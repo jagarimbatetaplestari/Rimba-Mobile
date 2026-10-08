@@ -1,0 +1,281 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Biophilic Sage-Mint Canvas Palette (Apple & Forest Style) */
+  --bg-canvas-start: #d4e7dc;
+  --bg-canvas-mid: #c5dfd1;
+  --bg-canvas-end: #b4d3c2;
+
+  /* Deep Forest Pine Accent */
+  --accent-forest: #1e5638;
+  --accent-forest-hover: #16442e;
+  --accent-forest-soft: #edf6f1;
+  --accent-forest-border: rgba(30, 86, 56, 0.2);
+
+  /* Frosted Milky Glass & Specular Rim Tokens */
+  --glass-surface-from: rgba(239, 246, 241, 0.94);
+  --glass-surface-to: rgba(226, 238, 230, 0.92);
+  --glass-border: rgba(255, 255, 255, 0.85);
+  --glass-highlight: rgba(255, 255, 255, 0.9);
+  --glass-shadow:
+    0 16px 36px -4px rgba(20, 53, 37, 0.12),
+    0 4px 12px -2px rgba(20, 53, 37, 0.05);
+
+  /* Pine Forest Ink Hierarchy */
+  --ink-primary: #143525;
+  --ink-secondary: #456b57;
+  --ink-muted: #6f927e;
+
+  --background: var(--bg-canvas-mid);
+  --foreground: var(--ink-primary);
+}
+
+body {
+  color: var(--foreground);
+  background: linear-gradient(
+      180deg,
+      var(--bg-canvas-start) 0%,
+      var(--bg-canvas-mid) 50%,
+      var(--bg-canvas-end) 100%
+    )
+    fixed;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+    var(--font-geist-sans), sans-serif;
+  overflow-x: hidden;
+  overflow-y: auto;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ==========================================================================
+   Apple Frosted Glass & Biophilic Component Tokens
+   ========================================================================== */
+
+@layer components {
+  /* Kartu Kaca Frosted Milky Transparan Lembut */
+  .milky-card {
+    background: linear-gradient(
+      180deg,
+      var(--glass-surface-from) 0%,
+      var(--glass-surface-to) 100%
+    );
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
+    box-shadow:
+      var(--glass-shadow),
+      inset 0 1.5px 0 var(--glass-highlight);
+    color: var(--ink-primary);
+  }
+
+  /* Kapsul Interaktif Putih Kaca (Cockpit & Badges) */
+  .milky-pill {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--glass-border);
+    border-radius: 9999px;
+    box-shadow:
+      0 4px 16px rgba(20, 53, 37, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    color: var(--ink-primary);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .milky-pill:hover {
+    background: rgba(255, 255, 255, 0.92);
+    transform: translateY(-0.5px);
+  }
+
+  .milky-pill:active {
+    transform: scale(0.96);
+  }
+
+  /* Ambient Sunbeam Glow di Puncak Kanvas */
+  .sunbeam-ambient {
+    position: fixed;
+    top: -70px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 140vw;
+    max-width: 680px;
+    height: 380px;
+    border-radius: 9999px;
+    background: radial-gradient(
+      ellipse at top,
+      rgba(255, 255, 255, 0.45) 0%,
+      rgba(255, 255, 255, 0.15) 45%,
+      transparent 70%
+    );
+    filter: blur(44px);
+    pointer-events: none;
+    z-index: 0;
+  }
+}
+
+/* ==========================================================================
+   Apple iOS Control Center Switch & Range Sliders
+   ========================================================================== */
+
+/* Toggle Switch Apple Forest Green */
+.ios-toggle-forest {
+  position: relative;
+  display: inline-flex;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+  cursor: pointer;
+  border-radius: 9999px;
+  padding: 2px;
+  background-color: rgba(0, 0, 0, 0.12);
+  transition: background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ios-toggle-forest[aria-checked="true"],
+.ios-toggle-forest[data-checked="true"] {
+  background-color: var(--accent-forest);
+}
+
+.ios-toggle-forest .thumb {
+  pointer-events: none;
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  background-color: #ffffff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  transform: translateX(0);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ios-toggle-forest[aria-checked="true"] .thumb,
+.ios-toggle-forest[data-checked="true"] .thumb {
+  transform: translateX(20px);
+}
+
+/* Range Slider Ramping (Minimalist & Locked Inside Container) */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 9999px;
+  background: rgba(20, 53, 37, 0.14);
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: -6px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 2px 6px rgba(20, 53, 37, 0.25);
+  border: 1.5px solid var(--accent-forest);
+  transition: transform 0.15s ease;
+}
+
+input[type="range"]:active::-webkit-slider-thumb {
+  transform: scale(1.15);
+}
+
+input[type="range"]::-moz-range-track {
+  height: 4px;
+  border-radius: 9999px;
+  background: rgba(20, 53, 37, 0.14);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 1.5px solid var(--accent-forest);
+  box-shadow: 0 2px 6px rgba(20, 53, 37, 0.25);
+}
+
+/* ==========================================================================
+   Utilities: Scrollbar & Touch Optimization
+   ========================================================================== */
+
+.no-scrollbar::-webkit-scrollbar,
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar,
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+button,
+a,
+input {
+  touch-action: manipulation;
+}
+
+/* ==========================================================================
+   Atmospheric Sky Animations (Smooth 60fps)
+   ========================================================================== */
+
+@keyframes rimbaDriftHorizon {
+  0% {
+    transform: translate3d(-2%, 0, 0);
+  }
+  50% {
+    transform: translate3d(2%, 0, 0);
+  }
+  100% {
+    transform: translate3d(-2%, 0, 0);
+  }
+}
+
+@keyframes rimbaPulseSunbeam {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(1.03);
+  }
+}
+
+@keyframes rimbaTwinkle {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+.animate-rimba-drift {
+  animation: rimbaDriftHorizon 18s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-rimba-sunbeam {
+  animation: rimbaPulseSunbeam 6s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+.animate-rimba-twinkle {
+  animation: rimbaTwinkle 3.5s ease-in-out infinite;
+  will-change: opacity;
+}

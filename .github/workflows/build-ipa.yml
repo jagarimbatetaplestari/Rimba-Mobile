@@ -1,0 +1,86 @@
+name: Build Rimba iOS IPA (SideStore / AltStore)
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-ipa:
+    runs-on: macos-14
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Node Dependencies
+        run: npm ci
+
+      - name: Export Next.js Static Web Build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://rkljugrrscmqopeuwtpd.supabase.co' }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJrbGp1Z3Jyc2NtcW9wZXV3dHBkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE0NTg2NzcsImV4cCI6MjEwNzAzNDY3N30.5ZGZjrPq8cCMBhX_pIuMOsFjq0H50JhhLHdIlmo5HQ0' }}
+        run: npm run build
+
+      - name: Sync Capacitor iOS Project
+        run: npx cap sync ios
+
+      - name: Install CocoaPods
+        run: |
+          cd ios/App
+          pod install --repo-update
+          cd ../..
+
+      - name: Build Xcode Archive (Unsigned for Sideloading)
+        run: |
+          xcodebuild \
+            -workspace ios/App/App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath build/App.xcarchive \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            archive
+
+      - name: Package Unsigned IPA for SideStore / AltStore
+        run: |
+          mkdir -p build/Payload
+          cp -r build/App.xcarchive/Products/Applications/App.app build/Payload/
+          cd build
+          zip -qry Rimba.ipa Payload
+          cd ..
+          ls -lh build/Rimba.ipa
+
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Rimba-SideStore-IPA
+          path: build/Rimba.ipa
+          retention-days: 14
+
+      - name: Create Release (Optional for main branch)
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v0.1.0-build-${{ github.run_number }}
+          name: Rimba Mobile v0.1.0 (Build #${{ github.run_number }})
+          body: |
+            ## 🌲 Rimba Mobile — Digital Garden & Focus World
+            **IPA Build untuk Sideload SideStore / AltStore**
+
+            ### Cara Install di iPhone:
+            1. Download file `Rimba.ipa` di bawah ini langsung dari browser Safari iPhone.
+            2. Buka aplikasi **SideStore** (atau AltStore).
+            3. Tap tombol `+` (Install) lalu pilih file `Rimba.ipa` yang baru didownload.
+            4. SideStore akan menandatangani dengan Apple ID Anda dan aplikasi siap dibuka!
+          files: build/Rimba.ipa
+        continue-on-error: true

@@ -3,7 +3,12 @@ name: Build Rimba iOS IPA (SideStore / AltStore)
 on:
   push:
     branches: [ main ]
+    tags:
+      - 'v*'
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build-ipa:
@@ -67,20 +72,40 @@ jobs:
           path: build/Rimba.ipa
           retention-days: 14
 
-      - name: Create Release (Optional for main branch)
-        if: github.ref == 'refs/heads/main'
+      - name: Determine Release Tag
+        id: release_info
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            TAG="${{ github.ref_name }}"
+            NAME="Rimba Mobile $TAG"
+          else
+            TAG="v0.1.0-build-${{ github.run_number }}"
+            NAME="Rimba Mobile v0.1.0 (Build #${{ github.run_number }})"
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "name=$NAME" >> $GITHUB_OUTPUT
+
+      - name: Publish GitHub Release with IPA
         uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v0.1.0-build-${{ github.run_number }}
-          name: Rimba Mobile v0.1.0 (Build #${{ github.run_number }})
+          tag_name: ${{ steps.release_info.outputs.tag }}
+          name: ${{ steps.release_info.outputs.name }}
           body: |
             ## 🌲 Rimba Mobile — Digital Garden & Focus World
             **IPA Build untuk Sideload SideStore / AltStore**
 
-            ### Cara Install di iPhone:
-            1. Download file `Rimba.ipa` di bawah ini langsung dari browser Safari iPhone.
-            2. Buka aplikasi **SideStore** (atau AltStore).
-            3. Tap tombol `+` (Install) lalu pilih file `Rimba.ipa` yang baru didownload.
-            4. SideStore akan menandatangani dengan Apple ID Anda dan aplikasi siap dibuka!
+            ### 📲 Cara Install di iPhone via SideStore / AltStore:
+            1. Buka halaman rilis ini di browser Safari iPhone Anda.
+            2. Unduh file **`Rimba.ipa`** dari bagian **Assets** di bawah.
+            3. Buka aplikasi **SideStore** (atau AltStore).
+            4. Tap tab **My Apps**, lalu tap ikon `+` di pojok kiri/kanan atas.
+            5. Pilih file **`Rimba.ipa`** yang baru diunduh.
+            6. SideStore akan menandatangani dengan akun Apple ID Anda, dan Rimba siap digunakan!
+
+            ---
+            *Commit: `${{ github.sha }}`*
           files: build/Rimba.ipa
-        continue-on-error: true
+          draft: false
+          prerelease: false

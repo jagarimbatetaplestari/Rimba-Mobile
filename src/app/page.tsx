@@ -30,6 +30,12 @@ import { setupBackgroundGuard } from "@/lib/mobile/backgroundTimerGuard";
 import { getDailyQuestStatus } from "@/lib/game/quests";
 import { evaluateAchievements } from "@/lib/game/achievements";
 import { LoadingSanctuary } from "@/components/feedback/LoadingSanctuary";
+import { toLocalDateString, calculateAnalytics } from "@/lib/game/analytics";
+import {
+  scheduleDailyStreakReminder,
+  cancelDailyStreakReminder,
+} from "@/lib/mobile/notificationManager";
+import { usePreferencesStore } from "@/lib/settings/usePreferencesStore";
 
 export default function RimbaDioramaApp() {
   const init = useGameStore((state) => state.init);
@@ -180,6 +186,35 @@ export default function RimbaDioramaApp() {
       cleanupGuard();
     };
   }, [init, checkReclamation]);
+
+  // Smart Daily Streak Reminder: If user hasn't focused today, schedule evening reminder; if already focused, cancel reminder
+  useEffect(() => {
+    if (!isInitialized) return;
+
+    try {
+      const todayStr = toLocalDateString(new Date());
+      const hasFocusedToday = (saveData.focus_sessions || []).some((s) => {
+        if (!s.completed_at) return false;
+        return toLocalDateString(new Date(s.completed_at)) === todayStr;
+      });
+
+      const analytics = calculateAnalytics(
+        saveData.focus_sessions || [],
+        new Date(),
+        saveData.used_shield_dates || []
+      );
+      const currentStreak = Math.max(1, analytics.currentStreak);
+      const prefs = usePreferencesStore.getState();
+
+      if (hasFocusedToday) {
+        cancelDailyStreakReminder();
+      } else {
+        scheduleDailyStreakReminder(prefs.dailyReminderTime || '20:00', currentStreak);
+      }
+    } catch (err) {
+      console.warn('[Rimba] Smart streak reminder check error:', err);
+    }
+  }, [isInitialized, saveData.focus_sessions, saveData.used_shield_dates]);
 
   const timeOfDay = useGameStore((state) => state.timeOfDay);
   const isDay = timeOfDay === "day";

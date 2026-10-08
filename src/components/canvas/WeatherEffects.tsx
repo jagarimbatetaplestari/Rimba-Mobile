@@ -123,6 +123,100 @@ function RainParticles() {
 }
 
 // ==========================================
+// 1b. WATER & GROUND RAIN RIPPLES
+// Gentle expanding concentric ripples on river and meadow
+// ==========================================
+const RIPPLE_COUNT = 24;
+
+function RainRipples() {
+  const meshRefs = useRef<(THREE.Mesh | null)[]>([]);
+  const ripples = useRef(
+    Array.from({ length: RIPPLE_COUNT }, () => ({
+      x: 0,
+      y: 0.1,
+      z: 0,
+      progress: Math.random(),
+      speed: 0.012 + Math.random() * 0.016,
+      maxRadius: 0.35 + Math.random() * 0.35,
+    }))
+  );
+
+  const unlockedSignature = useGameStore((state) =>
+    getUnlockedTilesSignature(state.saveData.world, state.saveData.world_objects)
+  );
+  const unlockedSet = useMemo(() => {
+    const state = useGameStore.getState();
+    return getUnlockedTilesSet(state.saveData.world, state.saveData.world_objects);
+  }, [unlockedSignature]);
+
+  const unlockedTiles = useMemo(() => {
+    const list: { cx: number; cz: number }[] = [];
+    const tileSize = GAME_CONFIG.grid.tileSize;
+    const offset = GAME_CONFIG.grid.offset;
+    unlockedSet.forEach((key) => {
+      const [gx, gy] = key.split(',').map(Number);
+      if (Number.isInteger(gx) && Number.isInteger(gy)) {
+        list.push({
+          cx: (gx + offset) * tileSize,
+          cz: (gy + offset) * tileSize,
+        });
+      }
+    });
+    return list;
+  }, [unlockedSet]);
+
+  const ringGeo = useMemo(() => new THREE.RingGeometry(0.04, 0.09, 20), []);
+
+  useFrame(() => {
+    if (unlockedTiles.length === 0) return;
+    const tileSize = GAME_CONFIG.grid.tileSize;
+    ripples.current.forEach((r, idx) => {
+      r.progress += r.speed;
+      if (r.progress >= 1) {
+        r.progress = 0;
+        const tile = unlockedTiles[Math.floor(Math.random() * unlockedTiles.length)];
+        r.x = tile.cx + (Math.random() - 0.5) * tileSize * 0.85;
+        r.z = tile.cz + (Math.random() - 0.5) * tileSize * 0.85;
+        r.y = getTerrainElevation(r.x, r.z).height + 0.035;
+      }
+      const mesh = meshRefs.current[idx];
+      if (mesh) {
+        mesh.position.set(r.x, r.y, r.z);
+        const scale = 0.2 + r.progress * (r.maxRadius / 0.09);
+        mesh.scale.set(scale, scale, 1);
+        const mat = mesh.material as THREE.MeshBasicMaterial;
+        if (mat) {
+          mat.opacity = Math.max(0, (1 - r.progress) * 0.55);
+        }
+      }
+    });
+  });
+
+  return (
+    <group>
+      {Array.from({ length: RIPPLE_COUNT }).map((_, idx) => (
+        <mesh
+          key={idx}
+          ref={(el) => {
+            meshRefs.current[idx] = el;
+          }}
+          geometry={ringGeo}
+          rotation={[-Math.PI / 2, 0, 0]}
+        >
+          <meshBasicMaterial
+            color="#A8D8F0"
+            transparent
+            opacity={0}
+            depthWrite={false}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+// ==========================================
 // 2. NIGHT FIREFLIES (Active during 'night' timeOfDay)
 // Bound strictly to unlocked land tiles & low hovering altitude
 // ==========================================
@@ -411,10 +505,89 @@ function WindLeaves() {
 }
 
 // ==========================================
+// 5. MOUNTAIN MIST WISPS (Active during 'mist' weather)
+// Soft, slow horizontal highland clouds hovering above island
+// ==========================================
+const MIST_COUNT = 22;
+
+function MountainMist() {
+  const pointsRef = useRef<THREE.Points>(null);
+
+  const mistTexture = useMemo(() => {
+    return createRadialGlowTexture(
+      'rgba(240, 248, 245, 0.35)',
+      'rgba(215, 235, 230, 0.18)',
+      'rgba(195, 220, 215, 0.0)',
+      128
+    );
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      mistTexture?.dispose();
+    };
+  }, [mistTexture]);
+
+  const { positions, driftSpeeds, baseAlts } = useMemo(() => {
+    const pos = new Float32Array(MIST_COUNT * 3);
+    const spd = new Float32Array(MIST_COUNT);
+    const alt = new Float32Array(MIST_COUNT);
+
+    for (let i = 0; i < MIST_COUNT; i++) {
+      pos[i * 3 + 0] = (Math.random() - 0.5) * 16;
+      const h = 0.6 + Math.random() * 2.0;
+      pos[i * 3 + 1] = h;
+      pos[i * 3 + 2] = (Math.random() - 0.5) * 16;
+      spd[i] = 0.008 + Math.random() * 0.012;
+      alt[i] = h;
+    }
+    return { positions: pos, driftSpeeds: spd, baseAlts: alt };
+  }, []);
+
+  useFrame(({ clock }) => {
+    if (!pointsRef.current) return;
+    const t = clock.getElapsedTime();
+    const geo = pointsRef.current.geometry;
+    const posAttr = geo.attributes.position;
+    const array = posAttr.array as Float32Array;
+
+    for (let i = 0; i < MIST_COUNT; i++) {
+      array[i * 3 + 0] += driftSpeeds[i];
+      array[i * 3 + 1] = baseAlts[i] + Math.sin(t * 0.6 + i) * 0.12;
+      array[i * 3 + 2] += Math.sin(t * 0.4 + i) * 0.004;
+
+      if (array[i * 3 + 0] > 9) {
+        array[i * 3 + 0] = -9;
+        array[i * 3 + 2] = (Math.random() - 0.5) * 16;
+      }
+    }
+    posAttr.needsUpdate = true;
+  });
+
+  return (
+    <points ref={pointsRef}>
+      <bufferGeometry>
+        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
+      </bufferGeometry>
+      <pointsMaterial
+        map={mistTexture || undefined}
+        color="#E2F0EB"
+        size={4.2}
+        transparent
+        opacity={0.42}
+        depthWrite={false}
+        blending={THREE.NormalBlending}
+      />
+    </points>
+  );
+}
+
+// ==========================================
 // MAIN WEATHER & ATMOSPHERE EFFECTS CONTAINER
 // ==========================================
 export function WeatherEffects() {
   const timeOfDay = useGameStore((state) => state.timeOfDay);
+  const weather = useGameStore((state) => state.weather);
   const [activeSoundscape, setActiveSoundscape] = useState<SoundscapeType>(
     soundscapeManager.getCurrentTrack()
   );
@@ -429,10 +602,21 @@ export function WeatherEffects() {
     return () => window.removeEventListener('rimba:soundscape_change', handleSoundscapeChange);
   }, []);
 
+  const isRaining = weather === 'rain' || activeSoundscape === 'rain';
+  const isMisty = weather === 'mist';
+
   return (
     <group>
-      {/* 🌧️ Rain Particles */}
-      {activeSoundscape === 'rain' && <RainParticles />}
+      {/* 🌧️ Rain Particles & Ground Ripples */}
+      {isRaining && (
+        <>
+          <RainParticles />
+          <RainRipples />
+        </>
+      )}
+
+      {/* 🌫️ Mountain Mist Highland Wisps */}
+      {isMisty && <MountainMist />}
 
       {/* 🌙 Night Fireflies (Soft circular glowing bioluminescence) */}
       {timeOfDay === 'night' && <Fireflies />}

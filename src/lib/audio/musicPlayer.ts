@@ -1,4 +1,4 @@
-'use client';
+import { mediaSessionManager } from './mediaSessionManager';
 
 export interface MusicTrack {
   id: string;
@@ -121,35 +121,33 @@ class MusicPlayerController {
   }
 
   private updateMediaSession(track: MusicTrack) {
-    if (typeof window === 'undefined' || !('mediaSession' in navigator)) return;
-    try {
-      navigator.mediaSession.metadata = new MediaMetadata({
+    mediaSessionManager.updateSession(
+      {
+        type: 'music',
         title: track.title,
         artist: 'Rimba Nature & Lo-Fi',
         album: `${track.categoryLabel} Focus`,
-        artwork: [
-          { src: '/logo-web.webp', sizes: '512x512', type: 'image/webp' },
-        ],
-      });
-
-      navigator.mediaSession.setActionHandler('play', () => {
-        if (!this.isPlaying) this.togglePlay();
-      });
-      navigator.mediaSession.setActionHandler('pause', () => {
-        if (this.isPlaying) this.togglePlay();
-      });
-      navigator.mediaSession.setActionHandler('nexttrack', () => {
-        this.next();
-      });
-      navigator.mediaSession.setActionHandler('previoustrack', () => {
-        this.prev();
-      });
-    } catch (err) {
-      // Ignore if MediaSession fails
-    }
+        isPlaying: this.isPlaying,
+      },
+      {
+        onPlay: () => {
+          if (!this.isPlaying) this.togglePlay();
+        },
+        onPause: () => {
+          if (this.isPlaying) this.togglePlay();
+        },
+        onNext: () => this.next(),
+        onPrev: () => this.prev(),
+      }
+    );
   }
 
   private notifyState() {
+    if (this.currentTrack) {
+      this.updateMediaSession(this.currentTrack);
+    } else {
+      mediaSessionManager.clear();
+    }
     if (typeof window !== 'undefined') {
       window.dispatchEvent(
         new CustomEvent('rimba:music_update', {

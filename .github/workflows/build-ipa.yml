@@ -79,8 +79,8 @@ jobs:
             TAG="${{ github.ref_name }}"
             NAME="Rimba Mobile $TAG"
           else
-            TAG="v0.1.0-build-${{ github.run_number }}"
-            NAME="Rimba Mobile v0.1.0 (Build #${{ github.run_number }})"
+            TAG="v0.2.0-build-${{ github.run_number }}"
+            NAME="Rimba Mobile v0.2.0 (Build #${{ github.run_number }})"
           fi
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "name=$NAME" >> $GITHUB_OUTPUT

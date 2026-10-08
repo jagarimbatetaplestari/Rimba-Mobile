@@ -1,4 +1,4 @@
-'use client';
+import { mediaSessionManager } from './mediaSessionManager';
 
 export type SoundscapeType = 'rain' | 'wind' | 'river' | 'fire' | 'waves' | 'off';
 
@@ -70,26 +70,27 @@ class SoundscapeController {
   }
 
   private updateMediaSession(track: SoundscapeType) {
-    if (typeof window === 'undefined' || !('mediaSession' in navigator)) return;
-    if (track === 'off') return;
+    if (track === 'off') {
+      mediaSessionManager.clear();
+      return;
+    }
 
     const meta = SOUNDSCAPES_LIST.find((s) => s.id === track);
     if (!meta) return;
 
-    try {
-      navigator.mediaSession.metadata = new MediaMetadata({
+    mediaSessionManager.updateSession(
+      {
+        type: 'nature',
         title: `${meta.icon} ${meta.name}`,
-        artist: 'Rimba Ambient Soundscape',
-        album: 'Suara Alam & Hutan Rimba',
-        artwork: [
-          { src: '/logo-web.webp', sizes: '512x512', type: 'image/webp' },
-        ],
-      });
-
-      navigator.mediaSession.setActionHandler('pause', () => {
-        this.stop();
-      });
-    } catch {}
+        artist: 'Rimba Nature Soundscape',
+        album: 'Suara Alam Suaka Rimba',
+        isPlaying: true,
+      },
+      {
+        onPause: () => this.stop(),
+        onPlay: () => this.play(track),
+      }
+    );
   }
 
   getCurrentTrack(): SoundscapeType {
@@ -137,6 +138,7 @@ class SoundscapeController {
     });
     this.activeNodes = [];
     this.currentTrack = 'off';
+    mediaSessionManager.clear();
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('rimba:soundscape_change', { detail: 'off' }));
     }

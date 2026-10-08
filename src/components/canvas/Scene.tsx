@@ -164,6 +164,7 @@ function CameraEventListener() {
 export function Scene() {
   const backgroundTheme = useGameStore((state) => state.backgroundTheme);
   const timeOfDay = useGameStore((state) => state.timeOfDay);
+  const weather = useGameStore((state) => state.weather);
   const unlockedSignature = useGameStore((state) =>
     getUnlockedTilesSignature(state.saveData.world, state.saveData.world_objects)
   );
@@ -190,6 +191,47 @@ export function Scene() {
     }
     return ATMOSPHERE_CONFIG.day;
   }, [timeOfDay, backgroundTheme]);
+
+  // Dynamic Fog & Illumination adjustments based on weather
+  const weatherAtmosphere = useMemo(() => {
+    if (weather === 'mist') {
+      return {
+        fogColor:
+          timeOfDay === 'night'
+            ? '#14212D'
+            : timeOfDay === 'sunset'
+            ? '#DFB9A0'
+            : backgroundTheme === 'matcha'
+            ? '#DCEBE0'
+            : '#DDE8E2',
+        fogNear: 12,
+        fogFar: 30,
+        sunIntensityMultiplier: 0.85,
+      };
+    }
+    if (weather === 'rain') {
+      return {
+        fogColor:
+          timeOfDay === 'night'
+            ? '#0E1B26'
+            : timeOfDay === 'sunset'
+            ? '#B89082'
+            : backgroundTheme === 'matcha'
+            ? '#C6DCD0'
+            : '#B8CBD2',
+        fogNear: 20,
+        fogFar: 44,
+        sunIntensityMultiplier: 0.72,
+      };
+    }
+    // clear
+    return {
+      fogColor: theme.fogColor,
+      fogNear: 36,
+      fogFar: 60,
+      sunIntensityMultiplier: 1.0,
+    };
+  }, [weather, timeOfDay, backgroundTheme, theme.fogColor]);
 
   const graphicsQuality = usePreferencesStore((state) => state.graphicsQuality);
 
@@ -221,7 +263,14 @@ export function Scene() {
       <ResponsiveCamera />
 
       {/* Atmospheric depth fog at far distance */}
-      <fog attach="fog" args={[theme.fogColor, 36, 60]} />
+      <fog
+        attach="fog"
+        args={[
+          weatherAtmosphere.fogColor,
+          weatherAtmosphere.fogNear,
+          weatherAtmosphere.fogFar,
+        ]}
+      />
 
       {/* Soft natural ambient fill */}
       <ambientLight color={theme.ambientColor} intensity={theme.ambientIntensity} />
@@ -232,7 +281,7 @@ export function Scene() {
       {/* Main sun/moon directional light (Optimized shadow map according to graphicsQuality) */}
       <directionalLight
         position={theme.sunPosition}
-        intensity={theme.sunIntensity}
+        intensity={theme.sunIntensity * weatherAtmosphere.sunIntensityMultiplier}
         color={theme.sunColor}
         castShadow={graphicsQuality !== 'eco'}
         shadow-mapSize={graphicsQuality === 'ultra' ? [1024, 1024] : [512, 512]}

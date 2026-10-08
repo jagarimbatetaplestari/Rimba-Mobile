@@ -10,6 +10,7 @@ import {
   TodoItem,
   TreeSpecies,
   WorldObject,
+  WeatherType,
 } from '@/types/game';
 import { BUILD_CATALOG, CatalogItem, GAME_CONFIG, ATMOSPHERE_CONFIG, detectLocalTimeOfDay } from './config';
 import { calculateBalances, canAfford, createLedgerEntry, getObjectBaseCost } from './economy';
@@ -67,6 +68,8 @@ interface GameState {
   grassPalette: 'natural' | 'emerald';
   timeOfDay: TimeOfDay;
   isTimeAuto: boolean;
+  weather: WeatherType;
+  isWeatherAuto: boolean;
   placementRotation: number;
   relocatingObjectId: string | null;
   isTabBlurred: boolean;
@@ -107,6 +110,9 @@ interface GameState {
   setTimeOfDay: (time: TimeOfDay) => void;
   toggleTimeOfDay: () => void;
   setAutoTime: (enabled: boolean) => void;
+  setWeather: (weather: WeatherType) => void;
+  toggleWeather: () => void;
+  setAutoWeather: (enabled: boolean) => void;
   setTabBlurred: (blurred: boolean) => void;
   rotatePlacement: () => void;
   setSelectedTool: (tool: ObjectType | null) => void;
@@ -173,6 +179,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   grassPalette: 'natural',
   timeOfDay: 'day',
   isTimeAuto: true,
+  weather: 'clear',
+  isWeatherAuto: true,
   placementRotation: 0,
   relocatingObjectId: null,
   isTabBlurred: false,
@@ -510,6 +518,16 @@ export const useGameStore = create<GameState>((set, get) => ({
       }
     }
 
+    let initialWeather: WeatherType = 'clear';
+    let isWeatherAuto = true;
+    if (typeof window !== 'undefined') {
+      const storedWeather = localStorage.getItem('rimba_weather');
+      if (storedWeather === 'clear' || storedWeather === 'rain' || storedWeather === 'mist') {
+        initialWeather = storedWeather as WeatherType;
+        isWeatherAuto = false;
+      }
+    }
+
     // Auto-rescue check for Streak Shield
     const now = new Date();
     const yesterday = new Date(now);
@@ -543,6 +561,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       grassPalette: savedGrass,
       timeOfDay: initialTime,
       isTimeAuto: isAuto,
+      weather: initialWeather,
+      isWeatherAuto,
       isInitialized: true,
     });
 
@@ -609,6 +629,48 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (enabled) {
       const cfg = ATMOSPHERE_CONFIG[detected];
       get().notify(`🕒 Mode Waktu Otomatis Aktif (${cfg.icon} ${cfg.name})`, 'info');
+    }
+  },
+
+  setWeather: (weather) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('rimba_weather', weather);
+    }
+    set({ weather, isWeatherAuto: false });
+    const names: Record<WeatherType, string> = {
+      clear: '☀️ Cerah Alami',
+      rain: '🌧️ Hujan Suaka',
+      mist: '🌫️ Kabut Pegunungan',
+    };
+    get().notify(`Cuaca Suaka: ${names[weather]}`, 'info');
+  },
+
+  toggleWeather: () => {
+    const current = get().weather;
+    const next: WeatherType = current === 'clear' ? 'rain' : current === 'rain' ? 'mist' : 'clear';
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('rimba_weather', next);
+    }
+    set({ weather: next, isWeatherAuto: false });
+    const names: Record<WeatherType, string> = {
+      clear: '☀️ Cerah Alami',
+      rain: '🌧️ Hujan Suaka',
+      mist: '🌫️ Kabut Pegunungan',
+    };
+    get().notify(`Cuaca Suaka: ${names[next]}`, 'info');
+  },
+
+  setAutoWeather: (enabled) => {
+    if (typeof window !== 'undefined') {
+      if (enabled) {
+        localStorage.removeItem('rimba_weather');
+      }
+    }
+    const timeOfDay = get().timeOfDay;
+    const autoWeather: WeatherType = timeOfDay === 'night' ? 'mist' : 'clear';
+    set({ weather: enabled ? autoWeather : get().weather, isWeatherAuto: enabled });
+    if (enabled) {
+      get().notify('🍃 Cuaca Alami (Otomatis) Aktif', 'info');
     }
   },
 

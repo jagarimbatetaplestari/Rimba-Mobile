@@ -2,6 +2,7 @@ export type FocusSessionStatus = 'active' | 'completed' | 'abandoned';
 export type ObjectType = 'tree' | 'rock' | 'path';
 export type ObjectStatus = 'active' | 'reclaimed' | 'marked_for_clearing';
 export type CurrencyType = 'gold' | 'xp';
+export type WeatherType = 'clear' | 'rain' | 'mist';
 
 export interface Profile {
   id: 'local-user';

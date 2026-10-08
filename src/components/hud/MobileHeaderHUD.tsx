@@ -17,6 +17,9 @@ import {
   Sun,
   Sunset,
   Moon,
+  CloudRain,
+  CloudFog,
+  CloudSun,
   Sprout,
 } from "lucide-react";
 import { hapticLight } from "@/lib/mobile/nativeBridge";
@@ -65,6 +68,8 @@ export function MobileHeaderHUD({
   const authUser = useAuthStore((state) => state.user);
   const timeOfDay = useGameStore((state) => state.timeOfDay);
   const setTimeOfDay = useGameStore((state) => state.setTimeOfDay);
+  const weather = useGameStore((state) => state.weather);
+  const toggleWeather = useGameStore((state) => state.toggleWeather);
 
   const currentLevel = getLevelFromXp(profile.xp);
   const nickname = authUser?.name?.trim() || "Penjaga";
@@ -109,6 +114,36 @@ export function MobileHeaderHUD({
     if (timeOfDay === "day") return "Siang";
     if (timeOfDay === "sunset") return "Sore";
     return "Malam";
+  };
+
+  // Siklus cuaca suaka: cerah -> hujan -> kabut -> cerah
+  const handleCycleWeather = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    soundManager.playPop();
+    hapticLight();
+    toggleWeather();
+  };
+
+  const getWeatherIcon = () => {
+    if (weather === "rain") {
+      return (
+        <CloudRain className="w-4.5 h-4.5 text-sky-600 fill-sky-400/25 stroke-[2.2]" />
+      );
+    }
+    if (weather === "mist") {
+      return (
+        <CloudFog className="w-4.5 h-4.5 text-teal-600 fill-teal-500/25 stroke-[2.2]" />
+      );
+    }
+    return (
+      <CloudSun className="w-4.5 h-4.5 text-amber-500 fill-amber-400/25 stroke-[2.2]" />
+    );
+  };
+
+  const getWeatherLabel = () => {
+    if (weather === "rain") return "Hujan";
+    if (weather === "mist") return "Kabut";
+    return "Cerah";
   };
 
   const toggleDropdown = (type: "profile" | "settings") => {
@@ -267,15 +302,29 @@ export function MobileHeaderHUD({
           </div>
 
           {/* ======================================================== */}
-          {/* SISI KANAN: [ AMBIENT TIME ] + [ SETTINGS PILLAR ]       */}
+          {/* SISI KANAN: [ CUACA ] + [ WAKTU ] + [ SETTINGS PILLAR ]  */}
           {/* ======================================================== */}
-          <div className="flex items-start gap-2 pointer-events-auto">
+          <div className="flex items-start gap-1.5 pointer-events-auto">
+            {/* Tombol Siklus Cuaca (Cerah / Hujan / Kabut) */}
+            <button
+              type="button"
+              onClick={handleCycleWeather}
+              className={`
+                w-[42px] h-[42px] rounded-full flex items-center justify-center transition-all duration-200 active:scale-90 cursor-pointer shrink-0
+                ${glassSurface}
+              `}
+              title={`Cuaca Suaka: ${getWeatherLabel()} (Ketuk untuk ganti)`}
+              aria-label={`Ganti Cuaca (${getWeatherLabel()})`}
+            >
+              {getWeatherIcon()}
+            </button>
+
             {/* Tombol Siklus Waktu (Siang / Sore / Malam) */}
             <button
               type="button"
               onClick={handleCycleTime}
               className={`
-                w-[44px] h-[44px] rounded-full flex items-center justify-center transition-all duration-200 active:scale-90 cursor-pointer shrink-0
+                w-[42px] h-[42px] rounded-full flex items-center justify-center transition-all duration-200 active:scale-90 cursor-pointer shrink-0
                 ${glassSurface}
               `}
               title={`Waktu Suaka: ${getTimeLabel()} (Ketuk untuk ganti)`}
@@ -292,7 +341,7 @@ export function MobileHeaderHUD({
                   type="button"
                   onClick={() => toggleDropdown("settings")}
                   className={`
-                    w-[44px] h-[44px] rounded-full flex items-center justify-center transition-all duration-200 active:scale-90 cursor-pointer shrink-0
+                    w-[42px] h-[42px] rounded-full flex items-center justify-center transition-all duration-200 active:scale-90 cursor-pointer shrink-0
                     ${glassSurface}
                   `}
                   title="Pengaturan & Sarana"
@@ -304,7 +353,7 @@ export function MobileHeaderHUD({
                 /* Dynamic Vertical Pillar Bersih */
                 <div
                   className={`
-                    w-[44px] rounded-full p-1 transition-all duration-300 z-50 flex flex-col items-center gap-1 shadow-[0_16px_40px_rgba(20,53,37,0.12),inset_0_1.5px_2px_rgba(255,255,255,0.95)]
+                    w-[42px] rounded-full p-1 transition-all duration-300 z-50 flex flex-col items-center gap-1 shadow-[0_16px_40px_rgba(20,53,37,0.12),inset_0_1.5px_2px_rgba(255,255,255,0.95)]
                     ${glassSurface}
                     animate-in fade-in zoom-in-95 duration-200
                   `}

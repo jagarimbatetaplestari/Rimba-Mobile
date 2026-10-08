@@ -23,6 +23,8 @@ import { createInitialSaveData, saveSaveData } from "@/lib/game/storage";
 import { SoundscapeModal } from "@/components/modals/SoundscapeModal";
 import { RestoreDataModal } from "@/components/modals/RestoreDataModal";
 import { SnapshotsHistoryModal } from "@/components/modals/SnapshotsHistoryModal";
+import { RangerAvatar } from "@/components/ui/RangerAvatar";
+import { uploadGameSaveToCloud, smartSyncOnLogin, getLastSyncedAt } from "@/lib/supabase/cloudSync";
 import {
   User,
   Music,
@@ -40,6 +42,8 @@ import {
   Trash2,
   ShieldAlert,
   Sparkles,
+  Cloud,
+  RefreshCw,
   X,
 } from "lucide-react";
 
@@ -69,10 +73,36 @@ export function MobileSettingsSheet({
   const [confirmInput, setConfirmInput] = useState("");
   const [isDeleteAccountOpen, setIsDeleteAccountOpen] = useState(false);
   const [deleteAccountInput, setDeleteAccountInput] = useState("");
+  const [isSyncingCloud, setIsSyncingCloud] = useState(false);
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) setCurrentView("main");
   }, [isOpen]);
+
+  const handleManualCloudSync = async () => {
+    if (!user || user.isGuest) {
+      soundManager.playPop();
+      hapticLight();
+      setSyncMessage("Akun masih mode tamu. Masuk untuk mengaktifkan cloud sync.");
+      return;
+    }
+    setIsSyncingCloud(true);
+    setSyncMessage(null);
+    soundManager.playPop();
+    hapticLight();
+    const success = await uploadGameSaveToCloud(saveData);
+    setIsSyncingCloud(false);
+    if (success) {
+      soundManager.playComplete();
+      hapticSuccess();
+      setSyncMessage("Progres suaka tersinkronkan ke Supabase Cloud!");
+    } else {
+      soundManager.playError();
+      hapticWarning();
+      setSyncMessage("Gagal sinkronisasi. Periksa koneksi internet.");
+    }
+  };
 
   const handleExportBackup = () => {
     soundManager.playComplete();
@@ -231,17 +261,12 @@ export function MobileSettingsSheet({
                 className="group flex w-full items-center justify-between rounded-[24px] border border-white/85 bg-white/75 p-3 px-3.5 shadow-[0_8px_24px_rgba(20,50,30,0.05)] transition-all active:scale-[0.98] cursor-pointer"
               >
                 <div className="flex items-center gap-3 min-w-0 pr-2">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#bfdac8]/50 text-[#143525] overflow-hidden">
-                    {user?.avatarUrl ? (
-                      <img
-                        src={user.avatarUrl}
-                        alt="Avatar"
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <User className="h-5 w-5 stroke-[2.2]" />
-                    )}
-                  </div>
+                  <RangerAvatar
+                    avatarUrl={user?.avatarUrl || profile?.avatarUrl}
+                    name={user?.name || profile?.name}
+                    size="md"
+                    borderClassName="border border-white/80"
+                  />
 
                   <div className="min-w-0 text-left">
                     <div className="flex items-center gap-2">
@@ -579,6 +604,63 @@ export function MobileSettingsSheet({
             <div className="p-3.5 rounded-[22px] border border-white/85 bg-white/70 text-[11.5px] text-[#456b57] leading-relaxed shadow-2xs">
               Seluruh progres pulau, spesies tanaman, dan riwayat fokus
               tersimpan secara lokal di perangkat Anda.
+            </div>
+
+            {/* Supabase Cloud Sync Card */}
+            <div className="p-3.5 rounded-[22px] border border-white/85 bg-white/80 space-y-2.5 shadow-2xs">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-full bg-emerald-500/15 flex items-center justify-center text-emerald-800">
+                    <Cloud className="w-4 h-4 stroke-[2.2]" />
+                  </div>
+                  <div>
+                    <h4 className="text-[13px] font-semibold text-[#143525]">
+                      Supabase Cloud Sync
+                    </h4>
+                    <p className="text-[10.5px] text-[#456b57]">
+                      {user && !user.isGuest
+                        ? "Penyimpanan awan terhubung"
+                        : "Mode Tamu (Hanya Tersimpan Lokal)"}
+                    </p>
+                  </div>
+                </div>
+
+                <span
+                  className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                    user && !user.isGuest
+                      ? "bg-emerald-100 text-emerald-800"
+                      : "bg-amber-100 text-amber-800"
+                  }`}
+                >
+                  {user && !user.isGuest ? "Online" : "Lokal"}
+                </span>
+              </div>
+
+              {syncMessage && (
+                <div className="text-[11px] p-2 rounded-xl bg-[#bfdac8]/30 text-[#143525] font-medium animate-in fade-in">
+                  {syncMessage}
+                </div>
+              )}
+
+              <button
+                type="button"
+                disabled={isSyncingCloud}
+                onClick={handleManualCloudSync}
+                className="w-full py-2 px-3 rounded-full border border-emerald-800/15 bg-white text-[#143525] hover:bg-emerald-50 text-[12px] font-semibold flex items-center justify-center gap-2 transition-all active:scale-98 shadow-xs cursor-pointer"
+              >
+                <RefreshCw
+                  className={`w-3.5 h-3.5 stroke-[2.2] ${
+                    isSyncingCloud ? "animate-spin text-emerald-700" : ""
+                  }`}
+                />
+                <span>
+                  {isSyncingCloud
+                    ? "Menyinkronkan ke Cloud..."
+                    : user && !user.isGuest
+                    ? "Sinkronkan Sekarang"
+                    : "Hubungkan Akun"}
+                </span>
+              </button>
             </div>
 
             <div className="space-y-2">

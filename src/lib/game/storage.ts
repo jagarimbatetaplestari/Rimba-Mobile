@@ -59,6 +59,9 @@ export function createInitialSaveData(): RimbaSaveData {
       id: 'local-user',
       xp,
       goldCached: gold,
+      name: 'Penjaga Rimba',
+      avatarUrl: '🦌',
+      bio: 'Penjaga Hutan Suaka',
     },
     world: {
       id: 'world_local_default',

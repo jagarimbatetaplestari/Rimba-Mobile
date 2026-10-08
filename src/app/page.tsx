@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useGameStore } from "@/lib/game/useGameStore";
+import { useAuthStore } from "@/lib/auth/useAuthStore";
 import { GAME_CONFIG, detectLocalTimeOfDay } from "@/lib/game/config";
 import { CanvasWrapper } from "@/components/canvas/CanvasWrapper";
 import { MobileHeaderHUD } from "@/components/hud/MobileHeaderHUD";
@@ -141,6 +142,7 @@ export default function RimbaDioramaApp() {
   useEffect(() => {
     try {
       init();
+      useAuthStore.getState().initAuth();
     } catch (err) {
       console.error("[Rimba] Failed during init():", err);
       useGameStore.setState({ isInitialized: true });

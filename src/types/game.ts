@@ -8,6 +8,8 @@ export interface Profile {
   xp: number;
   goldCached: number;
   name?: string;
+  avatarUrl?: string;
+  bio?: string;
 }
 
 export interface BulldozerThreat {

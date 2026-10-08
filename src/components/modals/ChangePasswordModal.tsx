@@ -86,15 +86,19 @@ export function ChangePasswordModal({
       const ok = await upgradeGuestAccount(guestName, guestEmail, newPassword);
       setIsSubmitting(false);
 
-      if (ok) {
+      if (ok.success) {
         soundManager.playComplete();
         hapticSuccess();
         setSuccessMessage(
-          "Akun berhasil didaftarkan dan kata sandi tersimpan!",
+          "Akun berhasil didaftarkan! Silakan cek email untuk verifikasi.",
         );
         setTimeout(() => {
           onClose();
         }, 1200);
+      } else {
+        soundManager.playError();
+        hapticWarning();
+        setErrorMessage(ok.error || "Gagal mendaftarkan akun.");
       }
     } else {
       if (newPassword.length < 6) {

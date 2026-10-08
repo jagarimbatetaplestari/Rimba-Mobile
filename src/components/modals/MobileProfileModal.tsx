@@ -16,6 +16,7 @@ import { hapticLight, hapticSuccess } from "@/lib/mobile/nativeBridge";
 import { AvatarPickerModal } from "@/components/modals/AvatarPickerModal";
 import { BadgesShowcaseModal } from "@/components/modals/BadgesShowcaseModal";
 import { RestoreDataModal } from "@/components/modals/RestoreDataModal";
+import { RangerAvatar } from "@/components/ui/RangerAvatar";
 import {
   X,
   User,
@@ -224,21 +225,16 @@ export function MobileProfileModal({
                   hapticLight();
                   setIsAvatarPickerOpen(true);
                 }}
-                className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#bfdac8]/50 text-[#143525] border-2 border-white/90 overflow-hidden active:scale-95 transition-transform cursor-pointer shadow-xs"
+                className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full active:scale-95 transition-transform cursor-pointer shadow-xs"
                 title="Ganti Foto Avatar"
               >
-                {isDataUrl ? (
-                  <img
-                    src={user?.avatarUrl}
-                    alt={user?.name || "Avatar"}
-                    className="h-full w-full object-cover"
-                  />
-                ) : user?.avatarUrl ? (
-                  <span className="text-2xl">{user.avatarUrl}</span>
-                ) : (
-                  <User className="h-7 w-7 stroke-[1.8] text-[#143525]" />
-                )}
-                <div className="absolute bottom-0 right-0 p-1 rounded-full bg-[#1e5638] text-white shadow-2xs">
+                <RangerAvatar
+                  avatarUrl={user?.avatarUrl || profile?.avatarUrl}
+                  name={user?.name || profile?.name}
+                  size="lg"
+                  borderClassName="border-2 border-white/90"
+                />
+                <div className="absolute bottom-0 right-0 p-1 rounded-full bg-[#1e5638] text-white shadow-2xs z-10">
                   <Camera className="w-2.5 h-2.5" />
                 </div>
               </button>
@@ -609,7 +605,7 @@ export function MobileProfileModal({
       <AvatarPickerModal
         isOpen={isAvatarPickerOpen}
         onClose={() => setIsAvatarPickerOpen(false)}
-        currentAvatarUrl={user?.avatarUrl}
+        currentAvatarUrl={user?.avatarUrl || profile?.avatarUrl}
       />
 
       {/* Badges Showcase Modal */}

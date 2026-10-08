@@ -45,6 +45,7 @@ import {
 } from './worldRules';
 import { createInitialSaveData, loadSaveData, saveSaveData } from './storage';
 import { requestScreenWakeLock, releaseScreenWakeLock } from '@/lib/mobile/nativeBridge';
+import { syncProfileUpdate, scheduleDebouncedCloudSync } from '../supabase/cloudSync';
 
 export interface NotificationState {
   id: string;
@@ -129,6 +130,7 @@ interface GameState {
   deleteCustomTag: (tagId: string) => void;
   setDistractionSource: (source: string) => void;
   setProfileName: (name: string) => void;
+  setProfileAvatar: (avatarUrl: string) => void;
   markPioneerStepDone: (stepId: string) => void;
   claimPioneerMysteryReward: () => boolean;
   abandonFocus: () => void;
@@ -837,6 +839,25 @@ export const useGameStore = create<GameState>((set, get) => ({
     };
     saveSaveData(updatedData);
     set({ saveData: updatedData });
+    syncProfileUpdate({ name: cleanName });
+    scheduleDebouncedCloudSync();
+  },
+
+  setProfileAvatar: (avatarUrl: string) => {
+    const { saveData } = get();
+    const cleanAvatar = avatarUrl.trim();
+    if (!cleanAvatar) return;
+    const updatedData: RimbaSaveData = {
+      ...saveData,
+      profile: {
+        ...saveData.profile,
+        avatarUrl: cleanAvatar,
+      },
+    };
+    saveSaveData(updatedData);
+    set({ saveData: updatedData });
+    syncProfileUpdate({ avatarUrl: cleanAvatar });
+    scheduleDebouncedCloudSync();
   },
 
   markPioneerStepDone: (stepId) => {
@@ -961,6 +982,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     saveSaveData(updatedData);
     releaseScreenWakeLock();
+    scheduleDebouncedCloudSync();
     set({
       saveData: updatedData,
       activeSession: null,
@@ -1061,6 +1083,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     saveSaveData(updatedData);
     releaseScreenWakeLock();
+    scheduleDebouncedCloudSync();
     set({
       saveData: updatedData,
       activeSession: null,

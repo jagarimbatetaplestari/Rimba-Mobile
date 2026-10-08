@@ -2,6 +2,8 @@
 
 import React, { useState, useRef } from "react";
 import { useAuthStore } from "@/lib/auth/useAuthStore";
+import { useGameStore } from "@/lib/game/useGameStore";
+import { RangerAvatar } from "@/components/ui/RangerAvatar";
 import { hapticLight, hapticSuccess } from "@/lib/mobile/nativeBridge";
 import { soundManager } from "@/lib/audio/sounds";
 import {
@@ -36,6 +38,8 @@ export function AvatarPickerModal({
   currentAvatarUrl,
 }: AvatarPickerModalProps) {
   const updateProfile = useAuthStore((state) => state.updateProfile);
+  const uploadAvatarFile = useAuthStore((state) => state.uploadAvatarFile);
+  const setProfileAvatar = useGameStore((state) => state.setProfileAvatar);
   const [selectedAvatar, setSelectedAvatar] = useState<string>(
     currentAvatarUrl || "",
   );
@@ -62,7 +66,7 @@ export function AvatarPickerModal({
     const reader = new FileReader();
     reader.onload = (event) => {
       const img = new Image();
-      img.onload = () => {
+      img.onload = async () => {
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d");
         const size = 256;
@@ -77,6 +81,20 @@ export function AvatarPickerModal({
           ctx.drawImage(img, startX, startY, minDim, minDim, 0, 0, size, size);
           const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.82);
           setSelectedAvatar(compressedDataUrl);
+
+          // Coba unggah ke Supabase Storage jika akun terhubung
+          try {
+            canvas.toBlob(async (blob) => {
+              if (blob) {
+                const cloudUrl = await uploadAvatarFile(blob);
+                if (cloudUrl) {
+                  setSelectedAvatar(cloudUrl);
+                }
+              }
+            }, "image/jpeg", 0.82);
+          } catch {
+            // Tetap gunakan compressedDataUrl
+          }
         }
         setIsProcessing(false);
       };
@@ -88,7 +106,10 @@ export function AvatarPickerModal({
   const handleSave = () => {
     soundManager.playComplete();
     hapticSuccess();
-    updateProfile({ avatarUrl: selectedAvatar });
+    if (selectedAvatar) {
+      updateProfile({ avatarUrl: selectedAvatar });
+      setProfileAvatar(selectedAvatar);
+    }
     onClose();
   };
 
@@ -144,25 +165,17 @@ export function AvatarPickerModal({
 
         {/* Live Circular Avatar Preview */}
         <div className="flex flex-col items-center justify-center py-1">
-          <div className="relative w-22 h-22 rounded-full border-2 border-white bg-white/80 p-1 flex items-center justify-center shadow-[0_8px_24px_rgba(20,50,30,0.08)]">
-            <div className="w-full h-full rounded-full overflow-hidden bg-[#bfdac8]/40 flex items-center justify-center text-4xl select-none">
-              {isDataUrl ? (
-                <img
-                  src={selectedAvatar}
-                  alt="Avatar"
-                  className="w-full h-full object-cover"
-                />
-              ) : selectedAvatar ? (
-                <span>{selectedAvatar}</span>
-              ) : (
-                <span className="text-[#143525]/50 text-3xl">🌿</span>
-              )}
-            </div>
+          <div className="relative p-1 flex items-center justify-center">
+            <RangerAvatar
+              avatarUrl={selectedAvatar}
+              size={84}
+              borderClassName="border-2 border-white shadow-[0_8px_24px_rgba(20,50,30,0.08)] bg-white/80"
+            />
 
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-[#1e5638] text-white flex items-center justify-center shadow-xs active:scale-90 transition-transform cursor-pointer border-2 border-white"
+              className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-[#1e5638] text-white flex items-center justify-center shadow-xs active:scale-90 transition-transform cursor-pointer border-2 border-white z-10"
               title="Unggah Foto"
             >
               <Camera className="w-3.5 h-3.5" />

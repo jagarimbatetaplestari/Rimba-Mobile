@@ -22,6 +22,7 @@ import {
 import { hapticLight } from "@/lib/mobile/nativeBridge";
 import { useAuthStore } from "@/lib/auth/useAuthStore";
 import { getLevelFromXp } from "@/lib/game/levelRules";
+import { RangerAvatar } from "@/components/ui/RangerAvatar";
 
 export interface MobileHeaderHUDProps {
   onOpenStreak?: () => void;
@@ -174,18 +175,13 @@ export function MobileHeaderHUD({
                 aria-label="Buka Menu Profil dan Suaka"
               >
                 {/* Avatar Icon Container dengan Fallback Aman */}
-                <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 bg-black/10 text-[#1e5638] border border-white/10 shadow-2xs overflow-hidden">
-                  {showAvatarImage ? (
-                    <img
-                      src={authUser!.avatarUrl}
-                      alt="Avatar"
-                      className="w-full h-full object-cover rounded-full"
-                      onError={() => setAvatarError(true)}
-                    />
-                  ) : (
-                    <User className="w-3.5 h-3.5 stroke-[2.2]" />
-                  )}
-                </div>
+                <RangerAvatar
+                  avatarUrl={authUser?.avatarUrl || profile?.avatarUrl}
+                  name={nickname}
+                  size="sm"
+                  className="w-7 h-7"
+                  borderClassName="border border-white/20 shadow-2xs"
+                />
 
                 {/* Nickname Akun */}
                 <span className="text-[13px] font-semibold truncate tracking-tight max-w-[96px] text-[#143525]">

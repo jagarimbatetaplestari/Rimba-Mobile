@@ -125,7 +125,10 @@ export function FocusSapling() {
     const now = Date.now();
     const start = new Date(activeSession.started_at).getTime();
     const end = new Date(activeSession.expected_end_at).getTime();
-    const totalDuration = Math.max(1000, end - start);
+    // For Stopwatch (Durasi Bebas) mode, tree growth reaches maturity at 5 minutes (300,000 ms)
+    const totalDuration = activeSession.is_stopwatch
+      ? 300000
+      : Math.max(1000, end - start);
     const elapsed = Math.max(0, now - start);
     const rawProgress = Math.min(1, elapsed / totalDuration);
 

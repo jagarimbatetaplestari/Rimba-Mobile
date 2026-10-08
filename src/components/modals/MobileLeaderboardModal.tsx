@@ -222,6 +222,10 @@ export function MobileLeaderboardModal({
                     <p className="text-[11px] text-[#456b57] font-light truncate">
                       {tier.description}
                     </p>
+                    <p className="text-[10px] font-medium text-[#1e5638] flex items-center gap-1 mt-0.5 truncate">
+                      <span>✨</span>
+                      <span>{tier.perk}</span>
+                    </p>
                   </div>
                 </div>
 

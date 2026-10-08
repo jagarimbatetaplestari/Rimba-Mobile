@@ -436,15 +436,48 @@ export function ObjectInspectModal() {
                       <span>Pindahkan</span>
                     </button>
 
-                    <button
-                      type="button"
-                      onClick={handleRemove}
-                      className="py-2 px-3 rounded-full text-xs font-semibold bg-rose-50 hover:bg-rose-100 border border-rose-200/80 text-rose-700 flex items-center justify-center gap-1.5 shadow-2xs active:scale-95 transition-all cursor-pointer"
-                      title={`Hapus objek dan dapatkan kembali 50% Soul (+${refundAmount} Soul)`}
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      <span>Hapus (+{refundAmount})</span>
-                    </button>
+                    {selectedObject.object_type === 'tree' ? (
+                      isReclaimed ? (
+                        <button
+                          type="button"
+                          onClick={handleRemove}
+                          className="py-2 px-3 rounded-full text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 flex items-center justify-center gap-1.5 shadow-2xs active:scale-95 transition-all cursor-pointer"
+                          title="Bersihkan tunggul kayu lapuk untuk memulihkan kesuburan tanah (Gratis)"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Bersihkan (Gratis)</span>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={handleRemove}
+                          disabled={gold < 2}
+                          className={`py-2 px-3 rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 shadow-2xs transition-all ${
+                            gold >= 2
+                              ? "bg-rose-50 hover:bg-rose-100 border border-rose-300 text-rose-700 active:scale-95 cursor-pointer"
+                              : "bg-black/5 border border-black/10 text-[#456b57]/40 cursor-not-allowed"
+                          }`}
+                          title={
+                            gold >= 2
+                              ? "Mencabut pohon suaka hidup berkonsekuensi -2 Soul demi keseimbangan alam"
+                              : "Butuh minimal 2 Soul untuk mencabut pohon hidup"
+                          }
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Cabut (-2 Soul)</span>
+                        </button>
+                      )
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleRemove}
+                        className="py-2 px-3 rounded-full text-xs font-semibold bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 flex items-center justify-center gap-1.5 shadow-2xs active:scale-95 transition-all cursor-pointer"
+                        title={`Bongkar objek dan daur ulang material (+${refundAmount} Soul)`}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Bongkar (+{refundAmount})</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               )}

@@ -304,6 +304,16 @@ export function MobileFocusCard({ onEnterZen }: MobileFocusCardProps = {}) {
   const handleComplete = () => {
     soundManager.playPop();
     hapticLight();
+    if (activeSession?.is_stopwatch) {
+      const startMs = new Date(activeSession.started_at).getTime();
+      const elapsedMs = Math.max(0, Date.now() - startMs);
+      if (elapsedMs < 300000) {
+        // Under 5 minutes: complete without harvest modal (0 rewards, no tree)
+        cancelPendingFocusNotifications();
+        completeFocus();
+        return;
+      }
+    }
     setShowHarvestModal(true);
   };
 
@@ -1013,10 +1023,28 @@ export function MobileFocusCard({ onEnterZen }: MobileFocusCardProps = {}) {
               <button
                 type="button"
                 onClick={handleComplete}
-                className="h-[36px] px-3.5 rounded-full font-extrabold text-xs shadow-md shadow-emerald-700/25 flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer bg-[#059669] hover:bg-[#047857] text-white"
+                className={`h-[36px] px-3.5 rounded-full font-extrabold text-xs shadow-md flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer ${
+                  activeSession.is_stopwatch && elapsedMs < 300000
+                    ? 'bg-slate-700 hover:bg-slate-800 text-white shadow-slate-900/20'
+                    : 'bg-[#059669] hover:bg-[#047857] text-white shadow-emerald-700/25'
+                }`}
+                title={
+                  activeSession.is_stopwatch && elapsedMs < 300000
+                    ? 'Selesai sekarang (di bawah 5 menit tidak menumbuhkan pohon suaka)'
+                    : 'Panen hasil fokusmu!'
+                }
               >
-                <Sparkles className="w-3.5 h-3.5 fill-current" />
-                <span>{activeSession.is_stopwatch ? 'Selesai' : 'Panen!'}</span>
+                {activeSession.is_stopwatch && elapsedMs < 300000 ? (
+                  <>
+                    <X className="w-3.5 h-3.5" />
+                    <span>Selesai (&lt;5m)</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-3.5 h-3.5 fill-current" />
+                    <span>Panen!</span>
+                  </>
+                )}
               </button>
             ) : (
               <button

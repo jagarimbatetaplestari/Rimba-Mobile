@@ -382,7 +382,68 @@ export const useGameStore = create<GameState>((set, get) => ({
       return false;
     }
 
-    // 50% Gold refund
+    // 1. Living tree removal: An ideological & ecological consequence!
+    // Uprooting a living mindful tree costs -2 Soul for disrupting sanctuary harmony.
+    if (target.object_type === 'tree' && target.status === 'active') {
+      if (!canAfford(saveData.currency_ledger, 2)) {
+        get().notify(
+          'Soul tidak cukup! Mencabut pohon suaka yang hidup membutuhkan 2 Soul sebagai penyeimbang energi alam.',
+          'error'
+        );
+        return false;
+      }
+
+      const ledgerEntry = createLedgerEntry(
+        'gold',
+        -2,
+        'uproot_tree_penalty',
+        objectId
+      );
+
+      const updatedObjects = saveData.world_objects.filter((o) => o.id !== objectId);
+      const updatedLedger = [...saveData.currency_ledger, ledgerEntry];
+
+      const updatedData: RimbaSaveData = {
+        ...saveData,
+        world_objects: updatedObjects,
+        currency_ledger: updatedLedger,
+      };
+
+      saveSaveData(updatedData);
+      set({
+        saveData: updatedData,
+        selectedObject: null,
+      });
+
+      get().notify(
+        '🍂 Pohon suaka dicabut. Keseimbangan alam terganggu (-2 Soul sebagai konsekuensi).',
+        'info'
+      );
+      return true;
+    }
+
+    // 2. Withered tree removal: Clearing decayed stumps restores soil fertility (Gratis)
+    if (target.object_type === 'tree' && target.status === 'reclaimed') {
+      const updatedObjects = saveData.world_objects.filter((o) => o.id !== objectId);
+      const updatedData: RimbaSaveData = {
+        ...saveData,
+        world_objects: updatedObjects,
+      };
+
+      saveSaveData(updatedData);
+      set({
+        saveData: updatedData,
+        selectedObject: null,
+      });
+
+      get().notify(
+        '🌱 Tunggul lapuk dibersihkan tanpa biaya. Lahan suaka kembali subur untuk ditanami bibit baru.',
+        'success'
+      );
+      return true;
+    }
+
+    // 3. Dismantling non-tree structures / crafted items gives 50% material recycle refund
     const baseCost = getObjectBaseCost(target);
     const refund = Math.max(1, Math.floor(baseCost * 0.5));
 
@@ -409,8 +470,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     });
 
     get().notify(
-      `🗑️ Objek ${target.object_type} dihapus. Energi dikembalikan +${refund} Soul (50% refund)! ✨`,
-      'success'
+      `🗑️ Struktur ${target.object_type} dibongkar. Material didaur ulang (+${refund} Soul).`,
+      'info'
     );
     return true;
   },
@@ -1006,15 +1067,22 @@ export const useGameStore = create<GameState>((set, get) => ({
       isZenMode: false,
     });
 
-    const earnedGold = result.rewardGold || GAME_CONFIG.focus.baseGold;
-    const earnedXp = result.rewardXp || GAME_CONFIG.focus.baseXp;
+    const earnedGold = result.rewardGold ?? 0;
+    const earnedXp = result.rewardXp ?? 0;
 
-    get().notify(
-      chasedBulldozer
-        ? `🎉 Fokus tuntas! Ketekunanmu menghalau kru Bulldozer & membuka segel petak pulau! (+${earnedGold} Soul & +${earnedXp} XP)`
-        : `🎉 Fokus selesai! Kamu meraih +${earnedGold} Soul & +${earnedXp} XP. Pohon baru tumbuh di pulaumu!`,
-      'success'
-    );
+    if (activeSession.is_stopwatch && !result.newWorldObject) {
+      get().notify(
+        '⏱️ Sesi durasi bebas diselesaikan. Sesi di bawah 5 menit tidak menumbuhkan pohon suaka atau memberi Soul/XP.',
+        'info'
+      );
+    } else {
+      get().notify(
+        chasedBulldozer
+          ? `🎉 Fokus tuntas! Ketekunanmu menghalau kru Bulldozer & membuka segel petak pulau! (+${earnedGold} Soul & +${earnedXp} XP)`
+          : `🎉 Fokus selesai! Kamu meraih +${earnedGold} Soul & +${earnedXp} XP. Pohon baru tumbuh di pulaumu!`,
+        'success'
+      );
+    }
     return true;
   },
 

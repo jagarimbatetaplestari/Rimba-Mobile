@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { hapticLight } from "@/lib/mobile/nativeBridge";
 import { useAuthStore } from "@/lib/auth/useAuthStore";
+import { getLevelFromXp } from "@/lib/game/levelRules";
 
 export interface MobileHeaderHUDProps {
   onOpenStreak?: () => void;
@@ -64,7 +65,7 @@ export function MobileHeaderHUD({
   const timeOfDay = useGameStore((state) => state.timeOfDay);
   const setTimeOfDay = useGameStore((state) => state.setTimeOfDay);
 
-  const currentLevel = Math.floor(profile.xp / 100) + 1;
+  const currentLevel = getLevelFromXp(profile.xp);
   const nickname = authUser?.name?.trim() || "Penjaga";
 
   const [activeDropdown, setActiveDropdown] = useState<

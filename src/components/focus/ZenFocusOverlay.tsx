@@ -57,7 +57,7 @@ export function ZenFocusOverlay() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isZenMode, setZenMode]);
 
-  // Real-time Countdown timer from activeSession.expected_end_at
+  // Real-time Countdown timer from activeSession.expected_end_at, or elapsed for stopwatch
   useEffect(() => {
     if (!activeSession) {
       setRemainingSec(0);
@@ -66,9 +66,15 @@ export function ZenFocusOverlay() {
 
     const updateTimer = () => {
       const now = Date.now();
-      const end = new Date(activeSession.expected_end_at).getTime();
-      const diffSec = Math.max(0, Math.ceil((end - now) / 1000));
-      setRemainingSec(diffSec);
+      if (activeSession.is_stopwatch) {
+        const start = new Date(activeSession.started_at).getTime();
+        const elapsedSec = Math.max(0, Math.floor((now - start) / 1000));
+        setRemainingSec(elapsedSec);
+      } else {
+        const end = new Date(activeSession.expected_end_at).getTime();
+        const diffSec = Math.max(0, Math.ceil((end - now) / 1000));
+        setRemainingSec(diffSec);
+      }
     };
 
     updateTimer();
@@ -99,20 +105,28 @@ export function ZenFocusOverlay() {
 
   const minutes = Math.floor(remainingSec / 60);
   const seconds = remainingSec % 60;
-  const timeDisplay = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  const timeDisplay = `${activeSession.is_stopwatch ? '⏱️ ' : ''}${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 
   const currentSpecies: TreeSpecies = activeSession.species || 'oak';
   const speciesCfg =
     TREE_SPECIES_CONFIG.find((c) => c.id === currentSpecies) || TREE_SPECIES_CONFIG[0];
   const tagCfg = FOCUS_TAGS.find((t) => t.id === activeSession.tag);
 
-  const isTimeReached = remainingSec === 0;
+  // In stopwatch mode, minimum 5 minutes (300 seconds) required to sprout tree & harvest
+  const isTimeReached = activeSession.is_stopwatch ? remainingSec >= 300 : remainingSec === 0;
 
   const handleHarvest = () => {
     soundManager.playPop();
     hapticLight();
     setZenMode(false);
     window.dispatchEvent(new CustomEvent('rimba:open_harvest'));
+  };
+
+  const handleEarlyStopwatchFinish = () => {
+    soundManager.playPop();
+    hapticLight();
+    setZenMode(false);
+    completeFocus();
   };
 
   return (
@@ -170,6 +184,16 @@ export function ZenFocusOverlay() {
             </button>
           ) : (
             <div className="flex items-center gap-1 ml-1">
+              {activeSession.is_stopwatch && (
+                <button
+                  type="button"
+                  onClick={handleEarlyStopwatchFinish}
+                  className="px-2.5 py-1 rounded-full bg-white/15 hover:bg-white/25 active:scale-90 transition-all text-white/90 text-[11px] font-semibold"
+                  title="Selesai sekarang (di bawah 5 menit tidak menumbuhkan pohon suaka)"
+                >
+                  Selesai (&lt;5m)
+                </button>
+              )}
               {/* Ambient Soundscape Pill in Zen Mode */}
               <button
                 type="button"

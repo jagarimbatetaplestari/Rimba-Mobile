@@ -249,8 +249,8 @@ export function Scene() {
       {/* Warm/cool fill light to softly illuminate the shaded sides */}
       <directionalLight
         position={[-12, 10, -12]}
-        intensity={timeOfDay === 'night' ? 0.28 : 0.28}
-        color={timeOfDay === 'night' ? '#628CB8' : timeOfDay === 'sunset' ? '#F7996E' : '#FDE8C8'}
+        intensity={timeOfDay === 'night' ? 0.45 : 0.28}
+        color={timeOfDay === 'night' ? '#7DD3FC' : timeOfDay === 'sunset' ? '#F7996E' : '#FDE8C8'}
       />
 
       {/* Soft floating diorama contact shadow beneath the island (baked once per layout/theme change) */}

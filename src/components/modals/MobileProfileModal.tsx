@@ -281,8 +281,9 @@ export function MobileProfileModal({
                   </div>
                 )}
 
-                <p className="text-[11.5px] text-[#456b57] font-medium truncate">
-                  {rangerTitle}
+                <p className="text-[11.5px] text-[#456b57] font-medium truncate flex items-center gap-1.5">
+                  <span>{levelProgress.badge}</span>
+                  <span>{levelProgress.title}</span>
                 </p>
               </div>
             </div>
@@ -290,7 +291,7 @@ export function MobileProfileModal({
             {/* Progress Bar Level XP */}
             <div className="pt-2.5 border-t border-[#143525]/10 space-y-1.5">
               <div className="flex justify-between items-center text-[11px] font-medium">
-                <span className="text-[#456b57]">Level {currentLevel}</span>
+                <span className="text-[#456b57]">Level {currentLevel} • {levelProgress.title}</span>
                 <span className="font-medium text-[#143525]">
                   {xpInCurrentLevel} / {xpNeededForNextLevel} XP ({xpProgressPct}%)
                 </span>
@@ -300,6 +301,10 @@ export function MobileProfileModal({
                   className="h-full bg-gradient-to-r from-[#1e5638] to-[#2d6a4f] rounded-full transition-all duration-300 shadow-2xs"
                   style={{ width: `${xpProgressPct}%` }}
                 />
+              </div>
+              <div className="flex items-center gap-1.5 text-[10px] text-[#1e5638] font-medium pt-0.5">
+                <span>✨</span>
+                <span>Hak Suaka: {levelProgress.unlockRewardText}</span>
               </div>
             </div>
           </div>

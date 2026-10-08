@@ -6,7 +6,14 @@ import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { useGameStore } from '@/lib/game/useGameStore';
 import { checkFaunaEligibility, isFlowerOrBush } from '@/lib/game/faunaRules';
-import { gridToWorld, getUnlockedTilesSet, isTileOccupied } from '@/lib/game/worldRules';
+import {
+  gridToWorld,
+  getUnlockedTilesSet,
+  isTileOccupied,
+  getTerrainElevation,
+} from '@/lib/game/worldRules';
+import { buildRiverTileMap, getRiverChannelDistance } from '@/lib/game/riverSystem';
+import { GAME_CONFIG } from '@/lib/game/config';
 import { FaunaSpecies, WorldObject } from '@/types/game';
 import { soundManager } from '@/lib/audio/sounds';
 
@@ -377,7 +384,8 @@ function MeadowBunny({ roamingTiles, onSelect }: MeadowBunnyProps) {
 
     if (timeInCycle < IDLE_DUR) {
       // Resting, snacking, and looking around at tile A
-      groupRef.current.position.set(pA[0], pA[1] + 0.02, pA[2]);
+      const groundHA = getTerrainElevation(pA[0], pA[2]).height;
+      groupRef.current.position.set(pA[0], groundHA + 0.02, pA[2]);
       groupRef.current.rotation.x = 0;
 
       // Gentle turns while sniffing
@@ -391,8 +399,9 @@ function MeadowBunny({ roamingTiles, onSelect }: MeadowBunnyProps) {
 
       const currentX = pA[0] + (pB[0] - pA[0]) * hopProgress;
       const currentZ = pA[2] + (pB[2] - pA[2]) * hopProgress;
+      const groundH = getTerrainElevation(currentX, currentZ).height;
 
-      groupRef.current.position.set(currentX, pA[1] + 0.02 + hopY, currentZ);
+      groupRef.current.position.set(currentX, groundH + 0.02 + hopY, currentZ);
       groupRef.current.rotation.x = Math.sin(subHop * Math.PI) * 0.18;
 
       // Orient towards destination tile
@@ -513,7 +522,8 @@ function ForestFox({ roamingTiles, onSelect }: ForestFoxProps) {
 
     if (timeInCycle < IDLE_DUR) {
       // Alert idle at tile A
-      groupRef.current.position.set(pA[0], pA[1] + 0.02, pA[2]);
+      const groundHA = getTerrainElevation(pA[0], pA[2]).height;
+      groupRef.current.position.set(pA[0], groundHA + 0.02, pA[2]);
       // Lively tail wagging & head scanning
       groupRef.current.rotation.y = 0.5 + Math.sin(t * 1.3) * 0.28;
       groupRef.current.rotation.z = Math.sin(t * 2.6) * 0.04;
@@ -526,11 +536,12 @@ function ForestFox({ roamingTiles, onSelect }: ForestFoxProps) {
       const dz = pB[2] - pA[2];
       const currentX = pA[0] + dx * smoothProg;
       const currentZ = pA[2] + dz * smoothProg;
+      const groundH = getTerrainElevation(currentX, currentZ).height;
 
       // Trotting bounce
       const trotBob = Math.abs(Math.sin(walkProg * Math.PI * 6)) * 0.035;
 
-      groupRef.current.position.set(currentX, pA[1] + 0.02 + trotBob, currentZ);
+      groupRef.current.position.set(currentX, groundH + 0.02 + trotBob, currentZ);
       groupRef.current.rotation.y = Math.atan2(dx, dz);
       groupRef.current.rotation.z = Math.sin(walkProg * Math.PI * 6) * 0.04;
     }
@@ -615,15 +626,15 @@ function TreeKoala({ basePos, onSelect }: TreeKoalaProps) {
 }
 
 // ============================================================================
-// 6. MYSTIC STAG (Kenney Holiday Kit reindeer.glb - Grounded with Antler Aura)
+// 6. MYSTIC STAG (Kenney Holiday Kit reindeer.glb - Alive Grazing & Pacing Antler Guardian)
 // ============================================================================
 interface MysticStagProps {
-  basePos: [number, number, number];
+  roamingTiles: [number, number, number][];
   isNight: boolean;
   onSelect: () => void;
 }
 
-function MysticStag({ basePos, isNight, onSelect }: MysticStagProps) {
+function MysticStag({ roamingTiles, isNight, onSelect }: MysticStagProps) {
   const groupRef = useRef<THREE.Group>(null);
   const { scene } = useGLTF('/models/fauna_reindeer.glb');
 
@@ -638,22 +649,72 @@ function MysticStag({ basePos, isNight, onSelect }: MysticStagProps) {
     return cloned;
   }, [scene]);
 
+  // Deer life cycle:
+  // Phase 1 (5s): Grazing peacefully (head lowers to turf, gentle chewing bob)
+  // Phase 2 (4.5s): Alert noble posture (head lifts high, looks left/right surveying forest)
+  // Phase 3 (4s): Graceful pacing stride to next meadow tile
+  const GRAZE_DUR = 5.0;
+  const ALERT_DUR = 4.5;
+  const WALK_DUR = 4.0;
+  const CYCLE_DUR = GRAZE_DUR + ALERT_DUR + WALK_DUR; // 13.5s total
+
   useFrame(({ clock }) => {
+    if (!groupRef.current || roamingTiles.length === 0) return;
     const t = clock.getElapsedTime();
-    if (groupRef.current) {
-      // Stately deep breathing & body pulse
-      groupRef.current.scale.y = 0.58 * (1 + Math.sin(t * 1.4) * 0.025);
-      // Gentle hoof weight shifting
-      groupRef.current.position.y = basePos[1] + 0.02 + Math.sin(t * 1.4) * 0.015;
-      // Majestic posture turn
-      groupRef.current.rotation.y = 0.85 + Math.sin(t * 0.7) * 0.15;
+    const count = roamingTiles.length;
+    const currentIdx = Math.floor(t / CYCLE_DUR) % count;
+    const nextIdx = (currentIdx + 1) % count;
+    const timeInCycle = t % CYCLE_DUR;
+
+    const pA = roamingTiles[currentIdx];
+    const pB = roamingTiles[nextIdx];
+
+    const groundHA = getTerrainElevation(pA[0], pA[2]).height;
+
+    if (timeInCycle < GRAZE_DUR) {
+      // 1. Grazing Phase: Head gently lowered to grass with soft chewing bobs
+      const grazeBob = Math.sin(t * 1.8) * 0.015;
+      groupRef.current.position.set(pA[0], groundHA + 0.015 + grazeBob, pA[2]);
+      groupRef.current.rotation.x = 0.28 + Math.sin(t * 1.5) * 0.05;
+      groupRef.current.rotation.y = 0.85 + Math.sin(t * 0.5) * 0.1;
+      groupRef.current.rotation.z = Math.sin(t * 3.5) * 0.015;
+      groupRef.current.scale.set(0.58, 0.58 * (1 + Math.sin(t * 1.2) * 0.015), 0.58);
+    } else if (timeInCycle < GRAZE_DUR + ALERT_DUR) {
+      // 2. Alert & Majestic Survey Phase: Head held high, looking around proudly
+      const alertTime = timeInCycle - GRAZE_DUR;
+      const breathe = Math.sin(alertTime * 1.6) * 0.015;
+      groupRef.current.position.set(pA[0], groundHA + 0.02 + breathe, pA[2]);
+      groupRef.current.rotation.x = 0;
+      groupRef.current.rotation.y = 0.85 + Math.sin(alertTime * 0.8) * 0.45;
+      groupRef.current.rotation.z = 0;
+      groupRef.current.scale.set(0.58, 0.58 * (1 + Math.sin(t * 1.4) * 0.025), 0.58);
+    } else {
+      // 3. Stately Walk Phase: Noble pacing to next waypoint
+      const walkProgress = (timeInCycle - (GRAZE_DUR + ALERT_DUR)) / WALK_DUR;
+      const smooth = walkProgress * walkProgress * (3 - 2 * walkProgress);
+
+      const dx = pB[0] - pA[0];
+      const dz = pB[2] - pA[2];
+      const currentX = pA[0] + dx * smooth;
+      const currentZ = pA[2] + dz * smooth;
+      const groundH = getTerrainElevation(currentX, currentZ).height;
+
+      const stepBob = Math.abs(Math.sin(walkProgress * Math.PI * 4)) * 0.028;
+
+      groupRef.current.position.set(currentX, groundH + 0.02 + stepBob, currentZ);
+      groupRef.current.rotation.x = 0;
+      groupRef.current.rotation.y = Math.atan2(dx, dz);
+      groupRef.current.rotation.z = Math.sin(walkProgress * Math.PI * 4) * 0.025;
+      groupRef.current.scale.set(0.58, 0.58, 0.58);
     }
   });
+
+  const anchorPos = roamingTiles[0] || [0, 0, 0];
 
   return (
     <group
       ref={groupRef}
-      position={[basePos[0], basePos[1] + 0.02, basePos[2]]}
+      position={[anchorPos[0], anchorPos[1] + 0.02, anchorPos[2]]}
       rotation={[0, 0.85, 0]}
       scale={0.58}
       onClick={(e) => {
@@ -672,20 +733,20 @@ function MysticStag({ basePos, isNight, onSelect }: MysticStagProps) {
 
       {/* Bioluminescent Antler Glow Light */}
       <pointLight
-        color="#34D399"
-        intensity={isNight ? 1.5 : 0.6}
-        distance={2.8}
+        color={isNight ? "#6EE7B7" : "#34D399"}
+        intensity={isNight ? 1.8 : 0.8}
+        distance={3.2}
         decay={2}
         position={[0, 0.8, 0.2]}
       />
 
-      {/* Subtle Antler Magic Halo Sphere */}
+      {/* Radiant Antler Magic Halo Sphere */}
       <mesh position={[0, 0.82, 0.18]}>
-        <sphereGeometry args={[0.15, 12, 12]} />
+        <sphereGeometry args={[0.16, 16, 16]} />
         <meshBasicMaterial
-          color="#34D399"
+          color={isNight ? "#6EE7B7" : "#34D399"}
           transparent
-          opacity={isNight ? 0.28 : 0.14}
+          opacity={isNight ? 0.35 : 0.18}
         />
       </mesh>
     </group>
@@ -736,8 +797,50 @@ export function FaunaEcosystem() {
     [saveData.world, worldObjects]
   );
 
+  // River network mapping
+  const riverTileMap = useMemo(() => {
+    return buildRiverTileMap(worldObjects, unlockedSet);
+  }, [worldObjects, unlockedSet]);
+
+  // Checks whether a world coordinate (wx, wz) falls in or near any active river channel
+  const isRiverZone = useMemo(() => {
+    return (wx: number, wz: number, radius = 0.44): boolean => {
+      if (riverTileMap.size === 0) return false;
+      const tileSize = GAME_CONFIG.grid.tileSize;
+      const offset = GAME_CONFIG.grid.offset;
+      const rawGx = wx / tileSize - offset;
+      const rawGy = wz / tileSize - offset;
+      const gx = Math.round(rawGx);
+      const gy = Math.round(rawGy);
+      const key = `${gx},${gy}`;
+      const adj = riverTileMap.get(key);
+      if (!adj) return false;
+      const cx = (gx + offset) * tileSize;
+      const cz = (gy + offset) * tileSize;
+      const dx = wx - cx;
+      const dz = wz - cz;
+      const dStream = getRiverChannelDistance(dx, dz, adj);
+      return dStream < radius;
+    };
+  }, [riverTileMap]);
+
+  // Checks whether a straight path between two positions crosses through river water
+  const pathCrossesRiver = useMemo(() => {
+    return (pA: [number, number, number], pB: [number, number, number]): boolean => {
+      if (riverTileMap.size === 0) return false;
+      const STEPS = 8;
+      for (let i = 0; i <= STEPS; i++) {
+        const frac = i / STEPS;
+        const x = pA[0] + (pB[0] - pA[0]) * frac;
+        const z = pA[2] + (pB[2] - pA[2]) * frac;
+        if (isRiverZone(x, z, 0.42)) return true;
+      }
+      return false;
+    };
+  }, [riverTileMap, isRiverZone]);
+
   // --------------------------------------------------------------------------
-  // SPATIAL DISPERSION ALGORITHM: Disperse animals across distinct quadrants
+  // SPATIAL DISPERSION ALGORITHM: Disperse animals across distinct dry quadrants
   // --------------------------------------------------------------------------
   const { unoccupiedTiles, activeTrees, flowers } = useMemo(() => {
     const empty: [number, number, [number, number, number]][] = [];
@@ -754,13 +857,17 @@ export function FaunaEcosystem() {
 
     for (const key of Array.from(unlockedSet)) {
       const [gx, gy] = key.split(',').map(Number);
-      if (!isTileOccupied(gx, gy, worldObjects)) {
-        empty.push([gx, gy, gridToWorld(gx, gy)]);
+      // Strictly exclude any tile occupied by an object OR part of river water network
+      if (!isTileOccupied(gx, gy, worldObjects) && !riverTileMap.has(key)) {
+        const wPos = gridToWorld(gx, gy);
+        if (!isRiverZone(wPos[0], wPos[2], 0.44)) {
+          empty.push([gx, gy, wPos]);
+        }
       }
     }
 
     return { unoccupiedTiles: empty, activeTrees: trees, flowers: flws };
-  }, [unlockedSet, worldObjects]);
+  }, [unlockedSet, worldObjects, riverTileMap, isRiverZone]);
 
   // 1. Honey Bee flower targets
   const beeCenters = useMemo<[number, number, number][]>(() => {
@@ -781,7 +888,6 @@ export function FaunaEcosystem() {
     // Tree branch perches
     activeTrees.forEach((t) => {
       const w = gridToWorld(t.grid_x, t.grid_y);
-      // Place bird right inside tree branch foliage at y = 0.72, NOT high up in the sky
       points.push([w[0] + 0.18, w[1] + 0.72, w[2] + 0.16]);
     });
 
@@ -799,47 +905,73 @@ export function FaunaEcosystem() {
       return [[0, 0.72, 0], [1.2, 0.18, 0], [-1.2, 0.72, 1.2]];
     }
     if (points.length === 1) {
-      // Add a scenic swing point
       const p = points[0];
       return [p, [p[0] + 1.2, 0.2, p[2] + 0.8], [p[0] - 0.8, 0.65, p[2] - 0.8]];
     }
     return points;
   }, [activeTrees, unoccupiedTiles]);
 
-  // 3. Meadow Bunny Roaming Tiles (Southwest sector)
+  // 3. Meadow Bunny Roaming Tiles (Southwest sector - Strictly dry land)
   const bunnyRoamingTiles = useMemo<[number, number, number][]>(() => {
-    const swCandidates = unoccupiedTiles
+    const candidates = unoccupiedTiles
       .filter(([gx, gy]) => gx <= 4 && gy <= 4)
       .map((item) => item[2]);
 
-    if (swCandidates.length >= 2) return swCandidates.slice(0, 4);
+    const validTiles: [number, number, number][] = [];
+    for (const c of candidates) {
+      if (validTiles.length === 0) {
+        validTiles.push(c);
+      } else {
+        const last = validTiles[validTiles.length - 1];
+        if (!pathCrossesRiver(last, c)) {
+          validTiles.push(c);
+          if (validTiles.length >= 4) break;
+        }
+      }
+    }
 
-    // Fallback: take first 2-3 unoccupied tiles
+    if (validTiles.length >= 2 && !pathCrossesRiver(validTiles[validTiles.length - 1], validTiles[0])) {
+      return validTiles;
+    }
+
     if (unoccupiedTiles.length > 0) {
-      return unoccupiedTiles.slice(0, 3).map((item) => item[2]);
+      return [unoccupiedTiles[0][2], unoccupiedTiles[Math.min(1, unoccupiedTiles.length - 1)][2]];
     }
     return [gridToWorld(3, 3), gridToWorld(4, 3)];
-  }, [unoccupiedTiles]);
+  }, [unoccupiedTiles, pathCrossesRiver]);
 
-  // 4. Forest Fox Roaming Tiles (Northeast / perimeter sector)
+  // 4. Forest Fox Roaming Tiles (Northeast sector - Strictly dry land)
   const foxRoamingTiles = useMemo<[number, number, number][]>(() => {
-    const neCandidates = unoccupiedTiles
+    const candidates = unoccupiedTiles
       .filter(([gx, gy]) => gx >= 5 || gy >= 5)
       .map((item) => item[2]);
 
-    if (neCandidates.length >= 2) return neCandidates.slice(0, 4);
+    const validTiles: [number, number, number][] = [];
+    for (const c of candidates) {
+      if (validTiles.length === 0) {
+        validTiles.push(c);
+      } else {
+        const last = validTiles[validTiles.length - 1];
+        if (!pathCrossesRiver(last, c)) {
+          validTiles.push(c);
+          if (validTiles.length >= 4) break;
+        }
+      }
+    }
 
-    // Fallback: take tiles from end of list to avoid overlap with bunny
-    if (unoccupiedTiles.length >= 3) {
-      return unoccupiedTiles.slice(-3).map((item) => item[2]);
+    if (validTiles.length >= 2 && !pathCrossesRiver(validTiles[validTiles.length - 1], validTiles[0])) {
+      return validTiles;
+    }
+
+    if (unoccupiedTiles.length >= 2) {
+      return [unoccupiedTiles[unoccupiedTiles.length - 1][2], unoccupiedTiles[unoccupiedTiles.length - 2][2]];
     }
     return [gridToWorld(5, 5), gridToWorld(4, 5)];
-  }, [unoccupiedTiles]);
+  }, [unoccupiedTiles, pathCrossesRiver]);
 
   // 5. Tree Koala Position (Resting on grass near base of a lush tree)
   const koalaGroundPos = useMemo<[number, number, number]>(() => {
     if (activeTrees.length > 0) {
-      // Pick oak or first available tree
       const target =
         activeTrees.find(
           (t) =>
@@ -848,32 +980,48 @@ export function FaunaEcosystem() {
             (t.model_variant || '').includes('oak')
         ) || activeTrees[0];
       const w = gridToWorld(target.grid_x, target.grid_y);
-      return [w[0] + 0.32, w[1], w[2] + 0.3];
+      // Place next to tree trunk, checking river zone
+      const candidatePos: [number, number, number] = [w[0] + 0.32, w[1], w[2] + 0.3];
+      if (!isRiverZone(candidatePos[0], candidatePos[2], 0.35)) {
+        return candidatePos;
+      }
+      return [w[0] - 0.32, w[1], w[2] - 0.3];
     }
     if (unoccupiedTiles.length > 1) {
       return unoccupiedTiles[1][2];
     }
     return gridToWorld(4, 4);
-  }, [activeTrees, unoccupiedTiles]);
+  }, [activeTrees, unoccupiedTiles, isRiverZone]);
 
-  // 6. Mystic Stag Position (Dedicated serene corner of unlocked territory)
-  const stagPos = useMemo<[number, number, number]>(() => {
-    const cornerTiles: [number, number][] = [
-      [3, 3], [5, 3], [3, 5], [5, 5],
-      [2, 3], [3, 2], [6, 4], [4, 6],
-    ];
+  // 6. Mystic Stag Roaming Waypoints (Spacious tranquil corners - Strictly dry land)
+  const stagRoamingTiles = useMemo<[number, number, number][]>(() => {
+    const candidates = unoccupiedTiles
+      .filter(([gx, gy]) => (gx >= 5 && gy <= 3) || (gx <= 3 && gy >= 5) || (gx >= 6 && gy >= 6) || (gx <= 3 && gy <= 3))
+      .map((item) => item[2]);
 
-    for (const [gx, gy] of cornerTiles) {
-      if (unlockedSet.has(`${gx},${gy}`) && !isTileOccupied(gx, gy, worldObjects)) {
-        return gridToWorld(gx, gy);
+    const validTiles: [number, number, number][] = [];
+    for (const c of candidates) {
+      if (validTiles.length === 0) {
+        validTiles.push(c);
+      } else {
+        const last = validTiles[validTiles.length - 1];
+        if (!pathCrossesRiver(last, c)) {
+          validTiles.push(c);
+          if (validTiles.length >= 3) break;
+        }
       }
     }
 
-    if (unoccupiedTiles.length > 0) {
-      return unoccupiedTiles[Math.floor(unoccupiedTiles.length / 2)][2];
+    if (validTiles.length >= 2 && !pathCrossesRiver(validTiles[validTiles.length - 1], validTiles[0])) {
+      return validTiles;
     }
-    return gridToWorld(4, 4);
-  }, [unlockedSet, worldObjects, unoccupiedTiles]);
+
+    if (unoccupiedTiles.length > 0) {
+      const midIdx = Math.floor(unoccupiedTiles.length / 2);
+      return [unoccupiedTiles[midIdx][2], unoccupiedTiles[Math.max(0, midIdx - 1)][2]];
+    }
+    return [gridToWorld(4, 4)];
+  }, [unoccupiedTiles, pathCrossesRiver]);
 
   return (
     <group name="fauna-ecosystem">
@@ -932,9 +1080,9 @@ export function FaunaEcosystem() {
       {/* 6. Mystic Stag grounded on spacious island corner */}
       {canStag && (
         <MysticStag
-          basePos={stagPos}
+          roamingTiles={stagRoamingTiles}
           isNight={isNight}
-          onSelect={() => handleSelectSpecies('mystic_stag', stagPos)}
+          onSelect={() => handleSelectSpecies('mystic_stag', stagRoamingTiles[0])}
         />
       )}
 

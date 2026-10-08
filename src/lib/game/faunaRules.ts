@@ -2,6 +2,7 @@ import { FaunaConfig, FaunaSpecies, RimbaSaveData, TimeOfDay, WorldObject } from
 import { calculateAnalytics, toLocalDateString } from './analytics';
 import { calculateBalances, createLedgerEntry } from './economy';
 import { getUnlockedTilesSet } from './worldRules';
+import { getLevelFromXp } from './levelRules';
 
 export const FAUNA_CONFIG: Record<FaunaSpecies, FaunaConfig> = {
   bee: {
@@ -88,7 +89,7 @@ export const FAUNA_CONFIG: Record<FaunaSpecies, FaunaConfig> = {
     title: 'Pelindung Jiwa Tenang',
     icon: '🦌',
     description: 'Rusa agung dengan tanduk berpendarkan cahaya zamrud, menampakkan diri pada jiwa yang tekun atau di bawah naungan rembulan.',
-    unlockConditionText: 'Pertahankan streak fokus minimal 3 hari beruntun ATAU hadir di malam hari.',
+    unlockConditionText: 'Capai minimal Level 5 (Ranger Penjelajah), hadir di malam hari atau miliki streak fokus 3+ hari.',
     greetingQuote: 'Pancaran ketenangannya menyelimuti seluruh sudut hatimu.',
     dailyReward: {
       gold: 5,
@@ -185,8 +186,14 @@ export function checkFaunaEligibility(
     }
 
     case 'mystic_stag': {
-      // Requires streak >= 3 OR night time
+      const playerLevel = getLevelFromXp(saveData.profile.xp);
+      // Rusa Mistis adalah satwa agung suaka: hanya menampakkan diri bagi Ranger yang mencapai Level 5 ke atas!
+      if (playerLevel < 5) return false;
+
+      // Pada malam hari, Rusa Mistis turun menjelajah suaka jika sudah Level 5+
       if (timeOfDay === 'night') return true;
+
+      // Di siang/senja hari, hanya hadir jika memiliki streak fokus >= 3
       const refDate = targetDateStr ? new Date(targetDateStr) : new Date();
       const analytics = calculateAnalytics(saveData.focus_sessions, refDate);
       return analytics.currentStreak >= 3;

@@ -74,16 +74,19 @@ export function FocusHarvestModal({
 
   if (!isOpen || !session) return null;
 
-  const durationMins =
-    session.duration_minutes ||
-    Math.max(
-      1,
-      Math.round(
-        (new Date(session.expected_end_at).getTime() -
-          new Date(session.started_at).getTime()) /
-          60000
-      )
-    );
+  const isStopwatch = Boolean(session.is_stopwatch);
+  const elapsedSec = Math.max(0, (Date.now() - new Date(session.started_at).getTime()) / 1000);
+  const durationMins = isStopwatch
+    ? Math.max(5, Math.round(elapsedSec / 60))
+    : (session.duration_minutes ||
+      Math.max(
+        1,
+        Math.round(
+          (new Date(session.expected_end_at).getTime() -
+            new Date(session.started_at).getTime()) /
+            60000
+        )
+      ));
   const rewards = calculateFocusRewards(durationMins);
   const unlockedSet = getUnlockedTilesSet(world, worldObjects);
   const zoneInfo = getLandExpansionZoneInfo(unlockedSet.size);

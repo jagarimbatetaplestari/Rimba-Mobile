@@ -21,7 +21,12 @@ export function calculateFocusRewards(durationMinutes?: number): { gold: number;
   const baseGold = GAME_CONFIG.focus.baseGold; // 25
   const baseXp = GAME_CONFIG.focus.baseXp; // 100
 
-  if (!durationMinutes || durationMinutes < 5 || durationMinutes === 25) {
+  // Sessions under 5 minutes do not produce Soul or XP
+  if (!durationMinutes || durationMinutes < 5) {
+    return { gold: 0, xp: 0 };
+  }
+
+  if (durationMinutes === 25) {
     return { gold: baseGold, xp: baseXp };
   }
 
@@ -134,6 +139,30 @@ export function completeFocusSession(
       error: 'Cannot complete an abandoned session.',
       updatedSession: session,
       newLedgerEntries: [],
+      rewardGold: 0,
+      rewardXp: 0,
+    };
+  }
+
+  const elapsedSeconds = Math.max(0, (now - new Date(session.started_at).getTime()) / 1000);
+
+  // Special Handling for Durasi Bebas (Stopwatch Mode):
+  // User can tap "Selesai" whenever they want, but to sprout a mature tree & earn Soul/XP,
+  // the elapsed focus time MUST be at least 5 minutes (300 seconds).
+  if (session.is_stopwatch && elapsedSeconds < 300) {
+    const elapsedMins = Math.max(1, Math.round(elapsedSeconds / 60));
+    return {
+      success: true,
+      error: 'Sesi di bawah 5 menit tidak menumbuhkan pohon suaka.',
+      updatedSession: {
+        ...session,
+        duration_minutes: elapsedMins,
+        status: 'completed',
+        completed_at: new Date().toISOString(),
+        rewarded: false,
+      },
+      newLedgerEntries: [],
+      newWorldObject: undefined, // NO TREE
       rewardGold: 0,
       rewardXp: 0,
     };

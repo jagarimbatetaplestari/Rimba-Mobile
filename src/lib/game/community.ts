@@ -24,6 +24,8 @@ export interface RangerTier {
   minTrees: number;
   badgeEmoji: string;
   description: string;
+  perk: string;
+  color: string;
 }
 
 export const RANGER_HALL_OF_FAME_TIERS: RangerTier[] = [
@@ -35,6 +37,8 @@ export const RANGER_HALL_OF_FAME_TIERS: RangerTier[] = [
     minTrees: 50,
     badgeEmoji: '👑',
     description: 'Tingkat tertinggi suaka: melampaui 50 jam deep work penuh kesadaran.',
+    perk: 'Gelar Kehormatan Suaka Abadi & Bibit Pohon Leluhur Kuno',
+    color: '#F59E0B',
   },
   {
     id: 'tier_baobab',
@@ -43,7 +47,9 @@ export const RANGER_HALL_OF_FAME_TIERS: RangerTier[] = [
     minMinutes: 2000,
     minTrees: 35,
     badgeEmoji: '🌳',
-    description: 'Menjaga pohon-pohon raksasa dan kanopi suaka purba.',
+    description: 'Menjaga pohon raksasa penampung energi suaka purba.',
+    perk: 'Aura Ketenangan Abadi & Bibit Baobab Sakral Raksasa',
+    color: '#D97706',
   },
   {
     id: 'tier_pinus',
@@ -52,7 +58,9 @@ export const RANGER_HALL_OF_FAME_TIERS: RangerTier[] = [
     minMinutes: 1000,
     minTrees: 20,
     badgeEmoji: '🌲',
-    description: 'Fokus setegar pinus di lereng pegunungan tinggi.',
+    description: 'Fokus setegar pinus di lereng pegunungan tinggi nan tenang.',
+    perk: 'Perlindungan otomatis Streak Shield & Bibit Pinus Bertingkat',
+    color: '#047857',
   },
   {
     id: 'tier_lembah',
@@ -61,7 +69,9 @@ export const RANGER_HALL_OF_FAME_TIERS: RangerTier[] = [
     minMinutes: 500,
     minTrees: 10,
     badgeEmoji: '🏞️',
-    description: 'Merawat aliran air dan kesuburan tanah suaka.',
+    description: 'Merawat aliran air sungai dan kesuburan tanah suaka.',
+    perk: 'Membuka Jembatan Kayu Rustik & Penataan Aliran Sungai Penuh',
+    color: '#0284C7',
   },
   {
     id: 'tier_kanopi',
@@ -70,7 +80,9 @@ export const RANGER_HALL_OF_FAME_TIERS: RangerTier[] = [
     minMinutes: 250,
     minTrees: 5,
     badgeEmoji: '🌿',
-    description: 'Menapaki dedaunan rimbun dan ritme konsistensi harian.',
+    description: 'Menapaki dedaunan rimbun dan ritme deep work harian.',
+    perk: 'Membuka Satwa Rusa Mistis Malam Hari & Bibit Cemara Nordik',
+    color: '#059669',
   },
   {
     id: 'tier_kabut',
@@ -79,7 +91,9 @@ export const RANGER_HALL_OF_FAME_TIERS: RangerTier[] = [
     minMinutes: 100,
     minTrees: 2,
     badgeEmoji: '🌫️',
-    description: 'Melatih keheningan pikiran di awal fajar.',
+    description: 'Melatih keheningan pikiran dan konsistensi di awal fajar.',
+    perk: 'Membuka Flora Semak Belukar Rapi & Bonus Sapaan Satwa Harian',
+    color: '#14B8A6',
   },
   {
     id: 'tier_tunas',
@@ -89,6 +103,8 @@ export const RANGER_HALL_OF_FAME_TIERS: RangerTier[] = [
     minTrees: 0,
     badgeEmoji: '🌱',
     description: 'Langkah pertama menanam benih fokus dan mindfulness.',
+    perk: 'Akses Dasar Suaka 3×3 & Bibit Pohon Oak Rimba',
+    color: '#10B981',
   },
 ];
 
@@ -99,6 +115,14 @@ export function getCurrentRangerTier(totalMinutes: number, treeCount: number): R
     }
   }
   return RANGER_HALL_OF_FAME_TIERS[RANGER_HALL_OF_FAME_TIERS.length - 1];
+}
+
+export function getNextRangerTier(currentTier: RangerTier): RangerTier | null {
+  const currentIdx = RANGER_HALL_OF_FAME_TIERS.findIndex((t) => t.id === currentTier.id);
+  if (currentIdx > 0) {
+    return RANGER_HALL_OF_FAME_TIERS[currentIdx - 1];
+  }
+  return null;
 }
 
 /**

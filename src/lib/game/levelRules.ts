@@ -44,6 +44,36 @@ export function getLevelFromXp(xp: number): number {
   return 1;
 }
 
+export interface LevelMetadata {
+  level: number;
+  title: string;
+  badge: string;
+  unlockRewardText: string;
+}
+
+export const LEVEL_METADATA: LevelMetadata[] = [
+  { level: 1, title: 'Pemula Suaka', badge: '🌱', unlockRewardText: 'Bibit Pohon Oak Rimba & Kanopi Siang' },
+  { level: 2, title: 'Penyemai Benih', badge: '🌿', unlockRewardText: 'Bibit Birch Perak & Semak Belukar' },
+  { level: 3, title: 'Penjelajah Hening', badge: '🌾', unlockRewardText: 'Satwa Koala Pohon & Suara Alam Hutan' },
+  { level: 4, title: 'Penjaga Aliran', badge: '💧', unlockRewardText: 'Batu Sungai Halus & Jalur Setapak Kayu' },
+  { level: 5, title: 'Sahabat Satwa Agung', badge: '🦌', unlockRewardText: 'Rusa Mistis Rimba (Tanduk Bercahaya Zamrud)' },
+  { level: 6, title: 'Pengembara Kanopi', badge: '🌲', unlockRewardText: 'Bibit Cemara Lembah & Tenda Kemah' },
+  { level: 7, title: 'Penjaga Kabut Fajar', badge: '🌫️', unlockRewardText: 'Batu Lumut Zamrud & Flora Pakis' },
+  { level: 8, title: 'Penenang Lembah', badge: '🌾', unlockRewardText: 'Bibit Akasia Sabana Emas' },
+  { level: 9, title: 'Ksatria Angin Barat', badge: '🍃', unlockRewardText: 'Bibit Siprus Menara Angin' },
+  { level: 10, title: 'Tetua Rimba', badge: '🏛️', unlockRewardText: 'Bibit Cemara Kabut Utara' },
+  { level: 11, title: 'Penjaga Pesisir', badge: '🌴', unlockRewardText: 'Bibit Palem Tropis Pesisir' },
+  { level: 12, title: 'Penyelaras Pulau', badge: '🥥', unlockRewardText: 'Bibit Kelapa Gading Pesisir' },
+  { level: 13, title: 'Penjaga Mahkota Pinus', badge: '👑', unlockRewardText: 'Bibit Pinus Bertingkat Kerajaan' },
+  { level: 14, title: 'Pelindung Baobab', badge: '✨', unlockRewardText: 'Bibit Baobab Sakral Raksasa' },
+  { level: 15, title: 'Penjaga Rimba Abadi', badge: '🌟', unlockRewardText: 'Bibit Pohon Leluhur Kuno (Grandmaster)' },
+];
+
+export function getLevelMetadata(level: number): LevelMetadata {
+  const clamped = Math.max(1, Math.min(15, level));
+  return LEVEL_METADATA[clamped - 1] || LEVEL_METADATA[0];
+}
+
 export interface LevelProgress {
   currentLevel: number;
   currentXp: number;
@@ -51,6 +81,9 @@ export interface LevelProgress {
   xpNeededForNextLevel: number;
   progressRatio: number; // 0.0 to 1.0
   isMaxLevel: boolean;
+  title: string;
+  badge: string;
+  unlockRewardText: string;
 }
 
 /**
@@ -59,6 +92,7 @@ export interface LevelProgress {
 export function getLevelProgress(xp: number): LevelProgress {
   const safeXp = Math.max(0, xp || 0);
   const currentLevel = getLevelFromXp(safeXp);
+  const meta = getLevelMetadata(currentLevel);
 
   if (currentLevel >= MAX_DEFINED_LEVEL) {
     const levelFloor = LEVEL_THRESHOLDS[MAX_DEFINED_LEVEL - 1] + (currentLevel - MAX_DEFINED_LEVEL) * 2500;
@@ -73,6 +107,9 @@ export function getLevelProgress(xp: number): LevelProgress {
       xpNeededForNextLevel,
       progressRatio,
       isMaxLevel: true,
+      title: meta.title,
+      badge: meta.badge,
+      unlockRewardText: meta.unlockRewardText,
     };
   }
 
@@ -89,5 +126,8 @@ export function getLevelProgress(xp: number): LevelProgress {
     xpNeededForNextLevel,
     progressRatio,
     isMaxLevel: false,
+    title: meta.title,
+    badge: meta.badge,
+    unlockRewardText: meta.unlockRewardText,
   };
 }

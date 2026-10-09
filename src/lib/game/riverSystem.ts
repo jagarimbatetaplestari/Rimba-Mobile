@@ -129,6 +129,20 @@ export function getRiverChannelDistance(
   if (adj.west)  minDist = Math.min(minDist, distToSegment(dx, dz, 0, 0, -0.5, 0));
   if (adj.east)  minDist = Math.min(minDist, distToSegment(dx, dz, 0, 0, 0.5, 0));
 
+  // Corner / Junction diagonal fills so wide rivers and turns have 100% continuous water with zero holes
+  if (adj.east && adj.south && dx >= 0 && dz >= 0) {
+    minDist = Math.min(minDist, Math.max(0, Math.hypot(dx - 0.5, dz - 0.5) - 0.5));
+  }
+  if (adj.west && adj.south && dx <= 0 && dz >= 0) {
+    minDist = Math.min(minDist, Math.max(0, Math.hypot(dx + 0.5, dz - 0.5) - 0.5));
+  }
+  if (adj.east && adj.north && dx >= 0 && dz <= 0) {
+    minDist = Math.min(minDist, Math.max(0, Math.hypot(dx - 0.5, dz + 0.5) - 0.5));
+  }
+  if (adj.west && adj.north && dx <= 0 && dz <= 0) {
+    minDist = Math.min(minDist, Math.max(0, Math.hypot(dx + 0.5, dz + 0.5) - 0.5));
+  }
+
   return minDist;
 }
 
@@ -138,7 +152,7 @@ const shoreGeoCache = new Map<number, THREE.BufferGeometry | null>();
 
 /**
  * Generates or retrieves the seamless, continuous water mesh for a tile bitmask.
- * Extends by 0.505m on connected sides to ensure zero hairline seams between adjacent tiles.
+ * Extends by 0.50m on connected sides to ensure zero hairline seams between adjacent tiles.
  */
 export function getRiverWaterGeometry(mask: number): THREE.BufferGeometry {
   const cached = waterGeoCache.get(mask);
@@ -166,7 +180,7 @@ export function getRiverWaterGeometry(mask: number): THREE.BufferGeometry {
     indices.push(base, base + 2, base + 1,  base, base + 3, base + 2);
   }
 
-  function addFan(cx: number, cz: number, r: number, startA: number, endA: number, segs = 12) {
+  function addFan(cx: number, cz: number, r: number, startA: number, endA: number, segs = 16) {
     const base = verts.length / 3;
     verts.push(cx, y, cz);
     uvs.push(cx + 0.5, cz + 0.5);
@@ -183,22 +197,22 @@ export function getRiverWaterGeometry(mask: number): THREE.BufferGeometry {
   }
 
   if (count === 0) {
-    // Isolated pond disk
-    addFan(0, 0, hw, 0, Math.PI * 2, 16);
+    // Isolated pond disk - full rounded pond with zero raw edge holes
+    addFan(0, 0, 0.46, 0, Math.PI * 2, 24);
   } else if (count === 1) {
-    // Dead-end river source/spring: straight channel from tile border to center + clean semicircular cap
+    // River spring/source or mouth: straight channel from tile border to center + clean semicircular spring
     if (e) {
       addQuad(0, -hw, ext, hw);
-      addFan(0, 0, hw, Math.PI * 0.5, Math.PI * 1.5, 12);
+      addFan(0, 0, hw, Math.PI * 0.5, Math.PI * 1.5, 16);
     } else if (w) {
       addQuad(-ext, -hw, 0, hw);
-      addFan(0, 0, hw, -Math.PI * 0.5, Math.PI * 0.5, 12);
+      addFan(0, 0, hw, -Math.PI * 0.5, Math.PI * 0.5, 16);
     } else if (n) {
       addQuad(-hw, -ext, hw, 0);
-      addFan(0, 0, hw, 0, Math.PI, 12);
+      addFan(0, 0, hw, 0, Math.PI, 16);
     } else if (s) {
       addQuad(-hw, 0, hw, ext);
-      addFan(0, 0, hw, Math.PI, Math.PI * 2, 12);
+      addFan(0, 0, hw, Math.PI, Math.PI * 2, 16);
     }
   } else if (count === 2 && w && e) {
     // Pure straight West-East: single contiguous quad spanning the entire tile with ZERO internal seams
@@ -216,6 +230,12 @@ export function getRiverWaterGeometry(mask: number): THREE.BufferGeometry {
     if (w) addQuad(-ext, -hw, -hw, hw);
     if (n) addQuad(-hw, -ext, hw, -hw);
     if (s) addQuad(-hw, hw, hw, ext);
+
+    // Fill inner corners of active junctions so water never has corner holes
+    if (e && s) addQuad(hw, hw, ext, ext);
+    if (w && s) addQuad(-ext, hw, -hw, ext);
+    if (e && n) addQuad(hw, -ext, ext, -hw);
+    if (w && n) addQuad(-ext, -ext, -hw, -hw);
   }
 
   const geo = new THREE.BufferGeometry();
@@ -225,6 +245,95 @@ export function getRiverWaterGeometry(mask: number): THREE.BufferGeometry {
   geo.computeVertexNormals();
 
   waterGeoCache.set(mask, geo);
+  return geo;
+}
+
+const bedGeoCache = new Map<number, THREE.BufferGeometry>();
+
+/**
+ * Generates or retrieves the seamless sandy riverbed cradle mesh for a tile bitmask.
+ * Uses a slightly wider channel (hw = 0.43m) so golden sandy shores naturally cradle the turquoise water.
+ */
+export function getRiverBedGeometry(mask: number): THREE.BufferGeometry {
+  const cached = bedGeoCache.get(mask);
+  if (cached) return cached;
+
+  const n = Boolean(mask & 1);
+  const s = Boolean(mask & 2);
+  const w = Boolean(mask & 4);
+  const e = Boolean(mask & 8);
+  const count = (n ? 1 : 0) + (s ? 1 : 0) + (w ? 1 : 0) + (e ? 1 : 0);
+
+  const hw = 0.43;       // Half-width of riverbed canal (0.86m wide)
+  const ext = 0.505;     // Extends slightly past 0.50m so adjacent tiles connect with zero gap
+  const y = 0.0;
+
+  const verts: number[] = [];
+  const uvs: number[] = [];
+  const indices: number[] = [];
+
+  function addQuad(x0: number, z0: number, x1: number, z1: number) {
+    const base = verts.length / 3;
+    verts.push(x0, y, z0,  x1, y, z0,  x1, y, z1,  x0, y, z1);
+    uvs.push(x0 + 0.5, z0 + 0.5,  x1 + 0.5, z0 + 0.5,  x1 + 0.5, z1 + 0.5,  x0 + 0.5, z1 + 0.5);
+    indices.push(base, base + 2, base + 1,  base, base + 3, base + 2);
+  }
+
+  function addFan(cx: number, cz: number, r: number, startA: number, endA: number, segs = 16) {
+    const base = verts.length / 3;
+    verts.push(cx, y, cz);
+    uvs.push(cx + 0.5, cz + 0.5);
+    for (let i = 0; i <= segs; i++) {
+      const a = startA + (i / segs) * (endA - startA);
+      const vx = cx + Math.cos(a) * r;
+      const vz = cz + Math.sin(a) * r;
+      verts.push(vx, y, vz);
+      uvs.push(vx + 0.5, vz + 0.5);
+    }
+    for (let i = 1; i <= segs; i++) {
+      indices.push(base, base + i + 1, base + i);
+    }
+  }
+
+  if (count === 0) {
+    addFan(0, 0, 0.48, 0, Math.PI * 2, 24);
+  } else if (count === 1) {
+    if (e) {
+      addQuad(0, -hw, ext, hw);
+      addFan(0, 0, hw, Math.PI * 0.5, Math.PI * 1.5, 16);
+    } else if (w) {
+      addQuad(-ext, -hw, 0, hw);
+      addFan(0, 0, hw, -Math.PI * 0.5, Math.PI * 0.5, 16);
+    } else if (n) {
+      addQuad(-hw, -ext, hw, 0);
+      addFan(0, 0, hw, 0, Math.PI, 16);
+    } else if (s) {
+      addQuad(-hw, 0, hw, ext);
+      addFan(0, 0, hw, Math.PI, Math.PI * 2, 16);
+    }
+  } else if (count === 2 && w && e) {
+    addQuad(-ext, -hw, ext, hw);
+  } else if (count === 2 && n && s) {
+    addQuad(-hw, -ext, hw, ext);
+  } else {
+    addQuad(-hw, -hw, hw, hw);
+    if (e) addQuad(hw, -hw, ext, hw);
+    if (w) addQuad(-ext, -hw, -hw, hw);
+    if (n) addQuad(-hw, -ext, hw, -hw);
+    if (s) addQuad(-hw, hw, hw, ext);
+    if (e && s) addQuad(hw, hw, ext, ext);
+    if (w && s) addQuad(-ext, hw, -hw, ext);
+    if (e && n) addQuad(hw, -ext, ext, -hw);
+    if (w && n) addQuad(-ext, -ext, -hw, -hw);
+  }
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+  geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  geo.setIndex(indices);
+  geo.computeVertexNormals();
+
+  bedGeoCache.set(mask, geo);
   return geo;
 }
 
@@ -244,55 +353,8 @@ export interface RiverPebbleData {
 
 /**
  * Returns deterministic decorative low-poly pebble positions along UNCONNECTED shores.
+ * Disabled to ensure clean crystal-clear river surfaces matching Reference 2.
  */
-export function getRiverPebbles(mask: number): RiverPebbleData[] {
-  const pebbles: RiverPebbleData[] = [];
-  const n = Boolean(mask & 1);
-  const s = Boolean(mask & 2);
-  const w = Boolean(mask & 4);
-  const e = Boolean(mask & 8);
-
-  if (!n) {
-    pebbles.push({
-      pos: [-0.18, 0.005, -0.42],
-      scale: [0.06, 0.035, 0.05],
-      rot: 0.4,
-    });
-    pebbles.push({
-      pos: [0.24, 0.005, -0.44],
-      scale: [0.045, 0.025, 0.04],
-      rot: 1.2,
-    });
-  }
-
-  if (!s) {
-    pebbles.push({
-      pos: [0.14, 0.005, 0.43],
-      scale: [0.055, 0.03, 0.045],
-      rot: -0.6,
-    });
-    pebbles.push({
-      pos: [-0.22, 0.005, 0.44],
-      scale: [0.04, 0.025, 0.035],
-      rot: 2.1,
-    });
-  }
-
-  if (!w) {
-    pebbles.push({
-      pos: [-0.43, 0.005, 0.12],
-      scale: [0.045, 0.03, 0.055],
-      rot: 0.8,
-    });
-  }
-
-  if (!e) {
-    pebbles.push({
-      pos: [0.44, 0.005, -0.16],
-      scale: [0.05, 0.03, 0.05],
-      rot: -1.1,
-    });
-  }
-
-  return pebbles;
+export function getRiverPebbles(_mask: number): RiverPebbleData[] {
+  return [];
 }

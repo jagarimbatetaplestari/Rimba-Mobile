@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useMemo } from "react";
-import { Clock3, Flame, Lock, Play, X } from "lucide-react";
+import { BookOpen, Clock3, Flame, Lock, Play, X } from "lucide-react";
 
 import { soundManager } from "@/lib/audio/sounds";
 import { hapticLight, hapticMedium } from "@/lib/mobile/nativeBridge";
@@ -17,12 +17,14 @@ export interface MobileBottomCockpitProps {
   speciesIcon: string;
   selectedMinutes: number;
   isNight?: boolean;
+  claimableCount?: number;
   onSelectTag?: (tag: string) => void;
   onSelectSpecies?: (species: string) => void;
   onSelectMinutes?: (minutes: number) => void;
   onToggleStrictMode?: () => void;
   onStartFocus: () => void;
   onOpenWorkshop?: () => void;
+  onOpenJournal?: () => void;
   onOpenTagModal?: () => void;
   onOpenDurationModal?: () => void;
 }
@@ -38,11 +40,13 @@ export function MobileBottomCockpit({
   speciesIcon,
   selectedMinutes,
   isNight: isNightProp = false,
+  claimableCount = 0,
   onSelectTag,
   onSelectSpecies,
   onSelectMinutes,
   onToggleStrictMode,
   onStartFocus,
+  onOpenJournal,
 }: MobileBottomCockpitProps) {
   const [activeFlyout, setActiveFlyout] = useState<FlyoutType>(null);
   const [categoryTab, setCategoryTab] = useState<CategoryTab>("tags");
@@ -180,24 +184,61 @@ export function MobileBottomCockpit({
 
   const isExpanded = activeFlyout !== null;
 
+  /*
+   * SMOOTH & CLEAR LIQUID GLASS MATERIAL
+   */
+  const glassCapsuleStyle: React.CSSProperties = {
+    background: isNight
+      ? "linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.04) 40%, rgba(14, 32, 22, 0.45) 100%)"
+      : "linear-gradient(180deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.1) 45%, rgba(20, 52, 34, 0.22) 100%)",
+    backdropFilter: "blur(20px) saturate(150%)",
+    WebkitBackdropFilter: "blur(20px) saturate(150%)",
+    border: "1px solid rgba(255, 255, 255, 0.26)",
+    boxShadow: isNight
+      ? "0 10px 24px -4px rgba(0, 0, 0, 0.35), inset 0 1px 0 0 rgba(255, 255, 255, 0.35)"
+      : "0 10px 26px -6px rgba(10, 30, 20, 0.18), inset 0 1px 0 0 rgba(255, 255, 255, 0.45)",
+  };
+
+  const chipGlassStyle: React.CSSProperties = {
+    background: isNight
+      ? "linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(12, 28, 18, 0.35) 100%)"
+      : "linear-gradient(180deg, rgba(255, 255, 255, 0.26) 0%, rgba(20, 50, 32, 0.18) 100%)",
+    backdropFilter: "blur(16px) saturate(145%)",
+    WebkitBackdropFilter: "blur(16px) saturate(145%)",
+    border: "1px solid rgba(255, 255, 255, 0.25)",
+    boxShadow:
+      "0 4px 14px rgba(0, 0, 0, 0.08), inset 0 1px 0 0 rgba(255, 255, 255, 0.35)",
+  };
+
+  const modalGlassStyle: React.CSSProperties = {
+    background: isNight
+      ? "linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0%, rgba(15, 34, 24, 0.68) 35%, rgba(8, 20, 14, 0.82) 100%)"
+      : "linear-gradient(180deg, rgba(255, 255, 255, 0.35) 0%, rgba(240, 248, 243, 0.18) 22%, rgba(20, 52, 35, 0.46) 100%)",
+    backdropFilter: "blur(24px) saturate(155%)",
+    WebkitBackdropFilter: "blur(24px) saturate(155%)",
+    border: "1px solid rgba(255, 255, 255, 0.28)",
+    boxShadow:
+      "0 20px 44px -8px rgba(0, 0, 0, 0.22), inset 0 1px 0 0 rgba(255, 255, 255, 0.45)",
+  };
+
   return (
     <div
       className="pointer-events-none select-none"
       style={{
         fontFamily:
-          "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', var(--font-geist-sans), sans-serif",
+          "var(--font-urbanist), 'Urbanist', -apple-system, BlinkMacSystemFont, sans-serif",
       }}
     >
-      {/* SOFT AMBIENT BACKDROP */}
+      {/* OVERLAY BERSIH TANPA BLUR */}
       {isExpanded && (
         <div
-          className="fixed inset-0 z-40 pointer-events-auto bg-[#143525]/12 transition-opacity duration-300"
+          className="fixed inset-0 z-40 pointer-events-auto bg-black/15 transition-opacity duration-200"
           onClick={closeFlyout}
         />
       )}
 
       {/* ====================================================
-          MORPHING LIQUID ISLAND CONTAINER
+          FLOATING DOCK LAYER
           ==================================================== */}
       <div
         className="fixed bottom-0 left-0 right-0 z-40 flex justify-center px-4 pointer-events-none"
@@ -207,22 +248,100 @@ export function MobileBottomCockpit({
         }}
       >
         <div className="w-full max-w-[390px] flex items-end justify-center pointer-events-auto">
-          <div
-            className={`
-              relative w-full overflow-hidden border border-white/90 bg-[#EEF4F0]/95 backdrop-blur-3xl backdrop-saturate-[180%]
-              shadow-[0_20px_50px_rgba(20,53,37,0.12),inset_0_1.5px_2px_rgba(255,255,255,0.95)] text-[#143525]
-              transition-all duration-300 ease-out flex flex-col justify-between
-              ${isExpanded ? "rounded-[38px] p-3.5 pb-2.5 shadow-2xl" : "h-[66px] rounded-full px-2 py-0"}
-            `}
-          >
-            {/* ================================================
-                EXPANDED CONTENT SECTION
-                ================================================ */}
-            {isExpanded && (
-              <div className="flex flex-col animate-in fade-in zoom-in-95 duration-200">
+          {!isExpanded ? (
+            /* ====================================================
+                IDLE COCKPIT: 3 LIQUID GLASS PEBBLES + GLASS CHIP
+                ==================================================== */
+            <div className="flex flex-col items-center w-full">
+              {/* CHIP INDIKATOR KATEGORI & DURASI */}
+              <button
+                type="button"
+                onClick={() => toggleFlyout("category")}
+                style={chipGlassStyle}
+                className="mb-2.5 px-4 py-1 rounded-full text-[11.5px] font-medium tracking-tight flex items-center gap-1.5 transition-colors cursor-pointer relative overflow-hidden"
+                title="Kategori & Durasi Terpilih (Ketuk untuk ubah)"
+              >
+                <div className="absolute inset-x-2 top-0 h-[45%] bg-gradient-to-b from-white/25 to-transparent rounded-t-full pointer-events-none" />
+                <span className="font-semibold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.2)]">
+                  {tagLabel}
+                </span>
+                <span className="text-white/40 font-normal">|</span>
+                <span className="font-semibold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.2)]">
+                  {selectedMinutes === 0 ? "∞" : `${selectedMinutes} Menit`}
+                </span>
+              </button>
+
+              {/* 3 FLOATING CAPSULES */}
+              <div className="flex items-center justify-between gap-3 w-full">
+                {/* 1. KAPSUL KIRI: KATEGORI */}
+                <button
+                  type="button"
+                  onClick={() => toggleFlyout("category")}
+                  style={glassCapsuleStyle}
+                  className="w-[58px] h-[58px] rounded-full flex items-center justify-center transition-colors cursor-pointer shrink-0 relative overflow-hidden"
+                  title="Pilih Kategori Fokus"
+                  aria-label="Pilih Kategori Fokus"
+                >
+                  <div className="absolute inset-x-2 top-0 h-[45%] bg-gradient-to-b from-white/25 to-transparent rounded-t-full pointer-events-none" />
+                  <TagLineIcon
+                    name={activeTag.icon}
+                    className="w-5 h-5 text-white stroke-[2.2] drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)] relative z-10"
+                  />
+                </button>
+
+                {/* 2. KAPSUL TENGAH: TOMBOL MULAI FOKUS */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    hapticMedium();
+                    closeFlyout();
+                    onStartFocus();
+                  }}
+                  style={glassCapsuleStyle}
+                  className="flex-1 h-[58px] px-6 rounded-full flex items-center justify-center gap-2 transition-colors cursor-pointer relative overflow-hidden"
+                  title={
+                    selectedMinutes === 0
+                      ? "Mulai sesi fokus Bebas (∞)"
+                      : `Mulai sesi fokus ${selectedMinutes} menit`
+                  }
+                  aria-label="Mulai Fokus"
+                >
+                  <div className="absolute inset-x-4 top-0 h-[45%] bg-gradient-to-b from-white/25 to-transparent rounded-t-full pointer-events-none" />
+                  <Play className="w-4 h-4 fill-white text-white shrink-0 drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)] relative z-10" />
+                  <span className="text-[15.5px] font-semibold tracking-tight text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)] relative z-10">
+                    Mulai Fokus
+                  </span>
+                </button>
+
+                {/* 3. KAPSUL KANAN: TIMER */}
+                <button
+                  type="button"
+                  onClick={() => toggleFlyout("timer")}
+                  style={glassCapsuleStyle}
+                  className="w-[58px] h-[58px] rounded-full flex items-center justify-center transition-colors cursor-pointer shrink-0 relative overflow-hidden"
+                  title="Atur Target Durasi Fokus"
+                  aria-label="Atur Durasi Fokus"
+                >
+                  <div className="absolute inset-x-2 top-0 h-[45%] bg-gradient-to-b from-white/25 to-transparent rounded-t-full pointer-events-none" />
+                  <Clock3 className="w-5 h-5 text-white stroke-[2.2] drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)] relative z-10" />
+                </button>
+              </div>
+            </div>
+          ) : (
+            /* ====================================================
+                EXPANDED FLYOUT SECTION (CLEAR GLASS SHEET)
+                ==================================================== */
+            <div
+              style={modalGlassStyle}
+              className="relative w-full overflow-hidden rounded-[34px] p-4 pb-3 transition-opacity duration-200 flex flex-col justify-between"
+            >
+              {/* Top ambient highlight */}
+              <div className="absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-white/15 to-transparent pointer-events-none rounded-t-[34px]" />
+
+              <div className="flex flex-col animate-in fade-in duration-200 relative z-10">
                 {/* Drag Handle Bar */}
                 <div
-                  className="mx-auto w-10 h-1.5 rounded-full bg-[#143525]/15 mb-2.5 cursor-pointer active:scale-95 transition-transform"
+                  className="mx-auto w-10 h-1 rounded-full bg-white/40 mb-3 cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.15)]"
                   onClick={closeFlyout}
                 />
 
@@ -230,10 +349,10 @@ export function MobileBottomCockpit({
                     TAB 1: KATEGORI & BIBIT POHON
                     ---------------------------------------------- */}
                 {activeFlyout === "category" && (
-                  <div className="space-y-3 pb-2">
-                    {/* Header: Segmented Pill Switch */}
-                    <div className="flex items-center justify-between gap-2 px-1">
-                      <div className="flex-1 flex rounded-full p-1 bg-[#143525]/8 border border-white/60">
+                  <div className="space-y-3 pb-1">
+                    {/* Header: Segmented Glass Switch */}
+                    <div className="flex items-center justify-between gap-2 px-0.5">
+                      <div className="flex-1 flex rounded-full p-1 bg-black/15 border border-white/15">
                         <button
                           type="button"
                           onClick={() => {
@@ -241,10 +360,10 @@ export function MobileBottomCockpit({
                             hapticLight();
                             setCategoryTab("tags");
                           }}
-                          className={`flex-1 rounded-full py-1.5 text-[12px] font-semibold tracking-tight transition-all cursor-pointer ${
+                          className={`flex-1 rounded-full py-1.5 text-[12px] font-semibold tracking-tight transition-colors cursor-pointer ${
                             categoryTab === "tags"
-                              ? "bg-white text-[#143525] shadow-2xs"
-                              : "text-[#456b57] hover:text-[#143525]"
+                              ? "bg-white text-[#0b2719] shadow-[0_2px_8px_rgba(0,0,0,0.18)] font-bold"
+                              : "text-white/75 hover:text-white"
                           }`}
                         >
                           Kategori Sesi
@@ -256,10 +375,10 @@ export function MobileBottomCockpit({
                             hapticLight();
                             setCategoryTab("species");
                           }}
-                          className={`flex-1 rounded-full py-1.5 text-[12px] font-semibold tracking-tight transition-all cursor-pointer ${
+                          className={`flex-1 rounded-full py-1.5 text-[12px] font-semibold tracking-tight transition-colors cursor-pointer ${
                             categoryTab === "species"
-                              ? "bg-white text-[#143525] shadow-2xs"
-                              : "text-[#456b57] hover:text-[#143525]"
+                              ? "bg-white text-[#0b2719] shadow-[0_2px_8px_rgba(0,0,0,0.18)] font-bold"
+                              : "text-white/75 hover:text-white"
                           }`}
                         >
                           Bibit Pohon
@@ -269,7 +388,7 @@ export function MobileBottomCockpit({
                       <button
                         type="button"
                         onClick={closeFlyout}
-                        className="w-7 h-7 rounded-full bg-white/80 border border-white/90 flex items-center justify-center text-[#143525] shadow-2xs active:scale-90 transition-transform cursor-pointer shrink-0"
+                        className="w-7 h-7 rounded-full bg-white/15 hover:bg-white/25 border border-white/20 flex items-center justify-center text-white transition-colors cursor-pointer shrink-0 shadow-xs"
                       >
                         <X className="w-3.5 h-3.5 stroke-[2.2]" />
                       </button>
@@ -286,27 +405,33 @@ export function MobileBottomCockpit({
                               type="button"
                               onClick={() => handleTagSelect(tag.id)}
                               className={`
-                                flex items-center gap-2 p-2.5 rounded-2xl border transition-all active:scale-95 cursor-pointer text-left
+                                flex items-center gap-2 p-2.5 rounded-2xl border transition-all cursor-pointer text-left
                                 ${
                                   isActive
-                                    ? "bg-gradient-to-b from-[#2a6845] to-[#1e5235] text-white border-white/25 shadow-xs font-semibold"
-                                    : "bg-white/75 text-[#143525] border-white/80 hover:bg-white font-medium shadow-2xs"
+                                    ? "bg-white text-[#0b2719] border-white shadow-[0_4px_14px_rgba(0,0,0,0.18)] font-semibold ring-2 ring-white/60"
+                                    : "bg-white/[0.08] hover:bg-white/[0.14] text-white/90 border-white/15 font-medium"
                                 }
                               `}
                             >
                               <div
                                 className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 ${
                                   isActive
-                                    ? "bg-white/20 text-white"
-                                    : "bg-[#143525]/8 text-[#143525]"
+                                    ? "bg-[#0b2719]/10 text-[#0b2719]"
+                                    : "bg-black/15 text-white"
                                 }`}
                               >
                                 <TagLineIcon
                                   name={tag.icon}
-                                  className="w-3.5 h-3.5 stroke-[2]"
+                                  className="w-3.5 h-3.5 stroke-[2.2]"
                                 />
                               </div>
-                              <span className="text-[12px] font-semibold truncate flex-1 tracking-tight">
+                              <span
+                                className={`text-[12px] truncate flex-1 tracking-tight ${
+                                  isActive
+                                    ? "font-bold text-[#0b2719]"
+                                    : "text-white/90 drop-shadow-[0_1px_1px_rgba(0,0,0,0.2)]"
+                                }`}
+                              >
                                 {tag.label}
                               </span>
                             </button>
@@ -315,7 +440,7 @@ export function MobileBottomCockpit({
                       </div>
                     )}
 
-                    {/* Bento Grid: Bibit Pohon (Format 2-Baris Rapi Tanpa Truncate) */}
+                    {/* Bento Grid: Bibit Pohon */}
                     {categoryTab === "species" && (
                       <div className="grid grid-cols-3 gap-2 px-0.5 max-h-[160px] overflow-y-auto no-scrollbar py-0.5">
                         {TREE_SPECIES_CONFIG.map((sp) => {
@@ -331,29 +456,31 @@ export function MobileBottomCockpit({
                                 relative flex flex-col items-center justify-center h-[74px] p-1.5 rounded-2xl border transition-all text-center
                                 ${
                                   !unlocked
-                                    ? "opacity-40 cursor-not-allowed border-transparent bg-black/5"
-                                    : "cursor-pointer active:scale-95"
+                                    ? "opacity-35 cursor-not-allowed border-white/10 bg-black/15"
+                                    : "cursor-pointer"
                                 }
                                 ${
                                   isActive
-                                    ? "bg-gradient-to-b from-[#2a6845] to-[#1e5235] text-white border-white/25 shadow-xs"
-                                    : "bg-white/75 text-[#143525] border-white/80 hover:bg-white shadow-2xs"
+                                    ? "bg-white text-[#0b2719] border-white shadow-[0_4px_16px_rgba(0,0,0,0.2)] font-semibold ring-2 ring-white/60"
+                                    : "bg-white/[0.08] hover:bg-white/[0.14] text-white border-white/15 font-medium"
                                 }
                               `}
                             >
-                              <span className="text-[20px] mb-1 leading-none drop-shadow-2xs">
+                              <span className="text-[20px] mb-1 leading-none drop-shadow-xs">
                                 {sp.icon}
                               </span>
                               <span
-                                className={`text-[10.5px] leading-tight font-semibold line-clamp-2 px-0.5 ${
-                                  isActive ? "text-white" : "text-[#143525]"
+                                className={`text-[10.5px] leading-tight line-clamp-2 px-0.5 ${
+                                  isActive
+                                    ? "font-bold text-[#0b2719]"
+                                    : "text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.2)]"
                                 }`}
                               >
                                 {sp.name}
                               </span>
 
                               {!unlocked && (
-                                <span className="absolute top-1.5 right-1.5 flex items-center text-[8.5px] font-semibold text-[#69572c] bg-[#d6cbaf]/70 border border-[#c4b693]/40 px-1 py-0.2 rounded-full">
+                                <span className="absolute top-1.5 right-1.5 flex items-center text-[8.5px] font-semibold text-amber-100 bg-amber-950/60 border border-amber-400/30 px-1 py-0.2 rounded-full">
                                   <Lock className="w-2 h-2 mr-0.5 stroke-[2.5]" />
                                   L{sp.levelRequired}
                                 </span>
@@ -367,34 +494,34 @@ export function MobileBottomCockpit({
                 )}
 
                 {/* ----------------------------------------------
-                    TAB 2: DURASI FOKUS (APPLE MINIMALIST STYLE)
+                    TAB 2: DURASI FOKUS
                     ---------------------------------------------- */}
                 {activeFlyout === "timer" && (
-                  <div className="space-y-3 pb-2 text-center">
+                  <div className="space-y-3 pb-1 text-center">
                     {/* Header + Close Button */}
                     <div className="flex items-center justify-between px-1">
-                      <span className="text-[12px] font-semibold text-[#456b57] tracking-tight">
+                      <span className="text-[12px] font-medium text-white/80 tracking-tight">
                         Target Durasi
                       </span>
                       <button
                         type="button"
                         onClick={closeFlyout}
-                        className="w-7 h-7 rounded-full bg-white/80 border border-white/90 flex items-center justify-center text-[#143525] shadow-2xs active:scale-90 transition-transform cursor-pointer shrink-0"
+                        className="w-7 h-7 rounded-full bg-white/15 hover:bg-white/25 border border-white/20 flex items-center justify-center text-white transition-colors cursor-pointer shrink-0 shadow-xs"
                       >
                         <X className="w-3.5 h-3.5 stroke-[2.2]" />
                       </button>
                     </div>
 
-                    {/* Big Bold Clean Time Display */}
+                    {/* Big Clean Time Display */}
                     <div className="py-0.5">
-                      <div className="text-[42px] font-semibold tracking-tight text-[#143525] tabular-nums  leading-none">
+                      <div className="text-[44px] font-semibold tracking-tight text-white tabular-nums leading-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.2)]">
                         {selectedMinutes === 0
-                          ? "Bebas"
+                          ? "∞"
                           : `${selectedMinutes < 10 ? "0" : ""}${selectedMinutes}:00`}
                       </div>
                     </div>
 
-                    {/* Apple Quick Preset Pills */}
+                    {/* Quick Preset Pills */}
                     <div className="flex items-center justify-between gap-1.5 px-0.5">
                       {TIMER_PRESETS.map((m) => {
                         const isActive = selectedMinutes === m;
@@ -404,11 +531,11 @@ export function MobileBottomCockpit({
                             type="button"
                             onClick={() => handleMinutesSelect(m)}
                             className={`
-                              flex-1 py-1.5 rounded-full text-[12px] font-semibold transition-all active:scale-95 cursor-pointer border
+                              flex-1 py-1.5 rounded-full text-[12px] transition-all cursor-pointer border
                               ${
                                 isActive
-                                  ? "bg-gradient-to-b from-[#2a6845] to-[#1e5235] text-white border-white/20 shadow-xs"
-                                  : "bg-white/75 text-[#143525] border-white/85 hover:bg-white shadow-2xs"
+                                  ? "bg-white text-[#0b2719] border-white shadow-[0_3px_10px_rgba(0,0,0,0.2)] font-bold ring-2 ring-white/60"
+                                  : "bg-white/[0.08] hover:bg-white/[0.16] text-white/85 border-white/15 font-semibold"
                               }
                             `}
                           >
@@ -418,7 +545,7 @@ export function MobileBottomCockpit({
                       })}
                     </div>
 
-                    {/* Minimal Fine-Tune Apple Slider */}
+                    {/* Minimal Slider */}
                     <div className="relative py-1 select-none touch-none px-1">
                       <input
                         type="range"
@@ -429,23 +556,23 @@ export function MobileBottomCockpit({
                         onChange={(e) =>
                           handleMinutesSelect(Number(e.target.value))
                         }
-                        className="w-full h-1.5 bg-[#143525]/12 rounded-full appearance-none cursor-pointer accent-[#1e5235]"
+                        className="w-full h-1.5 bg-white/25 rounded-full appearance-none cursor-pointer accent-white"
                         aria-label="Atur durasi menit"
                       />
                     </div>
 
-                    {/* Inline Mode Ketat Toggle (Apple Switch) */}
+                    {/* Inline Mode Ketat Toggle */}
                     <button
                       type="button"
                       onClick={handleStrictToggle}
-                      className="flex w-full items-center justify-between rounded-2xl border border-white/80 bg-white/70 hover:bg-white/90 px-3.5 py-2 transition-all active:scale-[0.98] cursor-pointer shadow-2xs"
+                      className="flex w-full items-center justify-between rounded-2xl border border-white/18 bg-white/10 hover:bg-white/15 px-3.5 py-2 transition-colors cursor-pointer shadow-xs"
                     >
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2.5">
                         <div
                           className={`w-7 h-7 rounded-xl flex items-center justify-center transition-colors ${
                             isStrictMode
-                              ? "bg-amber-100/90 text-amber-700"
-                              : "bg-black/5 text-[#143525]/45"
+                              ? "bg-amber-400/25 text-amber-300 border border-amber-400/35"
+                              : "bg-white/10 text-white/50 border border-white/15"
                           }`}
                         >
                           <Flame
@@ -453,10 +580,10 @@ export function MobileBottomCockpit({
                           />
                         </div>
                         <div className="text-left">
-                          <p className="text-[12.5px] font-semibold text-[#143525] leading-tight">
+                          <p className="text-[12.5px] font-semibold text-white leading-tight drop-shadow-[0_1px_1px_rgba(0,0,0,0.2)]">
                             Mode Ketat
                           </p>
-                          <p className="text-[10.5px] text-[#456b57]">
+                          <p className="text-[10.5px] text-white/70">
                             {isStrictMode
                               ? "Aktif · Lindungi fokus"
                               : "Nonaktif"}
@@ -465,12 +592,12 @@ export function MobileBottomCockpit({
                       </div>
 
                       <div
-                        className={`relative h-5 w-9 rounded-full p-0.5 transition-colors duration-200 ${
-                          isStrictMode ? "bg-[#34b844]" : "bg-black/15"
+                        className={`relative h-5 w-9 rounded-full p-0.5 transition-colors duration-200 border border-white/20 ${
+                          isStrictMode ? "bg-emerald-500" : "bg-black/25"
                         }`}
                       >
                         <div
-                          className={`h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200 ${
+                          className={`h-4 w-4 rounded-full bg-white shadow-xs transition-transform duration-200 ${
                             isStrictMode ? "translate-x-4" : "translate-x-0"
                           }`}
                         />
@@ -478,93 +605,9 @@ export function MobileBottomCockpit({
                     </button>
                   </div>
                 )}
-
-                {/* Subtle Divider Garis Halus */}
-                <div className="h-[1px] bg-[#143525]/8 mx-1 my-1" />
               </div>
-            )}
-
-            {/* ================================================
-                INTEGRATED ANCHOR COCKPIT BAR (TANPA BORDER HITAM)
-                ================================================ */}
-            <div className="flex h-[60px] w-full items-center justify-between shrink-0">
-              {/* SISI KIRI: KATEGORI BUTTON */}
-              <button
-                type="button"
-                onClick={() => toggleFlyout("category")}
-                className={`
-                  flex-1 min-w-0 h-[48px] flex items-center gap-2.5 pl-2.5 pr-2 rounded-full border transition-all active:scale-[0.97] cursor-pointer
-                  ${
-                    activeFlyout === "category"
-                      ? "bg-black/10 border-white/10 shadow-2xs"
-                      : "border-transparent hover:bg-white/40"
-                  }
-                `}
-              >
-                <div className="w-8 h-8 rounded-full bg-white/90 border border-white/80 shadow-2xs flex items-center justify-center shrink-0 text-[#1e5235]">
-                  <TagLineIcon
-                    name={activeTag.icon}
-                    className="w-4 h-4 stroke-[2]"
-                  />
-                </div>
-
-                <div className="min-w-0 text-left flex flex-col justify-center">
-                  <span className="text-[8.5px] font-semibold uppercase tracking-[0.14em] text-[#456b57]/90 leading-none mb-1">
-                    Kategori
-                  </span>
-                  <span className="text-[13px] font-semibold text-[#143525] truncate leading-tight block">
-                    {tagLabel}
-                  </span>
-                </div>
-              </button>
-
-              {/* CENTER: TOMBOL FOKUS UTAMA (APPLE PILL) */}
-              <button
-                type="button"
-                onClick={() => {
-                  hapticMedium();
-                  closeFlyout();
-                  onStartFocus();
-                }}
-                className="shrink-0 flex h-[44px] min-w-[104px] px-5 items-center justify-center gap-2 rounded-full bg-gradient-to-b from-[#54d262] to-[#34b844] hover:brightness-105 active:scale-95 text-white font-semibold text-[14px] tracking-tight shadow-[0_6px_18px_rgba(52,184,68,0.35),inset_0_1px_1.5px_rgba(255,255,255,0.6)] border border-white/30 transition-all duration-200 cursor-pointer mx-1"
-                title={
-                  selectedMinutes === 0
-                    ? "Mulai sesi fokus Stopwatch (Bebas)"
-                    : `Mulai sesi fokus ${selectedMinutes} menit`
-                }
-              >
-                <Play className="h-3.5 w-3.5 translate-x-[0.5px] fill-white text-white stroke-[2]" />
-                <span>Fokus</span>
-              </button>
-
-              {/* SISI KANAN: DURASI BUTTON */}
-              <button
-                type="button"
-                onClick={() => toggleFlyout("timer")}
-                className={`
-                  flex-1 min-w-0 h-[48px] flex items-center justify-end gap-2.5 pl-2 pr-2.5 rounded-full border transition-all active:scale-[0.97] cursor-pointer
-                  ${
-                    activeFlyout === "timer"
-                      ? "bg-black/10 border-white/10 shadow-2xs"
-                      : "border-transparent hover:bg-white/40"
-                  }
-                `}
-              >
-                <div className="min-w-0 text-right flex flex-col justify-center">
-                  <span className="text-[8.5px] font-semibold uppercase tracking-[0.14em] text-[#456b57]/90 leading-none mb-1">
-                    Durasi
-                  </span>
-                  <span className="text-[13px] font-bold  text-[#143525] leading-tight block">
-                    {selectedMinutes === 0 ? "Bebas" : `${selectedMinutes}m`}
-                  </span>
-                </div>
-
-                <div className="w-8 h-8 rounded-full bg-white/90 border border-white/80 shadow-2xs flex items-center justify-center shrink-0 text-[#1e5235]">
-                  <Clock3 className="w-4 h-4 stroke-[2]" />
-                </div>
-              </button>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

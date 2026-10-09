@@ -20,9 +20,14 @@ export const LEVEL_THRESHOLDS = [
   8450,   // Level 13: 8,450 XP (+1,660 XP)
   10370,  // Level 14: 10,370 XP (+1,920 XP)
   12570,  // Level 15: 12,570 XP (+2,200 XP) - Grand Master
+  15070,  // Level 16: 15,070 XP (+2,500 XP)
+  17870,  // Level 17: 17,870 XP (+2,800 XP)
+  21000,  // Level 18: 21,000 XP (+3,130 XP)
+  24500,  // Level 19: 24,500 XP (+3,500 XP)
+  28500,  // Level 20: 28,500 XP (+4,000 XP) - Frost Sovereign
 ];
 
-export const MAX_DEFINED_LEVEL = 15;
+export const MAX_DEFINED_LEVEL = 20;
 
 /**
  * Calculates current level from total XP using the progressive threshold curve.
@@ -67,10 +72,15 @@ export const LEVEL_METADATA: LevelMetadata[] = [
   { level: 13, title: 'Penjaga Mahkota Pinus', badge: '👑', unlockRewardText: 'Bibit Pinus Bertingkat Kerajaan' },
   { level: 14, title: 'Pelindung Baobab', badge: '✨', unlockRewardText: 'Bibit Baobab Sakral Raksasa' },
   { level: 15, title: 'Penjaga Rimba Abadi', badge: '🌟', unlockRewardText: 'Bibit Pohon Leluhur Kuno (Grandmaster)' },
+  { level: 16, title: 'Penjaga Embun Beku', badge: '❄️', unlockRewardText: 'Bibit Cemara Gunung Berbatu' },
+  { level: 17, title: 'Penenang Badai Salju', badge: '🌨️', unlockRewardText: 'Trio Batuan Beku Alpin' },
+  { level: 18, title: 'Ksatria Puncak Es', badge: '🏔️', unlockRewardText: 'Pinus Salju Muda & Lumut Salju' },
+  { level: 19, title: 'Tetua Gletser Abadi', badge: '💎', unlockRewardText: 'Pohon Bundar Salju & Rumpun Kristal' },
+  { level: 20, title: 'Pelindung Salju Abadi', badge: '👑', unlockRewardText: 'Bioma Salju Abadi (Winter Wonderland) & Pinus Salju Abadi' },
 ];
 
 export function getLevelMetadata(level: number): LevelMetadata {
-  const clamped = Math.max(1, Math.min(15, level));
+  const clamped = Math.max(1, Math.min(MAX_DEFINED_LEVEL, level));
   return LEVEL_METADATA[clamped - 1] || LEVEL_METADATA[0];
 }
 

@@ -83,7 +83,7 @@ export function ObjectInspectModal() {
           particleCount: 40,
           spread: 60,
           origin: { y: 0.5 },
-          colors: ["#1e5638", "#fcd34d", "#34d399"],
+          colors: ["#187557", "#fcd34d", "#2BB688"],
         });
       } catch {}
     }
@@ -99,7 +99,7 @@ export function ObjectInspectModal() {
           particleCount: 50,
           spread: 70,
           origin: { y: 0.5 },
-          colors: ["#f59e0b", "#10b981", "#3b82f6"],
+          colors: ["#f59e0b", "#2BB688", "#187557"],
         });
       } catch {}
       setSelectedObject(null);
@@ -138,7 +138,7 @@ export function ObjectInspectModal() {
           particleCount: 35,
           spread: 60,
           origin: { y: 0.5 },
-          colors: ["#f59e0b", "#ef4444", "#10b981"],
+          colors: ["#f59e0b", "#ef4444", "#187557"],
         });
       } catch {}
     }
@@ -146,345 +146,344 @@ export function ObjectInspectModal() {
 
   const getIcon = () => {
     if (isBulldozer) {
-      return <Truck className="w-4 h-4 text-amber-600" />;
+      return <Truck className="w-4 h-4 text-amber-600 stroke-[1.8]" />;
     }
     switch (selectedObject.object_type) {
       case "tree":
-        return <Trees className="w-4 h-4 text-[#1e5638]" />;
+        return <Trees className="w-4 h-4 text-[#187557] stroke-[1.8]" />;
       case "rock":
-        return <Mountain className="w-4 h-4 text-[#456b57]" />;
+        return <Mountain className="w-4 h-4 text-[#4C7567] stroke-[1.8]" />;
       case "path":
-        return <Footprints className="w-4 h-4 text-amber-700" />;
+        return <Footprints className="w-4 h-4 text-amber-700 stroke-[1.8]" />;
       default:
-        return <Trees className="w-4 h-4 text-[#1e5638]" />;
+        return <Trees className="w-4 h-4 text-[#187557] stroke-[1.8]" />;
     }
   };
 
   return (
-    <div
-      className="fixed top-20 right-3.5 sm:right-6 z-30 pointer-events-auto max-w-[310px] w-[calc(100vw-28px)] animate-in fade-in zoom-in-95 duration-200"
-      style={{
-        fontFamily:
-          "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', var(--font-geist-sans), sans-serif",
-      }}
-    >
-      <div
-        className="p-4 rounded-[28px] border border-white/85 shadow-[0_20px_48px_rgba(20,53,37,0.18)] text-[#143525]"
-        style={{
-          background:
-            "linear-gradient(180deg, rgba(239, 246, 241, 0.96) 0%, rgba(226, 238, 230, 0.94) 100%)",
-        }}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-[#143525]/10">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-[#bfdac8]/50 border border-white/80 shadow-2xs">
-              {getIcon()}
+    <>
+      {/* Tipografi Urbanist yang Halus & Modern */}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700&display=swap');
+        .font-urbanist {
+          font-family: 'Urbanist', -apple-system, BlinkMacSystemFont, sans-serif !important;
+        }
+      `}</style>
+
+      <div className="fixed top-20 right-3.5 sm:right-6 z-30 pointer-events-auto max-w-[310px] w-[calc(100vw-28px)] animate-in fade-in zoom-in-95 duration-200 font-urbanist select-none antialiased">
+        <div className="p-4 rounded-3xl border border-white/80 bg-gradient-to-b from-white/95 via-white/95 to-white/90 shadow-2xl shadow-[#0E3B2D]/20 backdrop-blur-xl text-[#0D3528] space-y-3">
+          {/* Header */}
+          <div className="flex items-center justify-between pb-2.5 border-b border-[#0D3528]/8">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8.5 h-8.5 rounded-2xl flex items-center justify-center shrink-0 bg-[#E4F4ED] border border-[#BCE5D3] shadow-2xs">
+                {getIcon()}
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-[13px] font-semibold capitalize truncate tracking-tight text-[#0D3528]">
+                  {displayName}
+                </h3>
+                <p className="text-[10.5px] text-[#4C7567] truncate font-normal">
+                  {isBulldozer
+                    ? "Ancaman Inaktivitas"
+                    : `Petak Lahan (${selectedObject.grid_x}, ${selectedObject.grid_y})`}
+                </p>
+              </div>
             </div>
-            <div className="min-w-0">
-              <h3 className="text-xs font-semibold capitalize truncate tracking-tight text-[#143525]">
-                {displayName}
-              </h3>
-              <p className="text-[10px] text-[#456b57] truncate">
-                {isBulldozer
-                  ? "Ancaman Inaktivitas"
-                  : `Petak Lahan (${selectedObject.grid_x}, ${selectedObject.grid_y})`}
-              </p>
-            </div>
+
+            <button
+              type="button"
+              onClick={() => setSelectedObject(null)}
+              className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0D3528]/5 hover:bg-[#0D3528]/10 text-[#0D3528] transition-transform active:scale-90 cursor-pointer shadow-2xs shrink-0"
+              aria-label="Tutup inspeksi"
+            >
+              <X className="w-3.5 h-3.5 stroke-[2]" />
+            </button>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setSelectedObject(null)}
-            className="flex h-7 w-7 items-center justify-center rounded-full border border-white/80 bg-white/60 hover:bg-white text-[#143525] transition-transform active:scale-90 cursor-pointer shadow-2xs shrink-0"
-            aria-label="Tutup inspeksi"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
-        </div>
+          {/* Content Body */}
+          <div className="space-y-2.5">
+            {/* Memori Fokus Card */}
+            {!isBulldozer &&
+              (selectedObject.object_type === "tree" ||
+                selectedObject.task_note) && (
+                <div className="p-3 rounded-2xl border border-[#0D3528]/8 bg-[#0D3528]/[0.025] space-y-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10.5px] font-medium text-[#187557] flex items-center gap-1">
+                      <span>🌱</span> Memori Fokus
+                    </span>
+                    <div className="flex items-center gap-1">
+                      {selectedObject.focus_tag && (
+                        <span className="text-[9.5px] font-medium px-2 py-0.5 rounded-full bg-[#E4F4ED] border border-[#BCE5D3] text-[#14664D]">
+                          {selectedObject.focus_tag}
+                        </span>
+                      )}
+                      {selectedObject.focus_duration && (
+                        <span className="text-[9.5px] font-medium px-1.5 py-0.5 rounded-full bg-white border border-[#0D3528]/10 text-[#4C7567] tabular-nums">
+                          {selectedObject.focus_duration}m
+                        </span>
+                      )}
+                    </div>
+                  </div>
 
-        {/* Content Body */}
-        <div className="pt-3 space-y-2.5">
-          {/* Memori Fokus Card */}
-          {!isBulldozer &&
-            (selectedObject.object_type === "tree" ||
-              selectedObject.task_note) && (
-              <div className="p-3 rounded-[20px] border border-white/85 bg-white/75 shadow-2xs space-y-1.5">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-[10px] font-semibold text-[#1e5638] flex items-center gap-1">
-                    <span>🌱</span> Memori Fokus
-                  </span>
-                  <div className="flex items-center gap-1">
-                    {selectedObject.focus_tag && (
-                      <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full bg-[#bfdac8]/40 border border-[#bfdac8]/60 text-[#143525]">
-                        {selectedObject.focus_tag}
-                      </span>
-                    )}
-                    {selectedObject.focus_duration && (
-                      <span className="text-[9px] font-mono font-medium px-1.5 py-0.5 rounded-full bg-black/5 text-[#456b57]">
-                        {selectedObject.focus_duration}m
-                      </span>
-                    )}
+                  <p className="text-[11.5px] font-normal leading-relaxed text-[#0D3528] italic">
+                    {selectedObject.task_note
+                      ? `“${selectedObject.task_note}”`
+                      : "Ditanam dari sesi fokus hening di pulau Rimba."}
+                  </p>
+
+                  <div className="text-[10.5px] flex items-center justify-between pt-1 border-t border-[#0D3528]/6 text-[#4C7567] font-normal">
+                    <span>Ditanam pada</span>
+                    <span className="font-medium text-[#0D3528]">
+                      {new Date(selectedObject.created_at).toLocaleDateString(
+                        "id-ID",
+                        {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        },
+                      )}
+                    </span>
                   </div>
                 </div>
-
-                <p className="text-xs font-normal leading-relaxed text-[#143525]">
-                  {selectedObject.task_note
-                    ? `“${selectedObject.task_note}”`
-                    : "Ditanam dari sesi fokus hening di pulau Rimba."}
-                </p>
-
-                <div className="text-[10px] flex items-center justify-between pt-1 border-t border-[#143525]/8 text-[#456b57]">
-                  <span>Ditanam pada</span>
-                  <span className="font-semibold text-[#143525]">
-                    {new Date(selectedObject.created_at).toLocaleDateString(
-                      "id-ID",
-                      {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      },
-                    )}
-                  </span>
-                </div>
-              </div>
-            )}
-
-          {/* STATE 1: BULLDOZER THREAT DIRECT INSPECTION */}
-          {isBulldozer ? (
-            <div className="space-y-2.5">
-              <div className="flex items-start gap-2.5 p-3 rounded-[20px] border border-amber-200/80 bg-amber-50/80 shadow-2xs text-[#143525]">
-                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                <div className="space-y-0.5 min-w-0">
-                  <p className="font-semibold text-xs text-[#143525] tracking-tight">
-                    Kru Konstruksi di Pulau
-                  </p>
-                  <p className="text-[10px] leading-relaxed text-[#456b57]">
-                    Bulldozer akan menebang 1 pohon jika tidak ada aktivitas
-                    selama 24 jam. Selesaikan sesi fokus atau halau dengan Soul.
-                  </p>
-                </div>
-              </div>
-
-              <div className="text-[11px] flex justify-between px-1 text-[#456b57]">
-                <span>Energi Penghalau:</span>
-                <span className="font-semibold text-amber-800 flex items-center gap-1">
-                  {bribeCost} Soul{" "}
-                  <Sparkles className="w-3 h-3 text-amber-500 fill-amber-500" />
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={handleFocusToSave}
-                  className="py-2.5 px-3 rounded-full text-xs font-semibold bg-[#1e5638] hover:bg-[#16442e] text-white active:scale-95 transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  <Play className="w-3 h-3 fill-current" />
-                  <span>Fokus (Gratis)</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleBribe}
-                  disabled={!canAffordBribe}
-                  className={`py-2.5 px-3 rounded-full text-xs font-semibold border flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                    canAffordBribe
-                      ? "bg-amber-400 hover:bg-amber-300 border-amber-300 text-slate-950 active:scale-95 shadow-2xs"
-                      : "bg-black/5 border-black/10 text-[#456b57]/40 cursor-not-allowed"
-                  }`}
-                >
-                  <Sparkles className="w-3 h-3 text-current" />
-                  <span>
-                    {canAffordBribe
-                      ? `Halau (${bribeCost})`
-                      : `Butuh ${bribeCost}`}
-                  </span>
-                </button>
-              </div>
-            </div>
-          ) : isMarkedForClearing ? (
-            /* STATE 2: MARKED TREE FOR CLEARING */
-            <div className="space-y-2.5">
-              <div className="flex items-start gap-2.5 p-3 rounded-[20px] border border-amber-200/80 bg-amber-50/80 shadow-2xs text-[#143525]">
-                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                <div className="space-y-0.5 min-w-0">
-                  <p className="font-semibold text-xs text-[#143525] tracking-tight">
-                    Ditandai untuk Ditebang
-                  </p>
-                  <p className="text-[10px] leading-relaxed text-[#456b57]">
-                    Kru konstruksi menandai pohon ini. Selesaikan 1 Sesi Fokus
-                    untuk menyelamatkannya atau halau dengan 40 Soul.
-                  </p>
-                </div>
-              </div>
-
-              <div className="text-[11px] flex justify-between px-1 text-[#456b57]">
-                <span>Energi Penyelamatan:</span>
-                <span className="font-semibold text-amber-800 flex items-center gap-1">
-                  {bribeCost} Soul{" "}
-                  <Sparkles className="w-3 h-3 text-amber-500 fill-amber-500" />
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={handleFocusToSave}
-                  className="py-2.5 px-3 rounded-full text-xs font-semibold bg-[#1e5638] hover:bg-[#16442e] text-white active:scale-95 transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  <Play className="w-3 h-3 fill-current" />
-                  <span>Fokus</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleBribe}
-                  disabled={!canAffordBribe}
-                  className={`py-2.5 px-3 rounded-full text-xs font-semibold border flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                    canAffordBribe
-                      ? "bg-amber-400 hover:bg-amber-300 border-amber-300 text-slate-950 active:scale-95 shadow-2xs"
-                      : "bg-black/5 border-black/10 text-[#456b57]/40 cursor-not-allowed"
-                  }`}
-                >
-                  <Sparkles className="w-3 h-3 text-current" />
-                  <span>
-                    {canAffordBribe
-                      ? `Halau (${bribeCost})`
-                      : `Butuh ${bribeCost}`}
-                  </span>
-                </button>
-              </div>
-            </div>
-          ) : isReclaimed ? (
-            /* STATE 3: RECLAIMED MOSS (RESTORE) */
-            <div className="space-y-2.5">
-              <div className="flex items-start gap-2.5 p-3 rounded-[20px] border border-amber-200/80 bg-amber-50/80 shadow-2xs text-[#143525]">
-                <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                <div className="space-y-0.5 min-w-0">
-                  <p className="font-semibold text-xs text-[#143525] tracking-tight">
-                    Tertutup Lumut Liar
-                  </p>
-                  <p className="text-[10px] leading-relaxed text-[#456b57]">
-                    Pulihkan objek ini untuk mengembalikan kesegaran alaminya.
-                  </p>
-                </div>
-              </div>
-
-              <div className="text-[11px] flex justify-between px-1 text-[#456b57]">
-                <span>Energi Pemulihan:</span>
-                <span className="font-semibold text-amber-800 flex items-center gap-1">
-                  {restoreCost} Soul{" "}
-                  <Sparkles className="w-3 h-3 text-amber-500 fill-amber-500" />
-                </span>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleRestore}
-                disabled={!canAffordRestore}
-                className={`w-full py-2.5 rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                  canAffordRestore
-                    ? "bg-[#1e5638] hover:bg-[#16442e] text-white active:scale-95 shadow-xs"
-                    : "bg-black/5 border border-black/10 text-[#456b57]/40 cursor-not-allowed"
-                }`}
-              >
-                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                <span>
-                  {canAffordRestore
-                    ? `Pulihkan (${restoreCost} Soul)`
-                    : `Butuh ${restoreCost} Soul`}
-                </span>
-              </button>
-            </div>
-          ) : (
-            /* STATE 4: HEALTHY & FLOURISHING */
-            <div className="space-y-3">
-              <div className="flex items-center gap-2.5 p-2.5 rounded-[18px] border border-white/85 bg-white/75 text-[#143525] shadow-2xs">
-                <CheckCircle2 className="w-4 h-4 text-[#1e5638] shrink-0" />
-                <div className="min-w-0">
-                  <p className="font-semibold text-xs text-[#143525]">
-                    Subur & Terawat
-                  </p>
-                  <p className="text-[10px] text-[#456b57]">
-                    Tumbuh dari ketekunan fokusmu di Rimba.
-                  </p>
-                </div>
-              </div>
-
-              {catalogItem?.description && (
-                <p className="text-[11px] italic text-[#456b57] px-1 pt-0.5 leading-relaxed">
-                  &ldquo;{catalogItem.description}&rdquo;
-                </p>
               )}
 
-              {/* Land Management Controls */}
-              {!activeSession && (
-                <div className="pt-2 border-t border-[#143525]/10 space-y-2">
-                  <div className="text-[10px] font-semibold uppercase tracking-wider text-[#2f5542]/75 px-1">
-                    Tata Letak & Lahan
+            {/* STATE 1: BULLDOZER THREAT DIRECT INSPECTION */}
+            {isBulldozer ? (
+              <div className="space-y-2.5">
+                <div className="flex items-start gap-2.5 p-3 rounded-2xl border border-amber-200/80 bg-amber-50/80 text-[#0D3528]">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5 stroke-[1.8]" />
+                  <div className="space-y-0.5 min-w-0">
+                    <p className="font-semibold text-[12px] text-amber-950 tracking-tight">
+                      Kru Konstruksi di Pulau
+                    </p>
+                    <p className="text-[10.5px] leading-relaxed text-amber-900/80 font-normal">
+                      Bulldozer akan menebang 1 pohon jika tidak ada aktivitas
+                      selama 24 jam. Selesaikan sesi fokus atau halau dengan
+                      Soul.
+                    </p>
                   </div>
+                </div>
 
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={handleStartRelocate}
-                      className="py-2 px-3 rounded-full text-xs font-semibold border border-white/90 bg-white/80 hover:bg-white text-[#143525] flex items-center justify-center gap-1.5 shadow-2xs active:scale-95 transition-all cursor-pointer"
-                      title="Pindahkan objek ke petak lain"
-                    >
-                      <Move className="w-3.5 h-3.5 stroke-[2.2]" />
-                      <span>Pindahkan</span>
-                    </button>
+                <div className="text-[11px] flex justify-between px-1 text-[#4C7567] font-normal">
+                  <span>Energi Penghalau:</span>
+                  <span className="font-semibold text-amber-800 flex items-center gap-1 tabular-nums">
+                    {bribeCost} Soul{" "}
+                    <Sparkles className="w-3 h-3 text-amber-500 fill-amber-500" />
+                  </span>
+                </div>
 
-                    {selectedObject.object_type === 'tree' ? (
-                      isReclaimed ? (
-                        <button
-                          type="button"
-                          onClick={handleRemove}
-                          className="py-2 px-3 rounded-full text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 flex items-center justify-center gap-1.5 shadow-2xs active:scale-95 transition-all cursor-pointer"
-                          title="Bersihkan tunggul kayu lapuk untuk memulihkan kesuburan tanah (Gratis)"
-                        >
-                          <Trash2 className="w-3.5 h-3.5 text-emerald-600" />
-                          <span>Bersihkan (Gratis)</span>
-                        </button>
+                <div className="grid grid-cols-2 gap-2 pt-0.5">
+                  <button
+                    type="button"
+                    onClick={handleFocusToSave}
+                    className="py-2.5 px-3 rounded-full text-[12px] font-medium bg-[#187557] hover:bg-[#126046] text-white active:scale-95 transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <Play className="w-3 h-3 fill-current" />
+                    <span>Fokus (Gratis)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleBribe}
+                    disabled={!canAffordBribe}
+                    className={`py-2.5 px-3 rounded-full text-[12px] font-medium border flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                      canAffordBribe
+                        ? "bg-amber-400 hover:bg-amber-300 border-amber-300 text-slate-950 active:scale-95 shadow-2xs"
+                        : "bg-black/5 border-black/10 text-[#4C7567]/40 cursor-not-allowed"
+                    }`}
+                  >
+                    <Sparkles className="w-3 h-3 text-current" />
+                    <span>
+                      {canAffordBribe
+                        ? `Halau (${bribeCost})`
+                        : `Butuh ${bribeCost}`}
+                    </span>
+                  </button>
+                </div>
+              </div>
+            ) : isMarkedForClearing ? (
+              /* STATE 2: MARKED TREE FOR CLEARING */
+              <div className="space-y-2.5">
+                <div className="flex items-start gap-2.5 p-3 rounded-2xl border border-amber-200/80 bg-amber-50/80 text-[#0D3528]">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5 stroke-[1.8]" />
+                  <div className="space-y-0.5 min-w-0">
+                    <p className="font-semibold text-[12px] text-amber-950 tracking-tight">
+                      Ditandai untuk Ditebang
+                    </p>
+                    <p className="text-[10.5px] leading-relaxed text-amber-900/80 font-normal">
+                      Kru konstruksi menandai pohon ini. Selesaikan 1 Sesi Fokus
+                      untuk menyelamatkannya atau halau dengan 40 Soul.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="text-[11px] flex justify-between px-1 text-[#4C7567] font-normal">
+                  <span>Energi Penyelamatan:</span>
+                  <span className="font-semibold text-amber-800 flex items-center gap-1 tabular-nums">
+                    {bribeCost} Soul{" "}
+                    <Sparkles className="w-3 h-3 text-amber-500 fill-amber-500" />
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 pt-0.5">
+                  <button
+                    type="button"
+                    onClick={handleFocusToSave}
+                    className="py-2.5 px-3 rounded-full text-[12px] font-medium bg-[#187557] hover:bg-[#126046] text-white active:scale-95 transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <Play className="w-3 h-3 fill-current" />
+                    <span>Fokus</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleBribe}
+                    disabled={!canAffordBribe}
+                    className={`py-2.5 px-3 rounded-full text-[12px] font-medium border flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                      canAffordBribe
+                        ? "bg-amber-400 hover:bg-amber-300 border-amber-300 text-slate-950 active:scale-95 shadow-2xs"
+                        : "bg-black/5 border-black/10 text-[#4C7567]/40 cursor-not-allowed"
+                    }`}
+                  >
+                    <Sparkles className="w-3 h-3 text-current" />
+                    <span>
+                      {canAffordBribe
+                        ? `Halau (${bribeCost})`
+                        : `Butuh ${bribeCost}`}
+                    </span>
+                  </button>
+                </div>
+              </div>
+            ) : isReclaimed ? (
+              /* STATE 3: RECLAIMED MOSS (RESTORE) */
+              <div className="space-y-2.5">
+                <div className="flex items-start gap-2.5 p-3 rounded-2xl border border-amber-200/80 bg-amber-50/80 text-[#0D3528]">
+                  <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0 mt-0.5 stroke-[1.8]" />
+                  <div className="space-y-0.5 min-w-0">
+                    <p className="font-semibold text-[12px] text-amber-950 tracking-tight">
+                      Tertutup Lumut Liar
+                    </p>
+                    <p className="text-[10.5px] leading-relaxed text-amber-900/80 font-normal">
+                      Pulihkan objek ini untuk mengembalikan kesegaran alaminya.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="text-[11px] flex justify-between px-1 text-[#4C7567] font-normal">
+                  <span>Energi Pemulihan:</span>
+                  <span className="font-semibold text-amber-800 flex items-center gap-1 tabular-nums">
+                    {restoreCost} Soul{" "}
+                    <Sparkles className="w-3 h-3 text-amber-500 fill-amber-500" />
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleRestore}
+                  disabled={!canAffordRestore}
+                  className={`w-full py-2.5 rounded-full text-[12px] font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                    canAffordRestore
+                      ? "bg-[#187557] hover:bg-[#126046] text-white active:scale-95 shadow-xs"
+                      : "bg-black/5 border border-black/10 text-[#4C7567]/40 cursor-not-allowed"
+                  }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                  <span>
+                    {canAffordRestore
+                      ? `Pulihkan (${restoreCost} Soul)`
+                      : `Butuh ${restoreCost} Soul`}
+                  </span>
+                </button>
+              </div>
+            ) : (
+              /* STATE 4: HEALTHY & FLOURISHING */
+              <div className="space-y-2.5">
+                <div className="flex items-center gap-2.5 p-3 rounded-2xl border border-[#BCE5D3] bg-[#E4F4ED]/80 text-[#0D3528]">
+                  <CheckCircle2 className="w-4 h-4 text-[#187557] shrink-0 stroke-[2]" />
+                  <div className="min-w-0">
+                    <p className="font-semibold text-[12.5px] text-[#0D3528]">
+                      Subur & Terawat
+                    </p>
+                    <p className="text-[10.5px] text-[#4C7567] font-normal">
+                      Tumbuh dari ketekunan fokusmu di Rimba.
+                    </p>
+                  </div>
+                </div>
+
+                {catalogItem?.description && (
+                  <p className="text-[11px] italic text-[#4C7567] px-1 leading-relaxed font-normal">
+                    &ldquo;{catalogItem.description}&rdquo;
+                  </p>
+                )}
+
+                {/* Land Management Controls */}
+                {!activeSession && (
+                  <div className="pt-2 border-t border-[#0D3528]/8 space-y-2">
+                    <div className="text-[10px] font-medium uppercase tracking-[0.1em] text-[#4C7567] px-1">
+                      Tata Letak & Lahan
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={handleStartRelocate}
+                        className="py-2.5 px-3 rounded-full text-[12px] font-medium border border-[#0D3528]/12 bg-white hover:bg-[#E4F4ED]/50 text-[#0D3528] flex items-center justify-center gap-1.5 shadow-2xs active:scale-95 transition-all cursor-pointer"
+                        title="Pindahkan objek ke petak lain"
+                      >
+                        <Move className="w-3.5 h-3.5 stroke-[1.8]" />
+                        <span>Pindahkan</span>
+                      </button>
+
+                      {selectedObject.object_type === "tree" ? (
+                        isReclaimed ? (
+                          <button
+                            type="button"
+                            onClick={handleRemove}
+                            className="py-2.5 px-3 rounded-full text-[12px] font-medium bg-[#E4F4ED] hover:bg-[#d5eee2] border border-[#BCE5D3] text-[#14664D] flex items-center justify-center gap-1.5 shadow-2xs active:scale-95 transition-all cursor-pointer"
+                            title="Bersihkan tunggul kayu lapuk untuk memulihkan kesuburan tanah (Gratis)"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-[#187557] stroke-[1.8]" />
+                            <span>Bersihkan (Gratis)</span>
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={handleRemove}
+                            disabled={gold < 2}
+                            className={`py-2.5 px-3 rounded-full text-[12px] font-medium flex items-center justify-center gap-1.5 shadow-2xs transition-all ${
+                              gold >= 2
+                                ? "bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 active:scale-95 cursor-pointer"
+                                : "bg-black/5 border border-black/10 text-[#4C7567]/40 cursor-not-allowed"
+                            }`}
+                            title={
+                              gold >= 2
+                                ? "Mencabut pohon suaka hidup berkonsekuensi -2 Soul demi keseimbangan alam"
+                                : "Butuh minimal 2 Soul untuk mencabut pohon hidup"
+                            }
+                          >
+                            <Trash2 className="w-3.5 h-3.5 stroke-[1.8]" />
+                            <span>Cabut (-2 Soul)</span>
+                          </button>
+                        )
                       ) : (
                         <button
                           type="button"
                           onClick={handleRemove}
-                          disabled={gold < 2}
-                          className={`py-2 px-3 rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 shadow-2xs transition-all ${
-                            gold >= 2
-                              ? "bg-rose-50 hover:bg-rose-100 border border-rose-300 text-rose-700 active:scale-95 cursor-pointer"
-                              : "bg-black/5 border border-black/10 text-[#456b57]/40 cursor-not-allowed"
-                          }`}
-                          title={
-                            gold >= 2
-                              ? "Mencabut pohon suaka hidup berkonsekuensi -2 Soul demi keseimbangan alam"
-                              : "Butuh minimal 2 Soul untuk mencabut pohon hidup"
-                          }
+                          className="py-2.5 px-3 rounded-full text-[12px] font-medium bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 flex items-center justify-center gap-1.5 shadow-2xs active:scale-95 transition-all cursor-pointer"
+                          title={`Bongkar objek dan daur ulang material (+${refundAmount} Soul)`}
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          <span>Cabut (-2 Soul)</span>
+                          <Trash2 className="w-3.5 h-3.5 stroke-[1.8]" />
+                          <span>Bongkar (+{refundAmount})</span>
                         </button>
-                      )
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={handleRemove}
-                        className="py-2 px-3 rounded-full text-xs font-semibold bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 flex items-center justify-center gap-1.5 shadow-2xs active:scale-95 transition-all cursor-pointer"
-                        title={`Bongkar objek dan daur ulang material (+${refundAmount} Soul)`}
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        <span>Bongkar (+{refundAmount})</span>
-                      </button>
-                    )}
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-          )}
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

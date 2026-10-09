@@ -19,11 +19,9 @@ import { RestoreDataModal } from "@/components/modals/RestoreDataModal";
 import { RangerAvatar } from "@/components/ui/RangerAvatar";
 import {
   X,
-  User,
   Camera,
   TreePine,
   Droplets,
-  Grid,
   Award,
   ShieldCheck,
   Download,
@@ -33,6 +31,9 @@ import {
   Lock,
   ChevronRight,
   Sparkles,
+  LogOut,
+  MapPin,
+  Trophy,
 } from "lucide-react";
 
 export type ProfileTab = "stats" | "profile";
@@ -45,19 +46,20 @@ interface MobileProfileModalProps {
 }
 
 function getRangerTitle(level: number): string {
-  if (level <= 2) return "Penjelajah Rimba Baru";
-  if (level <= 4) return "Penjaga Kabut Hening";
-  if (level <= 6) return "Pengembara Kanopi Rimba";
-  if (level <= 8) return "Penjaga Lembah Sungai";
-  if (level <= 10) return "Ksatria Pinus Pegunungan";
-  if (level <= 12) return "Penjaga Sabana Emas";
-  if (level <= 14) return "Pelindung Baobab Purba";
-  return "Maharesi Suaka Suci";
+  if (level <= 2) return "Penjelajah Rimba";
+  if (level <= 4) return "Penjaga Kabut";
+  if (level <= 6) return "Pengembara Kanopi";
+  if (level <= 8) return "Penjaga Lembah";
+  if (level <= 10) return "Ksatria Pinus";
+  if (level <= 12) return "Penjaga Sabana";
+  if (level <= 14) return "Pelindung Baobab";
+  return "Maharesi Suaka";
 }
 
 export function MobileProfileModal({
   isOpen,
   onClose,
+  onOpenLeaderboard,
 }: MobileProfileModalProps) {
   const saveData = useGameStore((state) => state.saveData);
   const grassPalette = useGameStore((state) => state.grassPalette);
@@ -70,7 +72,6 @@ export function MobileProfileModal({
   const [isBadgesOpen, setIsBadgesOpen] = useState(false);
   const [isRestoreOpen, setIsRestoreOpen] = useState(false);
 
-  // Inline name editing state
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameInput, setNameInput] = useState("");
 
@@ -78,12 +79,10 @@ export function MobileProfileModal({
   const world = saveData.world;
   const worldObjects = saveData.world_objects || [];
 
-  // Sync current name into input
   useEffect(() => {
     setNameInput(profile.name || user?.name || "Tamu Rimba");
   }, [profile.name, user?.name]);
 
-  // Escape key listener
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -143,15 +142,11 @@ export function MobileProfileModal({
     [currentLevel],
   );
 
-  const isDataUrl =
-    user?.avatarUrl?.startsWith("data:image/") ||
-    user?.avatarUrl?.startsWith("http");
-
   const handleSaveName = () => {
     const trimmed = nameInput.trim();
     if (trimmed) {
       setProfileName(trimmed);
-      notify(`Nama profil diperbarui menjadi "${trimmed}".`, "success");
+      notify(`Nama diperbarui: "${trimmed}"`, "success");
     }
     setIsEditingName(false);
     hapticSuccess();
@@ -161,307 +156,226 @@ export function MobileProfileModal({
     hapticSuccess();
     soundManager.playPop();
     downloadSaveDataBackup(saveData);
-    notify("Berkas cadangan suaka (JSON) berhasil diunduh.", "success");
+    notify("Cadangan data suaka berhasil diunduh.", "success");
   };
 
   if (!isOpen) return null;
 
   return (
     <>
+      {/* Tipografi Urbanist yang Halus & Modern */}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700&display=swap');
+        .font-urbanist {
+          font-family: 'Urbanist', -apple-system, BlinkMacSystemFont, sans-serif !important;
+        }
+      `}</style>
+
       <div
-        className="fixed inset-0 z-50 overflow-y-auto no-scrollbar select-none antialiased"
+        className="fixed inset-0 z-50 overflow-y-auto no-scrollbar select-none antialiased font-urbanist text-[#0D3528]"
         style={{
           background:
-            "linear-gradient(180deg, #d4e7dc 0%, #c5dfd1 45%, #b4d3c2 100%)",
-          fontFamily:
-            "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', var(--font-geist-sans), sans-serif",
+            "radial-gradient(130% 90% at 50% -5%, #38B28B 0%, #289874 34%, #1C7459 70%, #165643 100%)",
         }}
         role="dialog"
         aria-modal="true"
       >
-        {/* Top Ambient Glow */}
-        <div
-          className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-lg h-72 pointer-events-none"
-          style={{
-            background:
-              "radial-gradient(ellipse 80% 60% at 50% -10%, rgba(255, 255, 255, 0.5), transparent 70%)",
-          }}
-        />
-
-        {/* Content Container (Unified Single-Page Flow) */}
-        <div className="relative z-10 w-full max-w-md mx-auto px-4 sm:px-5 pt-[max(env(safe-area-inset-top,1rem),1.25rem)] pb-[max(calc(env(safe-area-inset-bottom,0px)+2.5rem),3rem)] space-y-3.5">
-          {/* Navigation Header */}
-          <div className="flex items-center justify-between pt-1 pb-1">
-            <div className="flex items-baseline gap-2">
-              <h2 className="text-[21px] font-semibold tracking-tight text-[#143525]">
-                Profil Ranger
+        <div className="w-full max-w-md mx-auto px-5 pt-[max(env(safe-area-inset-top,1.25rem),1.25rem)] pb-[max(calc(env(safe-area-inset-bottom,0px)+2.5rem),3rem)] space-y-4">
+          {/* HEADER NAV */}
+          <div className="flex items-center justify-between py-1">
+            <div className="flex items-center gap-2.5">
+              <h2 className="text-[23px] font-semibold tracking-normal text-white drop-shadow-xs">
+                Profil
               </h2>
-              <span className="text-[12.5px] font-normal text-[#456b57]">
-                Identitas & Suaka Rimba
+              <span className="rounded-full bg-white/20 border border-white/25 px-3 py-0.5 text-[11.5px] font-medium text-emerald-50 backdrop-blur-md">
+                {rangerTitle}
               </span>
             </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                hapticLight();
-                onClose();
-              }}
-              className="flex h-8 w-8 items-center justify-center rounded-full border border-white/80 bg-white/60 hover:bg-white/80 text-[#143525] transition-transform active:scale-90 cursor-pointer shadow-2xs"
-              aria-label="Tutup"
-            >
-              <X className="h-4 w-4 stroke-[2.2]" />
-            </button>
+            <div className="flex items-center gap-2">
+              {onOpenLeaderboard && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    hapticLight();
+                    onOpenLeaderboard();
+                  }}
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 border border-white/30 text-white shadow-sm backdrop-blur-md active:scale-90 transition-transform hover:bg-white/30"
+                  aria-label="Peringkat"
+                >
+                  <Trophy className="h-4 w-4 stroke-[1.8]" />
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  hapticLight();
+                  onClose();
+                }}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 border border-white/30 text-white shadow-sm backdrop-blur-md active:scale-90 transition-transform hover:bg-white/30"
+                aria-label="Tutup"
+              >
+                <X className="h-4 w-4 stroke-[2]" />
+              </button>
+            </div>
           </div>
 
-          {/* ========================================================= */}
-          {/* 1. KARTU IDENTITAS RANGER & PROGRESSI LEVEL               */}
-          {/* ========================================================= */}
-          <div className="rounded-[24px] border border-white/85 bg-white/75 p-4 shadow-[0_8px_24px_rgba(20,50,30,0.05)] space-y-3.5">
-            <div className="flex items-center gap-3.5 min-w-0">
+          {/* 1. KARTU IDENTITAS & XP (Translucent Blended White Gradient) */}
+          <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-4">
+            <div className="flex items-center gap-3.5">
               <button
                 type="button"
                 onClick={() => {
                   hapticLight();
                   setIsAvatarPickerOpen(true);
                 }}
-                className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full active:scale-95 transition-transform cursor-pointer shadow-xs"
-                title="Ganti Foto Avatar"
+                className="relative h-14 w-14 shrink-0 rounded-full active:scale-95 transition-transform"
               >
                 <RangerAvatar
                   avatarUrl={user?.avatarUrl || profile?.avatarUrl}
                   name={user?.name || profile?.name}
                   size="lg"
-                  borderClassName="border-2 border-white/90"
+                  borderClassName="border-2 border-white shadow-sm"
                 />
-                <div className="absolute bottom-0 right-0 p-1 rounded-full bg-[#1e5638] text-white shadow-2xs z-10">
-                  <Camera className="w-2.5 h-2.5" />
+                <div className="absolute -bottom-0.5 -right-0.5 p-1.5 rounded-full bg-[#187557] border border-white text-white shadow-xs">
+                  <Camera className="w-2.5 h-2.5 stroke-[2]" />
                 </div>
               </button>
 
-              <div className="min-w-0 flex-1 space-y-1">
+              <div className="min-w-0 flex-1">
                 {isEditingName ? (
                   <div className="flex items-center gap-1.5">
                     <input
                       type="text"
                       value={nameInput}
                       onChange={(e) => setNameInput(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleSaveName()}
                       maxLength={24}
                       autoFocus
-                      className="w-full text-[14px] font-semibold text-[#143525] bg-white/90 border border-[#1e5638]/30 rounded-lg px-2 py-0.5 focus:outline-none focus:border-[#1e5638]"
+                      className="w-full text-[14px] font-medium text-[#0D3528] bg-white/90 border border-[#187557]/40 rounded-xl px-2.5 py-1 focus:outline-none focus:ring-1 focus:ring-[#187557]"
                     />
                     <button
                       type="button"
                       onClick={handleSaveName}
-                      className="p-1 rounded-lg bg-[#1e5638] text-white cursor-pointer active:scale-90"
+                      className="p-1.5 rounded-xl bg-[#187557] text-white active:scale-90"
                     >
                       <Check className="w-3.5 h-3.5 stroke-[2.5]" />
                     </button>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <h3 className="truncate text-[16px] font-semibold text-[#143525]">
+                    <h3 className="truncate text-[17px] font-semibold text-[#0D3528] tracking-wide">
                       {profile.name || user?.name || "Tamu Rimba"}
                     </h3>
                     <button
                       type="button"
                       onClick={() => setIsEditingName(true)}
-                      className="text-[#456b57] hover:text-[#143525] cursor-pointer"
-                      title="Edit Nama"
+                      className="text-[#4C7567] hover:text-[#0D3528] p-0.5 transition-colors"
                     >
-                      <Edit2 className="w-3.5 h-3.5" />
+                      <Edit2 className="w-3.5 h-3.5 stroke-[1.8]" />
                     </button>
-                    <span className="shrink-0 rounded-full border border-[#c4b693]/40 bg-[#d6cbaf]/50 px-2 py-0.5 text-[10px] font-semibold text-[#69572c]">
-                      Level {currentLevel}
+                    <span className="ml-auto shrink-0 rounded-full bg-[#E4F4ED] border border-[#BCE5D3] px-2.5 py-0.5 text-[11px] font-medium text-[#14664D]">
+                      Lvl {currentLevel}
                     </span>
                   </div>
                 )}
-
-                <p className="text-[11.5px] text-[#456b57] font-medium truncate flex items-center gap-1.5">
-                  <span>{levelProgress.badge}</span>
-                  <span>{levelProgress.title}</span>
+                <p className="text-[12.5px] text-[#4C7567] font-normal truncate mt-0.5">
+                  {levelProgress.badge} {levelProgress.title}
                 </p>
               </div>
             </div>
 
-            {/* Progress Bar Level XP */}
-            <div className="pt-2.5 border-t border-[#143525]/10 space-y-1.5">
-              <div className="flex justify-between items-center text-[11px] font-medium">
-                <span className="text-[#456b57]">Level {currentLevel} • {levelProgress.title}</span>
-                <span className="font-medium text-[#143525]">
-                  {xpInCurrentLevel} / {xpNeededForNextLevel} XP ({xpProgressPct}%)
+            {/* XP Progress Bar */}
+            <div className="pt-2 border-t border-[#0D3528]/8 space-y-2">
+              <div className="flex justify-between items-center text-[11.5px] font-normal">
+                <span className="text-[#4C7567]">
+                  Menuju Lvl {currentLevel + 1}
+                </span>
+                <span className="text-[#0D3528] font-medium">
+                  {xpInCurrentLevel} / {xpNeededForNextLevel} XP (
+                  {xpProgressPct}%)
                 </span>
               </div>
-              <div className="w-full h-2 rounded-full bg-[#143525]/10 overflow-hidden">
+              <div className="w-full h-1.5 rounded-full bg-[#0D3528]/10 overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-[#1e5638] to-[#2d6a4f] rounded-full transition-all duration-300 shadow-2xs"
-                  style={{ width: `${xpProgressPct}%` }}
+                  className="h-full bg-gradient-to-r from-[#2BB688] to-[#1E8E69] rounded-full transition-all duration-300 shadow-xs"
+                  style={{ width: `${Math.min(xpProgressPct, 100)}%` }}
                 />
               </div>
-              <div className="flex items-center gap-1.5 text-[10px] text-[#1e5638] font-medium pt-0.5">
-                <span>✨</span>
-                <span>Hak Suaka: {levelProgress.unlockRewardText}</span>
+              <div className="flex items-center gap-1.5 text-[11px] text-[#187557] font-medium pt-0.5">
+                <Sparkles className="w-3.5 h-3.5 shrink-0 stroke-[1.8] text-emerald-600" />
+                <span className="truncate">
+                  {levelProgress.unlockRewardText}
+                </span>
               </div>
             </div>
           </div>
 
-          {/* ========================================================= */}
-          {/* 2. HERBARIUM POHON SUAKA (TREE PROGRESSION BY LEVEL)       */}
-          {/* ========================================================= */}
-          <div className="rounded-[24px] border border-white/85 bg-white/75 p-4 shadow-[0_8px_24px_rgba(20,50,30,0.05)] space-y-3">
+          {/* 2. SUAKA & STATISTIK (Harmonious Air Layout) */}
+          <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/95 p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-lg bg-[#1e5638]/10 flex items-center justify-center">
-                  <TreePine className="w-3.5 h-3.5 text-[#1e5638]" />
-                </div>
-                <div>
-                  <h3 className="text-[13.5px] font-semibold text-[#143525] leading-tight">
-                    Herbarium Pohon Suaka
-                  </h3>
-                  <p className="text-[10.5px] text-[#456b57]">
-                    Spesies mekar bertahap sesuai level fokusmu
-                  </p>
-                </div>
-              </div>
-
-              <span className="rounded-full border border-[#bfdac8]/60 bg-[#bfdac8]/40 px-2 py-0.5 text-[10px] font-semibold text-[#143525]">
-                {unlockedTreesCount} / {TREE_SPECIES_CONFIG.length} Terbuka
+              <span className="text-[14.5px] font-semibold text-[#0D3528] tracking-wide">
+                {world.name || "Suaka Rimba"}
               </span>
             </div>
 
-            {/* Tree Species Roster (Scrollable List) */}
-            <div className="max-h-56 overflow-y-auto no-scrollbar space-y-1.5 pt-1 pr-0.5">
-              {TREE_SPECIES_CONFIG.map((tree) => {
-                const isUnlocked = currentLevel >= tree.levelRequired;
-                return (
-                  <div
-                    key={tree.id}
-                    className={`p-2.5 rounded-xl border transition-all flex items-center justify-between text-left ${
-                      isUnlocked
-                        ? "bg-white/80 border-white/90 shadow-2xs"
-                        : "bg-black/[0.02] border-[#143525]/10 opacity-60"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0 pr-2">
-                      <div
-                        className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${
-                          isUnlocked
-                            ? "bg-[#1e5638]/10 border-[#1e5638]/20 text-[#1e5638]"
-                            : "bg-[#143525]/5 border-[#143525]/10 text-[#456b57]"
-                        }`}
-                      >
-                        {isUnlocked ? (
-                          <TreePine className="w-4 h-4 stroke-[2]" />
-                        ) : (
-                          <Lock className="w-3.5 h-3.5 text-[#456b57]/60" />
-                        )}
-                      </div>
-
-                      <div className="min-w-0">
-                        <div className="text-[12px] font-semibold text-[#143525] truncate">
-                          {tree.name}
-                        </div>
-                        <div className="text-[10px] text-[#456b57] truncate font-light">
-                          {tree.description}
-                        </div>
-                      </div>
-                    </div>
-
-                    <span
-                      className={`shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full border ${
-                        isUnlocked
-                          ? "bg-[#1e5638]/10 border-[#1e5638]/25 text-[#1e5638]"
-                          : "bg-[#143525]/5 border-[#143525]/10 text-[#456b57]/70"
-                      }`}
-                    >
-                      {isUnlocked ? `Level ${tree.levelRequired}` : `Buka Lvl ${tree.levelRequired}`}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* ========================================================= */}
-          {/* 3. WILAYAH & TATA SUAKA (SANCTUARY ENVIRONMENT)           */}
-          {/* ========================================================= */}
-          <div className="rounded-[24px] border border-white/85 bg-white/75 p-4 shadow-[0_8px_24px_rgba(20,50,30,0.05)] space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-lg bg-[#1e5638]/10 flex items-center justify-center">
-                  <Grid className="w-3.5 h-3.5 text-[#1e5638]" />
+            {/* Stat Row Terbuka */}
+            <div className="grid grid-cols-2 py-2 divide-x divide-[#0D3528]/10">
+              <div className="text-center pr-3">
+                <div className="text-[21px] font-medium text-[#0D3528] tracking-normal">
+                  {unlockedSet.size}{" "}
+                  <span className="text-[12px] text-[#4C7567] font-normal">
+                    / 100
+                  </span>
                 </div>
-                <div>
-                  <h3 className="text-[13.5px] font-semibold text-[#143525] leading-tight">
-                    {world.name || "Suaka Rimba"}
-                  </h3>
-                  <p className="text-[10.5px] text-[#456b57]">
-                    Kondisi Wilayah & Lingkungan Pulau
-                  </p>
-                </div>
-              </div>
-
-              <span className="rounded-full border border-[#bfdac8]/60 bg-[#bfdac8]/40 px-2 py-0.5 text-[10px] font-semibold text-[#143525]">
-                {zoneInfo.zoneName}
-              </span>
-            </div>
-
-            {/* 2 Island Metrics Pillars */}
-            <div className="grid grid-cols-2 gap-2 text-center text-xs">
-              <div className="p-2.5 rounded-[18px] bg-white/60 border border-white/80">
-                <div className="font-bold text-[15px] text-[#143525]">
-                  {unlockedSet.size} / 100
-                </div>
-                <div className="text-[10px] text-[#456b57] mt-0.5">
+                <div className="text-[11.5px] font-normal text-[#4C7567] mt-0.5">
                   Petak Terbuka
                 </div>
               </div>
-              <div className="p-2.5 rounded-[18px] bg-white/60 border border-white/80">
-                <div className="font-bold text-[15px] text-[#143525]">
-                  {treesCount} Pohon
+              <div className="text-center pl-3">
+                <div className="text-[21px] font-medium text-[#0D3528] tracking-normal">
+                  {treesCount}{" "}
+                  <span className="text-[12px] text-[#4C7567] font-normal">
+                    Pohon
+                  </span>
                 </div>
-                <div className="text-[10px] text-[#456b57] mt-0.5">
+                <div className="text-[11.5px] font-normal text-[#4C7567] mt-0.5">
                   {stumpsCount} Tunggul
                 </div>
               </div>
             </div>
 
-            {/* Embun Pelindung Streak Ward */}
-            <div className="p-2.5 rounded-[18px] bg-sky-50/60 border border-sky-100 flex items-start gap-2.5">
-              <div className="w-7 h-7 rounded-xl bg-sky-100/80 border border-sky-200/60 flex items-center justify-center shrink-0">
-                <Droplets className="w-3.5 h-3.5 text-sky-700" />
-              </div>
-              <div className="min-w-0 flex-1 space-y-0.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11.5px] font-semibold text-[#143525]">
-                    Embun Pelindung
-                  </span>
-                  <span className="text-[11px] font-bold text-sky-800">
-                    {saveData.streak_shields || 0} Aktif
-                  </span>
+            {/* Status Embun Pelindung */}
+            <div className="pt-2 border-t border-[#0D3528]/8 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-1 rounded-lg bg-cyan-500/10 text-cyan-700">
+                  <Droplets className="w-3.5 h-3.5 stroke-[1.8]" />
                 </div>
-                <p className="text-[10.5px] text-[#456b57] leading-relaxed font-light">
-                  Perisai harian yang memaafkan jika suatu hari kamu berhalangan hadir fokus.
-                </p>
+                <span className="text-[12.5px] font-normal text-[#0D3528]">
+                  Embun Pelindung
+                </span>
               </div>
+              <span className="text-[11px] font-medium text-cyan-800 bg-cyan-50 border border-cyan-200/70 px-2.5 py-0.5 rounded-full">
+                {saveData.streak_shields || 0} Siap
+              </span>
             </div>
 
-            {/* Palet Rumput Switcher */}
-            <div className="pt-2 border-t border-[#143525]/10 flex items-center justify-between">
-              <span className="text-[12.5px] font-semibold text-[#143525]">
-                Palet Rumput
+            {/* Selector Palet Rumput */}
+            <div className="pt-2 border-t border-[#0D3528]/8 flex items-center justify-between">
+              <span className="text-[12.5px] font-normal text-[#4C7567]">
+                Warna Rumput
               </span>
-              <div className="flex items-center gap-1 bg-[#143525]/10 p-0.5 rounded-full">
+              <div className="flex bg-[#0D3528]/7 p-0.5 rounded-full border border-white/60">
                 <button
                   type="button"
                   onClick={() => {
                     hapticLight();
                     setGrassPalette("natural");
                   }}
-                  className={`px-3 py-1 rounded-full text-[10.5px] transition-all cursor-pointer ${
+                  className={`px-3.5 py-1 rounded-full text-[11px] font-medium transition-all ${
                     grassPalette === "natural"
-                      ? "bg-[#1e5638] text-white shadow-2xs font-semibold"
-                      : "text-[#456b57] hover:text-[#143525]"
+                      ? "bg-[#187557] text-white shadow-xs"
+                      : "text-[#4C7567] hover:text-[#0D3528]"
                   }`}
                 >
                   Alami
@@ -472,10 +386,10 @@ export function MobileProfileModal({
                     hapticLight();
                     setGrassPalette("emerald");
                   }}
-                  className={`px-3 py-1 rounded-full text-[10.5px] transition-all cursor-pointer ${
+                  className={`px-3.5 py-1 rounded-full text-[11px] font-medium transition-all ${
                     grassPalette === "emerald"
-                      ? "bg-[#1e5638] text-white shadow-2xs font-semibold"
-                      : "text-[#456b57] hover:text-[#143525]"
+                      ? "bg-[#187557] text-white shadow-xs"
+                      : "text-[#4C7567] hover:text-[#0D3528]"
                   }`}
                 >
                   Zamrud
@@ -484,106 +398,114 @@ export function MobileProfileModal({
             </div>
           </div>
 
-          {/* ========================================================= */}
-          {/* 4. PIAGAM & PENCAPAIAN SUAKA (BADGES SHOWCASE LINK)        */}
-          {/* ========================================================= */}
-          <div className="rounded-[24px] border border-white/85 bg-white/75 p-4 shadow-[0_8px_24px_rgba(20,50,30,0.05)] space-y-3">
+          {/* 3. HERBARIUM POHON (List Bersih & Transparan) */}
+          <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/95 p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-3">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                  <Award className="w-3.5 h-3.5 text-amber-600" />
-                </div>
-                <div>
-                  <h3 className="text-[13.5px] font-semibold text-[#143525] leading-tight">
-                    Pencapaian & Jejak Hening
-                  </h3>
-                  <p className="text-[10.5px] text-[#456b57]">
-                    Lencana kehormatan konsistensi suaka
-                  </p>
-                </div>
-              </div>
+              <span className="text-[14.5px] font-semibold text-[#0D3528] tracking-wide">
+                Herbarium
+              </span>
+              <span className="text-[11px] font-medium text-[#187557] bg-[#E4F4ED] border border-[#BCE5D3] px-2.5 py-0.5 rounded-full">
+                {unlockedTreesCount} / {TREE_SPECIES_CONFIG.length} Terbuka
+              </span>
+            </div>
 
+            <div className="max-h-48 overflow-y-auto no-scrollbar space-y-0.5 divide-y divide-[#0D3528]/6 pr-0.5">
+              {TREE_SPECIES_CONFIG.map((tree) => {
+                const isUnlocked = currentLevel >= tree.levelRequired;
+                return (
+                  <div
+                    key={tree.id}
+                    className={`pt-2.5 pb-2 px-1 flex items-center justify-between transition-colors ${
+                      isUnlocked ? "text-[#0D3528]" : "text-[#4C7567]/60"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                      <div
+                        className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${
+                          isUnlocked ? "text-[#187557]" : "text-[#4C7567]/40"
+                        }`}
+                      >
+                        {isUnlocked ? (
+                          <TreePine className="w-4 h-4 stroke-[1.8]" />
+                        ) : (
+                          <Lock className="w-3.5 h-3.5 stroke-[1.8]" />
+                        )}
+                      </div>
+                      <span className="text-[13px] font-normal truncate">
+                        {tree.name}
+                      </span>
+                    </div>
+
+                    <span
+                      className={`shrink-0 text-[10.5px] font-medium px-2 py-0.5 rounded-md ${
+                        isUnlocked
+                          ? "bg-[#E4F4ED] text-[#14664D] border border-[#BCE5D3]"
+                          : "bg-black/5 text-[#4C7567]/60"
+                      }`}
+                    >
+                      Lvl {tree.levelRequired}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 4. PENCAPAIAN */}
+          <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/95 p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-3.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <Award className="w-4 h-4 text-emerald-600 stroke-[1.8]" />
+                <span className="text-[14.5px] font-semibold text-[#0D3528] tracking-wide">
+                  Pencapaian
+                </span>
+              </div>
               <button
                 type="button"
                 onClick={() => {
                   hapticLight();
                   setIsBadgesOpen(true);
                 }}
-                className="flex items-center gap-1 text-[11px] font-semibold text-[#1e5638] hover:underline cursor-pointer"
+                className="flex items-center gap-0.5 text-[11.5px] font-medium text-[#187557] hover:text-[#0D3528] transition-colors"
               >
-                <span>Lihat Semua</span>
-                <ChevronRight className="w-3 h-3" />
+                <span>Semua</span>
+                <ChevronRight className="w-3.5 h-3.5 stroke-[1.8]" />
               </button>
             </div>
 
-            {/* Preview Badges Capsule */}
-            <div className="grid grid-cols-3 gap-2 pt-1 text-center">
-              <div className="p-2.5 rounded-xl bg-white/70 border border-white/90 space-y-1">
-                <div className="text-base">{streakInfo.icon || "🌱"}</div>
-                <div className="text-[10.5px] font-semibold text-[#143525] truncate">
+            <div className="grid grid-cols-3 divide-x divide-[#0D3528]/10 text-center py-1">
+              <div className="px-1">
+                <div className="text-xl leading-tight">
+                  {streakInfo.icon || "🌱"}
+                </div>
+                <div className="text-[11.5px] font-medium text-[#0D3528] truncate mt-1">
                   {streakInfo.title || "Konsistensi"}
                 </div>
               </div>
-
-              <div className="p-2.5 rounded-xl bg-white/70 border border-white/90 space-y-1">
-                <div className="text-base">🏕️</div>
-                <div className="text-[10.5px] font-semibold text-[#143525] truncate">
+              <div className="px-1">
+                <div className="text-xl leading-tight">🏕️</div>
+                <div className="text-[11.5px] font-medium text-[#0D3528] truncate mt-1">
                   {zoneInfo.shortZoneName}
                 </div>
               </div>
-
-              <div className="p-2.5 rounded-xl bg-white/70 border border-white/90 space-y-1">
-                <div className="text-base">🌲</div>
-                <div className="text-[10.5px] font-semibold text-[#143525] truncate">
+              <div className="px-1">
+                <div className="text-xl leading-tight">🌲</div>
+                <div className="text-[11.5px] font-medium text-[#0D3528] truncate mt-1">
                   {unlockedTreesCount} Spesies
                 </div>
               </div>
             </div>
           </div>
 
-          {/* ========================================================= */}
-          {/* 5. AKUN & CADANGAN DATA SUAKA (ACCOUNT & BACKUP SAFETY)    */}
-          {/* ========================================================= */}
-          <div className="rounded-[24px] border border-white/85 bg-white/75 p-4 shadow-[0_8px_24px_rgba(20,50,30,0.05)] space-y-3">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-lg bg-[#1e5638]/10 flex items-center justify-center">
-                <ShieldCheck className="w-3.5 h-3.5 text-[#1e5638]" />
+          {/* 5. DATA & AKUN */}
+          <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/95 p-4 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-3">
+            <div className="flex items-center justify-between px-1">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-[#187557] stroke-[1.8]" />
+                <span className="text-[12.5px] font-medium text-[#0D3528] truncate max-w-[200px]">
+                  {user?.email || "Penyimpanan Lokal"}
+                </span>
               </div>
-              <div>
-                <h3 className="text-[13.5px] font-semibold text-[#143525] leading-tight">
-                  Akun & Cadangan Data
-                </h3>
-                <p className="text-[10.5px] text-[#456b57]">
-                  {user?.email || "Mode Tamu (Tersimpan Lokal di Perangkat)"}
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 pt-1">
-              <button
-                type="button"
-                onClick={handleDownloadBackup}
-                className="py-2.5 px-3 rounded-xl bg-white/80 hover:bg-white active:bg-white/90 border border-white/90 text-xs font-semibold text-[#143525] transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
-              >
-                <Download className="w-3.5 h-3.5 text-[#1e5638]" />
-                <span>Cadangkan Data</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  hapticLight();
-                  setIsRestoreOpen(true);
-                }}
-                className="py-2.5 px-3 rounded-xl bg-white/80 hover:bg-white active:bg-white/90 border border-white/90 text-xs font-semibold text-[#143525] transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
-              >
-                <Upload className="w-3.5 h-3.5 text-[#1e5638]" />
-                <span>Pulihkan Data</span>
-              </button>
-            </div>
-
-            {/* Logout Button */}
-            <div className="pt-2 border-t border-[#143525]/10 flex justify-center">
               <button
                 type="button"
                 onClick={() => {
@@ -592,29 +514,48 @@ export function MobileProfileModal({
                   onClose();
                   window.location.replace("/login");
                 }}
-                className="py-2 px-6 rounded-full text-[11.5px] font-semibold text-rose-700 bg-rose-50/70 hover:bg-rose-100/70 border border-rose-200/80 active:scale-95 transition-all cursor-pointer shadow-2xs"
+                className="flex items-center gap-1.5 text-[11px] font-medium text-rose-600 hover:text-rose-700 bg-rose-50 border border-rose-200/60 px-2.5 py-1 rounded-full active:scale-95 transition-transform"
               >
-                Keluar dari Akun
+                <LogOut className="w-3 h-3 stroke-[1.8]" />
+                <span>Keluar</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5 pt-1">
+              <button
+                type="button"
+                onClick={handleDownloadBackup}
+                className="py-2.5 rounded-2xl bg-white/85 hover:bg-white border border-white text-[12px] font-medium text-[#0D3528] active:scale-95 transition-all flex items-center justify-center gap-1.5 shadow-xs"
+              >
+                <Download className="w-3.5 h-3.5 text-[#187557] stroke-[1.8]" />
+                <span>Cadangkan</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  hapticLight();
+                  setIsRestoreOpen(true);
+                }}
+                className="py-2.5 rounded-2xl bg-white/85 hover:bg-white border border-white text-[12px] font-medium text-[#0D3528] active:scale-95 transition-all flex items-center justify-center gap-1.5 shadow-xs"
+              >
+                <Upload className="w-3.5 h-3.5 text-[#187557] stroke-[1.8]" />
+                <span>Pulihkan</span>
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Avatar Picker Modal */}
+      {/* Sub Modals */}
       <AvatarPickerModal
         isOpen={isAvatarPickerOpen}
         onClose={() => setIsAvatarPickerOpen(false)}
         currentAvatarUrl={user?.avatarUrl || profile?.avatarUrl}
       />
-
-      {/* Badges Showcase Modal */}
       <BadgesShowcaseModal
         isOpen={isBadgesOpen}
         onClose={() => setIsBadgesOpen(false)}
       />
-
-      {/* Restore Data Modal */}
       <RestoreDataModal
         isOpen={isRestoreOpen}
         onClose={() => setIsRestoreOpen(false)}

@@ -1,4 +1,5 @@
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo, useEffect, useRef } from 'react';
+import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useGLTF } from '@react-three/drei';
 import { WorldObject } from '@/types/game';
@@ -10,6 +11,7 @@ import { ConstructionCones } from './ConstructionCones';
 import {
   buildRiverTileMap,
   getRiverWaterGeometry,
+  getRiverBedGeometry,
   getRiverPebbles,
   RiverAdjacency,
 } from '@/lib/game/riverSystem';
@@ -45,47 +47,142 @@ export function preloadAllManifestModels(category?: string) {
   });
 }
 
+/**
+ * High-fidelity procedural fluid river caustic & wave shimmer texture (Foto 2 Style)
+ * Renders organic directional flow ribbons and crystal shimmer without artificial concentric rings
+ */
+function createWaterCausticTexture(): THREE.CanvasTexture | null {
+  if (typeof document === 'undefined') return null;
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return null;
+
+  // Luminous crystal turquoise-cyan water base
+  const grad = ctx.createLinearGradient(0, 0, 256, 256);
+  grad.addColorStop(0, '#29B6E8');
+  grad.addColorStop(0.5, '#38BDF8');
+  grad.addColorStop(1, '#1EA3D8');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 256, 256);
+
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  // 1. Broad soft ambient water filaments (low-frequency gentle undulation)
+  for (let i = 0; i < 18; i++) {
+    const yStart = (i * 16 + (i % 3) * 5) % 256;
+    ctx.strokeStyle = `rgba(255, 255, 255, ${0.07 + (i % 4) * 0.03})`;
+    ctx.lineWidth = 6 + (i % 3) * 3;
+    ctx.beginPath();
+    ctx.moveTo(-20, yStart);
+    ctx.bezierCurveTo(
+      60, yStart + 18,
+      140, yStart - 14,
+      280, yStart + 8
+    );
+    ctx.stroke();
+  }
+
+  // 2. Crisp luminous caustic ribbons flowing along the stream
+  for (let i = 0; i < 28; i++) {
+    const yStart = (i * 10 + (i % 5) * 8) % 256;
+    const xOff = ((i * 37) % 80) - 40;
+    ctx.strokeStyle = `rgba(240, 253, 250, ${0.16 + (i % 3) * 0.08})`;
+    ctx.lineWidth = 1.8 + (i % 2) * 1.4;
+    ctx.beginPath();
+    ctx.moveTo(-10 + xOff, yStart);
+    ctx.bezierCurveTo(
+      70 + xOff, yStart + 14 + (i % 4) * 4,
+      160 + xOff, yStart - 12 - (i % 3) * 3,
+      270 + xOff, yStart + 6
+    );
+    ctx.stroke();
+  }
+
+  // 3. Delicate sparkling sunlight micro-caustics
+  for (let i = 0; i < 35; i++) {
+    const cx = (i * 47) % 256;
+    const cy = (i * 61) % 256;
+    const r = 2.5 + (i % 3) * 2;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.22)';
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, r * 2.2, r * 0.7, -0.35, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(1.5, 1.5);
+  return texture;
+}
+
 interface ConnectedRiverTileProps {
   adjacency: RiverAdjacency;
 }
 
 function ConnectedRiverTile({ adjacency }: ConnectedRiverTileProps) {
   const waterGeo = useMemo(() => getRiverWaterGeometry(adjacency.mask), [adjacency.mask]);
-  const pebbles = useMemo(() => getRiverPebbles(adjacency.mask), [adjacency.mask]);
+  const bedGeo = useMemo(() => getRiverBedGeometry(adjacency.mask), [adjacency.mask]);
+  const causticTexture = useMemo(() => createWaterCausticTexture(), []);
+  const matRef = useRef<THREE.MeshStandardMaterial>(null);
+  const activeBiome = useGameStore((state) => state.activeBiome || 'meadow');
+  const isSnow = activeBiome === 'snow';
+
+  // Smooth living animated river current flowing downstream
+  useFrame((_, delta) => {
+    if (causticTexture) {
+      causticTexture.offset.x = (causticTexture.offset.x + delta * 0.035) % 1;
+      causticTexture.offset.y = (causticTexture.offset.y + delta * 0.018) % 1;
+    }
+  });
+
+  useEffect(() => {
+    return () => {
+      causticTexture?.dispose();
+    };
+  }, [causticTexture]);
 
   return (
     <group>
-      {/* 1. Seamless Shimmering Azure Water Surface */}
-      <mesh geometry={waterGeo} receiveShadow renderOrder={1}>
+      {/* 1. Recessed Warm Sandy Riverbed Canal (Foto 2 / Kenney style) */}
+      <mesh geometry={bedGeo} position={[0, 0.002, 0]} receiveShadow renderOrder={0}>
         <meshStandardMaterial
-          color="#38BDF8"
+          color={isSnow ? '#A8C0D4' : '#C4A478'}
+          roughness={0.92}
+          metalness={0.02}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      {/* 2. Seamless Shimmering Crystal Turquoise Water Surface (Foto 2 Style) */}
+      <mesh geometry={waterGeo} position={[0, 0.006, 0]} receiveShadow renderOrder={1}>
+        <meshStandardMaterial
+          ref={matRef}
+          color={isSnow ? '#38C8F0' : '#2EB8E6'}
+          map={causticTexture || undefined}
           transparent
-          opacity={0.88}
-          roughness={0.08}
+          opacity={0.84}
+          roughness={0.06}
           metalness={0.12}
           depthWrite={false}
           side={THREE.DoubleSide}
         />
       </mesh>
 
-      {/* 2. Decorative River Pebbles along unconnected shores */}
-      {pebbles.map((p, idx) => (
-        <mesh
-          key={idx}
-          position={p.pos}
-          scale={p.scale}
-          rotation={[0, p.rot, 0]}
-          castShadow
-          receiveShadow
-        >
-          <dodecahedronGeometry args={[1, 0]} />
-          <meshStandardMaterial
-            color={idx % 2 === 0 ? '#8E887E' : '#A8A196'}
-            roughness={0.88}
-            metalness={0.05}
-          />
-        </mesh>
-      ))}
+      {/* 3. Soft Shoreline Foam fringe (elevated by 0.002m above water) */}
+      <mesh geometry={waterGeo} position={[0, 0.008, 0]} renderOrder={2}>
+        <meshStandardMaterial
+          color="#F0FDFA"
+          transparent
+          opacity={0.18}
+          roughness={0.25}
+          depthWrite={false}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
     </group>
   );
 }
@@ -179,6 +276,11 @@ function ObjectItem({ object, isSelected, onSelect, riverAdjacency }: ObjectItem
             mesh.material = mat;
           } else {
             const matNameLower = mat.name.toLowerCase();
+            const isTent =
+              variant.includes('tent') ||
+              object.id === 'survival_tent' ||
+              (object.model_variant && object.model_variant.toLowerCase().includes('tent'));
+
             const isLeaf =
               mat.name === 'leafsGreen' ||
               matNameLower.includes('leaf') ||
@@ -190,7 +292,23 @@ function ObjectItem({ object, isSelected, onSelect, riverAdjacency }: ObjectItem
               matNameLower.includes('bark') ||
               (mat.color && mat.color.r < 0.35 && mat.color.g > 0.42 && mat.color.b > 0.32);
 
-            if (isLeaf) {
+            if (isTent) {
+              // User requirement: "warna tenda diganti ke coklat"
+              // In Kenney survival/nature colormap, tent canvas UVs have x > 0.80 while poles have x <= 0.80
+              mat.onBeforeCompile = (shader) => {
+                shader.fragmentShader = shader.fragmentShader.replace(
+                  '#include <map_fragment>',
+                  `
+                  #include <map_fragment>
+                  if (vMapUv.x > 0.80) {
+                    diffuseColor.rgb = vec3(0.52, 0.33, 0.16); // Warm camping canvas brown
+                  }
+                  `
+                );
+              };
+              mat.roughness = 0.88;
+              mat.metalness = 0.0;
+            } else if (isLeaf) {
               mat.color = naturalLeafColor.clone();
             } else if (isTrunkOrTealWood) {
               mat.color = naturalBarkColor.clone();
@@ -201,7 +319,7 @@ function ObjectItem({ object, isSelected, onSelect, riverAdjacency }: ObjectItem
               mat.color = new THREE.Color('#9E9A92');
             }
 
-            mat.roughness = object.object_type === 'rock' ? 0.90 : 0.84;
+            mat.roughness = isTent ? 0.88 : object.object_type === 'rock' ? 0.90 : 0.84;
             mat.metalness = 0.0;
             clonedMaterials.push(mat);
             mesh.material = mat;
@@ -229,12 +347,15 @@ function ObjectItem({ object, isSelected, onSelect, riverAdjacency }: ObjectItem
   const y = isRiver ? 0.012 : rawY;
 
   // River tiles use exact 1.0 scale so adjacent stream segments connect edge-to-edge without seams
+  const isTent = variantLower.includes('tent');
   const baseScale = isRiver
     ? 1.0
+    : isTent
+    ? 0.58
     : isBridge
     ? manifestItem?.defaultScale || 1.06
     : object.scale || manifestItem?.defaultScale || 1.15;
-  const clampedScale = isRiver ? 1.0 : Math.max(0.85, Math.min(1.45, baseScale));
+  const clampedScale = isRiver ? 1.0 : isTent ? 0.58 : Math.max(0.40, Math.min(1.45, baseScale));
 
   return (
     <group

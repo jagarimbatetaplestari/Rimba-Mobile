@@ -35,6 +35,7 @@ import {
   bribeBulldozer,
   dismissBulldozerViaFocus,
 } from './reclamation';
+import { getLevelFromXp } from './levelRules';
 import {
   isTileOccupied,
   isValidCoord,
@@ -66,6 +67,7 @@ interface GameState {
   notification: NotificationState | null;
   backgroundTheme: 'cream' | 'matcha';
   grassPalette: 'natural' | 'emerald';
+  activeBiome: 'meadow' | 'snow';
   timeOfDay: TimeOfDay;
   isTimeAuto: boolean;
   weather: WeatherType;
@@ -107,6 +109,8 @@ interface GameState {
   setBackgroundTheme: (theme: 'cream' | 'matcha') => void;
   toggleBackgroundTheme: () => void;
   setGrassPalette: (palette: 'natural' | 'emerald') => void;
+  setActiveBiome: (biome: 'meadow' | 'snow') => void;
+  toggleActiveBiome: () => void;
   setTimeOfDay: (time: TimeOfDay) => void;
   toggleTimeOfDay: () => void;
   setAutoTime: (enabled: boolean) => void;
@@ -177,6 +181,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   notification: null,
   backgroundTheme: 'cream',
   grassPalette: 'natural',
+  activeBiome: 'meadow',
   timeOfDay: 'day',
   isTimeAuto: true,
   weather: 'clear',
@@ -285,8 +290,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   setSelectedFauna: (species) => set({ selectedFauna: species }),
 
   greetAnimal: (species) => {
-    const { saveData, timeOfDay } = get();
-    const result = greetFauna(species, saveData, timeOfDay);
+    const { saveData, timeOfDay, activeBiome } = get();
+    const result = greetFauna(species, saveData, timeOfDay, undefined, activeBiome);
 
     if (!result.ok) {
       get().notify(result.message, 'error');
@@ -518,6 +523,19 @@ export const useGameStore = create<GameState>((set, get) => ({
       }
     }
 
+    let savedBiome: 'meadow' | 'snow' = 'meadow';
+    if (typeof window !== 'undefined') {
+      const storedBiome = localStorage.getItem('rimba_active_biome');
+      if (storedBiome === 'meadow' || storedBiome === 'snow') {
+        const lvl = getLevelFromXp(data.profile.xp);
+        if (storedBiome === 'snow' && lvl < 20 && !get().devFastMode) {
+          savedBiome = 'meadow';
+        } else {
+          savedBiome = storedBiome;
+        }
+      }
+    }
+
     let initialWeather: WeatherType = 'clear';
     let isWeatherAuto = true;
     if (typeof window !== 'undefined') {
@@ -559,6 +577,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       activeSession: active,
       backgroundTheme: savedTheme,
       grassPalette: savedGrass,
+      activeBiome: savedBiome,
       timeOfDay: initialTime,
       isTimeAuto: isAuto,
       weather: initialWeather,
@@ -574,6 +593,31 @@ export const useGameStore = create<GameState>((set, get) => ({
       localStorage.setItem('rimba_grass_palette', palette);
     }
     set({ grassPalette: palette });
+  },
+
+  setActiveBiome: (biome) => {
+    const { saveData, devFastMode } = get();
+    const currentLevel = getLevelFromXp(saveData.profile.xp);
+    if (biome === 'snow' && currentLevel < 20 && !devFastMode) {
+      get().notify('🔒 Bioma Salju terbuka saat mencapai Level 20! Teruslah fokus.', 'error');
+      return;
+    }
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('rimba_active_biome', biome);
+    }
+    set({ activeBiome: biome });
+    get().notify(
+      biome === 'snow'
+        ? '❄️ Bioma Salju Abadi (Winter Wonderland) aktif!'
+        : '🌿 Bioma Padang Rumput (Lush Meadow) aktif!',
+      'info'
+    );
+  },
+
+  toggleActiveBiome: () => {
+    const current = get().activeBiome;
+    const nextBiome = current === 'meadow' ? 'snow' : 'meadow';
+    get().setActiveBiome(nextBiome);
   },
 
   setBackgroundTheme: (theme) => {

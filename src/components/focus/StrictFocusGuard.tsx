@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState, useRef } from 'react';
-import { useGameStore } from '@/lib/game/useGameStore';
-import { AlertOctagon, Flame, ShieldAlert } from 'lucide-react';
+import React, { useEffect, useState, useRef } from "react";
+import { useGameStore } from "@/lib/game/useGameStore";
+import { Flame, ShieldAlert, Sparkles } from "lucide-react";
 
 const GRACE_PERIOD_SECONDS = 10;
 
@@ -17,7 +17,11 @@ export function StrictFocusGuard() {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const isWarningActiveRef = useRef(false);
 
-  const isStrictMode = Boolean(activeSession && activeSession.status === 'active' && activeSession.strict_mode);
+  const isStrictMode = Boolean(
+    activeSession &&
+    activeSession.status === "active" &&
+    activeSession.strict_mode,
+  );
 
   useEffect(() => {
     if (!isStrictMode) {
@@ -53,7 +57,10 @@ export function StrictFocusGuard() {
             setIsWarningActive(false);
             setTabBlurred(false);
             abandonFocus();
-            notify('Sesi gagal! Mode Ketat mendeteksi kamu meninggalkan Rimba. Bibit pohon layu.', 'error');
+            notify(
+              "Sesi gagal! Mode Ketat mendeteksi kamu meninggalkan Rimba. Bibit pohon layu.",
+              "error",
+            );
             return 0;
           }
           return prev - 1;
@@ -67,7 +74,10 @@ export function StrictFocusGuard() {
         timerRef.current = null;
       }
       if (isWarningActiveRef.current && returnedInTime) {
-        notify('🌱 Kamu kembali tepat waktu! Pohonmu selamat. Tetap fokus!', 'success');
+        notify(
+          "🌱 Kamu kembali tepat waktu! Pohonmu selamat. Tetap fokus!",
+          "success",
+        );
       }
       isWarningActiveRef.current = false;
       setIsWarningActive(false);
@@ -90,14 +100,14 @@ export function StrictFocusGuard() {
       clearWarning(true);
     };
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('blur', handleWindowBlur);
-    window.addEventListener('focus', handleWindowFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("blur", handleWindowBlur);
+    window.addEventListener("focus", handleWindowFocus);
 
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('blur', handleWindowBlur);
-      window.removeEventListener('focus', handleWindowFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("blur", handleWindowBlur);
+      window.removeEventListener("focus", handleWindowFocus);
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
@@ -107,36 +117,66 @@ export function StrictFocusGuard() {
 
   if (!isWarningActive || !isStrictMode) return null;
 
+  /*
+   * Apple Alert Glass Style
+   */
+  const alertGlassStyle: React.CSSProperties = {
+    background:
+      "linear-gradient(180deg, rgba(255, 255, 255, 0.3) 0%, rgba(65, 18, 24, 0.5) 24%, rgba(28, 8, 12, 0.88) 100%)",
+    backdropFilter: "blur(34px) saturate(190%) contrast(104%)",
+    WebkitBackdropFilter: "blur(34px) saturate(190%) contrast(104%)",
+    border: "1px solid rgba(255, 255, 255, 0.4)",
+    boxShadow:
+      "inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.8), inset 0 -1px 1px 0 rgba(0, 0, 0, 0.35), 0 24px 60px rgba(0, 0, 0, 0.45)",
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="max-w-sm w-full p-6 rounded-3xl bg-rose-950/90 border-2 border-rose-500/80 shadow-2xl text-white text-center space-y-4">
-        <div className="w-16 h-16 mx-auto rounded-2xl bg-rose-500/20 flex items-center justify-center text-rose-400 animate-pulse">
-          <AlertOctagon className="w-9 h-9" />
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/35 backdrop-blur-xs animate-in fade-in duration-200 select-none"
+      style={{
+        fontFamily:
+          "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', var(--font-geist-sans), sans-serif",
+      }}
+    >
+      <div
+        style={alertGlassStyle}
+        className="max-w-sm w-full p-6 rounded-[34px] text-white text-center flex flex-col items-center gap-3.5 relative overflow-hidden shadow-2xl"
+      >
+        {/* Top Refraction Sheen */}
+        <div className="absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-white/25 to-transparent pointer-events-none rounded-t-[34px]" />
+
+        {/* Minimal Apple Alert Orb */}
+        <div className="relative mt-1">
+          <div className="w-16 h-16 rounded-full bg-gradient-to-b from-white/25 to-rose-500/20 border border-white/40 flex items-center justify-center shadow-[inset_0_1px_2px_rgba(255,255,255,0.7)]">
+            <Flame className="w-7 h-7 text-amber-300 stroke-[2.2] animate-pulse drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]" />
+          </div>
         </div>
 
-        <div className="space-y-1">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/30 text-rose-300 text-xs font-bold uppercase tracking-wider">
-            <Flame className="w-3.5 h-3.5 text-amber-400" />
+        {/* Header & Body Text */}
+        <div className="space-y-1.5 relative z-10 px-1">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/12 border border-white/25 text-amber-200 text-[11px] font-semibold tracking-tight shadow-xs">
             <span>Peringatan Mode Ketat</span>
           </div>
-          <h2 className="text-xl font-black text-rose-100">
-            Kamu Meninggalkan Rimba!
+          <h2 className="text-xl font-bold tracking-tight text-white drop-shadow-sm">
+            Kamu Meninggalkan Rimba
           </h2>
-          <p className="text-xs text-rose-200/80 leading-relaxed">
-            Kembali ke tab ini sekarang sebelum hitung mundur habis, atau bibit pohonmu akan layu tanpa hadiah!
+          <p className="text-[12px] text-white/80 leading-relaxed max-w-xs mx-auto">
+            Kembali ke aplikasi sebelum hitung mundur selesai agar bibit pohonmu
+            tidak layu.
           </p>
         </div>
 
-        {/* Big Countdown Number */}
-        <div className="py-2">
-          <span className="text-5xl font-black font-mono text-amber-400 drop-shadow-md">
+        {/* Clean Large Apple Countdown */}
+        <div className="py-1 relative z-10">
+          <div className="text-[52px] font-bold font-mono tracking-tight text-white tabular-nums leading-none drop-shadow-[0_2px_6px_rgba(0,0,0,0.35)]">
             {countdown}
-          </span>
-          <span className="block text-[11px] text-rose-300 uppercase tracking-widest mt-1">
+          </div>
+          <span className="block text-[10px] text-white/60 tracking-wider font-semibold uppercase mt-1">
             Detik Tersisa
           </span>
         </div>
 
+        {/* Primary Action Button */}
         <button
           onClick={() => {
             if (timerRef.current) {
@@ -146,12 +186,12 @@ export function StrictFocusGuard() {
             isWarningActiveRef.current = false;
             setIsWarningActive(false);
             setTabBlurred(false);
-            notify('🌱 Kamu kembali tepat waktu! Pohonmu selamat.', 'success');
+            notify("🌱 Kamu kembali tepat waktu! Pohonmu selamat.", "success");
           }}
-          className="w-full py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-bold text-sm shadow-lg shadow-emerald-900/40 active:scale-95 transition-all flex items-center justify-center gap-2"
+          className="w-full py-3.5 px-4 rounded-2xl bg-white text-[#0f2e1e] hover:bg-white/95 font-bold text-[13px] tracking-tight shadow-xs active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer relative z-10"
         >
-          <ShieldAlert className="w-4 h-4" />
-          <span>Saya Kembali & Tetap Fokus!</span>
+          <ShieldAlert className="w-4 h-4 stroke-[2.4]" />
+          <span>Saya Kembali & Tetap Fokus</span>
         </button>
       </div>
     </div>

@@ -21,6 +21,8 @@ import {
   CloudFog,
   CloudSun,
   Sprout,
+  Snowflake,
+  X,
 } from "lucide-react";
 import { hapticLight } from "@/lib/mobile/nativeBridge";
 import { useAuthStore } from "@/lib/auth/useAuthStore";
@@ -70,21 +72,29 @@ export function MobileHeaderHUD({
   const setTimeOfDay = useGameStore((state) => state.setTimeOfDay);
   const weather = useGameStore((state) => state.weather);
   const toggleWeather = useGameStore((state) => state.toggleWeather);
+  const activeBiome = useGameStore((state) => state.activeBiome);
+  const toggleActiveBiome = useGameStore((state) => state.toggleActiveBiome);
+  const devFastMode = useGameStore((state) => state.devFastMode);
 
   const currentLevel = getLevelFromXp(profile.xp);
   const nickname = authUser?.name?.trim() || "Penjaga";
+
+  const handleToggleBiome = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    soundManager.playPop();
+    hapticLight();
+    toggleActiveBiome();
+  };
 
   const [activeDropdown, setActiveDropdown] = useState<
     "profile" | "settings" | null
   >(null);
   const [avatarError, setAvatarError] = useState(false);
 
-  // Reset status error jika URL avatar berubah
   useEffect(() => {
     setAvatarError(false);
   }, [authUser?.avatarUrl]);
 
-  // Siklus waktu suaka: siang -> sore -> malam -> siang
   const handleCycleTime = (e: React.MouseEvent) => {
     e.stopPropagation();
     soundManager.playPop();
@@ -94,19 +104,22 @@ export function MobileHeaderHUD({
     setTimeOfDay(nextTime);
   };
 
+  const isNight = timeOfDay === "night";
+
+  // Kontras tajam: Deep Forest Green pekat di siang/sore agar terbaca jelas di background terang
+  const iconThemeClass = isNight ? "text-white" : "text-[#0b2719]";
+
   const getTimeIcon = () => {
     if (timeOfDay === "day") {
-      return (
-        <Sun className="w-4.5 h-4.5 text-amber-500 fill-amber-400/25 stroke-[2.2]" />
-      );
+      return <Sun className={`w-4 h-4 stroke-[2.4] ${iconThemeClass}`} />;
     }
     if (timeOfDay === "sunset") {
-      return (
-        <Sunset className="w-4.5 h-4.5 text-amber-600 fill-amber-500/25 stroke-[2.2]" />
-      );
+      return <Sunset className={`w-4 h-4 stroke-[2.4] ${iconThemeClass}`} />;
     }
     return (
-      <Moon className="w-4.5 h-4.5 text-[#1e5638] fill-[#1e5638]/20 stroke-[2.2]" />
+      <Moon
+        className={`w-4 h-4 stroke-[2.4] ${iconThemeClass} drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]`}
+      />
     );
   };
 
@@ -116,7 +129,6 @@ export function MobileHeaderHUD({
     return "Malam";
   };
 
-  // Siklus cuaca suaka: cerah -> hujan -> kabut -> cerah
   const handleCycleWeather = (e: React.MouseEvent) => {
     e.stopPropagation();
     soundManager.playPop();
@@ -126,18 +138,12 @@ export function MobileHeaderHUD({
 
   const getWeatherIcon = () => {
     if (weather === "rain") {
-      return (
-        <CloudRain className="w-4.5 h-4.5 text-sky-600 fill-sky-400/25 stroke-[2.2]" />
-      );
+      return <CloudRain className={`w-4 h-4 stroke-[2.4] ${iconThemeClass}`} />;
     }
     if (weather === "mist") {
-      return (
-        <CloudFog className="w-4.5 h-4.5 text-teal-600 fill-teal-500/25 stroke-[2.2]" />
-      );
+      return <CloudFog className={`w-4 h-4 stroke-[2.4] ${iconThemeClass}`} />;
     }
-    return (
-      <CloudSun className="w-4.5 h-4.5 text-amber-500 fill-amber-400/25 stroke-[2.2]" />
-    );
+    return <CloudSun className={`w-4 h-4 stroke-[2.4] ${iconThemeClass}`} />;
   };
 
   const getWeatherLabel = () => {
@@ -163,38 +169,72 @@ export function MobileHeaderHUD({
     callback?.();
   };
 
-  // Apple Liquid Frosted Glass Surface Token (Tanpa Border Hitam)
-  const glassSurface =
-    "border border-white/90 bg-[#F0F5F1]/75 backdrop-blur-3xl backdrop-saturate-[180%] shadow-[0_12px_32px_rgba(20,53,37,0.08),inset_0_1.5px_2px_rgba(255,255,255,0.95)] text-[#143525]";
+  /*
+   * SMOOTH & CLEAR LIQUID GLASS MATERIAL
+   * Selaras dengan bottom cockpit
+   */
+  const glassCapsuleStyle: React.CSSProperties = {
+    background: isNight
+      ? "linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.04) 40%, rgba(14, 32, 22, 0.45) 100%)"
+      : "linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.25) 45%, rgba(200, 230, 215, 0.35) 100%)",
+    backdropFilter: "blur(20px) saturate(150%)",
+    WebkitBackdropFilter: "blur(20px) saturate(150%)",
+    border: isNight
+      ? "1px solid rgba(255, 255, 255, 0.26)"
+      : "1px solid rgba(255, 255, 255, 0.55)",
+    boxShadow: isNight
+      ? "0 10px 24px -4px rgba(0, 0, 0, 0.35), inset 0 1px 0 0 rgba(255, 255, 255, 0.35)"
+      : "0 8px 20px -6px rgba(10, 35, 20, 0.12), inset 0 1px 0 0 rgba(255, 255, 255, 0.6)",
+  };
 
-  // Style tombol dalam pilar dinamis
-  const pillarButton =
-    "w-9 h-9 rounded-full flex items-center justify-center text-[#143525] hover:bg-white/80 active:bg-white transition-all cursor-pointer relative";
+  const pillarGlassStyle: React.CSSProperties = {
+    background: isNight
+      ? "linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0%, rgba(15, 34, 24, 0.68) 35%, rgba(8, 20, 14, 0.82) 100%)"
+      : "linear-gradient(180deg, rgba(255, 255, 255, 0.65) 0%, rgba(240, 250, 244, 0.35) 25%, rgba(200, 230, 215, 0.5) 100%)",
+    backdropFilter: "blur(24px) saturate(155%)",
+    WebkitBackdropFilter: "blur(24px) saturate(155%)",
+    border: isNight
+      ? "1px solid rgba(255, 255, 255, 0.28)"
+      : "1px solid rgba(255, 255, 255, 0.6)",
+    boxShadow: isNight
+      ? "0 20px 44px -8px rgba(0, 0, 0, 0.22), inset 0 1px 0 0 rgba(255, 255, 255, 0.45)"
+      : "0 14px 32px -4px rgba(10, 35, 20, 0.14), inset 0 1px 0 0 rgba(255, 255, 255, 0.7)",
+  };
+
+  // Tombol aksi di dalam pilar (tanpa efek zoom)
+  const pillarButton = isNight
+    ? "w-9 h-9 rounded-full flex items-center justify-center text-white/90 hover:text-white hover:bg-white/15 active:bg-white/20 transition-colors cursor-pointer relative"
+    : "w-9 h-9 rounded-full flex items-center justify-center text-[#0b2719] hover:bg-[#0b2719]/10 active:bg-[#0b2719]/15 transition-colors cursor-pointer relative";
+
+  // Tombol aksi di sisi kanan (tanpa efek zoom, kontras tinggi)
+  const iconButtonClass = isNight
+    ? "w-8 h-8 rounded-full flex items-center justify-center text-white hover:bg-white/15 active:bg-white/20 transition-colors cursor-pointer shrink-0 relative z-10"
+    : "w-8 h-8 rounded-full flex items-center justify-center text-[#0b2719] hover:bg-[#0b2719]/10 active:bg-[#0b2719]/15 transition-colors cursor-pointer shrink-0 relative z-10";
 
   const showAvatarImage = Boolean(authUser?.avatarUrl) && !avatarError;
 
   return (
     <>
-      {/* Soft Ambient Backdrop saat pilar terbuka */}
+      {/* Overlay tanpa blur saat pilar terbuka */}
       {activeDropdown && (
         <div
           onClick={closeDropdown}
-          className="fixed inset-0 z-30 bg-[#143525]/12  transition-opacity duration-300 pointer-events-auto"
+          className="fixed inset-0 z-30 bg-black/15 transition-opacity duration-200 pointer-events-auto"
         />
       )}
 
       <header
-        className={`fixed top-0 left-0 right-0 z-40 flex justify-center px-6 pt-[max(env(safe-area-inset-top,0px)+8px,12px)] pointer-events-none transition-opacity duration-500 ${
+        className={`fixed top-0 left-0 right-0 z-40 flex justify-center px-4 pt-[max(env(safe-area-inset-top,0px)+8px,12px)] pointer-events-none transition-opacity duration-500 ${
           isZenDimmed ? "opacity-0 pointer-events-none" : "opacity-100"
         }`}
         style={{
           fontFamily:
-            "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', var(--font-geist-sans), sans-serif",
+            "var(--font-urbanist), 'Urbanist', -apple-system, BlinkMacSystemFont, sans-serif",
         }}
       >
         <div className="w-full max-w-[390px] flex items-start justify-between pointer-events-none relative select-none">
           {/* ======================================================== */}
-          {/* SISI KIRI: PROFIL & DYNAMIC EXPANDABLE PILLAR             */}
+          {/* SISI KIRI: PROFIL & DYNAMIC PILLAR                      */}
           {/* ======================================================== */}
           <div className="relative pointer-events-auto">
             {activeDropdown !== "profile" ? (
@@ -202,54 +242,90 @@ export function MobileHeaderHUD({
               <button
                 type="button"
                 onClick={() => toggleDropdown("profile")}
-                className={`
-                  flex items-center gap-2 h-[44px] pl-1.5 pr-3 rounded-full transition-all duration-200 active:scale-95 cursor-pointer
-                  ${glassSurface}
-                `}
+                style={glassCapsuleStyle}
+                className="relative flex items-center gap-2 h-[44px] pl-2 pr-3.5 rounded-full transition-colors cursor-pointer overflow-hidden group"
                 title="Menu Profil & Catatan Suaka"
                 aria-label="Buka Menu Profil dan Suaka"
               >
-                {/* Avatar Icon Container dengan Fallback Aman */}
-                <RangerAvatar
-                  avatarUrl={authUser?.avatarUrl || profile?.avatarUrl}
-                  name={nickname}
-                  size="sm"
-                  className="w-7 h-7"
-                  borderClassName="border border-white/20 shadow-2xs"
-                />
+                {/* Specular Highlight Sheen Halus */}
+                <div className="absolute inset-x-2 top-0 h-[45%] bg-gradient-to-b from-white/25 to-transparent rounded-t-full pointer-events-none" />
+
+                {/* Avatar / Sprout Badge */}
+                <div
+                  className={`relative z-10 w-7 h-7 rounded-full flex items-center justify-center shrink-0 border ${
+                    isNight
+                      ? "bg-white/20 border-white/30 text-white"
+                      : "bg-[#0b2719]/10 border-[#0b2719]/20 text-[#0b2719]"
+                  }`}
+                >
+                  {showAvatarImage ? (
+                    <RangerAvatar
+                      avatarUrl={authUser?.avatarUrl || profile?.avatarUrl}
+                      name={nickname}
+                      size="sm"
+                      className="w-7 h-7"
+                      borderClassName="border border-white/40 shadow-xs"
+                    />
+                  ) : (
+                    <Sprout className="w-4 h-4 stroke-[2.4]" />
+                  )}
+                </div>
 
                 {/* Nickname Akun */}
-                <span className="text-[13px] font-semibold truncate tracking-tight max-w-[96px] text-[#143525]">
+                <span
+                  className={`relative z-10 text-[13px] font-semibold italic truncate tracking-tight max-w-[96px] ${
+                    isNight ? "text-white" : "text-[#0b2719]"
+                  }`}
+                >
                   {nickname === "Penjaga" ? "Tamu Rimba" : nickname}
                 </span>
 
                 {/* Level Pill Suaka */}
-                <span className="flex items-center gap-1 text-[9.5px] font-semibold px-2 py-0.5 rounded-full border border-[#c4b693]/40 bg-[#d6cbaf]/60 text-[#69572c] shrink-0">
-                  <Sprout className="w-2.5 h-2.5 stroke-[2.4]" />
-                  <span>Lvl {currentLevel}</span>
+                <span
+                  className={`relative z-10 flex items-center gap-1 text-[10.5px] font-semibold px-2 py-0.5 rounded-full border shrink-0 ${
+                    isNight
+                      ? "border-white/35 bg-white/20 text-white"
+                      : "border-[#0b2719]/20 bg-[#0b2719]/10 text-[#0b2719]"
+                  }`}
+                >
+                  <span>Lv {currentLevel}</span>
                 </span>
               </button>
             ) : (
-              /* Dynamic Vertical Pillar Bersih (Apple Minimalist) */
+              /* Dynamic Vertical Pillar Profil */
               <div
-                className={`
-                  w-[44px] rounded-full p-2 transition-all duration-300 z-50 flex flex-col items-center gap-1 shadow-[0_16px_40px_rgba(20,53,37,0.12),inset_0_1.5px_2px_rgba(255,255,255,0.95)]
-                  ${glassSurface}
-                  animate-in fade-in duration-200
-                `}
+                style={pillarGlassStyle}
+                className="w-[44px] rounded-full p-1.5 z-50 flex flex-col items-center gap-1 relative overflow-hidden animate-in fade-in duration-200"
               >
-                {/* 1. Profil (Anchor Teratas) */}
+                <div className="absolute inset-x-1 top-0 h-8 bg-gradient-to-b from-white/25 to-transparent rounded-t-full pointer-events-none" />
+
+                {/* 1. Tombol X (Tutup Pilar) */}
+                <button
+                  type="button"
+                  onClick={closeDropdown}
+                  className={`w-8 h-8 rounded-full flex items-center justify-center border transition-colors cursor-pointer relative z-10 ${
+                    isNight
+                      ? "bg-white/20 hover:bg-white/30 border-white/30 text-white"
+                      : "bg-[#0b2719]/12 hover:bg-[#0b2719]/20 border-[#0b2719]/20 text-[#0b2719]"
+                  }`}
+                  title="Tutup Menu"
+                  aria-label="Tutup Menu"
+                >
+                  <X className="w-3.5 h-3.5 stroke-[2.4]" />
+                </button>
+
+                {/* 2. Profil Akun */}
                 <button
                   type="button"
                   onClick={() => handleAction(onOpenProfile)}
-                  className={`${pillarButton} bg-black/10 shadow-2xs text-[#1e5638]`}
+                  className={pillarButton}
                   title="Profil Akun"
                   aria-label="Profil Akun"
                 >
                   <User className="w-4 h-4 stroke-[2.2]" />
                 </button>
 
-                {/* 2. Statistik Fokus */}
+                {/* 3. Statistik Fokus */}
                 <button
                   type="button"
                   onClick={() => handleAction(onOpenStats || onOpenProfile)}
@@ -260,7 +336,7 @@ export function MobileHeaderHUD({
                   <BarChart3 className="w-4 h-4 stroke-[2.2]" />
                 </button>
 
-                {/* 3. Jurnal Suaka */}
+                {/* 4. Jurnal Suaka */}
                 <button
                   type="button"
                   onClick={() => handleAction(onOpenJournal || onOpenAlmanac)}
@@ -270,13 +346,13 @@ export function MobileHeaderHUD({
                 >
                   <BookMarked className="w-4 h-4 stroke-[2.2]" />
                   {claimableCount > 0 && (
-                    <span className="absolute top-1 right-1 min-w-[13px] h-[13px] px-0.5 rounded-full bg-emerald-500 text-white font-semibold text-[8px] flex items-center justify-center border border-white shadow-2xs">
+                    <span className="absolute top-1 right-1 min-w-[13px] h-[13px] px-0.5 rounded-full bg-emerald-600 text-white font-semibold text-[8px] flex items-center justify-center border border-white shadow-xs">
                       {claimableCount}
                     </span>
                   )}
                 </button>
 
-                {/* 4. Papan Peringkat */}
+                {/* 5. Papan Peringkat */}
                 <button
                   type="button"
                   onClick={() => handleAction(onOpenLeaderboard)}
@@ -287,7 +363,7 @@ export function MobileHeaderHUD({
                   <Trophy className="w-4 h-4 stroke-[2.2]" />
                 </button>
 
-                {/* 5. Bagikan Suaka */}
+                {/* 6. Bagikan Suaka */}
                 <button
                   type="button"
                   onClick={() => handleAction(onOpenShare)}
@@ -302,108 +378,150 @@ export function MobileHeaderHUD({
           </div>
 
           {/* ======================================================== */}
-          {/* SISI KANAN: [ CUACA ] + [ WAKTU ] + [ SETTINGS PILLAR ]  */}
+          {/* SISI KANAN: UNIFIED ACTION CAPSULE                      */}
           {/* ======================================================== */}
-          <div className="flex items-start gap-1.5 pointer-events-auto">
-            {/* Tombol Siklus Cuaca (Cerah / Hujan / Kabut) */}
-            <button
-              type="button"
-              onClick={handleCycleWeather}
-              className={`
-                w-[42px] h-[42px] rounded-full flex items-center justify-center transition-all duration-200 active:scale-90 cursor-pointer shrink-0
-                ${glassSurface}
-              `}
-              title={`Cuaca Suaka: ${getWeatherLabel()} (Ketuk untuk ganti)`}
-              aria-label={`Ganti Cuaca (${getWeatherLabel()})`}
-            >
-              {getWeatherIcon()}
-            </button>
+          <div className="relative pointer-events-auto">
+            {activeDropdown !== "settings" ? (
+              /* Kapsul Aksi Mengambang */
+              <div
+                style={glassCapsuleStyle}
+                className="relative h-[44px] px-2 rounded-full flex items-center gap-1 transition-colors overflow-hidden"
+              >
+                <div className="absolute inset-x-2 top-0 h-[45%] bg-gradient-to-b from-white/25 to-transparent rounded-t-full pointer-events-none" />
 
-            {/* Tombol Siklus Waktu (Siang / Sore / Malam) */}
-            <button
-              type="button"
-              onClick={handleCycleTime}
-              className={`
-                w-[42px] h-[42px] rounded-full flex items-center justify-center transition-all duration-200 active:scale-90 cursor-pointer shrink-0
-                ${glassSurface}
-              `}
-              title={`Waktu Suaka: ${getTimeLabel()} (Ketuk untuk ganti)`}
-              aria-label={`Ganti Waktu (${getTimeLabel()})`}
-            >
-              {getTimeIcon()}
-            </button>
+                {/* 1. Tombol Cuaca */}
+                <button
+                  type="button"
+                  onClick={handleCycleWeather}
+                  className={iconButtonClass}
+                  title={`Cuaca Suaka: ${getWeatherLabel()} (Ketuk untuk ganti)`}
+                  aria-label={`Ganti Cuaca (${getWeatherLabel()})`}
+                >
+                  {getWeatherIcon()}
+                </button>
 
-            {/* Tombol Pengaturan dengan Dynamic Pillar */}
-            <div className="relative">
-              {activeDropdown !== "settings" ? (
-                /* Tombol Pengaturan Bulat Tertutup */
+                {/* 2. Tombol Bioma Salju */}
+                {(currentLevel >= 20 || devFastMode) && (
+                  <button
+                    type="button"
+                    onClick={handleToggleBiome}
+                    className={`
+                      ${iconButtonClass}
+                      ${
+                        activeBiome === "snow"
+                          ? isNight
+                            ? "bg-sky-400/25 border border-sky-300/40 text-sky-200"
+                            : "bg-sky-500/20 border border-sky-600/30 text-sky-950 font-semibold"
+                          : ""
+                      }
+                    `}
+                    title={
+                      activeBiome === "snow"
+                        ? "Bioma: Salju Abadi (Beralih ke Padang Rumput)"
+                        : "Bioma: Padang Rumput (Beralih ke Salju Abadi)"
+                    }
+                    aria-label={`Ganti Bioma (${activeBiome === "snow" ? "Salju" : "Rumput"})`}
+                  >
+                    {activeBiome === "snow" ? (
+                      <Snowflake className="w-4 h-4 stroke-[2.4]" />
+                    ) : (
+                      <Sprout className="w-4 h-4 stroke-[2.4]" />
+                    )}
+                  </button>
+                )}
+
+                {/* 3. Tombol Siklus Waktu */}
+                <button
+                  type="button"
+                  onClick={handleCycleTime}
+                  className={iconButtonClass}
+                  title={`Waktu Suaka: ${getTimeLabel()} (Ketuk untuk ganti)`}
+                  aria-label={`Ganti Waktu (${getTimeLabel()})`}
+                >
+                  {getTimeIcon()}
+                </button>
+
+                {/* 4. Tombol Pengaturan */}
                 <button
                   type="button"
                   onClick={() => toggleDropdown("settings")}
-                  className={`
-                    w-[42px] h-[42px] rounded-full flex items-center justify-center transition-all duration-200 active:scale-90 cursor-pointer shrink-0
-                    ${glassSurface}
-                  `}
+                  className={iconButtonClass}
                   title="Pengaturan & Sarana"
                   aria-label="Pengaturan dan Sarana"
                 >
-                  <Settings className="w-[18px] h-[18px] stroke-[2.2] text-[#143525]" />
+                  <Settings
+                    className={`w-4 h-4 stroke-[2.4] ${iconThemeClass}`}
+                  />
                 </button>
-              ) : (
-                /* Dynamic Vertical Pillar Bersih */
-                <div
-                  className={`
-                    w-[42px] rounded-full p-1 transition-all duration-300 z-50 flex flex-col items-center gap-1 shadow-[0_16px_40px_rgba(20,53,37,0.12),inset_0_1.5px_2px_rgba(255,255,255,0.95)]
-                    ${glassSurface}
-                    animate-in fade-in zoom-in-95 duration-200
-                  `}
+              </div>
+            ) : (
+              /* Dynamic Vertical Pillar Pengaturan (tanpa zoom-in-95) */
+              <div
+                style={pillarGlassStyle}
+                className="w-[44px] rounded-full p-1.5 z-50 flex flex-col items-center gap-1 relative overflow-hidden animate-in fade-in duration-200"
+              >
+                <div className="absolute inset-x-1 top-0 h-8 bg-gradient-to-b from-white/25 to-transparent rounded-t-full pointer-events-none" />
+
+                {/* 1. Tombol X (Tutup Pengaturan) */}
+                <button
+                  type="button"
+                  onClick={closeDropdown}
+                  className={`w-8 h-8 rounded-full flex items-center justify-center border transition-colors cursor-pointer relative z-10 ${
+                    isNight
+                      ? "bg-white/20 hover:bg-white/30 border-white/30 text-white"
+                      : "bg-[#0b2719]/12 hover:bg-[#0b2719]/20 border-[#0b2719]/20 text-[#0b2719]"
+                  }`}
+                  title="Tutup Pengaturan"
+                  aria-label="Tutup Pengaturan"
                 >
-                  {/* 1. Pengaturan Utama (Anchor Teratas) */}
-                  <button
-                    type="button"
-                    onClick={() => handleAction(onOpenSettings)}
-                    className={`${pillarButton} bg-black/10 shadow-2xs text-[#1e5638]`}
-                    title="Pengaturan Suaka"
-                    aria-label="Pengaturan Suaka"
-                  >
-                    <Settings className="w-4 h-4 stroke-[2.2]" />
-                  </button>
+                  <X className="w-3.5 h-3.5 stroke-[2.4]" />
+                </button>
 
-                  {/* 2. Bengkel Alam */}
-                  <button
-                    type="button"
-                    onClick={() => handleAction(onOpenWorkshop)}
-                    className={pillarButton}
-                    title="Bengkel Alam (Dekorasi Lahan)"
-                    aria-label="Bengkel Alam"
-                  >
-                    <Hammer className="w-4 h-4 stroke-[2.2]" />
-                  </button>
+                {/* 2. Pengaturan Utama */}
+                <button
+                  type="button"
+                  onClick={() => handleAction(onOpenSettings)}
+                  className={pillarButton}
+                  title="Pengaturan Suaka"
+                  aria-label="Pengaturan Suaka"
+                >
+                  <Settings className="w-4 h-4 stroke-[2.2]" />
+                </button>
 
-                  {/* 3. Audio & Suara Alam */}
-                  <button
-                    type="button"
-                    onClick={() => handleAction(onOpenSoundscapes)}
-                    className={pillarButton}
-                    title="Audio Alam (Soundscape)"
-                    aria-label="Audio Alam"
-                  >
-                    <Headphones className="w-4 h-4 stroke-[2.2]" />
-                  </button>
+                {/* 3. Bengkel Alam */}
+                <button
+                  type="button"
+                  onClick={() => handleAction(onOpenWorkshop)}
+                  className={pillarButton}
+                  title="Bengkel Alam (Dekorasi Lahan)"
+                  aria-label="Bengkel Alam"
+                >
+                  <Hammer className="w-4 h-4 stroke-[2.2]" />
+                </button>
 
-                  {/* 4. Panduan & Onboarding */}
-                  <button
-                    type="button"
-                    onClick={() => handleAction(onOpenOnboarding)}
-                    className={pillarButton}
-                    title="Panduan & Onboarding Suaka"
-                    aria-label="Bantuan dan Panduan"
-                  >
-                    <HelpCircle className="w-4 h-4 stroke-[2.2]" />
-                  </button>
-                </div>
-              )}
-            </div>
+                {/* 4. Audio & Suara Alam */}
+                <button
+                  type="button"
+                  onClick={() => handleAction(onOpenSoundscapes)}
+                  className={pillarButton}
+                  title="Audio Alam (Soundscape)"
+                  aria-label="Audio Alam"
+                >
+                  <Headphones className="w-4 h-4 stroke-[2.2]" />
+                </button>
+
+                {/* 5. Panduan & Onboarding */}
+                <button
+                  type="button"
+                  onClick={() => handleAction(onOpenOnboarding)}
+                  className={pillarButton}
+                  title="Panduan & Onboarding Suaka"
+                  aria-label="Bantuan dan Panduan"
+                >
+                  <HelpCircle className="w-4 h-4 stroke-[2.2]" />
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </header>
@@ -411,5 +529,4 @@ export function MobileHeaderHUD({
   );
 }
 
-// Backward-compatible alias
 export const HeaderHUD = MobileHeaderHUD;

@@ -12,7 +12,6 @@ import { soundManager } from "@/lib/audio/sounds";
 import { hapticLight, hapticSuccess } from "@/lib/mobile/nativeBridge";
 import {
   X,
-  History,
   Plus,
   Trash2,
   RotateCcw,
@@ -78,175 +77,172 @@ export function SnapshotsHistoryModal({
   };
 
   return (
-    <div
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-3.5 select-none antialiased animate-in fade-in duration-200 pointer-events-auto"
-      style={{
-        fontFamily:
-          "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', var(--font-geist-sans), sans-serif",
-      }}
-    >
-      {/* Backdrop Ethereal Blur */}
-      <div
-        className="fixed inset-0 bg-[#3d5e4b]/35 backdrop-blur-md transition-opacity duration-300 pointer-events-none"
-        aria-hidden="true"
-      />
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700&display=swap');
+        .font-urbanist {
+          font-family: 'Urbanist', -apple-system, BlinkMacSystemFont, sans-serif !important;
+        }
+      `}</style>
 
-      {/* Main Container */}
       <div
-        className="relative z-10 w-full max-w-[385px] max-h-[92vh] overflow-hidden rounded-[34px] border border-white/80 p-5 shadow-[0_24px_60px_rgba(15,45,28,0.22)] animate-in zoom-in-95 duration-200 flex flex-col space-y-4"
-        style={{
-          background:
-            "linear-gradient(180deg, rgba(239, 246, 241, 0.95) 0%, rgba(226, 238, 230, 0.93) 100%)",
+        onClick={(e) => {
+          if (e.target === e.currentTarget) onClose();
         }}
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 select-none antialiased font-urbanist text-[#0D3528] animate-in fade-in duration-200 pointer-events-auto"
       >
-        {/* Navigation Header */}
-        <div className="flex items-center justify-between pt-0.5">
-          <div className="flex items-baseline gap-2">
-            <h2 className="text-[20px] font-semibold tracking-tight text-[#143525]">
-              Riwayat Snapshot
-            </h2>
-            <span className="text-[12px] font-normal text-[#456b57]">
-              Titik Pemulihan
-            </span>
-          </div>
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity duration-200 pointer-events-none"
+          aria-hidden="true"
+        />
 
-          <button
-            type="button"
-            onClick={() => {
-              hapticLight();
-              onClose();
-            }}
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-white/80 bg-white/60 hover:bg-white/80 text-[#143525] transition-transform active:scale-90 cursor-pointer shadow-2xs"
-            aria-label="Tutup snapshot suaka"
-          >
-            <X className="h-4 w-4 stroke-[2.2]" />
-          </button>
-        </div>
-
-        {/* Create Snapshot Card / Trigger */}
-        {isCreating ? (
-          <div className="p-3.5 rounded-[22px] border border-white/90 bg-white/85 shadow-2xs space-y-2.5 flex-shrink-0">
-            <label className="text-[11px] font-semibold uppercase tracking-wider text-[#2f5542]/75 block px-0.5">
-              Nama Cuplikan Snapshot
-            </label>
-            <input
-              type="text"
-              value={newTitle}
-              onChange={(e) => setNewTitle(e.target.value)}
-              placeholder="Contoh: Suaka 50 Pohon Rimbun"
-              className="w-full px-3.5 py-2.5 rounded-[16px] border border-[#143525]/15 bg-white text-xs text-[#143525] placeholder-[#456b57]/40 outline-none focus:border-[#1e5638] shadow-2xs"
-              autoFocus
-            />
-            <div className="flex items-center gap-2 justify-end pt-0.5">
-              <button
-                type="button"
-                onClick={() => setIsCreating(false)}
-                className="px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#456b57] hover:text-[#143525] transition-colors cursor-pointer"
-              >
-                Batal
-              </button>
-              <button
-                type="button"
-                onClick={handleCreateSnapshot}
-                className="px-4 py-1.5 rounded-full bg-[#1e5638] hover:bg-[#16442e] text-white text-xs font-semibold shadow-2xs flex items-center gap-1 active:scale-95 transition-all cursor-pointer"
-              >
-                <Check className="w-3.5 h-3.5 stroke-[2.4]" />
-                <span>Simpan</span>
-              </button>
+        <div className="relative z-10 w-full max-w-[375px] max-h-[90vh] overflow-hidden rounded-3xl border border-white/80 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-5 shadow-2xl shadow-[#0E3B2D]/20 backdrop-blur-xl animate-in zoom-in-95 duration-200 flex flex-col space-y-4">
+          {/* Header */}
+          <div className="flex items-center justify-between pb-0.5">
+            <div className="flex items-baseline gap-2">
+              <h2 className="text-[19px] font-semibold tracking-tight text-[#0D3528]">
+                Riwayat Snapshot
+              </h2>
+              <span className="text-[12px] font-normal text-[#4C7567]">
+                Titik Pemulihan
+              </span>
             </div>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => {
-              hapticLight();
-              setIsCreating(true);
-            }}
-            className="w-full py-2.5 px-3 rounded-full border border-white/90 bg-white/80 hover:bg-white text-xs font-semibold text-[#143525] shadow-2xs flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all cursor-pointer flex-shrink-0"
-          >
-            <Plus className="w-4 h-4 text-[#1e5638] stroke-[2.4]" />
-            <span>Buat Snapshot Kondisi Saat Ini</span>
-          </button>
-        )}
 
-        {/* Snapshots List */}
-        <div className="space-y-2.5 overflow-y-auto no-scrollbar flex-1 pr-0.5">
-          {snapshots.length === 0 ? (
-            <div className="p-8 rounded-[26px] border border-white/80 bg-white/60 text-center space-y-2 my-2 shadow-2xs">
-              <div className="w-10 h-10 rounded-full bg-[#bfdac8]/50 flex items-center justify-center text-[#143525] mx-auto">
-                <Sparkles className="w-5 h-5" />
+            <button
+              type="button"
+              onClick={() => {
+                hapticLight();
+                onClose();
+              }}
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0D3528]/5 hover:bg-[#0D3528]/10 text-[#0D3528] transition-transform active:scale-90 cursor-pointer shadow-2xs"
+              aria-label="Tutup snapshot suaka"
+            >
+              <X className="h-4 w-4 stroke-[2]" />
+            </button>
+          </div>
+
+          {/* Create Snapshot Trigger */}
+          {isCreating ? (
+            <div className="p-3.5 rounded-2xl border border-[#0D3528]/10 bg-[#0D3528]/[0.025] space-y-2.5 flex-shrink-0">
+              <label className="text-[11px] font-medium uppercase tracking-wider text-[#4C7567] block px-0.5">
+                Nama Cuplikan Snapshot
+              </label>
+              <input
+                type="text"
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                placeholder="Contoh: Suaka 50 Pohon Rimbun"
+                className="w-full px-3.5 py-2 rounded-xl border border-[#0D3528]/15 bg-white text-xs text-[#0D3528] placeholder-[#4C7567]/40 outline-none focus:border-[#187557] focus:ring-1 focus:ring-[#187557]"
+                autoFocus
+              />
+              <div className="flex items-center gap-2 justify-end pt-0.5">
+                <button
+                  type="button"
+                  onClick={() => setIsCreating(false)}
+                  className="px-3.5 py-1.5 rounded-full text-xs font-medium text-[#4C7567] hover:text-[#0D3528] transition-colors cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCreateSnapshot}
+                  className="px-4 py-1.5 rounded-full bg-[#187557] hover:bg-[#126046] text-white text-xs font-medium shadow-xs flex items-center gap-1 active:scale-95 transition-all cursor-pointer"
+                >
+                  <Check className="w-3.5 h-3.5 stroke-[2]" />
+                  <span>Simpan</span>
+                </button>
               </div>
-              <p className="text-[13px] font-semibold text-[#143525]">
-                Belum Ada Snapshot Tersimpan
-              </p>
-              <p className="text-[11px] text-[#456b57] max-w-xs mx-auto leading-relaxed">
-                Abadikan kemajuan suaka kapan saja untuk menyimpan tata letak
-                pulau yang bisa dipulihkan kembali nanti.
-              </p>
             </div>
           ) : (
-            snapshots.map((snap) => (
-              <div
-                key={snap.id}
-                className="p-3.5 rounded-[22px] border border-white/85 bg-white/75 shadow-2xs space-y-2.5 transition-all"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0 pr-1">
-                    <h4 className="text-[13.5px] font-semibold text-[#143525] truncate">
-                      {snap.title}
-                    </h4>
-                    <span className="text-[10.5px] text-[#456b57] flex items-center gap-1 mt-0.5">
-                      <Calendar className="w-3 h-3 shrink-0" />
-                      {formatDate(snap.createdAt)}
+            <button
+              type="button"
+              onClick={() => {
+                hapticLight();
+                setIsCreating(true);
+              }}
+              className="w-full py-2.5 px-3 rounded-full border border-[#0D3528]/12 bg-white hover:bg-[#E4F4ED]/50 text-xs font-medium text-[#0D3528] shadow-2xs flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all cursor-pointer flex-shrink-0"
+            >
+              <Plus className="w-4 h-4 text-[#187557] stroke-[2]" />
+              <span>Buat Snapshot Kondisi Saat Ini</span>
+            </button>
+          )}
+
+          {/* Snapshots List */}
+          <div className="space-y-2.5 overflow-y-auto no-scrollbar flex-1 pr-0.5">
+            {snapshots.length === 0 ? (
+              <div className="p-7 rounded-3xl border border-[#0D3528]/8 bg-[#0D3528]/[0.025] text-center space-y-2 my-2">
+                <div className="w-10 h-10 rounded-2xl bg-[#E4F4ED] border border-[#BCE5D3] flex items-center justify-center text-[#187557] mx-auto">
+                  <Sparkles className="w-5 h-5 stroke-[1.8]" />
+                </div>
+                <p className="text-[13.5px] font-semibold text-[#0D3528]">
+                  Belum Ada Snapshot Tersimpan
+                </p>
+                <p className="text-[11.5px] text-[#4C7567] max-w-xs mx-auto leading-relaxed font-normal">
+                  Abadikan kemajuan suaka kapan saja untuk menyimpan tata letak
+                  pulau yang bisa dipulihkan kembali nanti.
+                </p>
+              </div>
+            ) : (
+              snapshots.map((snap) => (
+                <div
+                  key={snap.id}
+                  className="p-3.5 rounded-2xl border border-[#0D3528]/8 bg-white/80 shadow-xs space-y-2.5 transition-all hover:bg-white"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 pr-1">
+                      <h4 className="text-[13.5px] font-semibold text-[#0D3528] truncate">
+                        {snap.title}
+                      </h4>
+                      <span className="text-[10.5px] text-[#4C7567] flex items-center gap-1 mt-0.5 font-normal">
+                        <Calendar className="w-3 h-3 shrink-0 stroke-[1.8]" />
+                        {formatDate(snap.createdAt)}
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={(e) => handleDeleteSnapshot(snap.id, e)}
+                      className="p-1.5 rounded-full hover:bg-rose-50 text-[#4C7567]/60 hover:text-rose-600 transition-colors cursor-pointer shrink-0"
+                      title="Hapus snapshot"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 stroke-[1.8]" />
+                    </button>
+                  </div>
+
+                  {/* Details Pills */}
+                  <div className="flex items-center gap-1.5 text-[10.5px] flex-wrap pt-1 border-t border-[#0D3528]/6 font-normal">
+                    <span className="px-2 py-0.5 rounded-full bg-[#E4F4ED] border border-[#BCE5D3] text-[#14664D] font-medium flex items-center gap-1">
+                      <TreePine className="w-3 h-3 text-[#187557] stroke-[1.8]" />
+                      {snap.treesCount} Pohon
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200/70 text-amber-800 font-medium flex items-center gap-1 tabular-nums">
+                      <Coins className="w-3 h-3 text-amber-600 stroke-[1.8]" />
+                      {snap.gold.toLocaleString()}
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full bg-white border border-[#0D3528]/10 text-[#4C7567] font-medium">
+                      Lv.{snap.level}
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full bg-white border border-[#0D3528]/10 text-[#4C7567] font-medium flex items-center gap-1 tabular-nums">
+                      <Clock className="w-2.5 h-2.5 stroke-[1.8]" />
+                      {snap.totalFocusMinutes}m
                     </span>
                   </div>
 
+                  {/* Restore Button */}
                   <button
                     type="button"
-                    onClick={(e) => handleDeleteSnapshot(snap.id, e)}
-                    className="p-1.5 rounded-full hover:bg-rose-50 text-[#456b57]/60 hover:text-rose-600 transition-colors cursor-pointer shrink-0"
-                    title="Hapus snapshot"
+                    onClick={() => handleRestoreSnapshot(snap)}
+                    className="w-full py-2 px-3 rounded-full bg-[#187557] hover:bg-[#126046] text-white font-medium text-[11.5px] flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] shadow-xs cursor-pointer"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <RotateCcw className="w-3.5 h-3.5 stroke-[2]" />
+                    <span>Pulihkan ke Kondisi Ini</span>
                   </button>
                 </div>
-
-                {/* Details Pills */}
-                <div className="flex items-center gap-1.5 text-[10.5px] flex-wrap pt-1 border-t border-[#143525]/8">
-                  <span className="px-2 py-0.5 rounded-full bg-[#bfdac8]/40 border border-[#bfdac8]/60 text-[#143525] font-semibold flex items-center gap-1">
-                    <TreePine className="w-3 h-3 text-[#1e5638]" />
-                    {snap.treesCount} Pohon
-                  </span>
-                  <span className="px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200/70 text-amber-800 font-semibold flex items-center gap-1">
-                    <Coins className="w-3 h-3 text-amber-600" />
-                    {snap.gold.toLocaleString()}
-                  </span>
-                  <span className="px-2 py-0.5 rounded-full bg-white/80 border border-white/90 text-[#456b57] font-semibold">
-                    Lv.{snap.level}
-                  </span>
-                  <span className="px-2 py-0.5 rounded-full bg-white/80 border border-white/90 text-[#456b57] font-semibold flex items-center gap-1">
-                    <Clock className="w-2.5 h-2.5" />
-                    {snap.totalFocusMinutes}m
-                  </span>
-                </div>
-
-                {/* Restore Button */}
-                <button
-                  type="button"
-                  onClick={() => handleRestoreSnapshot(snap)}
-                  className="w-full py-2 px-3 rounded-full bg-[#1e5638] hover:bg-[#16442e] text-white font-semibold text-[11.5px] flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] shadow-2xs cursor-pointer"
-                >
-                  <RotateCcw className="w-3.5 h-3.5 stroke-[2.2]" />
-                  <span>Pulihkan ke Kondisi Ini</span>
-                </button>
-              </div>
-            ))
-          )}
+              ))
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

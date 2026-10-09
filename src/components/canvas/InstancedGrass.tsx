@@ -270,10 +270,18 @@ export function InstancedGrass({ count: overrideCount }: InstancedGrassProps) {
     });
 
     // Helper: checks if world coordinate (wx, wz) falls in or near any river channel
-    const isRiverZone = (wx: number, wz: number, radius = 0.44): boolean => {
+    const isRiverZone = (wx: number, wz: number, radius = 0.50): boolean => {
       if (riverTileMap.size === 0) return false;
       const g = worldToGrid(wx, wz);
       if (!g) return false;
+
+      // If the coordinate falls on a river tile, strictly forbid grass inside the channel
+      if (riverTileMap.has(`${g.grid_x},${g.grid_y}`)) {
+        const [cx, , cz] = gridToWorld(g.grid_x, g.grid_y, 0);
+        const adj = riverTileMap.get(`${g.grid_x},${g.grid_y}`)!;
+        const dStream = getRiverChannelDistance(wx - cx, wz - cz, adj);
+        if (dStream < 0.52) return true;
+      }
 
       const candidates = [
         [g.grid_x, g.grid_y],
@@ -350,7 +358,7 @@ export function InstancedGrass({ count: overrideCount }: InstancedGrassProps) {
       );
 
       blades.push({
-        pos: new THREE.Vector3(x, height - 0.003, z),
+        pos: new THREE.Vector3(x, 0.002, z),
         rotY,
         tiltX,
         tiltZ,
@@ -368,7 +376,7 @@ export function InstancedGrass({ count: overrideCount }: InstancedGrassProps) {
           flowers.push({
             pos: new THREE.Vector3(
               fx,
-              height + 0.036 * scaleY,
+              0.004 + 0.036 * scaleY,
               fz
             ),
             scale: 0.015 + rnd() * 0.009,
@@ -383,12 +391,21 @@ export function InstancedGrass({ count: overrideCount }: InstancedGrassProps) {
   }, [count, unlockedTiles, unlockedKeySet, pathWorldCenters, riverTileMap]);
 
   const grassPalette = useGameStore((state) => state.grassPalette || 'natural');
+  const activeBiome = useGameStore((state) => state.activeBiome || 'meadow');
 
-  // Apply matrices and multi-tone emerald/lime colors to fluffy tufts
+  // Apply matrices and multi-tone emerald/lime or winter frost colors
   useEffect(() => {
     if (!grassRef.current) return;
 
+    const isSnow = activeBiome === 'snow';
     const isEmerald = grassPalette === 'emerald';
+
+    // Snow Biome: Soft, shimmering winter frost crystals
+    const frostBase = new THREE.Color('#CBD5E1');
+    const frostMid = new THREE.Color('#E2E8F0');
+    const frostTip = new THREE.Color('#FFFFFF');
+
+    // Meadow Biome: Lush emerald and sunlit gold tones
     const lushEmerald = new THREE.Color(isEmerald ? '#2EA86E' : '#6EAE46');
     const sunlitMeadow = new THREE.Color(isEmerald ? '#4ED48E' : '#9ED45A');
     const goldenCrest = new THREE.Color(isEmerald ? '#86EAB5' : '#BCE668');
@@ -399,15 +416,27 @@ export function InstancedGrass({ count: overrideCount }: InstancedGrassProps) {
 
       dummy.position.copy(item.pos);
       dummy.rotation.set(item.tiltX, item.rotY, item.tiltZ, 'YXZ');
-      dummy.scale.set(item.scaleX, item.scaleY, item.scaleZ);
+      dummy.scale.set(
+        isSnow ? item.scaleX * 0.75 : item.scaleX,
+        isSnow ? item.scaleY * 0.70 : item.scaleY,
+        isSnow ? item.scaleZ * 0.75 : item.scaleZ
+      );
       dummy.updateMatrix();
 
       grassRef.current.setMatrixAt(i, dummy.matrix);
 
-      if (item.tSunlit < 0.65) {
-        tempCol.lerpColors(lushEmerald, sunlitMeadow, item.tSunlit / 0.65);
+      if (isSnow) {
+        if (item.tSunlit < 0.5) {
+          tempCol.lerpColors(frostBase, frostMid, item.tSunlit * 2.0);
+        } else {
+          tempCol.lerpColors(frostMid, frostTip, (item.tSunlit - 0.5) * 2.0);
+        }
       } else {
-        tempCol.lerpColors(sunlitMeadow, goldenCrest, (item.tSunlit - 0.65) / 0.35);
+        if (item.tSunlit < 0.65) {
+          tempCol.lerpColors(lushEmerald, sunlitMeadow, item.tSunlit / 0.65);
+        } else {
+          tempCol.lerpColors(sunlitMeadow, goldenCrest, (item.tSunlit - 0.65) / 0.35);
+        }
       }
 
       grassRef.current.setColorAt(i, tempCol);
@@ -417,15 +446,17 @@ export function InstancedGrass({ count: overrideCount }: InstancedGrassProps) {
     if (grassRef.current.instanceColor) {
       grassRef.current.instanceColor.needsUpdate = true;
     }
-  }, [dummy, bladeData, grassPalette]);
+  }, [dummy, bladeData, grassPalette, activeBiome]);
 
-  // Set transforms and pastel colors for meadow wildflowers
+  // Set transforms and pastel colors for meadow wildflowers or winter frost florets
   useEffect(() => {
     if (!flowerRef.current) return;
 
-    const creamWhite = new THREE.Color('#FFFDF5');
-    const buttercupYellow = new THREE.Color('#FDE68A');
-    const softBlossom = new THREE.Color('#FBCFE8');
+    const isSnow = activeBiome === 'snow';
+
+    const creamWhite = new THREE.Color(isSnow ? '#FFFFFF' : '#FFFDF5');
+    const buttercupYellow = new THREE.Color(isSnow ? '#BAE6FD' : '#FDE68A');
+    const softBlossom = new THREE.Color(isSnow ? '#E0F2FE' : '#FBCFE8');
 
     for (let i = 0; i < flowerData.length; i++) {
       const f = flowerData[i];
@@ -448,7 +479,7 @@ export function InstancedGrass({ count: overrideCount }: InstancedGrassProps) {
     if (flowerRef.current.instanceColor) {
       flowerRef.current.instanceColor.needsUpdate = true;
     }
-  }, [dummy, flowerData]);
+  }, [dummy, flowerData, activeBiome]);
 
   // Dispose GPU resources on unmount
   useEffect(() => {

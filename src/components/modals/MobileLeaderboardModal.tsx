@@ -47,216 +47,224 @@ export function MobileLeaderboardModal({
   if (!isOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 overflow-y-auto no-scrollbar select-none antialiased"
-      style={{
-        background:
-          "linear-gradient(180deg, #d4e7dc 0%, #c5dfd1 45%, #b4d3c2 100%)",
-        fontFamily:
-          "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', var(--font-geist-sans), sans-serif",
-      }}
-      role="dialog"
-      aria-modal="true"
-    >
-      {/* Top Ambient Light Glow */}
+    <>
+      {/* Tipografi Urbanist yang Halus & Modern */}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700&display=swap');
+        .font-urbanist {
+          font-family: 'Urbanist', -apple-system, BlinkMacSystemFont, sans-serif !important;
+        }
+      `}</style>
+
       <div
-        className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-lg h-72 pointer-events-none"
+        className="fixed inset-0 z-50 overflow-y-auto no-scrollbar select-none antialiased font-urbanist text-[#0D3528]"
         style={{
           background:
-            "radial-gradient(ellipse 80% 60% at 50% -10%, rgba(255, 255, 255, 0.5), transparent 70%)",
+            "radial-gradient(130% 90% at 50% -5%, #38B28B 0%, #289874 34%, #1C7459 70%, #165643 100%)",
         }}
-      />
-
-      {/* Main Content Container */}
-      <div className="relative z-10 w-full max-w-md mx-auto px-4 sm:px-5 pt-[max(env(safe-area-inset-top,1rem),1.25rem)] pb-[max(calc(env(safe-area-inset-bottom,0px)+2.5rem),3rem)] space-y-4">
-        {/* Navigation Header */}
-        <div className="flex items-center justify-between pt-1 pb-1">
-          <div className="flex items-baseline gap-2">
-            <h2 className="text-[21px] font-semibold tracking-tight text-[#143525]">
-              Papan Kehormatan
-            </h2>
-            <span className="text-[12.5px] font-normal text-[#456b57]">
-              Piramida Ranger
-            </span>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => {
-              hapticLight();
-              onClose();
-            }}
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-white/80 bg-white/60 hover:bg-white/80 text-[#143525] transition-transform active:scale-90 cursor-pointer shadow-2xs"
-            aria-label="Tutup peringkat"
-          >
-            <X className="h-4 w-4 stroke-[2.2]" />
-          </button>
-        </div>
-
-        {/* Hero Current User Rank Bento Card */}
-        {currentUserEntry && (
-          <div className="rounded-[24px] border border-white/90 bg-white/85 p-4 shadow-[0_8px_24px_rgba(20,50,30,0.06)] space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3 min-w-0 pr-2">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#bfdac8]/50 border-2 border-white text-2xl shadow-xs">
-                  {currentUserEntry.avatarEmoji}
-                </div>
-
-                <div className="min-w-0 text-left">
-                  <div className="flex items-center gap-1.5">
-                    <span className="truncate text-[15.5px] font-bold tracking-tight text-[#143525]">
-                      {currentUserEntry.rangerName}
-                    </span>
-                    <span className="shrink-0 rounded-full border border-[#bfdac8]/60 bg-[#bfdac8]/50 px-2 py-0.5 text-[10px] font-semibold text-[#143525]">
-                      Suaka Anda
-                    </span>
-                  </div>
-                  <p className="truncate text-[12px] font-medium text-[#1e5638]">
-                    {currentUserEntry.title}
-                  </p>
-                </div>
-              </div>
-
-              <div className="text-right shrink-0">
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#1e5638]/10 text-[#1e5638] text-[11px] font-bold">
-                  <Sparkles className="w-3 h-3" />
-                  Aktif
-                </span>
-              </div>
+        role="dialog"
+        aria-modal="true"
+      >
+        <div className="w-full max-w-md mx-auto px-5 pt-[max(env(safe-area-inset-top,1.25rem),1.25rem)] pb-[max(calc(env(safe-area-inset-bottom,0px)+2.5rem),3rem)] space-y-4">
+          {/* HEADER NAV */}
+          <div className="flex items-center justify-between py-1">
+            <div className="flex items-center gap-2.5">
+              <h2 className="text-[23px] font-semibold tracking-normal text-white drop-shadow-xs">
+                Pencapaian
+              </h2>
+              <span className="rounded-full bg-white/20 border border-white/25 px-3 py-0.5 text-[11.5px] font-medium text-emerald-50 backdrop-blur-md">
+                Piramida Ranger
+              </span>
             </div>
 
-            {/* 3 Metrics Pills */}
-            <div className="grid grid-cols-3 gap-2 pt-2 border-t border-[#143525]/10 text-center">
-              <div className="p-2 rounded-xl bg-white/60 border border-white/70">
-                <div className="flex items-center justify-center gap-1 text-[#456b57] text-[10px] mb-0.5">
-                  <Clock className="w-3 h-3" />
-                  <span>Fokus</span>
-                </div>
-                <div className="font-bold text-[13.5px] text-[#143525] font-mono">
-                  {totalMinutes}m
-                </div>
-              </div>
-
-              <div className="p-2 rounded-xl bg-white/60 border border-white/70">
-                <div className="flex items-center justify-center gap-1 text-[#456b57] text-[10px] mb-0.5">
-                  <TreePine className="w-3 h-3" />
-                  <span>Pohon</span>
-                </div>
-                <div className="font-bold text-[13.5px] text-[#143525] font-mono">
-                  {activeTrees}
-                </div>
-              </div>
-
-              <div className="p-2 rounded-xl bg-white/60 border border-white/70">
-                <div className="flex items-center justify-center gap-1 text-[#456b57] text-[10px] mb-0.5">
-                  <Flame className="w-3 h-3 text-amber-600" />
-                  <span>Streak</span>
-                </div>
-                <div className="font-bold text-[13.5px] text-[#143525] font-mono">
-                  {analytics.currentStreak} Hari
-                </div>
-              </div>
-            </div>
+            <button
+              type="button"
+              onClick={() => {
+                hapticLight();
+                onClose();
+              }}
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 border border-white/30 text-white shadow-sm backdrop-blur-md active:scale-90 transition-transform hover:bg-white/30 cursor-pointer"
+              aria-label="Tutup peringkat"
+            >
+              <X className="h-4 w-4 stroke-[2]" />
+            </button>
           </div>
-        )}
 
-        {/* Section Heading */}
-        <div className="flex items-center justify-between px-1 pt-1">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#2f5542]/80">
-            Jenjang Kehormatan Ranger Rimba
-          </p>
-          <div className="flex items-center gap-1 text-[11px] text-[#456b57]">
-            <Trophy className="w-3.5 h-3.5 text-[#1e5638]" />
-            <span>7 Tingkatan</span>
-          </div>
-        </div>
-
-        {/* Tier Hierarchy List */}
-        <div className="space-y-2">
-          {RANGER_HALL_OF_FAME_TIERS.map((tier: RangerTier) => {
-            const isUnlocked =
-              totalMinutes >= tier.minMinutes && activeTrees >= tier.minTrees;
-            const isCurrent = currentUserEntry?.title === tier.name;
-
-            return (
-              <div
-                key={tier.id}
-                className={`p-3.5 rounded-[22px] transition-all flex items-center justify-between ${
-                  isCurrent
-                    ? "border-2 border-[#1e5638] bg-white shadow-xs"
-                    : isUnlocked
-                    ? "border border-white/90 bg-white/80 shadow-2xs"
-                    : "border border-white/50 bg-white/40 opacity-70"
-                }`}
-              >
-                <div className="flex items-center gap-3 min-w-0 pr-2">
-                  <div
-                    className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-lg border ${
-                      isUnlocked
-                        ? "bg-[#bfdac8]/60 border-white text-xl shadow-2xs"
-                        : "bg-black/5 border-black/10 text-base opacity-60"
-                    }`}
-                  >
-                    {tier.badgeEmoji}
+          {/* 1. HERO CURRENT USER BENTO CARD (Translucent Blended White Gradient) */}
+          {currentUserEntry && (
+            <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3.5 min-w-0 pr-2">
+                  <div className="flex h-13 w-13 shrink-0 items-center justify-center rounded-full bg-[#E4F4ED] border-2 border-white text-2xl shadow-xs">
+                    {currentUserEntry.avatarEmoji}
                   </div>
 
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <p
-                        className={`truncate text-[13.5px] ${
-                          isCurrent
-                            ? "font-bold text-[#143525]"
-                            : isUnlocked
-                            ? "font-semibold text-[#143525]"
-                            : "font-medium text-[#456b57]"
-                        }`}
-                      >
-                        {tier.name}
-                      </p>
-                      {isCurrent && (
-                        <span className="text-[9.5px] font-bold px-2 py-0.5 rounded-full bg-[#1e5638] text-white">
-                          Peringkatmu
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[11px] text-[#456b57] font-light truncate">
-                      {tier.description}
-                    </p>
-                    <p className="text-[10px] font-medium text-[#1e5638] flex items-center gap-1 mt-0.5 truncate">
-                      <span>✨</span>
-                      <span>{tier.perk}</span>
-                    </p>
-                  </div>
-                </div>
-
-                <div className="text-right shrink-0 pl-2">
-                  {isUnlocked ? (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#1e5638] bg-[#1e5638]/10 px-2.5 py-1 rounded-full">
-                      <CheckCircle2 className="w-3 h-3" />
-                      Terbuka
-                    </span>
-                  ) : (
-                    <div className="text-right">
-                      <span className="inline-flex items-center gap-1 text-[10.5px] font-medium text-[#456b57] bg-black/5 px-2 py-0.5 rounded-full">
-                        <Lock className="w-2.5 h-2.5 opacity-60" />
-                        {tier.minMinutes}m & {tier.minTrees}🌲
+                  <div className="min-w-0 text-left">
+                    <div className="flex items-center gap-2">
+                      <span className="truncate text-[17px] font-semibold tracking-wide text-[#0D3528]">
+                        {currentUserEntry.rangerName}
                       </span>
                     </div>
-                  )}
+                    <p className="truncate text-[12.5px] font-medium text-[#187557] mt-0.5">
+                      {currentUserEntry.title}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="text-right shrink-0">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E4F4ED] border border-[#BCE5D3] text-[#14664D] text-[11px] font-medium">
+                    <Sparkles className="w-3.5 h-3.5 stroke-[1.8] text-emerald-600" />
+                    Aktif
+                  </span>
                 </div>
               </div>
-            );
-          })}
-        </div>
 
-        {/* Privacy & Offline-First Sovereign Guarantee */}
-        <div className="p-3.5 rounded-[20px] bg-white/60 border border-white/80 flex items-start gap-2.5">
-          <ShieldCheck className="w-4 h-4 text-[#1e5638] shrink-0 mt-0.5" />
-          <p className="text-[11px] text-[#456b57] leading-relaxed font-light">
-            <strong className="font-semibold text-[#143525]">Kedaulatan Privasi Penuh:</strong> Rimba tidak menggunakan bot tiruan maupun telemetri pelacak. Seluruh jenjang dihitung murni dari waktu fokus dan pohon asli yang kamu tanam di perangkat ini.
-          </p>
+              {/* 3 Metrics (Open Airy Divide Layout - Tanpa Kotak Bertumpuk & No Mono) */}
+              <div className="grid grid-cols-3 py-2 divide-x divide-[#0D3528]/10 border-t border-[#0D3528]/8 text-center">
+                <div className="px-1 text-center">
+                  <div className="flex items-center justify-center gap-1 text-[#4C7567] text-[11px] mb-0.5 font-normal">
+                    <Clock className="w-3.5 h-3.5 stroke-[1.8]" />
+                    <span>Fokus</span>
+                  </div>
+                  <div className="text-[20px] font-medium text-[#0D3528] tracking-normal">
+                    {totalMinutes}
+                    <span className="text-[12px] font-normal text-[#4C7567] ml-0.5">
+                      m
+                    </span>
+                  </div>
+                </div>
+
+                <div className="px-1 text-center">
+                  <div className="flex items-center justify-center gap-1 text-[#4C7567] text-[11px] mb-0.5 font-normal">
+                    <TreePine className="w-3.5 h-3.5 stroke-[1.8]" />
+                    <span>Pohon</span>
+                  </div>
+                  <div className="text-[20px] font-medium text-[#0D3528] tracking-normal">
+                    {activeTrees}
+                  </div>
+                </div>
+
+                <div className="px-1 text-center">
+                  <div className="flex items-center justify-center gap-1 text-[#4C7567] text-[11px] mb-0.5 font-normal">
+                    <Flame className="w-3.5 h-3.5 stroke-[1.8] text-amber-600" />
+                    <span>Streak</span>
+                  </div>
+                  <div className="text-[20px] font-medium text-[#0D3528] tracking-normal">
+                    {analytics.currentStreak}
+                    <span className="text-[12px] font-normal text-[#4C7567] ml-0.5">
+                      Hari
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* SECTION HEADER */}
+          <div className="flex items-center justify-between px-1 pt-1">
+            <p className="text-[12px] font-medium uppercase tracking-[0.12em] text-white/90 drop-shadow-xs">
+              Pencapaian Rimba
+            </p>
+            <div className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-50 bg-white/20 border border-white/25 px-2.5 py-0.5 rounded-full backdrop-blur-md">
+              <Trophy className="w-3.5 h-3.5 text-emerald-100 stroke-[1.8]" />
+              <span>7 Tingkatan</span>
+            </div>
+          </div>
+
+          {/* 2. TIER HIERARCHY CARD (Translucent Container) */}
+          <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-4 sm:p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-2.5">
+            {RANGER_HALL_OF_FAME_TIERS.map((tier: RangerTier) => {
+              const isUnlocked =
+                totalMinutes >= tier.minMinutes && activeTrees >= tier.minTrees;
+              const isCurrent = currentUserEntry?.title === tier.name;
+
+              return (
+                <div
+                  key={tier.id}
+                  className={`p-3 rounded-2xl transition-all flex items-center justify-between ${
+                    isCurrent
+                      ? "border border-[#187557]/40 bg-[#E4F4ED]/80 shadow-xs"
+                      : isUnlocked
+                        ? "border border-white/80 bg-white/75 shadow-2xs"
+                        : "border border-transparent bg-[#0D3528]/[0.02] opacity-60"
+                  }`}
+                >
+                  <div className="flex items-center gap-3 min-w-0 pr-2">
+                    <div
+                      className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-lg border ${
+                        isCurrent
+                          ? "bg-white border-[#BCE5D3] shadow-2xs"
+                          : isUnlocked
+                            ? "bg-[#E4F4ED] border-white shadow-2xs"
+                            : "bg-black/5 border-black/5 opacity-70"
+                      }`}
+                    >
+                      {tier.badgeEmoji}
+                    </div>
+
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <p
+                          className={`truncate text-[13.5px] ${
+                            isCurrent
+                              ? "font-semibold text-[#0D3528]"
+                              : isUnlocked
+                                ? "font-medium text-[#0D3528]"
+                                : "font-normal text-[#4C7567]"
+                          }`}
+                        >
+                          {tier.name}
+                        </p>
+                        {isCurrent && (
+                          <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-[#187557] text-white">
+                            Peringkatmu
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11.5px] text-[#4C7567] font-normal truncate mt-0.5">
+                        {tier.description}
+                      </p>
+                      <p className="text-[10.5px] font-medium text-[#187557] flex items-center gap-1 mt-0.5 truncate">
+                        <Sparkles className="w-3 h-3 text-emerald-600 stroke-[1.8]" />
+                        <span>{tier.perk}</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="text-right shrink-0 pl-2">
+                    {isUnlocked ? (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#14664D] bg-[#E4F4ED] border border-[#BCE5D3] px-2.5 py-1 rounded-full">
+                        <CheckCircle2 className="w-3 h-3 stroke-[2]" />
+                        Terbuka
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-[10.5px] font-normal text-[#4C7567] bg-black/5 px-2.5 py-1 rounded-full">
+                        <Lock className="w-2.5 h-2.5 stroke-[2] opacity-60" />
+                        {tier.minMinutes}m & {tier.minTrees}🌲
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* 3. PRIVACY & SOVEREIGN GUARANTEE CARD */}
+          <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-4 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl flex items-start gap-3">
+            <div className="p-1.5 rounded-xl bg-[#E4F4ED] border border-[#BCE5D3] text-[#187557] shrink-0 mt-0.5">
+              <ShieldCheck className="w-4 h-4 stroke-[1.8]" />
+            </div>
+            <p className="text-[12px] text-[#4C7567] leading-relaxed font-normal">
+              <span className="font-semibold text-[#0D3528]">
+                Kedaulatan Privasi Penuh:
+              </span>{" "}
+              Rimba tidak menggunakan bot tiruan maupun telemetri pelacak.
+              Seluruh jenjang dihitung murni dari waktu fokus dan pohon asli
+              yang kamu tanam di perangkat ini.
+            </p>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

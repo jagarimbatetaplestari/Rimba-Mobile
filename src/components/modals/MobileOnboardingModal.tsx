@@ -62,18 +62,18 @@ const ONBOARDING_BACKGROUNDS = [
 ];
 
 const DISTRACTION_TAGS = [
-  { id: "social", label: "Media Sosial & Linimasa" },
-  { id: "notif", label: "Pesan & Notifikasi" },
-  { id: "overthinking", label: "Keraguan & Overthinking" },
-  { id: "video", label: "Video Pendek" },
-  { id: "work", label: "Riuh Tuntutan Harian" },
+  { id: "social", label: "Riuh Linimasa" },
+  { id: "notif", label: "Deru Notifikasi" },
+  { id: "overthinking", label: "Kekhawatiran Hari Esok" },
+  { id: "video", label: "Pusaran Konten Singkat" },
+  { id: "work", label: "Beban Tuntutan Harian" },
 ];
 
 const INTENT_OPTIONS = [
-  "Pikiran Tenang",
-  "Belajar Mendalam",
-  "Fokus Berkarya",
-  "Rehat Sadar",
+  "Kejernihan Pikiran",
+  "Fokus Mendalam",
+  "Ketekunan Berkarya",
+  "Jeda Berkesadaran",
 ];
 
 export function MobileOnboardingModal({
@@ -107,12 +107,12 @@ export function MobileOnboardingModal({
   const [hasNotifPermission, setHasNotifPermission] = useState<boolean>(false);
 
   // Slide 6: Starter intent
-  const [selectedIntent, setSelectedIntent] = useState<string>("Pikiran Tenang");
+  const [selectedIntent, setSelectedIntent] =
+    useState<string>("Kejernihan Pikiran");
 
-  // Music ambient state ("Embun Pagi Rimba")
+  // Music ambient state
   const [isMusicPlaying, setIsMusicPlaying] = useState<boolean>(false);
 
-  // Check notification status on mount
   useEffect(() => {
     if (typeof window !== "undefined" && "Notification" in window) {
       if (Notification.permission === "granted") {
@@ -121,35 +121,35 @@ export function MobileOnboardingModal({
     }
   }, []);
 
-  // Ambient audio playback: Play "Embun Pagi Rimba" during onboarding
   useEffect(() => {
     if (!isOpen) return;
 
     const embunTrack =
       RIMBA_PLAYLIST.find((t) => t.id === "amb_1") ||
-      RIMBA_PLAYLIST.find((t) => t.title.toLowerCase().includes("embun pagi")) ||
+      RIMBA_PLAYLIST.find((t) =>
+        t.title.toLowerCase().includes("embun pagi"),
+      ) ||
       RIMBA_PLAYLIST[0];
 
     const tryStartAudio = () => {
       if (!embunTrack) return;
-      musicPlayer.setVolume(0.4);
+      musicPlayer.setVolume(0.35);
       musicPlayer.playTrack(embunTrack);
       setIsMusicPlaying(true);
     };
 
-    // Attempt direct start
     tryStartAudio();
 
-    // Listen to updates from musicPlayer
     const handleMusicUpdate = (e: Event) => {
       const customEvent = e as CustomEvent<MusicPlayerState>;
       if (customEvent.detail) {
-        setIsMusicPlaying(customEvent.detail.isPlaying && !customEvent.detail.isMuted);
+        setIsMusicPlaying(
+          customEvent.detail.isPlaying && !customEvent.detail.isMuted,
+        );
       }
     };
     window.addEventListener("rimba:music_update", handleMusicUpdate);
 
-    // If browser blocked autoplay without prior gesture, start on first touch/pointerdown
     const handleFirstGesture = () => {
       const state = musicPlayer.getState();
       if (!state.isPlaying) {
@@ -165,12 +165,11 @@ export function MobileOnboardingModal({
     };
   }, [isOpen]);
 
-  // Slide 3: 4-second breathing cycle loop
   useEffect(() => {
     if (step !== 2) return;
     const interval = setInterval(() => {
       setBreathPhase((prev) => (prev === "inhale" ? "exhale" : "inhale"));
-    }, 4000);
+    }, 4500);
     return () => clearInterval(interval);
   }, [step]);
 
@@ -180,7 +179,9 @@ export function MobileOnboardingModal({
     hapticLight();
     const embunTrack =
       RIMBA_PLAYLIST.find((t) => t.id === "amb_1") ||
-      RIMBA_PLAYLIST.find((t) => t.title.toLowerCase().includes("embun pagi")) ||
+      RIMBA_PLAYLIST.find((t) =>
+        t.title.toLowerCase().includes("embun pagi"),
+      ) ||
       RIMBA_PLAYLIST[0];
 
     const state = musicPlayer.getState();
@@ -189,7 +190,7 @@ export function MobileOnboardingModal({
       setIsMusicPlaying(false);
     } else {
       if (embunTrack) {
-        musicPlayer.setVolume(0.4);
+        musicPlayer.setVolume(0.35);
         musicPlayer.playTrack(embunTrack);
         setIsMusicPlaying(true);
       }
@@ -213,7 +214,6 @@ export function MobileOnboardingModal({
 
   const handleNextStep = () => {
     hapticLight();
-    // Persist name if leaving slide 2
     if (step === 1 && userName.trim()) {
       setProfileName(userName.trim());
     }
@@ -227,7 +227,7 @@ export function MobileOnboardingModal({
         const res = await Notification.requestPermission();
         if (res === "granted") {
           setHasNotifPermission(true);
-          notify("Sapaan hening Rimba aktif.", "success");
+          notify("Pengingat hening Rimba aktif.", "success");
         }
       } catch {
         // Ignore
@@ -243,10 +243,7 @@ export function MobileOnboardingModal({
     }
     onComplete();
     startFocus(10 * 60, "Fokus", false, undefined, selectedIntent);
-    notify(
-      "Sesi 10 Menit dimulai. Selamat merawat ketenangan di Rimba.",
-      "info",
-    );
+    notify("Sesi 10 Menit dimulai. Selamat berakar di ketenangan.", "info");
   };
 
   const handleCompleteWithoutFocus = () => {
@@ -258,16 +255,20 @@ export function MobileOnboardingModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-between items-center px-6 bg-[#040D08] text-white overflow-hidden select-none antialiased pt-[max(env(safe-area-inset-top,1.5rem),1.5rem)] pb-[max(env(safe-area-inset-bottom,1.5rem),1.5rem)] pointer-events-auto">
-      {/* 1. Cinematic Crossfading Background Art Layer */}
+    <div
+      className="fixed inset-0 z-50 flex flex-col justify-between items-center px-6 bg-[#040D08] text-white overflow-hidden select-none antialiased pt-[max(env(safe-area-inset-top,1.5rem),1.5rem)] pb-[max(env(safe-area-inset-bottom,1.5rem),1.5rem)] pointer-events-auto"
+      style={{
+        fontFamily:
+          "var(--font-urbanist), 'Urbanist', -apple-system, BlinkMacSystemFont, sans-serif",
+      }}
+    >
+      {/* 1. Cinematic Background Layer Tanpa Bayangan Pekat */}
       <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
         {ONBOARDING_BACKGROUNDS.map((bg) => (
           <div
             key={bg.step}
-            className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
-              bg.step === step
-                ? "opacity-100 scale-100"
-                : "opacity-0 scale-105 pointer-events-none"
+            className={`absolute inset-0 transition-opacity duration-1000 ease-out ${
+              bg.step === step ? "opacity-100" : "opacity-0 pointer-events-none"
             }`}
           >
             <Image
@@ -275,19 +276,19 @@ export function MobileOnboardingModal({
               alt={bg.alt}
               fill
               priority={bg.step <= 1}
-              className="object-cover object-center filter brightness-[0.98] contrast-[1.02]"
+              className="object-cover object-center brightness-[0.98] contrast-[1.01]"
             />
           </div>
         ))}
 
-        {/* Ambient Top Shadow */}
-        <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-black/80 via-black/35 to-transparent pointer-events-none" />
+        {/* Ambient Top Vignette Halus */}
+        <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-black/40 to-transparent pointer-events-none" />
 
-        {/* Deep Bottom Ambient Scrim (Leaves top & center open for photographic art) */}
-        <div className="absolute inset-x-0 bottom-0 h-[65vh] bg-gradient-to-t from-black/95 via-black/60 via-45% to-transparent pointer-events-none" />
+        {/* Ambient Bawah Ringan (hanya cukup untuk kontras teks) */}
+        <div className="absolute inset-x-0 bottom-0 h-[42vh] bg-gradient-to-t from-black/65 via-black/25 to-transparent pointer-events-none" />
       </div>
 
-      {/* 2. Top Header: Minimal Step Indicator, Audio Pill & Navigation */}
+      {/* 2. Top Header: Bersih & Ringan */}
       <div className="relative z-10 w-full max-w-sm flex items-center justify-between pt-1">
         <div className="flex items-center gap-2">
           {step > 0 && (
@@ -297,7 +298,7 @@ export function MobileOnboardingModal({
                 hapticLight();
                 setStep((prev) => Math.max(0, prev - 1));
               }}
-              className="w-7 h-7 rounded-full bg-black/30 backdrop-blur-md border border-white/20 flex items-center justify-center text-white/80 hover:text-white mr-1 active:scale-95 cursor-pointer"
+              className="w-7 h-7 rounded-full bg-white/15 hover:bg-white/20 backdrop-blur-md border border-white/25 flex items-center justify-center text-white/90 hover:text-white mr-1 transition-colors cursor-pointer"
               title="Kembali"
               aria-label="Kembali ke langkah sebelumnya"
             >
@@ -305,46 +306,48 @@ export function MobileOnboardingModal({
             </button>
           )}
 
-          <span className="text-[11px] tracking-wider text-white font-medium">
+          <span className="text-[11px] tracking-widest text-white/80 font-medium drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
             0{step + 1} <span className="text-white/40">/ 06</span>
           </span>
 
-          <div className="flex items-center gap-1 ml-1.5">
+          <div className="flex items-center gap-1.5 ml-2">
             {[0, 1, 2, 3, 4, 5].map((idx) => (
               <div
                 key={idx}
-                className={`h-1 rounded-full transition-all duration-300 ${
-                  idx === step
-                    ? "w-4 bg-white shadow-[0_0_6px_rgba(255,255,255,0.7)]"
-                    : "w-1 bg-white/30"
+                className={`h-1 rounded-full transition-all duration-500 ${
+                  idx === step ? "w-4 bg-white" : "w-1 bg-white/30"
                 }`}
               />
             ))}
           </div>
         </div>
 
-        {/* Right Header: Audio Pill & Lewati */}
+        {/* Header Kanan: Frosted Glass Audio Pill & Lewati */}
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={toggleAudio}
-            className={`flex items-center gap-1.5 py-1 px-2.5 rounded-full backdrop-blur-md border text-[11px] transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 py-1 px-3 rounded-full backdrop-blur-md border text-[11px] transition-colors cursor-pointer ${
               isMusicPlaying
-                ? "bg-white/20 border-white/30 text-white shadow-[0_0_10px_rgba(255,255,255,0.2)]"
-                : "bg-black/30 border-white/15 text-white/60 hover:text-white"
+                ? "bg-white/25 border-white/40 text-white"
+                : "bg-white/12 border-white/20 text-white/80 hover:text-white"
             }`}
-            title={isMusicPlaying ? "Heningkan Audio" : "Putar Embun Pagi Rimba"}
+            title={isMusicPlaying ? "Heningkan Audio" : "Putar Musik Rimba"}
             aria-label="Kontrol musik latar"
           >
             {isMusicPlaying ? (
               <>
-                <Volume2 className="w-3 h-3 text-white animate-pulse" />
-                <span className="text-[10px] font-light hidden sm:inline">Embun Pagi</span>
+                <Volume2 className="w-3.5 h-3.5 text-white" />
+                <span className="text-[10.5px] font-medium hidden sm:inline text-white">
+                  Embun Pagi
+                </span>
               </>
             ) : (
               <>
-                <VolumeX className="w-3 h-3" />
-                <span className="text-[10px] font-light hidden sm:inline">Audio</span>
+                <VolumeX className="w-3.5 h-3.5" />
+                <span className="text-[10.5px] font-normal hidden sm:inline text-white/80">
+                  Hening
+                </span>
               </>
             )}
           </button>
@@ -352,33 +355,34 @@ export function MobileOnboardingModal({
           <button
             type="button"
             onClick={handleCompleteWithoutFocus}
-            className="text-xs text-white/70 hover:text-white transition-colors py-1 px-3 rounded-full bg-black/30 backdrop-blur-md border border-white/15 active:scale-95 cursor-pointer"
+            className="text-xs text-white/80 hover:text-white transition-colors py-1 px-3 rounded-full bg-white/12 hover:bg-white/18 backdrop-blur-md border border-white/20 cursor-pointer"
           >
             Lewati
           </button>
         </div>
       </div>
 
-      {/* 3. Core Content Body (Editorial, Breathable, Asymmetric) */}
+      {/* 3. Core Philosophical Content */}
       <div className="relative z-10 w-full max-w-sm flex-1 flex flex-col justify-end pb-3 space-y-4">
         {/* ======================================================== */}
-        {/* SLIDE 1: TITIK NOL (Lembah Kabut - Refleksi Riuh)        */}
+        {/* SLIDE 1: HENING LEMBAH                                   */}
         {/* ======================================================== */}
         {step === 0 && (
           <div className="w-full space-y-3.5 text-left animate-in fade-in duration-300">
             <div className="space-y-1">
-              <span className="text-[10px] tracking-wider text-white/50 uppercase font-medium">
+              <span className="text-[10.5px] tracking-widest text-white/60 uppercase font-medium drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
                 01 · Hening Lembah
               </span>
-              <h1 className="font-serif italic text-[29px] sm:text-[33px] font-normal tracking-tight text-white leading-tight">
-                Di sela deru dunia, apa yang paling sering menyita pikiranmu?
+              <h1 className="font-serif italic text-[28px] sm:text-[32px] font-normal tracking-tight text-white leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.35)]">
+                Di antara riuhnya hari, apa yang paling sering menyita benakmu?
               </h1>
-              <p className="text-xs text-white/75 leading-relaxed font-light pt-0.5">
-                Sentuh hal yang kerap mengusikmu. Mengenalinya adalah awal dari ketenangan.
+              <p className="text-[12.5px] text-white/85 leading-relaxed font-light pt-0.5 drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
+                Melihatnya dengan sadar adalah langkah awal untuk melepaskannya
+                perlahan.
               </p>
             </div>
 
-            {/* Organic Floating Pills (Card-Free) */}
+            {/* Frosted Glass Tags Tanpa Shadow Berat */}
             <div className="flex flex-wrap gap-2 pt-1">
               {DISTRACTION_TAGS.map((opt) => {
                 const active = selectedDistractions.includes(opt.id);
@@ -387,10 +391,10 @@ export function MobileOnboardingModal({
                     key={opt.id}
                     type="button"
                     onClick={() => handleToggleDistraction(opt.id)}
-                    className={`px-3.5 py-2 rounded-full text-xs transition-all active:scale-95 cursor-pointer flex items-center gap-1.5 ${
+                    className={`px-3.5 py-2 rounded-full text-xs backdrop-blur-md transition-colors cursor-pointer flex items-center gap-1.5 border ${
                       active
-                        ? "bg-white text-slate-900 font-medium shadow-[0_2px_12px_rgba(255,255,255,0.3)]"
-                        : "bg-black/35 hover:bg-black/45 text-white/80 border border-white/15 backdrop-blur-md"
+                        ? "bg-white text-neutral-900 font-semibold border-white"
+                        : "bg-white/14 hover:bg-white/20 text-white border-white/25"
                     }`}
                   >
                     {active && <Check className="w-3 h-3 stroke-[3]" />}
@@ -403,113 +407,112 @@ export function MobileOnboardingModal({
         )}
 
         {/* ======================================================== */}
-        {/* SLIDE 2: IDENTITAS (Kanopi Hutan - Input Nama Organik)   */}
+        {/* SLIDE 2: IDENTITAS                                       */}
         {/* ======================================================== */}
         {step === 1 && (
           <div className="w-full space-y-4 text-left animate-in fade-in duration-300">
             <div className="space-y-1">
-              <span className="text-[10px] tracking-wider text-white/50 uppercase font-medium">
+              <span className="text-[10.5px] tracking-widest text-white/60 uppercase font-medium drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
                 02 · Jejak Langkah
               </span>
-              <h1 className="font-serif italic text-[29px] sm:text-[33px] font-normal tracking-tight text-white leading-tight">
-                Bagaimana Rimba memanggilmu?
+              <h1 className="font-serif italic text-[28px] sm:text-[32px] font-normal tracking-tight text-white leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.35)]">
+                Bagaimana Rimba mengenalmu?
               </h1>
-              <p className="text-xs text-white/75 leading-relaxed font-light pt-0.5">
-                Sebuah nama untuk mengakar dan menandai tanah suakamu.
+              <p className="text-[12.5px] text-white/85 leading-relaxed font-light pt-0.5 drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
+                Sebuah nama untuk menandai awal mula tanah suakamu bertumbuh.
               </p>
             </div>
 
-            {/* Editorial Single Line Underline Form (Card-Free) */}
             <div className="pt-2 pb-1 space-y-2">
-              <div className="relative border-b-2 border-white/30 focus-within:border-white transition-all pb-2">
+              <div className="relative border-b border-white/40 focus-within:border-white transition-colors pb-1.5">
                 <input
                   type="text"
                   value={userName}
                   onChange={(e) => setUserName(e.target.value)}
-                  placeholder="Tulis namamu..."
-                  className="w-full bg-transparent text-xl font-serif italic text-white placeholder-white/30 focus:outline-none tracking-wide"
+                  placeholder="Tulis namamu di sini..."
+                  className="w-full bg-transparent text-xl font-serif italic text-white placeholder-white/40 focus:outline-none tracking-wide"
                   maxLength={24}
                   autoComplete="name"
                 />
               </div>
-              <p className="text-[11px] text-white/50 font-light">
-                Nama ini akan terukir di suaka dan merawat pohon pertamamu.
+              <p className="text-[11px] text-white/60 font-light">
+                Nama ini akan menyertai setiap benih yang kamu tanam.
               </p>
             </div>
           </div>
         )}
 
         {/* ======================================================== */}
-        {/* SLIDE 3: TARIKAN NAPAS (Katedral Hutan - Penyelarasan)   */}
+        {/* SLIDE 3: TARIKAN NAPAS                                   */}
         {/* ======================================================== */}
         {step === 2 && (
           <div className="w-full space-y-5 text-left animate-in fade-in duration-300 flex flex-col items-start">
-            {/* Ethereal Breath Synchronizer floating directly inside cathedral god rays */}
-            <div className="w-full flex flex-col items-center justify-center py-4 select-none pointer-events-none">
-              <div className="relative flex items-center justify-center">
-                {/* Outer Pulsing Aura Ring */}
+            <div className="w-full flex flex-col items-center justify-center py-5 select-none pointer-events-none">
+              <div className="relative flex items-center justify-center w-36 h-36">
                 <div
-                  className={`w-36 h-36 rounded-full border transition-all duration-[4000ms] ease-in-out ${
+                  className={`absolute inset-0 rounded-full border transition-all duration-[4500ms] ease-in-out ${
                     breathPhase === "inhale"
-                      ? "scale-125 border-white/35 shadow-[0_0_35px_rgba(255,255,255,0.25)]"
-                      : "scale-90 border-white/10 shadow-[0_0_10px_rgba(255,255,255,0.05)]"
+                      ? "scale-110 border-white/40 opacity-90"
+                      : "scale-90 border-white/20 opacity-40"
                   }`}
                 />
 
-                {/* Inner Glowing Core */}
                 <div
-                  className={`absolute w-24 h-24 rounded-full border border-white/25 flex flex-col items-center justify-center transition-all duration-[4000ms] ease-in-out ${
+                  className={`w-24 h-24 rounded-full border backdrop-blur-md flex flex-col items-center justify-center transition-all duration-[4500ms] ease-in-out ${
                     breathPhase === "inhale"
-                      ? "scale-110 bg-white/20 shadow-[0_0_25px_rgba(255,255,255,0.3)] backdrop-blur-md"
-                      : "scale-85 bg-white/5 backdrop-blur-sm"
+                      ? "scale-105 bg-white/20 border-white/50"
+                      : "scale-90 bg-white/10 border-white/25"
                   }`}
                 >
-                  <span className="text-[11px] font-light text-white tracking-widest uppercase transition-opacity duration-700">
-                    {breathPhase === "inhale" ? "Tarik Napas" : "Hembuskan"}
+                  <span className="text-[11px] font-medium text-white tracking-widest uppercase transition-opacity duration-700">
+                    {breathPhase === "inhale" ? "Tarik Napas" : "Lepaskan"}
                   </span>
                 </div>
               </div>
             </div>
 
             <div className="space-y-1">
-              <span className="text-[10px] tracking-wider text-white/50 uppercase font-medium">
-                03 · Tarikan Napas Pertama
+              <span className="text-[10.5px] tracking-widest text-white/60 uppercase font-medium drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
+                03 · Tarikan Napas
               </span>
-              <h1 className="font-serif italic text-[29px] sm:text-[33px] font-normal tracking-tight text-white leading-tight">
+              <h1 className="font-serif italic text-[28px] sm:text-[32px] font-normal tracking-tight text-white leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.35)]">
                 Hadir seutuhnya di saat ini.
               </h1>
-              <p className="text-xs text-white/75 leading-relaxed font-light pt-0.5">
-                Rasakan sejuknya udara hutan memenuhi dadamu, lalu hembuskan segala beban yang kamu bawa hari ini.
+              <p className="text-[12.5px] text-white/85 leading-relaxed font-light pt-0.5 drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
+                Pohon bertumbuh dalam keheningan. Izinkan napasmu mengalir apa
+                adanya tanpa tuntutan.
               </p>
             </div>
           </div>
         )}
 
         {/* ======================================================== */}
-        {/* SLIDE 4: KETEGUHAN BATIN (Cemara Tebing - Memaafkan Diri) */}
+        {/* SLIDE 4: KETEGUHAN BATIN                                 */}
         {/* ======================================================== */}
         {step === 3 && (
           <div className="w-full space-y-3.5 text-left animate-in fade-in duration-300">
             <div className="space-y-1">
-              <span className="text-[10px] tracking-wider text-white/50 uppercase font-medium">
+              <span className="text-[10.5px] tracking-widest text-white/60 uppercase font-medium drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
                 04 · Keteguhan Batin
               </span>
-              <h1 className="font-serif italic text-[29px] sm:text-[33px] font-normal tracking-tight text-white leading-tight">
-                Pohon tidak pernah tergesa untuk tumbuh.
+              <h1 className="font-serif italic text-[28px] sm:text-[32px] font-normal tracking-tight text-white leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.35)]">
+                Pohon tak pernah tergesa untuk tumbuh.
               </h1>
             </div>
 
             <div className="space-y-2.5 pt-0.5">
-              <p className="text-xs text-white/80 leading-relaxed font-light">
-                Jika suatu hari kamu lelah dan ritmemu sempat terputus, Rimba tidak pernah menghukummu.
+              <p className="text-[12.5px] text-white/85 leading-relaxed font-light drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
+                Bila ritmemu sempat terputus oleh lelahnya hari, Rimba tak
+                pernah menghakimimu.
               </p>
 
-              <div className="flex items-center gap-2.5 pt-1">
-                <div className="w-7 h-7 rounded-full bg-white/10 border border-white/20 flex items-center justify-center shrink-0">
+              <div className="flex items-center gap-3 pt-1">
+                <div className="w-7 h-7 rounded-full bg-white/15 backdrop-blur-md border border-white/25 flex items-center justify-center shrink-0">
                   <Droplets className="w-3.5 h-3.5 text-white" />
                 </div>
-                <span className="text-xs text-white/90 font-medium">
-                  Embun Pelindung menjaga pulaumu hingga kamu siap kembali.
+                <span className="text-xs text-white font-medium drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
+                  Embun Pelindung senantiasa menjaga suakamu hingga kamu siap
+                  kembali.
                 </span>
               </div>
             </div>
@@ -517,33 +520,33 @@ export function MobileOnboardingModal({
         )}
 
         {/* ======================================================== */}
-        {/* SLIDE 5: RITME BERPULANG (Senja Rimba - Jeda & Istirahat)  */}
+        {/* SLIDE 5: RITME BERPULANG                                 */}
         {/* ======================================================== */}
         {step === 4 && (
           <div className="w-full space-y-3.5 text-left animate-in fade-in duration-300">
             <div className="space-y-1">
-              <span className="text-[10px] tracking-wider text-white/50 uppercase font-medium">
+              <span className="text-[10.5px] tracking-widest text-white/60 uppercase font-medium drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
                 05 · Ritme Berpulang
               </span>
-              <h1 className="font-serif italic text-[29px] sm:text-[33px] font-normal tracking-tight text-white leading-tight">
-                Matahari tahu kapan harus terbenam.
+              <h1 className="font-serif italic text-[28px] sm:text-[32px] font-normal tracking-tight text-white leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.35)]">
+                Matahari tahu saatnya tenggelam.
               </h1>
-              <p className="text-xs text-white/75 leading-relaxed font-light pt-0.5">
-                Burung tahu kapan harus berpulang ke sarang. Kamu pun berhak untuk berhenti sejenak dan beristirahat.
+              <p className="text-[12.5px] text-white/85 leading-relaxed font-light pt-0.5 drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
+                Istirahat bukanlah kekalahan, melainkan cara akar menghimpun
+                kekuatan untuk hari esok.
               </p>
             </div>
 
-            {/* Minimalist Floating Bell Capsule (Card-Free) */}
             <div className="pt-1.5">
               <button
                 type="button"
                 onClick={handleRequestNotifications}
-                className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-black/35 hover:bg-black/45 active:bg-black/55 border border-white/20 text-xs text-white backdrop-blur-md transition-all active:scale-95 cursor-pointer"
+                className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-white/14 hover:bg-white/20 border border-white/25 text-xs text-white backdrop-blur-md transition-colors cursor-pointer"
               >
-                <Bell className="w-3.5 h-3.5 text-white/80" />
+                <Bell className="w-3.5 h-3.5 text-white" />
                 <span>
                   {hasNotifPermission
-                    ? "Sapaan hening aktif saat senja"
+                    ? "Sapaan senja suaka telah aktif"
                     : "Sapa aku dengan lembut saat tiba waktu hening"}
                 </span>
               </button>
@@ -552,26 +555,28 @@ export function MobileOnboardingModal({
         )}
 
         {/* ======================================================== */}
-        {/* SLIDE 6: TELAGA HENING (Danau Cermin - Memulai Pribadi)   */}
+        {/* SLIDE 6: TELAGA HENING                                   */}
         {/* ======================================================== */}
         {step === 5 && (
           <div className="w-full space-y-3.5 text-left animate-in fade-in duration-300">
             <div className="space-y-1">
-              <span className="text-[10px] tracking-wider text-white/50 uppercase font-medium">
-                06 · Telaga Hening
+              <span className="text-[10.5px] tracking-widest text-white/60 uppercase font-medium drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
+                06 · Telaga Cermin
               </span>
-              <h1 className="font-serif italic text-[29px] sm:text-[33px] font-normal tracking-tight text-white leading-tight">
-                {userName.trim() ? `${userName.trim()}, suakamu` : "Suakamu"} telah menanti.
+              <h1 className="font-serif italic text-[28px] sm:text-[32px] font-normal tracking-tight text-white leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.35)]">
+                {userName.trim() ? `${userName.trim()}, suakamu` : "Suakamu"}{" "}
+                telah menanti.
               </h1>
-              <p className="text-xs text-white/75 leading-relaxed font-light pt-0.5">
-                Air telaga yang tenang mampu memantulkan seluruh semesta. Duduklah dengan nyaman, dan mari kita mulai.
+              <p className="text-[12.5px] text-white/85 leading-relaxed font-light pt-0.5 drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
+                Seperti air telaga yang hening memantulkan luasnya langit,
+                mulailah dengan langkah yang tenang.
               </p>
             </div>
 
-            {/* Organic Floating Intent Chips (Card-Free) */}
+            {/* Frosted Intent Chips */}
             <div className="space-y-1.5 pt-1">
-              <span className="text-[11px] text-white/50 block font-light">
-                Pilih niat pertamamu:
+              <span className="text-[11px] text-white/60 block font-light">
+                Niat pertamamu:
               </span>
               <div className="flex flex-wrap gap-1.5">
                 {INTENT_OPTIONS.map((intent) => {
@@ -584,10 +589,10 @@ export function MobileOnboardingModal({
                         hapticLight();
                         setSelectedIntent(intent);
                       }}
-                      className={`px-3 py-1.5 rounded-full text-xs transition-all active:scale-95 cursor-pointer ${
+                      className={`px-3 py-1.5 rounded-full text-xs backdrop-blur-md transition-colors cursor-pointer border ${
                         active
-                          ? "bg-white text-slate-900 font-medium shadow-[0_2px_10px_rgba(255,255,255,0.25)]"
-                          : "bg-black/35 hover:bg-black/45 text-white/75 border border-white/15 backdrop-blur-md"
+                          ? "bg-white text-neutral-900 font-semibold border-white"
+                          : "bg-white/14 hover:bg-white/20 text-white border-white/25"
                       }`}
                     >
                       {intent}
@@ -600,13 +605,13 @@ export function MobileOnboardingModal({
         )}
       </div>
 
-      {/* 4. Bottom Control Deck (Pure Liquid Clear Glass Button) */}
+      {/* 4. Bottom Control Deck (Jernih, Tanpa Shadow Kotak Hitam) */}
       <div className="relative z-10 w-full max-w-sm space-y-2 pt-1">
         {step < 5 && (
           <button
             type="button"
             onClick={handleNextStep}
-            className="w-full py-3.5 px-6 rounded-2xl font-medium text-xs text-white bg-black/25 hover:bg-black/35 active:bg-black/45 backdrop-blur-md border border-white/20 shadow-[0_8px_24px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.2)] transition-all active:scale-[0.98] flex items-center justify-center cursor-pointer"
+            className="w-full py-3.5 px-6 rounded-2xl font-semibold text-xs tracking-wide text-white bg-white/16 hover:bg-white/24 backdrop-blur-md border border-white/15 transition-colors flex items-center justify-center cursor-pointer"
           >
             Lanjutkan
           </button>
@@ -617,7 +622,7 @@ export function MobileOnboardingModal({
             <button
               type="button"
               onClick={handleStartFirstSession}
-              className="w-full py-3.5 px-6 rounded-2xl font-medium text-xs text-white bg-black/25 hover:bg-black/35 active:bg-black/45 backdrop-blur-md border border-white/20 shadow-[0_8px_24px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.2)] transition-all active:scale-[0.98] flex items-center justify-center cursor-pointer"
+              className="w-full py-3.5 px-6 rounded-2xl font-semibold text-xs tracking-wide text-white bg-white/25 hover:bg-white/35 backdrop-blur-md border border-white/40 transition-colors flex items-center justify-center cursor-pointer"
             >
               Mulai 10 Menit Pertama
             </button>
@@ -625,9 +630,9 @@ export function MobileOnboardingModal({
             <button
               type="button"
               onClick={handleCompleteWithoutFocus}
-              className="w-full py-2 text-xs font-light text-white/70 hover:text-white transition-colors text-center cursor-pointer"
+              className="w-full py-2 text-xs font-normal text-white/75 hover:text-white transition-colors text-center cursor-pointer"
             >
-              Jelajahi Suaka Terlebih Dahulu
+              Masuk ke Suaka Tanpa Timer
             </button>
           </div>
         )}

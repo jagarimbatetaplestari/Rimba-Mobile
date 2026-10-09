@@ -250,6 +250,8 @@ export function Scene() {
         powerPreference: 'high-performance',
         stencil: false,
         alpha: true,
+        toneMapping: THREE.ACESFilmicToneMapping,
+        toneMappingExposure: 1.05,
       }}
       shadows={graphicsQuality !== 'eco' ? { type: THREE.PCFSoftShadowMap } : false}
       camera={{
@@ -298,8 +300,8 @@ export function Scene() {
       {/* Warm/cool fill light to softly illuminate the shaded sides */}
       <directionalLight
         position={[-12, 10, -12]}
-        intensity={timeOfDay === 'night' ? 0.45 : 0.28}
-        color={timeOfDay === 'night' ? '#7DD3FC' : timeOfDay === 'sunset' ? '#F7996E' : '#FDE8C8'}
+        intensity={timeOfDay === 'night' ? 0.16 : 0.28}
+        color={timeOfDay === 'night' ? '#3B5270' : timeOfDay === 'sunset' ? '#F7996E' : '#FDE8C8'}
       />
 
       {/* Soft floating diorama contact shadow beneath the island (baked once per layout/theme change) */}

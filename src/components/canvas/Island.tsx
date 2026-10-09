@@ -1,71 +1,136 @@
 import React, { useMemo, useEffect, useState, useRef } from 'react';
+import { useFrame } from '@react-three/fiber';
+import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { useGameStore } from '@/lib/game/useGameStore';
 import {
-  getTerrainElevation,
-  getUnlockedTilesSet,
   getUnlockedTilesSignature,
 } from '@/lib/game/worldRules';
 import { GAME_CONFIG } from '@/lib/game/config';
 import { RisingLandBlock } from './RisingLandBlock';
-import { buildRiverTileMap, getRiverChannelDistance, RiverAdjacency } from '@/lib/game/riverSystem';
+import { buildRiverTileMap } from '@/lib/game/riverSystem';
+
+// Preload Kenney Platformer Kit modular block models
+useGLTF.preload('/models/block-grass-low.glb');
+useGLTF.preload('/models/block-grass-overhang-low.glb');
+useGLTF.preload('/models/block-grass-corner-overhang-low.glb');
+useGLTF.preload('/models/block-snow-low.glb');
+useGLTF.preload('/models/block-snow-overhang-low.glb');
+useGLTF.preload('/models/block-snow-corner-overhang-low.glb');
+
+interface InstanceData {
+  pos: [number, number, number];
+  rotY: number;
+  scale?: [number, number, number];
+}
 
 /**
- * Procedural Warm Terracotta / Cork Soil Texture for Island Side Walls
- * Bright and sunlit (#BA8E5E / #C79C6A) to prevent dark/black side faces
+ * High-performance InstancedMesh renderer for modular Kenney terrain blocks
+ * Renders hundreds of tiles in a single draw call with cast/receive shadows!
  */
-function createWarmSoilTexture(): THREE.CanvasTexture | null {
-  if (typeof document === 'undefined') return null;
-  const canvas = document.createElement('canvas');
-  canvas.width = 256;
-  canvas.height = 128;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return null;
+function ModularBlockInstances({
+  modelUrl,
+  instances,
+}: {
+  modelUrl: string;
+  instances: InstanceData[];
+}) {
+  const { scene } = useGLTF(modelUrl);
+  const mesh = scene.children[0] as THREE.Mesh;
+  const instRef = useRef<THREE.InstancedMesh>(null);
+  const dummy = useMemo(() => new THREE.Object3D(), []);
 
-  // Warm terracotta / rich cork base tone
-  ctx.fillStyle = '#BA8E5E';
-  ctx.fillRect(0, 0, 256, 128);
+  useEffect(() => {
+    if (!instRef.current || instances.length === 0) return;
+    for (let i = 0; i < instances.length; i++) {
+      const item = instances[i];
+      dummy.position.set(item.pos[0], item.pos[1], item.pos[2]);
+      dummy.rotation.set(0, item.rotY, 0);
+      const s = item.scale || [1.0, 1.0, 1.0];
+      dummy.scale.set(s[0], s[1], s[2]);
+      dummy.updateMatrix();
+      instRef.current.setMatrixAt(i, dummy.matrix);
+    }
+    instRef.current.instanceMatrix.needsUpdate = true;
+  }, [instances, dummy]);
 
-  // Micro-speckles of earth, sandstone, and warm minerals
-  for (let i = 0; i < 3500; i++) {
-    const x = Math.random() * 256;
-    const y = Math.random() * 128;
-    const radius = 0.5 + Math.random() * 1.5;
-    const factor = 0.90 + Math.random() * 0.22;
-    const r = Math.min(255, Math.floor(186 * factor));
-    const g = Math.min(255, Math.floor(142 * factor));
-    const b = Math.min(255, Math.floor(94 * factor));
-    ctx.fillStyle = `rgb(${r},${g},${b})`;
-    ctx.beginPath();
-    ctx.arc(x, y, radius, 0, Math.PI * 2);
-    ctx.fill();
-  }
+  if (instances.length === 0 || !mesh) return null;
 
-  // Gentle warm geological strata bands
-  for (let y = 0; y < 128; y += 12) {
-    const factor = 0.92 + Math.random() * 0.16;
-    const darkR = Math.floor(165 * factor);
-    const darkG = Math.floor(120 * factor);
-    const darkB = Math.floor(75 * factor);
-    ctx.fillStyle = `rgba(${darkR}, ${darkG}, ${darkB}, 0.16)`;
-    ctx.fillRect(0, y + (Math.random() * 3 - 1.5), 256, 3 + Math.random() * 3);
-  }
+  return (
+    <instancedMesh
+      ref={instRef}
+      args={[mesh.geometry, mesh.material, instances.length]}
+      castShadow
+      receiveShadow
+    />
+  );
+}
 
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.wrapS = THREE.RepeatWrapping;
-  texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set(4, 1);
-  return texture;
+/**
+ * Seamless unified lawn turf overlay:
+ * Bridges all tile boundaries and completely seals corner bevel cavities ("padet dan menyatu"),
+ * creating a dense, solid, unified ground surface across the sanctuary island!
+ */
+function SeamlessTurfOverlay({
+  positions,
+  activeBiome,
+}: {
+  positions: [number, number, number][];
+  activeBiome: 'meadow' | 'snow';
+}) {
+  const instRef = useRef<THREE.InstancedMesh>(null);
+  const dummy = useMemo(() => new THREE.Object3D(), []);
+  const geo = useMemo(() => new THREE.PlaneGeometry(1.025, 1.025), []);
+  const isSnow = activeBiome === 'snow';
+
+  const mat = useMemo(() => {
+    return new THREE.MeshStandardMaterial({
+      color: isSnow ? '#F8F8FB' : '#5AC487', // Exact Kenney top color matching colormap.png
+      roughness: 0.88,
+      metalness: 0.0,
+    });
+  }, [isSnow]);
+
+  useEffect(() => {
+    if (!instRef.current || positions.length === 0) return;
+    for (let i = 0; i < positions.length; i++) {
+      const pos = positions[i];
+      dummy.position.set(pos[0], pos[1], pos[2]);
+      dummy.rotation.set(-Math.PI / 2, 0, 0);
+      dummy.scale.set(1.0, 1.0, 1.0);
+      dummy.updateMatrix();
+      instRef.current.setMatrixAt(i, dummy.matrix);
+    }
+    instRef.current.instanceMatrix.needsUpdate = true;
+  }, [positions, dummy]);
+
+  useEffect(() => {
+    return () => {
+      geo.dispose();
+      mat.dispose();
+    };
+  }, [geo, mat]);
+
+  if (positions.length === 0) return null;
+
+  return (
+    <instancedMesh
+      ref={instRef}
+      args={[geo, mat, positions.length]}
+      receiveShadow
+    />
+  );
 }
 
 /**
  * Dynamic Modular Diorama Island:
- * Generates 3D green meadow and terracotta soil walls ONLY on unlocked tiles.
- * When the user expands the island, new 3D land blocks dynamically rise and merge!
+ * Renders bright, vibrant modular Kenney Platformer Kit land blocks
+ * with smart overhang perimeter edge & corner styling, plus Level 20 Snow Biome!
  */
 export function Island() {
   const world = useGameStore((state) => state.saveData.world);
   const worldObjects = useGameStore((state) => state.saveData.world_objects);
+  const activeBiome = useGameStore((state) => state.activeBiome || 'meadow');
 
   const unlockedSignature = useMemo(
     () => getUnlockedTilesSignature(world, worldObjects),
@@ -112,217 +177,20 @@ export function Island() {
     return filtered;
   }, [unlockedSet, risingTiles]);
 
-  const soilTexture = useMemo(() => createWarmSoilTexture(), []);
-  const bottomY = -0.22;
   const tileSize = GAME_CONFIG.grid.tileSize;
   const offset = GAME_CONFIG.grid.offset;
 
-  // Map tiles that contain a river stream or bridge so the island carves a recessed river channel
+  // Map tiles that contain a river stream or bridge
   const riverTileMap = useMemo(() => {
     return buildRiverTileMap(worldObjects, staticUnlockedSet);
   }, [worldObjects, staticUnlockedSet]);
 
-  const grassPalette = useGameStore((state) => state.grassPalette || 'natural');
-
-  // 1. Top sculpted rolling meadow geometry (with recessed river channels) for all unlocked tiles
-  const topGeo = useMemo(() => {
-    const verts: number[] = [];
-    const colors: number[] = [];
-    const indices: number[] = [];
-
-    const isEmerald = grassPalette === 'emerald';
-    const grassLawn = new THREE.Color(isEmerald ? '#34B377' : '#88C252');
-    const grassSunlit = new THREE.Color(isEmerald ? '#58DE99' : '#A4D864');
-    const riverSand = new THREE.Color('#DFD2B7');
-    const tempCol = new THREE.Color();
-
-    staticUnlockedSet.forEach((key) => {
-      const [gx, gy] = key.split(',').map(Number);
-      if (!Number.isInteger(gx) || !Number.isInteger(gy)) return;
-
-      const riverAdj = riverTileMap.get(key);
-      const subdiv = 10;
-
-      const cx = (gx + offset) * tileSize;
-      const cz = (gy + offset) * tileSize;
-      const half = tileSize / 2;
-      const xMin = cx - half;
-      const zMin = cz - half;
-      const baseIdx = verts.length / 3;
-
-      for (let ix = 0; ix <= subdiv; ix++) {
-        for (let iz = 0; iz <= subdiv; iz++) {
-          const vx = xMin + (ix / subdiv) * tileSize;
-          const vz = zMin + (iz / subdiv) * tileSize;
-          let { height } = getTerrainElevation(vx, vz);
-
-          // Natural sunlit variation
-          const noise =
-            (Math.sin(vx * 1.8) * Math.cos(vz * 1.8) +
-              Math.sin(vx * 3.2 + vz * 2.2)) *
-            0.06;
-          const elevBonus = Math.max(0, (height - 0.04) * 2.0);
-          tempCol.lerpColors(
-            grassLawn,
-            grassSunlit,
-            Math.min(1, Math.max(0, 0.45 + noise + elevBonus))
-          );
-
-          // Carve wide recessed river bed if this tile is a river or bridge tile (~0.88m wide)
-          if (riverAdj) {
-            const dx = vx - cx;
-            const dz = vz - cz;
-            const dStream = getRiverChannelDistance(dx, dz, riverAdj);
-            const riverHalfWidth = 0.44;
-            if (dStream < riverHalfWidth) {
-              const tBank = dStream / riverHalfWidth;
-              const smoothBank = tBank * tBank * (3 - 2 * tBank);
-              height -= (1 - smoothBank) * 0.16;
-              tempCol.lerp(riverSand, (1 - smoothBank) * 0.90);
-            }
-          }
-
-          verts.push(vx, height, vz);
-          colors.push(tempCol.r, tempCol.g, tempCol.b);
-        }
-      }
-
-      for (let ix = 0; ix < subdiv; ix++) {
-        for (let iz = 0; iz < subdiv; iz++) {
-          const rowStride = subdiv + 1;
-          const i0 = baseIdx + ix * rowStride + iz;
-          const i1 = baseIdx + (ix + 1) * rowStride + iz;
-          const i2 = baseIdx + (ix + 1) * rowStride + (iz + 1);
-          const i3 = baseIdx + ix * rowStride + (iz + 1);
-
-          indices.push(i0, i2, i1);
-          indices.push(i0, i3, i2);
-        }
-      }
-    });
-
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
-    geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-    geo.setIndex(indices);
-    geo.computeVertexNormals();
-    return geo;
-  }, [staticUnlockedSet, offset, tileSize, riverTileMap, grassPalette]);
-
-  // 2. Seamless vertical soil side walls only on exposed outer perimeter edges
-  const sideWallsGeo = useMemo(() => {
-    const verts: number[] = [];
-    const uvs: number[] = [];
-    const indices: number[] = [];
-
-    const getEdgeHeight = (vx: number, vz: number, cx: number, cz: number, riverAdj?: RiverAdjacency) => {
-      let h = getTerrainElevation(vx, vz).height;
-      if (riverAdj) {
-        const dx = vx - cx;
-        const dz = vz - cz;
-        const dStream = getRiverChannelDistance(dx, dz, riverAdj);
-        const riverHalfWidth = 0.44;
-        if (dStream < riverHalfWidth) {
-          const tBank = dStream / riverHalfWidth;
-          const smoothBank = tBank * tBank * (3 - 2 * tBank);
-          h -= (1 - smoothBank) * 0.16;
-        }
-      }
-      return h;
-    };
-
-    const addWallStrip = (
-      pointsTop: { x: number; y: number; z: number }[]
-    ) => {
-      const baseIdx = verts.length / 3;
-      const count = pointsTop.length;
-
-      for (let i = 0; i < count; i++) {
-        const pt = pointsTop[i];
-        const u = i / (count - 1);
-
-        verts.push(pt.x, pt.y, pt.z);
-        uvs.push(u, 1);
-
-        verts.push(pt.x, bottomY, pt.z);
-        uvs.push(u, 0);
-
-        if (i < count - 1) {
-          const idx = baseIdx + i * 2;
-          indices.push(idx, idx + 2, idx + 1);
-          indices.push(idx + 1, idx + 2, idx + 3);
-        }
-      }
-    };
-
-    staticUnlockedSet.forEach((key) => {
-      const [gx, gy] = key.split(',').map(Number);
-      if (!Number.isInteger(gx) || !Number.isInteger(gy)) return;
-
-      const riverAdj = riverTileMap.get(key);
-      const subdiv = 10;
-
-      const cx = (gx + offset) * tileSize;
-      const cz = (gy + offset) * tileSize;
-      const half = tileSize / 2;
-      const xMin = cx - half;
-      const xMax = cx + half;
-      const zMin = cz - half;
-      const zMax = cz + half;
-
-      // North wall (gy - 1): exposed if North neighbor is empty
-      if (!staticUnlockedSet.has(`${gx},${gy - 1}`)) {
-        const topPts: { x: number; y: number; z: number }[] = [];
-        for (let i = 0; i <= subdiv; i++) {
-          const x = xMax - (i / subdiv) * tileSize;
-          topPts.push({ x, y: getEdgeHeight(x, zMin, cx, cz, riverAdj), z: zMin });
-        }
-        addWallStrip(topPts);
-      }
-
-      // South wall (gy + 1): exposed if South neighbor is empty
-      if (!staticUnlockedSet.has(`${gx},${gy + 1}`)) {
-        const topPts: { x: number; y: number; z: number }[] = [];
-        for (let i = 0; i <= subdiv; i++) {
-          const x = xMin + (i / subdiv) * tileSize;
-          topPts.push({ x, y: getEdgeHeight(x, zMax, cx, cz, riverAdj), z: zMax });
-        }
-        addWallStrip(topPts);
-      }
-
-      // East wall (gx + 1): exposed if East neighbor is empty
-      if (!staticUnlockedSet.has(`${gx + 1},${gy}`)) {
-        const topPts: { x: number; y: number; z: number }[] = [];
-        for (let i = 0; i <= subdiv; i++) {
-          const z = zMax - (i / subdiv) * tileSize;
-          topPts.push({ x: xMax, y: getEdgeHeight(xMax, z, cx, cz, riverAdj), z });
-        }
-        addWallStrip(topPts);
-      }
-
-      // West wall (gx - 1): exposed if West neighbor is empty
-      if (!staticUnlockedSet.has(`${gx - 1},${gy}`)) {
-        const topPts: { x: number; y: number; z: number }[] = [];
-        for (let i = 0; i <= subdiv; i++) {
-          const z = zMin + (i / subdiv) * tileSize;
-          topPts.push({ x: xMin, y: getEdgeHeight(xMin, z, cx, cz, riverAdj), z });
-        }
-        addWallStrip(topPts);
-      }
-    });
-
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
-    geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
-    geo.setIndex(indices);
-    geo.computeVertexNormals();
-    return geo;
-  }, [staticUnlockedSet, offset, tileSize, bottomY, riverTileMap]);
-
-  // 3. Bottom floor plate under all unlocked tiles
-  const bottomGeo = useMemo(() => {
-    const verts: number[] = [];
-    const indices: number[] = [];
+  // Smart modular block classification: categorize tiles into interior, edge, and corner
+  const { interiorTiles, edgeTiles, cornerTiles, turfPositions } = useMemo(() => {
+    const interiors: InstanceData[] = [];
+    const edges: InstanceData[] = [];
+    const corners: InstanceData[] = [];
+    const turfs: [number, number, number][] = [];
 
     staticUnlockedSet.forEach((key) => {
       const [gx, gy] = key.split(',').map(Number);
@@ -330,77 +198,96 @@ export function Island() {
 
       const cx = (gx + offset) * tileSize;
       const cz = (gy + offset) * tileSize;
-      const half = tileSize / 2;
-      const xMin = cx - half;
-      const xMax = cx + half;
-      const zMin = cz - half;
-      const zMax = cz + half;
-      const baseIdx = verts.length / 3;
 
-      verts.push(xMin, bottomY, zMin);
-      verts.push(xMax, bottomY, zMin);
-      verts.push(xMax, bottomY, zMax);
-      verts.push(xMin, bottomY, zMax);
+      // Unlocked land tiles that are not river get the seamless turf overlay to seal all bevel gaps
+      if (!riverTileMap.has(key)) {
+        turfs.push([cx, 0.001, cz]);
+      }
 
-      indices.push(baseIdx, baseIdx + 1, baseIdx + 2);
-      indices.push(baseIdx, baseIdx + 2, baseIdx + 3);
+      // Detect exposed exterior edges facing the ocean void
+      // (River tiles are valid island tiles, so land adjacent to a river is NOT an ocean cliff!)
+      const hasN = staticUnlockedSet.has(`${gx},${gy - 1}`);
+      const hasS = staticUnlockedSet.has(`${gx},${gy + 1}`);
+      const hasW = staticUnlockedSet.has(`${gx - 1},${gy}`);
+      const hasE = staticUnlockedSet.has(`${gx + 1},${gy}`);
+
+      const missingN = !hasN;
+      const missingS = !hasS;
+      const missingW = !hasW;
+      const missingE = !hasE;
+      const missingCount = (missingN ? 1 : 0) + (missingS ? 1 : 0) + (missingW ? 1 : 0) + (missingE ? 1 : 0);
+
+      const blockPos: [number, number, number] = [cx, -0.5, cz];
+
+      if (missingCount >= 2) {
+        // Exposed corners facing the ocean
+        if (missingS && missingE) {
+          corners.push({ pos: blockPos, rotY: 0 });
+        } else if (missingS && missingW) {
+          corners.push({ pos: blockPos, rotY: Math.PI * 0.5 });
+        } else if (missingN && missingW) {
+          corners.push({ pos: blockPos, rotY: Math.PI });
+        } else if (missingN && missingE) {
+          corners.push({ pos: blockPos, rotY: Math.PI * 1.5 });
+        } else if (missingS) {
+          edges.push({ pos: blockPos, rotY: 0 });
+        } else if (missingN) {
+          edges.push({ pos: blockPos, rotY: Math.PI });
+        } else {
+          interiors.push({ pos: blockPos, rotY: 0, scale: [1.025, 1.0, 1.025] });
+        }
+      } else if (missingCount === 1) {
+        // Exposed perimeter edges facing the ocean
+        if (missingS) {
+          edges.push({ pos: blockPos, rotY: 0 });
+        } else if (missingW) {
+          edges.push({ pos: blockPos, rotY: Math.PI * 0.5 });
+        } else if (missingN) {
+          edges.push({ pos: blockPos, rotY: Math.PI });
+        } else if (missingE) {
+          edges.push({ pos: blockPos, rotY: Math.PI * 1.5 });
+        }
+      } else {
+        // Fully enclosed interior tile - snug scale prevents hairline gaps between blocks
+        const rotY = ((gx * 3 + gy * 7) % 4) * Math.PI * 0.5;
+        interiors.push({ pos: blockPos, rotY, scale: [1.025, 1.0, 1.025] });
+      }
     });
 
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
-    geo.setIndex(indices);
-    geo.computeVertexNormals();
-    return geo;
-  }, [staticUnlockedSet, offset, tileSize, bottomY]);
-
-  // Dispose GPU geometries and procedural texture when rebuilt or unmounted
-  useEffect(() => {
-    return () => {
-      topGeo.dispose();
-      sideWallsGeo.dispose();
-      bottomGeo.dispose();
+    return {
+      interiorTiles: interiors,
+      edgeTiles: edges,
+      cornerTiles: corners,
+      turfPositions: turfs,
     };
-  }, [topGeo, sideWallsGeo, bottomGeo]);
+  }, [staticUnlockedSet, offset, tileSize, riverTileMap]);
 
-  useEffect(() => {
-    return () => {
-      soilTexture?.dispose();
-    };
-  }, [soilTexture]);
+  // Model variants for current active biome
+  const isSnow = activeBiome === 'snow';
+  const interiorModel = isSnow ? '/models/block-snow-low.glb' : '/models/block-grass-low.glb';
+  const edgeModel = isSnow ? '/models/block-snow-overhang-low.glb' : '/models/block-grass-overhang-low.glb';
+  const cornerModel = isSnow ? '/models/block-snow-corner-overhang-low.glb' : '/models/block-grass-corner-overhang-low.glb';
 
   return (
     <group position={[0, 0, 0]}>
-      {/* Top rolling meadow for active tiles */}
-      <mesh geometry={topGeo} receiveShadow>
-        <meshStandardMaterial
-          vertexColors
-          roughness={0.82}
-          metalness={0.0}
-        />
-      </mesh>
+      {/* 1. Interior Blocks */}
+      <ModularBlockInstances modelUrl={interiorModel} instances={interiorTiles} />
 
-      {/* Warm terracotta cork soil side walls for perimeter */}
-      <mesh geometry={sideWallsGeo} receiveShadow>
-        <meshStandardMaterial
-          color="#BA8E5E"
-          map={soilTexture || undefined}
-          roughness={0.88}
-          metalness={0.0}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
+      {/* 2. Edge Overhang Blocks */}
+      <ModularBlockInstances modelUrl={edgeModel} instances={edgeTiles} />
 
-      {/* Bottom floor plate */}
-      <mesh geometry={bottomGeo}>
-        <meshStandardMaterial color="#8A633E" roughness={0.95} />
-      </mesh>
+      {/* 3. Corner Overhang Blocks */}
+      <ModularBlockInstances modelUrl={cornerModel} instances={cornerTiles} />
 
-      {/* Dynamic Rising Land Blocks with spring physics & water splash */}
+      {/* 4. Seamless Unified Lawn Turf Overlay (seals all corner bevel holes & crevices) */}
+      <SeamlessTurfOverlay positions={turfPositions} activeBiome={activeBiome} />
+
+      {/* 5. Dynamic Rising Land Blocks with spring physics & water splash */}
       {Array.from(risingTiles).map((key) => (
         <RisingLandBlock
           key={`rising_${key}`}
           coordKey={key}
-          soilTexture={soilTexture}
+          activeBiome={activeBiome}
           onSettled={handleTileSettled}
         />
       ))}

@@ -1,111 +1,107 @@
-'use client';
+"use client";
 
-import React from 'react';
+import React from "react";
 
 interface LoadingSanctuaryProps {
   message?: string;
   subMessage?: string;
-  theme?: 'dark' | 'light' | 'auto';
+  theme?: "dark" | "light" | "auto";
   fullScreen?: boolean;
   isFadingOut?: boolean;
 }
 
 export function LoadingSanctuary({
-  message = 'Cultivating Sanctuary',
-  subMessage = 'Nurturing flora & calm focus...',
-  theme = 'auto',
+  message = "Menyiapkan Suaka Rimba",
+  subMessage = "Menumbuhkan flora & ketenangan fokus...",
   fullScreen = true,
   isFadingOut = false,
 }: LoadingSanctuaryProps) {
   const containerClasses = fullScreen
-    ? 'fixed inset-0 z-50 flex items-center justify-center p-4'
-    : 'w-full h-full min-h-[300px] flex items-center justify-center p-4';
-
-  const bgClasses =
-    theme === 'dark'
-      ? 'bg-[#070b0e] text-white'
-      : theme === 'light'
-      ? 'bg-[#EBF4EE] text-slate-900'
-      : 'bg-[#070b0e] text-white'; // Default to sleek obsidian Apple Liquid Glass
+    ? "fixed inset-0 z-50 flex items-center justify-center p-4"
+    : "w-full h-full min-h-[300px] flex items-center justify-center p-4";
 
   return (
-    <div
-      className={`${containerClasses} ${bgClasses} select-none transition-all duration-400 ease-out ${
-        isFadingOut ? 'opacity-0 pointer-events-none' : 'opacity-100'
-      }`}
-    >
-      {/* Background Ambient Radial Glow */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden flex items-center justify-center">
-        <div className="w-[320px] h-[320px] rounded-full bg-emerald-500/10 blur-[90px] animate-pulse" />
-      </div>
+    <>
+      {/* Tipografi Urbanist yang Halus & Modern */}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700&display=swap');
+        .font-urbanist {
+          font-family: 'Urbanist', -apple-system, BlinkMacSystemFont, sans-serif !important;
+        }
+      `}</style>
 
-      <div className="relative z-10 flex flex-col items-center justify-center text-center max-w-xs">
-        {/* ========================================================= */}
-        {/* THE SPROUT OF FOCUS (Clean Floating Seedling - No Glass)  */}
-        {/* ========================================================= */}
-        <div className="relative mb-6 flex items-center justify-center">
-          {/* Subtle Ambient Radial Glow */}
-          <div className="absolute w-24 h-24 rounded-full bg-emerald-400/20 blur-2xl animate-pulse pointer-events-none" />
+      <div
+        className={`${containerClasses} select-none transition-opacity duration-500 ease-out font-urbanist ${
+          isFadingOut ? "opacity-0 pointer-events-none" : "opacity-100"
+        }`}
+        style={{
+          background:
+            "radial-gradient(130% 90% at 50% -5%, #38B28B 0%, #289874 34%, #1C7459 70%, #165643 100%)",
+        }}
+      >
+        {/* Ambient Soft Glow Center */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden flex items-center justify-center">
+          <div className="w-[340px] h-[340px] rounded-full blur-[90px] bg-emerald-300/25 animate-pulse" />
+        </div>
 
-          {/* Clean Floating Sprout SVG without any glass wrapper */}
-          <div className="relative flex items-center justify-center">
+        <div className="relative z-10 flex flex-col items-center justify-center text-center max-w-xs">
+          {/* Glass Sprout Orb */}
+          <div className="relative mb-6 w-24 h-24 rounded-3xl border border-white/80 bg-gradient-to-b from-white/95 via-white/90 to-white/80 shadow-2xl shadow-[#0E3B2D]/20 backdrop-blur-xl flex items-center justify-center overflow-hidden animate-pulse">
+            {/* Top Sheen */}
+            <div className="absolute inset-x-2 top-0 h-[45%] bg-gradient-to-b from-white/40 to-transparent rounded-t-3xl pointer-events-none" />
+
+            {/* Clean Sprout SVG */}
             <svg
-              className="w-12 h-12 text-emerald-400 animate-pulse filter drop-shadow-[0_0_16px_rgba(52,211,153,0.55)]"
+              className="w-11 h-11 relative z-10 text-[#187557] drop-shadow-xs"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="1.75"
+              strokeWidth="1.8"
               strokeLinecap="round"
               strokeLinejoin="round"
             >
-              {/* Ground horizon / foundation */}
               <path d="M7 20h10" />
-              {/* Sprout stem */}
               <path d="M12 20v-8" />
-              {/* Right mature leaf with translucent fill */}
               <path
                 d="M12 12c0-4 3.5-7 7-7-1 4-3.5 7-7 7z"
-                fill="currentColor"
-                fillOpacity="0.25"
+                fill="#2BB688"
+                fillOpacity="0.35"
               />
-              {/* Left young leaf with translucent fill */}
               <path
                 d="M12 14c0-3.5-3-6-6-6 1 3.5 3 6 6 6z"
-                fill="currentColor"
-                fillOpacity="0.35"
+                fill="#187557"
+                fillOpacity="0.45"
               />
             </svg>
           </div>
-        </div>
 
-        {/* ========================================================= */}
-        {/* MINIMALIST TYPOGRAPHY & RHYTHMIC DOTS (English)           */}
-        {/* ========================================================= */}
-        <div className="space-y-1.5">
-          <h3 className="text-sm font-semibold tracking-wide text-white/95">
-            {message}
-          </h3>
-          <p className="text-xs text-white/50 font-mono tracking-tight">
-            {subMessage}
-          </p>
-        </div>
+          {/* Typography */}
+          <div className="space-y-1">
+            <h3 className="text-[17px] font-semibold tracking-normal text-white drop-shadow-xs">
+              {message}
+            </h3>
+            <p className="text-[12.5px] text-emerald-100/80 font-normal">
+              {subMessage}
+            </p>
+          </div>
 
-        {/* 3 Staggered Emerald Breathing Dots */}
-        <div className="flex items-center gap-1.5 mt-4">
-          <span
-            className="w-1.5 h-1.5 rounded-full bg-emerald-400/90 animate-bounce shadow-[0_0_6px_rgba(52,211,153,0.6)]"
-            style={{ animationDelay: '0s', animationDuration: '1.2s' }}
-          />
-          <span
-            className="w-1.5 h-1.5 rounded-full bg-emerald-400/90 animate-bounce shadow-[0_0_6px_rgba(52,211,153,0.6)]"
-            style={{ animationDelay: '0.2s', animationDuration: '1.2s' }}
-          />
-          <span
-            className="w-1.5 h-1.5 rounded-full bg-emerald-400/90 animate-bounce shadow-[0_0_6px_rgba(52,211,153,0.6)]"
-            style={{ animationDelay: '0.4s', animationDuration: '1.2s' }}
-          />
+          {/* Rhythm Dots */}
+          <div className="flex items-center gap-1.5 mt-5">
+            <span
+              className="w-1.5 h-1.5 rounded-full bg-white/80 animate-bounce shadow-xs"
+              style={{ animationDelay: "0s", animationDuration: "1.1s" }}
+            />
+            <span
+              className="w-1.5 h-1.5 rounded-full bg-white/80 animate-bounce shadow-xs"
+              style={{ animationDelay: "0.15s", animationDuration: "1.1s" }}
+            />
+            <span
+              className="w-1.5 h-1.5 rounded-full bg-white/80 animate-bounce shadow-xs"
+              style={{ animationDelay: "0.3s", animationDuration: "1.1s" }}
+            />
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

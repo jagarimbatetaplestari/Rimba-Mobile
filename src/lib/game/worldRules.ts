@@ -37,18 +37,8 @@ export function getTerrainElevation(
   x: number,
   z: number
 ): { height: number; isRiver: boolean; isBank: boolean; bankFactor: number } {
-  // Subtle organic knoll in the back-left quadrant (+0.07m)
-  const hillDist = Math.sqrt((x + 2.5) ** 2 + (z + 2.5) ** 2);
-  const hillFactor = Math.max(0, 1 - hillDist / 4.0);
-  const mound = Math.sin(hillFactor * Math.PI * 0.5) * 0.07;
-
-  // Gentle broad meadow wave (smooth variation +/-0.025m)
-  const wave = Math.sin(x * 0.45) * Math.cos(z * 0.45) * 0.025;
-
-  const height = 0.04 + mound + wave;
-
   return {
-    height,
+    height: 0.0,
     isRiver: false,
     isBank: false,
     bankFactor: 0,

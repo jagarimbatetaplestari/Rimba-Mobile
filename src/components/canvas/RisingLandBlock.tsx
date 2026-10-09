@@ -1,14 +1,15 @@
 import React, { useRef, useMemo, useEffect } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
+import { useGLTF } from '@react-three/drei';
 import { GAME_CONFIG } from '@/lib/game/config';
-import { getTerrainElevation } from '@/lib/game/worldRules';
 import { soundManager } from '@/lib/audio/sounds';
 import { hapticSuccess } from '@/lib/mobile/nativeBridge';
 
 interface RisingLandBlockProps {
   coordKey: string; // "grid_x,grid_y"
-  soilTexture: THREE.CanvasTexture | null;
+  activeBiome?: 'meadow' | 'snow';
+  soilTexture?: THREE.CanvasTexture | null;
   onSettled: (coordKey: string) => void;
 }
 
@@ -27,14 +28,13 @@ interface Particle {
 
 export function RisingLandBlock({
   coordKey,
-  soilTexture,
+  activeBiome = 'meadow',
   onSettled,
 }: RisingLandBlockProps) {
   const [gx, gy] = useMemo(() => coordKey.split(',').map(Number), [coordKey]);
 
   const tileSize = GAME_CONFIG.grid.tileSize;
   const offset = GAME_CONFIG.grid.offset;
-  const bottomY = -0.22;
 
   const cx = (gx + offset) * tileSize;
   const cz = (gy + offset) * tileSize;
@@ -42,13 +42,31 @@ export function RisingLandBlock({
   const groupRef = useRef<THREE.Group>(null);
   const particlesRef = useRef<THREE.Points>(null);
 
+  // Load Kenney modular land block based on active biome
+  const modelUrl =
+    activeBiome === 'snow'
+      ? '/models/block-snow-low.glb'
+      : '/models/block-grass-low.glb';
+  const { scene } = useGLTF(modelUrl);
+
+  const clonedScene = useMemo(() => {
+    const cloned = scene.clone(true);
+    cloned.traverse((node) => {
+      if ((node as THREE.Mesh).isMesh) {
+        node.castShadow = true;
+        node.receiveShadow = true;
+      }
+    });
+    return cloned;
+  }, [scene]);
+
   // Spring physics variables
   const yRef = useRef<number>(-1.25);
   const velRef = useRef<number>(0);
   const hasTriggeredSplash = useRef<boolean>(false);
   const isSettledRef = useRef<boolean>(false);
 
-  // Particle pool for water splash and golden dust (Ref-based for 0-overhead 60fps render loop)
+  // Particle pool for water splash and golden dust
   const particleListRef = useRef<Particle[]>([]);
 
   // Sound & Haptic on start
@@ -57,127 +75,17 @@ export function RisingLandBlock({
     hapticSuccess();
   }, []);
 
-  // Construct individual land tile geometry (meadow top + 4 soil side walls)
-  const { meadowGeo, wallsGeo } = useMemo(() => {
-    const subdiv = 6;
-    const half = tileSize / 2;
-    const xMin = cx - half;
-    const zMin = cz - half;
-
-    // 1. Meadow Top
-    const mVerts: number[] = [];
-    const mColors: number[] = [];
-    const mIndices: number[] = [];
-
-    const grassLawn = new THREE.Color('#88C252');
-    const grassSunlit = new THREE.Color('#A4D864');
-    const tempCol = new THREE.Color();
-
-    for (let ix = 0; ix <= subdiv; ix++) {
-      for (let iz = 0; iz <= subdiv; iz++) {
-        const vx = xMin + (ix / subdiv) * tileSize;
-        const vz = zMin + (iz / subdiv) * tileSize;
-        const { height } = getTerrainElevation(vx, vz);
-
-        const noise =
-          (Math.sin(vx * 1.8) * Math.cos(vz * 1.8) +
-            Math.sin(vx * 3.2 + vz * 2.2)) *
-          0.06;
-        const elevBonus = Math.max(0, (height - 0.04) * 2.0);
-        tempCol.lerpColors(
-          grassLawn,
-          grassSunlit,
-          Math.min(1, Math.max(0, 0.45 + noise + elevBonus))
-        );
-
-        // Relative to group center (cx, 0, cz)
-        mVerts.push(vx - cx, height, vz - cz);
-        mColors.push(tempCol.r, tempCol.g, tempCol.b);
-      }
-    }
-
-    for (let ix = 0; ix < subdiv; ix++) {
-      for (let iz = 0; iz < subdiv; iz++) {
-        const stride = subdiv + 1;
-        const i0 = ix * stride + iz;
-        const i1 = (ix + 1) * stride + iz;
-        const i2 = (ix + 1) * stride + (iz + 1);
-        const i3 = ix * stride + (iz + 1);
-
-        mIndices.push(i0, i2, i1);
-        mIndices.push(i0, i3, i2);
-      }
-    }
-
-    const mGeo = new THREE.BufferGeometry();
-    mGeo.setAttribute('position', new THREE.Float32BufferAttribute(mVerts, 3));
-    mGeo.setAttribute('color', new THREE.Float32BufferAttribute(mColors, 3));
-    mGeo.setIndex(mIndices);
-    mGeo.computeVertexNormals();
-
-    // 2. Soil Side Walls (4 edges)
-    const wVerts: number[] = [];
-    const wUvs: number[] = [];
-    const wIndices: number[] = [];
-
-    const addWall = (x1: number, z1: number, x2: number, z2: number) => {
-      const baseIdx = wVerts.length / 3;
-      for (let step = 0; step <= subdiv; step++) {
-        const t = step / subdiv;
-        const wx = x1 + (x2 - x1) * t;
-        const wz = z1 + (z2 - z1) * t;
-        const topH = getTerrainElevation(wx, wz).height;
-
-        // Top vertex (local to group)
-        wVerts.push(wx - cx, topH, wz - cz);
-        wUvs.push(t, 1);
-
-        // Bottom vertex
-        wVerts.push(wx - cx, bottomY, wz - cz);
-        wUvs.push(t, 0);
-
-        if (step < subdiv) {
-          const idx = baseIdx + step * 2;
-          wIndices.push(idx, idx + 2, idx + 1);
-          wIndices.push(idx + 1, idx + 2, idx + 3);
-        }
-      }
-    };
-
-    // 4 borders: North, East, South, West
-    addWall(xMin, zMin, xMin + tileSize, zMin);
-    addWall(xMin + tileSize, zMin, xMin + tileSize, zMin + tileSize);
-    addWall(xMin + tileSize, zMin + tileSize, xMin, zMin + tileSize);
-    addWall(xMin, zMin + tileSize, xMin, zMin);
-
-    const wGeo = new THREE.BufferGeometry();
-    wGeo.setAttribute('position', new THREE.Float32BufferAttribute(wVerts, 3));
-    wGeo.setAttribute('uv', new THREE.Float32BufferAttribute(wUvs, 2));
-    wGeo.setIndex(wIndices);
-    wGeo.computeVertexNormals();
-
-    return { meadowGeo: mGeo, wallsGeo: wGeo };
-  }, [cx, cz, tileSize, bottomY]);
-
-  // Clean up geometries on unmount
-  useEffect(() => {
-    return () => {
-      meadowGeo.dispose();
-      wallsGeo.dispose();
-    };
-  }, [meadowGeo, wallsGeo]);
-
   // Water splash trigger helper
   const triggerWaterSplash = () => {
     soundManager.playWaterSplash();
     hapticSuccess();
 
     const newParticles: Particle[] = [];
-    const waterColor = new THREE.Color('#38BDF8');
-    const goldColor = new THREE.Color('#FBBF24');
-    const emeraldColor = new THREE.Color('#34D399');
+    const waterColor = new THREE.Color(activeBiome === 'snow' ? '#BAE6FD' : '#38BDF8');
+    const goldColor = new THREE.Color(activeBiome === 'snow' ? '#E0F2FE' : '#FBBF24');
+    const emeraldColor = new THREE.Color(activeBiome === 'snow' ? '#FFFFFF' : '#34D399');
 
-    // 24 Water Splash Droplets
+    // 28 Water Splash Droplets
     for (let i = 0; i < 28; i++) {
       const angle = (i / 28) * Math.PI * 2 + (Math.random() - 0.5) * 0.2;
       const speed = 0.8 + Math.random() * 1.4;
@@ -268,78 +176,68 @@ export function RisingLandBlock({
       Math.abs(newVel) < 0.04
     ) {
       isSettledRef.current = true;
-      if (groupRef.current) {
-        groupRef.current.position.y = 0;
-      }
       onSettled(coordKey);
     }
 
-    // Update particles if any without triggering React component re-renders
-    const activeParticles = particleListRef.current;
-    if (activeParticles.length > 0 && particlesRef.current) {
+    // Animate splash particles
+    const list = particleListRef.current;
+    if (list.length > 0 && particlesRef.current) {
       const posAttr = particleGeo.getAttribute('position') as THREE.BufferAttribute;
       const colAttr = particleGeo.getAttribute('color') as THREE.BufferAttribute;
+      const posArr = posAttr.array as Float32Array;
+      const colArr = colAttr.array as Float32Array;
 
-      const gravity = 4.2;
-      let hasLiving = false;
-
-      for (let i = 0; i < activeParticles.length; i++) {
-        const p = activeParticles[i];
+      let anyAlive = false;
+      for (let i = 0; i < list.length; i++) {
+        const p = list[i];
         p.life += dt;
         if (p.life < p.maxLife) {
+          anyAlive = true;
           p.x += p.vx * dt;
           p.y += p.vy * dt;
           p.z += p.vz * dt;
-          p.vy -= gravity * dt;
+          p.vy -= 9.8 * dt; // Gravity
 
-          posAttr.setXYZ(i, p.x, p.y, p.z);
-          colAttr.setXYZ(i, p.color.r, p.color.g, p.color.b);
-          hasLiving = true;
+          const progress = p.life / p.maxLife;
+          const fade = 1 - progress;
+
+          const idx = i * 3;
+          posArr[idx] = cx + p.x;
+          posArr[idx + 1] = p.y;
+          posArr[idx + 2] = cz + p.z;
+
+          colArr[idx] = p.color.r * fade;
+          colArr[idx + 1] = p.color.g * fade;
+          colArr[idx + 2] = p.color.b * fade;
         } else {
-          // Hide dead particle below sea
-          posAttr.setXYZ(i, 0, -10, 0);
+          // Hide dead particle below island
+          const idx = i * 3;
+          posArr[idx + 1] = -100;
         }
       }
 
       posAttr.needsUpdate = true;
       colAttr.needsUpdate = true;
 
-      if (!hasLiving) {
+      if (!anyAlive && isSettledRef.current) {
         particleListRef.current = [];
       }
     }
   });
 
   return (
-    <group position={[cx, 0, cz]}>
-      {/* Animated Rising Tile Mesh */}
+    <group>
+      {/* Rising modular land block */}
       <group ref={groupRef} position={[0, -1.25, 0]}>
-        {/* Top Meadow */}
-        <mesh geometry={meadowGeo} receiveShadow castShadow>
-          <meshStandardMaterial
-            vertexColors
-            roughness={0.78}
-            metalness={0.06}
-            shadowSide={THREE.DoubleSide}
-          />
-        </mesh>
+        <group position={[cx, -0.5, cz]}>
+          <primitive object={clonedScene} />
+        </group>
 
-        {/* Soil Walls */}
-        <mesh geometry={wallsGeo} receiveShadow castShadow>
-          <meshStandardMaterial
-            map={soilTexture || undefined}
-            color="#BA8E5E"
-            roughness={0.88}
-            metalness={0.04}
-            side={THREE.DoubleSide}
-          />
-        </mesh>
-
-        {/* Golden Crown Pulse Glow on Edge */}
-        <mesh position={[0, 0.03, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        {/* Emergence Pulse Glow on Edge */}
+        <mesh position={[cx, 0.03, cz]} rotation={[-Math.PI / 2, 0, 0]}>
           <planeGeometry args={[tileSize * 0.98, tileSize * 0.98]} />
           <meshBasicMaterial
-            color="#34D399"
+            color={activeBiome === 'snow' ? '#7DD3FC' : '#34D399'}
             transparent
             opacity={0.35}
             blending={THREE.AdditiveBlending}

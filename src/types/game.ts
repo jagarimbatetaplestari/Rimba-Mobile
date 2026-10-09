@@ -58,7 +58,10 @@ export type TreeSpecies =
   | 'coconut'
   | 'tiered_pine'
   | 'baobab'
-  | 'ancient';
+  | 'ancient'
+  | 'platformer_pine'
+  | 'round_snow'
+  | 'pine_snow';
 
 export type DailyQuestId =
   | 'q_focus_1'
@@ -140,7 +143,19 @@ export type FaunaSpecies =
   | 'fox'
   | 'koala'
   | 'mystic_stag'
-  | 'butterfly'; // Legacy alias for bee
+  | 'deer'
+  | 'butterfly'
+  | 'elephant'
+  | 'tiger'
+  | 'polar'
+  | 'panda'
+  | 'monkey'
+  | 'lion'
+  | 'hog'
+  | 'giraffe'
+  | 'fish'
+  | 'cat'
+  | 'beaver';
 
 export interface FaunaConfig {
   id: FaunaSpecies;
@@ -150,6 +165,7 @@ export interface FaunaConfig {
   description: string;
   unlockConditionText: string;
   greetingQuote: string;
+  sleepQuote?: string;
   dailyReward: {
     gold: number;
     xp: number;

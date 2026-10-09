@@ -21,7 +21,10 @@ import { SoundscapeModal } from "@/components/modals/SoundscapeModal";
 import { DevDebugDrawer } from "@/components/feedback/DevDebugDrawer";
 import { ZenFocusOverlay } from "@/components/focus/ZenFocusOverlay";
 import { MobileOnboardingModal } from "@/components/modals/MobileOnboardingModal";
-import { MobileProfileModal, ProfileTab } from "@/components/modals/MobileProfileModal";
+import {
+  MobileProfileModal,
+  ProfileTab,
+} from "@/components/modals/MobileProfileModal";
 import { MobileStatisticsModal } from "@/components/modals/MobileStatisticsModal";
 import { MobileLeaderboardModal } from "@/components/modals/MobileLeaderboardModal";
 import { MobileSettingsSheet } from "@/components/modals/MobileSettingsSheet";
@@ -56,7 +59,8 @@ export default function RimbaDioramaApp() {
   const [isSoundscapeOpen, setIsSoundscapeOpen] = useState(false);
   const [isDevOpen, setIsDevOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [profileInitialTab, setProfileInitialTab] = useState<ProfileTab>("profile");
+  const [profileInitialTab, setProfileInitialTab] =
+    useState<ProfileTab>("profile");
   const [isStatisticsOpen, setIsStatisticsOpen] = useState(false);
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
@@ -201,7 +205,7 @@ export default function RimbaDioramaApp() {
       const analytics = calculateAnalytics(
         saveData.focus_sessions || [],
         new Date(),
-        saveData.used_shield_dates || []
+        saveData.used_shield_dates || [],
       );
       const currentStreak = Math.max(1, analytics.currentStreak);
       const prefs = usePreferencesStore.getState();
@@ -209,10 +213,13 @@ export default function RimbaDioramaApp() {
       if (hasFocusedToday) {
         cancelDailyStreakReminder();
       } else {
-        scheduleDailyStreakReminder(prefs.dailyReminderTime || '20:00', currentStreak);
+        scheduleDailyStreakReminder(
+          prefs.dailyReminderTime || "20:00",
+          currentStreak,
+        );
       }
     } catch (err) {
-      console.warn('[Rimba] Smart streak reminder check error:', err);
+      console.warn("[Rimba] Smart streak reminder check error:", err);
     }
   }, [isInitialized, saveData.focus_sessions, saveData.used_shield_dates]);
 
@@ -277,6 +284,17 @@ export default function RimbaDioramaApp() {
         setIsLeaderboardOpen(true);
       };
 
+      const handleOpenJournal = () => {
+        setJournalInitialTab("quests");
+        setIsJournalOpen(true);
+      };
+      window.addEventListener("rimba:open_journal", handleOpenJournal);
+
+      const handleOpenStats = () => {
+        setIsStatisticsOpen(true);
+      };
+      window.addEventListener("rimba:open_stats", handleOpenStats);
+
       return () => {
         window.removeEventListener(
           "rimba:open_onboarding",
@@ -288,6 +306,8 @@ export default function RimbaDioramaApp() {
           "rimba:open_leaderboard",
           handleOpenLeaderboard,
         );
+        window.removeEventListener("rimba:open_journal", handleOpenJournal);
+        window.removeEventListener("rimba:open_stats", handleOpenStats);
       };
     }
   }, []);
@@ -319,139 +339,286 @@ export default function RimbaDioramaApp() {
       className={`relative w-screen h-screen h-[100dvh] overflow-hidden select-none font-sans antialiased transition-colors duration-1000 ${mainThemeClass}`}
     >
       {/* ====================================================
-          BIOPHILIC SOFT SAGE ATMOSPHERIC BACKGROUND SYSTEM
+          MODERN AMBIENT HORIZON BACKDROP (Zero-Jank GPU Accelerated)
           ==================================================== */}
       <div
         className="absolute inset-0 z-0 pointer-events-none overflow-hidden"
         aria-hidden="true"
       >
-        {/* 1. Base Gradient Canvas (Pastel Sage-Mint ala Forest & Apple) */}
+        {/* 1. Day Ambient Horizon (Morning Dew Sage with Sun Ray Shafts - Foto 1 Style) */}
         <div
           className={`absolute inset-0 transition-opacity duration-1000 ${
             isDay ? "opacity-100" : "opacity-0"
           }`}
           style={{
             background:
-              "linear-gradient(180deg, #82ac94 0%, #75a288 45%, #649377 100%)",
+              "radial-gradient(135% 125% at 85% 10%, #D8ECDD 0%, #A9D1AD 30%, #76A680 66%, #527A59 100%)",
           }}
-        />
+        >
+          {/* Luminous Sun Origin Ambient Flare */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background:
+                "radial-gradient(circle at 86% 10%, rgba(255, 255, 235, 0.72) 0%, rgba(255, 255, 255, 0.28) 28%, transparent 62%)",
+            }}
+          />
+          {/* Island Pedestal Depth Vignette */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background:
+                "radial-gradient(ellipse at 50% 55%, rgba(255, 255, 255, 0.14) 0%, transparent 68%)",
+            }}
+          />
+        </div>
 
-        {/* Sunset Soft Peach-Honey Canvas */}
+        {/* 2. Sunset Ambient Horizon */}
         <div
           className={`absolute inset-0 transition-opacity duration-1000 ${
             isSunset ? "opacity-100" : "opacity-0"
           }`}
           style={{
             background:
-              "linear-gradient(180deg, #d98a6c 0%, #be6c4e 45%, #8f4732 100%)",
+              "radial-gradient(135% 125% at 85% 12%, #FFE4CE 0%, #F19B82 32%, #95658B 68%, #312347 100%)",
           }}
-        />
+        >
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background:
+                "radial-gradient(circle at 84% 14%, rgba(255, 235, 210, 0.5) 0%, rgba(241, 155, 130, 0.18) 32%, transparent 65%)",
+            }}
+          />
+        </div>
 
-        {/* Night Velvet Emerald-Navy Canvas */}
+        {/* 3. Night Ambient Horizon (Midnight Velvet Sapphire & Deep Emerald) */}
         <div
           className={`absolute inset-0 transition-opacity duration-1000 ${
             isNight ? "opacity-100" : "opacity-0"
           }`}
           style={{
             background:
-              "linear-gradient(180deg, #041f17 0%, #031812 50%, #010f0b 100%)",
+              "radial-gradient(135% 125% at 85% 12%, #294D58 0%, #1D3A3F 38%, #152B30 72%, #0E1F22 100%)",
           }}
-        />
-
-        {/* 2. Top-Right Soft Ambient Warm Sun Glow (Siang Hari) */}
-        <div
-          className={`absolute -top-24 -right-16 w-[420px] h-[420px] rounded-full pointer-events-none transition-opacity duration-1000 ${
-            isDay ? "opacity-100" : "opacity-0"
-          }`}
-          style={{
-            background:
-              "radial-gradient(circle, rgba(255, 255, 235, 0.45) 0%, rgba(255, 255, 255, 0.15) 45%, transparent 75%)",
-            filter: "blur(40px)",
-          }}
-        />
-
-        {/* 3. Volumetric Sun Rays / God Rays (Angling from Top Right to Center) */}
-        <div
-          className={`absolute inset-0 pointer-events-none transition-opacity duration-1000 mix-blend-screen ${
-            isDay ? "opacity-35" : "opacity-0"
-          }`}
-          style={{
-            background: `
-              conic-gradient(from 196deg at 90% 4%,
-                transparent 0deg,
-                rgba(255, 255, 255, 0.55) 5deg,
-                transparent 12deg,
-                rgba(255, 255, 255, 0.45) 18deg,
-                transparent 25deg,
-                rgba(255, 255, 255, 0.6) 32deg,
-                transparent 45deg
-              )
-            `,
-            filter: "blur(14px)",
-          }}
-        />
-
-        {/* Additional Diagonal Light Streaks */}
-        <div
-          className={`absolute inset-0 pointer-events-none transition-opacity duration-1000 mix-blend-overlay ${
-            isDay ? "opacity-30" : "opacity-0"
-          }`}
-          style={{
-            background:
-              "linear-gradient(132deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.15) 35%, transparent 65%)",
-          }}
-        />
-
-        {/* 4. Island Center Soft Glow Pedestal (Memberikan kedalaman diorama) */}
-        <div
-          className={`absolute inset-0 transition-opacity duration-1000 pointer-events-none ${
-            isDay ? "opacity-100" : "opacity-0"
-          }`}
-          style={{
-            background:
-              "radial-gradient(ellipse at 50% 50%, rgba(255, 255, 255, 0.18) 0%, transparent 60%)",
-          }}
-        />
-
-        {/* 5. Floating Dust Motes & Ambient Sparkles */}
-        <div
-          className={`absolute inset-0 pointer-events-none transition-opacity duration-1000 ${
-            isDay ? "opacity-100" : "opacity-0"
-          }`}
         >
-          {/* Sparkle 1 */}
           <div
-            className="absolute top-[28%] left-[22%] w-1.5 h-1.5 rounded-full bg-white/70 shadow-[0_0_8px_white] animate-pulse"
-            style={{ animationDuration: "3.2s" }}
-          />
-          {/* Sparkle 2 */}
-          <div
-            className="absolute top-[34%] right-[28%] w-1 h-1 rounded-full bg-white/60 shadow-[0_0_6px_white] animate-pulse"
-            style={{ animationDuration: "2.4s" }}
-          />
-          {/* Sparkle 3 */}
-          <div
-            className="absolute top-[22%] right-[38%] w-1.5 h-1.5 rounded-full bg-white/80 shadow-[0_0_10px_white] animate-pulse"
-            style={{ animationDuration: "4s" }}
-          />
-          {/* Sparkle 4 */}
-          <div
-            className="absolute top-[42%] left-[34%] w-1 h-1 rounded-full bg-white/50 shadow-[0_0_6px_white] animate-pulse"
-            style={{ animationDuration: "3.6s" }}
-          />
-          {/* Sparkle 5 */}
-          <div
-            className="absolute top-[26%] left-[45%] w-1 h-1 rounded-full bg-white/60 shadow-[0_0_6px_white] animate-pulse"
-            style={{ animationDuration: "2.8s" }}
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background:
+                "radial-gradient(circle at 82% 14%, rgba(212, 245, 230, 0.4) 0%, rgba(134, 215, 185, 0.14) 34%, transparent 64%)",
+            }}
           />
         </div>
 
-        {/* Bottom Ambient Vignette Tint (Membuat bottom cockpit terbaca jelas) */}
+        {/* 4. God Rays / Sun Shafts streaming from upper-right down across diorama (Foto 1 Style) */}
         <div
-          className="absolute inset-x-0 bottom-0 h-48 pointer-events-none"
+          className="absolute inset-0 pointer-events-none overflow-hidden animate-god-ray"
+          style={{
+            opacity: isDay ? 0.85 : isSunset ? 0.6 : 0.22,
+            transition: "opacity 1s ease",
+          }}
+        >
+          <div
+            className="absolute -top-[20%] -right-[20%] w-[160%] h-[160%]"
+            style={{
+              background:
+                "repeating-linear-gradient(-52deg, rgba(255, 255, 235, 0.22) 0px, rgba(255, 255, 235, 0.22) 50px, rgba(255, 255, 255, 0.0) 90px, rgba(255, 255, 235, 0.14) 155px, rgba(255, 255, 255, 0.0) 235px, rgba(255, 255, 235, 0.18) 310px, rgba(255, 255, 255, 0.0) 390px)",
+              maskImage:
+                "radial-gradient(circle at 86% 12%, black 20%, rgba(0,0,0,0.55) 55%, transparent 88%)",
+              WebkitMaskImage:
+                "radial-gradient(circle at 86% 12%, black 20%, rgba(0,0,0,0.55) 55%, transparent 88%)",
+            }}
+          />
+        </div>
+
+        {/* 5. Dynamic Moving Light Motes & Fireflies (Foto 1 Living Drift) */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {[
+            {
+              id: 1,
+              left: "12%",
+              bottom: "4%",
+              size: 3.2,
+              driftX: 34,
+              duration: 11,
+              delay: 0,
+              opacity: 0.8,
+            },
+            {
+              id: 2,
+              left: "22%",
+              bottom: "2%",
+              size: 2.2,
+              driftX: -26,
+              duration: 14,
+              delay: 2.2,
+              opacity: 0.65,
+            },
+            {
+              id: 3,
+              left: "35%",
+              bottom: "10%",
+              size: 4.2,
+              driftX: 42,
+              duration: 9.5,
+              delay: 1.1,
+              opacity: 0.9,
+            },
+            {
+              id: 4,
+              left: "48%",
+              bottom: "6%",
+              size: 2.0,
+              driftX: -18,
+              duration: 16,
+              delay: 4.5,
+              opacity: 0.55,
+            },
+            {
+              id: 5,
+              left: "62%",
+              bottom: "12%",
+              size: 3.6,
+              driftX: 30,
+              duration: 12,
+              delay: 3.1,
+              opacity: 0.85,
+            },
+            {
+              id: 6,
+              left: "76%",
+              bottom: "4%",
+              size: 4.5,
+              driftX: -36,
+              duration: 10,
+              delay: 0.8,
+              opacity: 0.95,
+            },
+            {
+              id: 7,
+              left: "88%",
+              bottom: "15%",
+              size: 2.6,
+              driftX: 20,
+              duration: 13,
+              delay: 5.0,
+              opacity: 0.7,
+            },
+            {
+              id: 8,
+              left: "16%",
+              bottom: "28%",
+              size: 3.0,
+              driftX: -28,
+              duration: 12.5,
+              delay: 6.2,
+              opacity: 0.75,
+            },
+            {
+              id: 9,
+              left: "30%",
+              bottom: "22%",
+              size: 2.2,
+              driftX: 35,
+              duration: 15,
+              delay: 7.4,
+              opacity: 0.6,
+            },
+            {
+              id: 10,
+              left: "68%",
+              bottom: "32%",
+              size: 4.0,
+              driftX: -22,
+              duration: 11.2,
+              delay: 1.8,
+              opacity: 0.85,
+            },
+            {
+              id: 11,
+              left: "82%",
+              bottom: "25%",
+              size: 3.2,
+              driftX: 25,
+              duration: 13.8,
+              delay: 4.0,
+              opacity: 0.8,
+            },
+            {
+              id: 12,
+              left: "44%",
+              bottom: "38%",
+              size: 2.4,
+              driftX: -30,
+              duration: 14.5,
+              delay: 8.5,
+              opacity: 0.7,
+            },
+            {
+              id: 13,
+              left: "72%",
+              bottom: "44%",
+              size: 3.6,
+              driftX: 28,
+              duration: 10.8,
+              delay: 3.5,
+              opacity: 0.85,
+            },
+            {
+              id: 14,
+              left: "26%",
+              bottom: "48%",
+              size: 2.0,
+              driftX: -20,
+              duration: 15.2,
+              delay: 9.0,
+              opacity: 0.65,
+            },
+            {
+              id: 15,
+              left: "90%",
+              bottom: "40%",
+              size: 4.2,
+              driftX: -40,
+              duration: 12.0,
+              delay: 5.5,
+              opacity: 0.9,
+            },
+          ].map((m) => (
+            <div
+              key={m.id}
+              className="absolute rounded-full animate-mote pointer-events-none"
+              style={{
+                left: m.left,
+                bottom: m.bottom,
+                width: `${m.size}px`,
+                height: `${m.size}px`,
+                backgroundColor: isNight
+                  ? "#BAE6FD"
+                  : isSunset
+                    ? "#FED7AA"
+                    : "#FEF9C3",
+                boxShadow: isNight
+                  ? "0 0 8px #7DD3FC"
+                  : isSunset
+                    ? "0 0 8px #FDBA74"
+                    : "0 0 10px rgba(254, 240, 138, 0.9)",
+                ["--mote-duration" as any]: `${m.duration}s`,
+                ["--mote-delay" as any]: `${m.delay}s`,
+                ["--mote-drift-x" as any]: `${m.driftX}px`,
+                ["--mote-max-op" as any]: m.opacity,
+              }}
+            />
+          ))}
+        </div>
+
+        {/* 6. Bottom Vignette Soft Tint */}
+        <div
+          className="absolute inset-x-0 bottom-0 h-44 pointer-events-none"
           style={{
             background:
-              "linear-gradient(to top, rgba(74, 114, 91, 0.35) 0%, transparent 100%)",
+              "linear-gradient(to top, rgba(14, 40, 28, 0.45) 0%, transparent 100%)",
           }}
         />
       </div>
@@ -503,7 +670,10 @@ export default function RimbaDioramaApp() {
         </div>
 
         {/* Bottom Cockpit Layer */}
-        <MobileFocusCard onEnterZen={handleEnterZen} />
+        <MobileFocusCard
+          onEnterZen={handleEnterZen}
+          claimableCount={claimableCount}
+        />
       </div>
 
       {/* Interactive Overlays & Modals */}

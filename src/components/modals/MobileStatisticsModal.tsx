@@ -5,6 +5,9 @@ import { useGameStore } from "@/lib/game/useGameStore";
 import {
   calculateAnalytics,
   calculatePeriodAnalytics,
+  calculateCircadianFocusRhythm,
+  getDetailedSessionsForDate,
+  calculateFlowMastery,
   toLocalDateString,
   AnalyticsPeriod,
 } from "@/lib/game/analytics";
@@ -22,6 +25,12 @@ import {
   Sparkles,
   Calendar,
   PieChart,
+  Sunrise,
+  Sun,
+  Sunset,
+  Moon,
+  Activity,
+  Zap,
 } from "lucide-react";
 
 export interface MobileStatisticsModalProps {
@@ -57,6 +66,11 @@ export function MobileStatisticsModal({
     dateStr: string;
     minutes: number;
   } | null>(null);
+  const [drilldownDate, setDrilldownDate] = useState<{
+    dateStr: string;
+    label: string;
+  } | null>(null);
+  const [selectedHour, setSelectedHour] = useState<number | null>(null);
 
   // Escape key listener
   useEffect(() => {
@@ -162,6 +176,24 @@ export function MobileStatisticsModal({
     }
     return weeks;
   }, [analytics.activityMap]);
+
+  // Circadian Rhythm (24h) and Flow Mastery calculations
+  const circadianData = useMemo(
+    () => calculateCircadianFocusRhythm(sessions),
+    [sessions],
+  );
+  const flowMastery = useMemo(
+    () => calculateFlowMastery(sessions, stumpsCount),
+    [sessions, stumpsCount],
+  );
+  const drilldownSessions = useMemo(() => {
+    if (!drilldownDate) return [];
+    return getDetailedSessionsForDate(sessions, drilldownDate.dateStr);
+  }, [sessions, drilldownDate]);
+
+  const maxHourlyMinutes = useMemo(() => {
+    return Math.max(...circadianData.hourlyMinutes, 1);
+  }, [circadianData.hourlyMinutes]);
 
   if (!isOpen) return null;
 
@@ -303,6 +335,28 @@ export function MobileStatisticsModal({
                     </p>
                     <p className="text-[11.5px] leading-snug text-[#4C7567] mt-0.5 font-normal">
                       {unlockedSet.size} petak dibuka
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Flow Mastery & Keseimbangan Jiwa Banner */}
+              <div className="mt-3 pt-3 border-t border-[#0D3528]/8 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-2xl bg-[#E4F4ED] border border-[#BCE5D3] text-[#187557] shadow-2xs">
+                    <Zap className="h-4 w-4 stroke-[2]" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-[13px] font-semibold text-[#0D3528]">
+                        Flow Harmony: {flowMastery.flowHarmonyScore}/100
+                      </p>
+                      <span className="text-[10px] font-medium px-2 py-0.2 rounded-full bg-[#E4F4ED] text-[#14664D] border border-[#BCE5D3]">
+                        {flowMastery.flowHarmonyScore >= 80 ? "Harmonis" : "Bertumbuh"}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-[#4C7567] mt-0.5 font-normal">
+                      {flowMastery.deepWorkCount} sesi deep work (≥25m) · Rata-rata {flowMastery.avgSessionMinutes}m/sesi
                     </p>
                   </div>
                 </div>
@@ -479,6 +533,136 @@ export function MobileStatisticsModal({
                   </p>
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* ========================================================= */}
+          {/* 3. JAM RITME SIRKADIAN (24-HOUR FOCUS CLOCK)               */}
+          {/* ========================================================= */}
+          <div className="space-y-1.5">
+            <p className="px-1 text-[12px] font-medium uppercase tracking-[0.12em] text-white/90 drop-shadow-xs">
+              Ritme Sirkadian Fokus
+            </p>
+
+            <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-3.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Activity className="h-4 w-4 text-[#187557] stroke-[1.8]" />
+                  <span className="text-[14.5px] font-semibold text-[#0D3528] tracking-wide">
+                    Pola Jam Produktivitas
+                  </span>
+                </div>
+                <span className="text-[11px] font-medium text-[#187557] bg-[#E4F4ED] border border-[#BCE5D3] px-2.5 py-0.5 rounded-full">
+                  24 Jam Sirkadian
+                </span>
+              </div>
+
+              {/* Diurnal Quadrants Summary Pills */}
+              <div className="grid grid-cols-4 gap-1.5 text-center">
+                <div className="p-2 rounded-2xl bg-[#0D3528]/[0.03] border border-[#0D3528]/8">
+                  <div className="flex items-center justify-center gap-1 text-[#187557]">
+                    <Sunrise className="w-3.5 h-3.5" />
+                    <span className="text-[10px] font-semibold">Fajar</span>
+                  </div>
+                  <p className="text-[12px] font-bold text-[#0D3528] mt-1 tabular-nums">{circadianData.quadrantSummaries.dawn}m</p>
+                  <span className="text-[8.5px] text-[#4C7567]">04:00-10:00</span>
+                </div>
+                <div className="p-2 rounded-2xl bg-[#0D3528]/[0.03] border border-[#0D3528]/8">
+                  <div className="flex items-center justify-center gap-1 text-amber-600">
+                    <Sun className="w-3.5 h-3.5" />
+                    <span className="text-[10px] font-semibold">Siang</span>
+                  </div>
+                  <p className="text-[12px] font-bold text-[#0D3528] mt-1 tabular-nums">{circadianData.quadrantSummaries.day}m</p>
+                  <span className="text-[8.5px] text-[#4C7567]">10:00-16:00</span>
+                </div>
+                <div className="p-2 rounded-2xl bg-[#0D3528]/[0.03] border border-[#0D3528]/8">
+                  <div className="flex items-center justify-center gap-1 text-orange-600">
+                    <Sunset className="w-3.5 h-3.5" />
+                    <span className="text-[10px] font-semibold">Senja</span>
+                  </div>
+                  <p className="text-[12px] font-bold text-[#0D3528] mt-1 tabular-nums">{circadianData.quadrantSummaries.sunset}m</p>
+                  <span className="text-[8.5px] text-[#4C7567]">16:00-20:00</span>
+                </div>
+                <div className="p-2 rounded-2xl bg-[#0D3528]/[0.03] border border-[#0D3528]/8">
+                  <div className="flex items-center justify-center gap-1 text-indigo-600">
+                    <Moon className="w-3.5 h-3.5" />
+                    <span className="text-[10px] font-semibold">Malam</span>
+                  </div>
+                  <p className="text-[12px] font-bold text-[#0D3528] mt-1 tabular-nums">{circadianData.quadrantSummaries.night}m</p>
+                  <span className="text-[8.5px] text-[#4C7567]">20:00-04:00</span>
+                </div>
+              </div>
+
+              {/* 24-Hour Interactive Bar Capsules */}
+              <div className="relative pt-4 pb-1">
+                <div className="relative h-24 flex items-end justify-between gap-[2px]">
+                  {circadianData.hourlyMinutes.map((mins, h) => {
+                    const heightPct = mins > 0 ? Math.max(14, Math.round((mins / maxHourlyMinutes) * 100)) : 8;
+                    const isSelected = selectedHour === h;
+                    const isPeak = mins === circadianData.peakHourMinutes && mins > 0;
+
+                    return (
+                      <div
+                        key={`hour_${h}`}
+                        onClick={() => {
+                          hapticLight();
+                          setSelectedHour(isSelected ? null : h);
+                        }}
+                        className="flex-1 flex flex-col items-center h-full justify-end cursor-pointer group"
+                      >
+                        <div className="w-full flex-1 flex items-end">
+                          <div
+                            className={`w-full rounded-full transition-all duration-300 ${
+                              mins > 0
+                                ? isPeak
+                                  ? "bg-gradient-to-t from-amber-500 to-amber-300 shadow-xs"
+                                  : "bg-gradient-to-t from-[#187557] to-[#2BB688]"
+                                : "bg-[#0D3528]/10"
+                            } ${
+                              isSelected ? "ring-2 ring-[#0D3528] scale-125" : ""
+                            }`}
+                            style={{ height: `${heightPct}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {/* Hour ticks */}
+                <div className="flex justify-between text-[8.5px] text-[#4C7567] mt-1.5 px-0.5">
+                  <span>00:00</span>
+                  <span>06:00</span>
+                  <span>12:00</span>
+                  <span>18:00</span>
+                  <span>23:00</span>
+                </div>
+              </div>
+
+              {/* Selected Hour or Peak Info Banner */}
+              <div className="p-2.5 px-3 rounded-2xl bg-[#E4F4ED] border border-[#BCE5D3] flex items-center justify-between text-[11.5px]">
+                <div className="flex items-center gap-2 text-[#0D3528]">
+                  <Sparkles className="w-3.5 h-3.5 text-[#187557] shrink-0" />
+                  {selectedHour !== null ? (
+                    <span>
+                      Pukul <strong>{String(selectedHour).padStart(2, '0')}:00 – {String((selectedHour + 1) % 24).padStart(2, '0')}:00</strong>:{" "}
+                      <strong>{circadianData.hourlyMinutes[selectedHour]} menit fokus</strong>
+                    </span>
+                  ) : (
+                    <span>
+                      Jam Emas: <strong>{circadianData.peakWindowLabel}</strong>
+                    </span>
+                  )}
+                </div>
+                {selectedHour !== null && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedHour(null)}
+                    className="text-[10.5px] text-[#14664D] underline font-medium cursor-pointer"
+                  >
+                    Reset
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
@@ -695,14 +879,19 @@ export function MobileStatisticsModal({
                             key={day.dateStr}
                             onClick={() => {
                               hapticLight();
-                              setSelectedHeatmapDay(
-                                isSelected
-                                  ? null
-                                  : {
-                                      dateStr: day.label,
-                                      minutes: day.minutes,
-                                    },
-                              );
+                              if (isSelected) {
+                                setSelectedHeatmapDay(null);
+                                setDrilldownDate(null);
+                              } else {
+                                setSelectedHeatmapDay({
+                                  dateStr: day.label,
+                                  minutes: day.minutes,
+                                });
+                                setDrilldownDate({
+                                  dateStr: day.dateStr,
+                                  label: day.label,
+                                });
+                              }
                             }}
                             className={`aspect-square rounded-[6px] border transition-all duration-150 cursor-pointer hover:scale-110 ${bgClass} ${
                               day.isToday ? "ring-2 " : ""
@@ -729,6 +918,94 @@ export function MobileStatisticsModal({
               </div>
             </div>
           </div>
+
+          {/* ========================================================= */}
+          {/* 5. RINCIAN SESI HARIAN INTERAKTIF (DRILLDOWN)             */}
+          {/* ========================================================= */}
+          {drilldownDate && (
+            <div className="space-y-1.5 animate-in fade-in slide-in-from-bottom-2 duration-200">
+              <div className="flex items-center justify-between px-1">
+                <p className="text-[12px] font-medium uppercase tracking-[0.12em] text-white/90 drop-shadow-xs">
+                  Riwayat Sesi: {drilldownDate.label}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    hapticLight();
+                    setDrilldownDate(null);
+                    setSelectedHeatmapDay(null);
+                  }}
+                  className="text-[11.5px] text-white/90 hover:text-white underline cursor-pointer"
+                >
+                  Tutup
+                </button>
+              </div>
+
+              <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-4 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-2">
+                {drilldownSessions.length === 0 ? (
+                  <p className="text-[12px] text-[#4C7567] italic py-2.5 text-center font-normal">
+                    Tidak ada sesi fokus pada tanggal ini.
+                  </p>
+                ) : (
+                  drilldownSessions.map((session, sIdx) => {
+                    const sTime = new Date(session.started_at).toLocaleTimeString("id-ID", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    });
+                    const isSuccess = session.status === "completed";
+                    const tagCol = DEFAULT_TAG_COLORS[session.tag || "Fokus"] || "#187557";
+
+                    return (
+                      <div
+                        key={session.id || sIdx}
+                        className="p-3 rounded-2xl bg-[#0D3528]/[0.025] border border-[#0D3528]/8 flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <div
+                            className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+                              isSuccess ? "bg-[#E4F4ED] text-[#187557]" : "bg-red-50 text-red-600"
+                            }`}
+                          >
+                            <TreePine className="w-4 h-4 stroke-[1.8]" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <span
+                                className="w-2 h-2 rounded-full shrink-0"
+                                style={{ backgroundColor: tagCol }}
+                              />
+                              <span className="text-[12.5px] font-semibold text-[#0D3528]">
+                                {session.tag || "Fokus"}
+                              </span>
+                              <span className="text-[10px] text-[#4C7567]">· {sTime}</span>
+                            </div>
+                            {session.task_note ? (
+                              <p className="text-[11px] text-[#4C7567] line-clamp-1 italic mt-0.5">
+                                "{session.task_note}"
+                              </p>
+                            ) : (
+                              <p className="text-[11px] text-[#4C7567] mt-0.5">
+                                {isSuccess ? "Pohon mekar sempurna" : "Sesi terganggu"}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="text-right">
+                          <span className="text-[13px] font-bold text-[#0D3528] tabular-nums">
+                            {session.duration_minutes || 25}m
+                          </span>
+                          <p className={`text-[10px] font-medium ${isSuccess ? "text-[#14664D]" : "text-red-500"}`}>
+                            {isSuccess ? "Mekar" : "Tumbang"}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </>

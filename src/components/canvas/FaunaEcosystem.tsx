@@ -116,15 +116,6 @@ function HoneyBee({ centers, speed, radius, phaseOffset, scale = 0.14, isNight =
     if (!groupRef.current || centers.length === 0) return;
     const t = clock.getElapsedTime() * speed + phaseOffset;
 
-    if (isNight) {
-      // Sleep settled quietly inside first flower
-      const f = centers[0] || [0, 0, 0];
-      const breathe = Math.sin(t * 1.2) * 0.005;
-      groupRef.current.position.set(f[0], f[1] + 0.16 + breathe, f[2]);
-      groupRef.current.rotation.set(0.12, 0.4, 0);
-      return;
-    }
-
     const count = centers.length;
 
     // Shift flower anchor every ~8 seconds
@@ -224,17 +215,6 @@ function Songbird({
     if (!groupRef.current || waypoints.length === 0) return;
 
     const t = clock.getElapsedTime() + phaseOffset;
-
-    if (isNight) {
-      // Sleep quietly perched on the first branch perch
-      const p = waypoints[0] || [0, 0.72, 0];
-      const breathe = Math.sin(t * 1.0) * 0.004;
-      groupRef.current.position.set(p[0], p[1] + breathe, p[2]);
-      groupRef.current.rotation.set(0.08, 0.35, 0);
-      if (leftWingRef.current) leftWingRef.current.rotation.z = -0.05;
-      if (rightWingRef.current) rightWingRef.current.rotation.z = 0.05;
-      return;
-    }
 
     const count = waypoints.length;
     const currentWaypointIndex = Math.floor(t / CYCLE_DUR) % count;
@@ -460,20 +440,6 @@ function MeadowBunny({
 
     const t = clock.getElapsedTime() + phaseOffset;
 
-    if (isNight) {
-      // Sleep state at night: Curls down gently in turf, ears lowered
-      const p = roamingTiles[0] || [0, 0, 0];
-      const groundH = getTerrainElevation(p[0], p[2]).height;
-      const breathe = Math.sin(t * 1.2) * 0.015;
-      groupRef.current.position.set(p[0], groundH + 0.005, p[2]);
-      groupRef.current.rotation.set(0.06, 0.3, 0.12);
-      groupRef.current.scale.set(scale, scale * (1 + breathe), scale);
-      if (leftEarRef.current) leftEarRef.current.rotation.x = -0.3;
-      if (rightEarRef.current) rightEarRef.current.rotation.x = -0.3;
-      groundPositionsRef.current.set(id, new THREE.Vector3(p[0], groundH + 0.005, p[2]));
-      return;
-    }
-
     const count = roamingTiles.length;
     const currentIdx = Math.floor(t / CYCLE_DUR) % count;
     const nextIdx = (currentIdx + 1) % count;
@@ -669,18 +635,6 @@ function ForestFox({
 
     const t = clock.getElapsedTime() + phaseOffset;
 
-    if (isNight) {
-      // Sleep state at night: Curled up resting with tail wrapped around
-      const p = roamingTiles[0] || [0, 0, 0];
-      const groundH = getTerrainElevation(p[0], p[2]).height;
-      const breathe = Math.sin(t * 1.1) * 0.015;
-      groupRef.current.position.set(p[0], groundH + 0.005, p[2]);
-      groupRef.current.rotation.set(0.06, 0.6, 0.22);
-      groupRef.current.scale.set(scale, scale * (1 + breathe), scale);
-      groundPositionsRef.current.set(id, new THREE.Vector3(p[0], groundH + 0.005, p[2]));
-      return;
-    }
-
     const count = roamingTiles.length;
     const currentIdx = Math.floor(t / CYCLE_DUR) % count;
     const nextIdx = (currentIdx + 1) % count;
@@ -808,16 +762,6 @@ function TreeKoala({ basePos, groundPositionsRef, isNight = false, onSelect }: T
   useFrame(({ clock }) => {
     if (!groupRef.current) return;
     const t = clock.getElapsedTime();
-
-    if (isNight) {
-      // Sleep state at night: Clings still to trunk, head resting on bark
-      const breathe = Math.sin(t * 1.0) * 0.012;
-      groupRef.current.position.set(basePos[0], basePos[1] + 0.015, basePos[2]);
-      groupRef.current.rotation.set(0.18, 1.1, 0.08);
-      groupRef.current.scale.set(0.26, 0.26 * (1 + breathe), 0.26);
-      groundPositionsRef.current.set('koala', new THREE.Vector3(basePos[0], basePos[1] + 0.015, basePos[2]));
-      return;
-    }
 
     const cycle = t % 11.0;
 
@@ -980,18 +924,6 @@ function CubePetGroundWalker({
   useFrame(({ clock }, delta) => {
     if (!groupRef.current || roamingTiles.length === 0) return;
     const t = clock.getElapsedTime() + phaseOffset;
-
-    if (isNight) {
-      // Sleep state at night: Resting peacefully on grass, gentle rhythmic breathing, stationary
-      const p = roamingTiles[0] || [0, 0, 0];
-      const groundH = getTerrainElevation(p[0], p[2]).height;
-      const breathe = Math.sin(t * 1.0) * 0.012;
-      groupRef.current.position.set(p[0], groundH + 0.005, p[2]);
-      groupRef.current.rotation.set(0.08, phaseOffset * 0.5, 0.12);
-      groupRef.current.scale.set(scale, scale * (1 + breathe), scale);
-      groundPositionsRef.current.set(id, new THREE.Vector3(p[0], groundH + 0.005, p[2]));
-      return;
-    }
 
     const count = roamingTiles.length;
     const currentIdx = Math.floor(t / CYCLE_DUR) % count;
@@ -1156,16 +1088,6 @@ function RiverFish({
     if (!groupRef.current || riverWaypoints.length === 0) return;
     const t = clock.getElapsedTime() + phaseOffset;
 
-    if (isNight) {
-      // Sleep in quiet river eddy: floats gently, stationary
-      const p = riverWaypoints[0];
-      const breathe = Math.sin(t * 0.9) * 0.015;
-      groupRef.current.position.set(p[0], -0.14 + breathe, p[2]);
-      groupRef.current.rotation.set(0.05, 0.4, 0.08);
-      groupRef.current.scale.set(scale, scale, scale);
-      return;
-    }
-
     const count = riverWaypoints.length;
     const currentIdx = Math.floor(t / SWIM_DUR) % count;
     const nextIdx = (currentIdx + 1) % count;
@@ -1269,17 +1191,6 @@ function TreeMonkey({
   useFrame(({ clock }) => {
     if (!groupRef.current || branchWaypoints.length === 0) return;
     const t = clock.getElapsedTime() + phaseOffset;
-
-    if (isNight) {
-      // Sleep state in tree: Huddled still on lower trunk/mossy roots
-      const p = branchWaypoints[0];
-      const breathe = Math.sin(t * 1.0) * 0.006;
-      groupRef.current.position.set(p[0], p[1] + breathe, p[2]);
-      groupRef.current.rotation.set(0.12, 0.8, 0.05);
-      groupRef.current.scale.set(scale, scale, scale);
-      groundPositionsRef.current.set('monkey', new THREE.Vector3(p[0], p[1], p[2]));
-      return;
-    }
 
     const count = branchWaypoints.length;
     const HOP_CYCLE = 6.0;

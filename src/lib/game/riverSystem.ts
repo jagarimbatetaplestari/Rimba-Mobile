@@ -196,6 +196,42 @@ export function getRiverWaterGeometry(mask: number): THREE.BufferGeometry {
     }
   }
 
+  function addCurvedArcStrip(
+    cx: number,
+    cz: number,
+    rInner: number,
+    rOuter: number,
+    startAngle: number,
+    endAngle: number,
+    segs = 16
+  ) {
+    const base = verts.length / 3;
+    for (let i = 0; i <= segs; i++) {
+      const prog = i / segs;
+      const angle = startAngle + prog * (endAngle - startAngle);
+      const cosA = Math.cos(angle);
+      const sinA = Math.sin(angle);
+
+      // Inner vertex
+      const xIn = cx + cosA * rInner;
+      const zIn = cz + sinA * rInner;
+      verts.push(xIn, y, zIn);
+      uvs.push(xIn + 0.5, zIn + 0.5);
+
+      // Outer vertex
+      const xOut = cx + cosA * rOuter;
+      const zOut = cz + sinA * rOuter;
+      verts.push(xOut, y, zOut);
+      uvs.push(xOut + 0.5, zOut + 0.5);
+    }
+
+    for (let i = 0; i < segs; i++) {
+      const idx = base + i * 2;
+      indices.push(idx, idx + 1, idx + 3);
+      indices.push(idx, idx + 3, idx + 2);
+    }
+  }
+
   if (count === 0) {
     // Isolated pond disk - full rounded pond with zero raw edge holes
     addFan(0, 0, 0.46, 0, Math.PI * 2, 24);
@@ -220,9 +256,20 @@ export function getRiverWaterGeometry(mask: number): THREE.BufferGeometry {
   } else if (count === 2 && n && s) {
     // Pure straight North-South: single contiguous quad spanning the entire tile with ZERO internal seams
     addQuad(-hw, -ext, hw, ext);
+  } else if (count === 2 && s && e) {
+    // Organic curved bend: South to East
+    addCurvedArcStrip(ext, ext, ext - hw, ext + hw, Math.PI, 1.5 * Math.PI, 20);
+  } else if (count === 2 && s && w) {
+    // Organic curved bend: South to West
+    addCurvedArcStrip(-ext, ext, ext - hw, ext + hw, 1.5 * Math.PI, 2.0 * Math.PI, 20);
+  } else if (count === 2 && n && e) {
+    // Organic curved bend: North to East
+    addCurvedArcStrip(ext, -ext, ext - hw, ext + hw, 0.5 * Math.PI, Math.PI, 20);
+  } else if (count === 2 && n && w) {
+    // Organic curved bend: North to West
+    addCurvedArcStrip(-ext, -ext, ext - hw, ext + hw, 0.0, 0.5 * Math.PI, 20);
   } else {
-    // Corners (L-bends), T-junctions, and 4-way cross:
-    // Central hub quad
+    // T-junctions and 4-way cross: Central hub + connected arms + smooth corner fillets
     addQuad(-hw, -hw, hw, hw);
 
     // Channel arms reaching precisely to tile edge (±0.50m)
@@ -232,10 +279,10 @@ export function getRiverWaterGeometry(mask: number): THREE.BufferGeometry {
     if (s) addQuad(-hw, hw, hw, ext);
 
     // Fill inner corners of active junctions so water never has corner holes
-    if (e && s) addQuad(hw, hw, ext, ext);
-    if (w && s) addQuad(-ext, hw, -hw, ext);
-    if (e && n) addQuad(hw, -ext, ext, -hw);
-    if (w && n) addQuad(-ext, -ext, -hw, -hw);
+    if (e && s) addCurvedArcStrip(ext, ext, ext - hw, ext + hw, Math.PI, 1.5 * Math.PI, 16);
+    if (w && s) addCurvedArcStrip(-ext, ext, ext - hw, ext + hw, 1.5 * Math.PI, 2.0 * Math.PI, 16);
+    if (e && n) addCurvedArcStrip(ext, -ext, ext - hw, ext + hw, 0.5 * Math.PI, Math.PI, 16);
+    if (w && n) addCurvedArcStrip(-ext, -ext, ext - hw, ext + hw, 0.0, 0.5 * Math.PI, 16);
   }
 
   const geo = new THREE.BufferGeometry();
@@ -295,6 +342,42 @@ export function getRiverBedGeometry(mask: number): THREE.BufferGeometry {
     }
   }
 
+  function addCurvedArcStrip(
+    cx: number,
+    cz: number,
+    rInner: number,
+    rOuter: number,
+    startAngle: number,
+    endAngle: number,
+    segs = 16
+  ) {
+    const base = verts.length / 3;
+    for (let i = 0; i <= segs; i++) {
+      const prog = i / segs;
+      const angle = startAngle + prog * (endAngle - startAngle);
+      const cosA = Math.cos(angle);
+      const sinA = Math.sin(angle);
+
+      // Inner vertex
+      const xIn = cx + cosA * rInner;
+      const zIn = cz + sinA * rInner;
+      verts.push(xIn, y, zIn);
+      uvs.push(xIn + 0.5, zIn + 0.5);
+
+      // Outer vertex
+      const xOut = cx + cosA * rOuter;
+      const zOut = cz + sinA * rOuter;
+      verts.push(xOut, y, zOut);
+      uvs.push(xOut + 0.5, zOut + 0.5);
+    }
+
+    for (let i = 0; i < segs; i++) {
+      const idx = base + i * 2;
+      indices.push(idx, idx + 1, idx + 3);
+      indices.push(idx, idx + 3, idx + 2);
+    }
+  }
+
   if (count === 0) {
     addFan(0, 0, 0.48, 0, Math.PI * 2, 24);
   } else if (count === 1) {
@@ -315,16 +398,24 @@ export function getRiverBedGeometry(mask: number): THREE.BufferGeometry {
     addQuad(-ext, -hw, ext, hw);
   } else if (count === 2 && n && s) {
     addQuad(-hw, -ext, hw, ext);
+  } else if (count === 2 && s && e) {
+    addCurvedArcStrip(ext, ext, Math.max(0.01, ext - hw), ext + hw, Math.PI, 1.5 * Math.PI, 20);
+  } else if (count === 2 && s && w) {
+    addCurvedArcStrip(-ext, ext, Math.max(0.01, ext - hw), ext + hw, 1.5 * Math.PI, 2.0 * Math.PI, 20);
+  } else if (count === 2 && n && e) {
+    addCurvedArcStrip(ext, -ext, Math.max(0.01, ext - hw), ext + hw, 0.5 * Math.PI, Math.PI, 20);
+  } else if (count === 2 && n && w) {
+    addCurvedArcStrip(-ext, -ext, Math.max(0.01, ext - hw), ext + hw, 0.0, 0.5 * Math.PI, 20);
   } else {
     addQuad(-hw, -hw, hw, hw);
     if (e) addQuad(hw, -hw, ext, hw);
     if (w) addQuad(-ext, -hw, -hw, hw);
     if (n) addQuad(-hw, -ext, hw, -hw);
     if (s) addQuad(-hw, hw, hw, ext);
-    if (e && s) addQuad(hw, hw, ext, ext);
-    if (w && s) addQuad(-ext, hw, -hw, ext);
-    if (e && n) addQuad(hw, -ext, ext, -hw);
-    if (w && n) addQuad(-ext, -ext, -hw, -hw);
+    if (e && s) addCurvedArcStrip(ext, ext, Math.max(0.01, ext - hw), ext + hw, Math.PI, 1.5 * Math.PI, 16);
+    if (w && s) addCurvedArcStrip(-ext, ext, Math.max(0.01, ext - hw), ext + hw, 1.5 * Math.PI, 2.0 * Math.PI, 16);
+    if (e && n) addCurvedArcStrip(ext, -ext, Math.max(0.01, ext - hw), ext + hw, 0.5 * Math.PI, Math.PI, 16);
+    if (w && n) addCurvedArcStrip(-ext, -ext, Math.max(0.01, ext - hw), ext + hw, 0.0, 0.5 * Math.PI, 16);
   }
 
   const geo = new THREE.BufferGeometry();

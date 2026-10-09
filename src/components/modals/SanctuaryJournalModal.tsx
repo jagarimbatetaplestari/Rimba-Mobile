@@ -11,6 +11,7 @@ import {
 import { TREE_SPECIES_CONFIG } from "@/lib/game/config";
 import { getDailyQuestStatus } from "@/lib/game/quests";
 import { STORY_CHAPTERS } from "@/lib/game/storyLore";
+import { getWisdomProgress, WisdomFragment } from "@/lib/game/wisdomLore";
 import { TagLineIcon } from "@/components/common/TagLineIcon";
 import { soundManager } from "@/lib/audio/sounds";
 import {
@@ -40,12 +41,14 @@ import {
   Check,
   Lock,
   Heart,
+  ScrollText,
 } from "lucide-react";
 
 export type JournalTab =
   | "quests"
   | "reflections"
   | "story"
+  | "wisdom"
   | "streak"
   | "almanac";
 
@@ -68,17 +71,20 @@ export function SanctuaryJournalModal({
   const claimAllClearBonus = useGameStore((state) => state.claimAllClearBonus);
   const buyStreakShield = useGameStore((state) => state.buyStreakShield);
   const claimStoryChapter = useGameStore((state) => state.claimStoryChapter);
+  const claimWisdomFragment = useGameStore((state) => state.claimWisdomFragment);
   const updateSessionNote = useGameStore((state) => state.updateSessionNote);
 
   // Normalize initial tab aliases
-  const normalizeTab = (t: JournalTab): "quests" | "reflections" | "story" => {
+  const normalizeTab = (
+    t: JournalTab,
+  ): "quests" | "reflections" | "story" | "wisdom" => {
     if (t === "streak") return "quests";
     if (t === "almanac") return "reflections";
-    return t as "quests" | "reflections" | "story";
+    return t as "quests" | "reflections" | "story" | "wisdom";
   };
 
   const [activeTab, setActiveTab] = useState<
-    "quests" | "reflections" | "story"
+    "quests" | "reflections" | "story" | "wisdom"
   >(normalizeTab(initialTab));
 
   // Reflection editor state
@@ -122,6 +128,15 @@ export function SanctuaryJournalModal({
       (c) => !claimed.has(c.id) && c.checkUnlocked(saveData).isUnlocked,
     ).length;
   }, [saveData]);
+
+  // Wisdom progression & claimable fragments
+  const wisdomProgress = useMemo(
+    () => getWisdomProgress(saveData),
+    [saveData],
+  );
+  const claimableWisdomCount = useMemo(() => {
+    return wisdomProgress.fragments.filter((f) => f.isUnlocked && !f.isClaimed).length;
+  }, [wisdomProgress]);
 
   // Mini calendar (28 days)
   const calendarDays = useMemo(() => {
@@ -244,6 +259,22 @@ export function SanctuaryJournalModal({
     }
   };
 
+  const handleClaimWisdom = (fragmentId: string) => {
+    hapticMedium();
+    const ok = claimWisdomFragment(fragmentId);
+    if (ok) {
+      soundManager.playComplete();
+      try {
+        confetti({
+          particleCount: 85,
+          spread: 80,
+          origin: { y: 0.6 },
+          colors: ["#F59E0B", "#10B981", "#3B82F6", "#ffffff"],
+        });
+      } catch {}
+    }
+  };
+
   const handleSaveNote = () => {
     if (!editingSessionId) return;
     soundManager.playPop();
@@ -346,8 +377,8 @@ export function SanctuaryJournalModal({
             </button>
           </div>
 
-          {/* 3-PILLAR SEGMENTED SWITCHER (Floating Capsule Glass) */}
-          <div className="rounded-full p-1 border border-white/25 bg-white/20 backdrop-blur-md shadow-xs grid grid-cols-3 gap-1">
+          {/* 4-PILLAR SEGMENTED SWITCHER (Floating Capsule Glass) */}
+          <div className="rounded-full p-1 border border-white/25 bg-white/20 backdrop-blur-md shadow-xs grid grid-cols-4 gap-1">
             <button
               type="button"
               onClick={() => {
@@ -355,15 +386,15 @@ export function SanctuaryJournalModal({
                 hapticLight();
                 setActiveTab("quests");
               }}
-              className={`py-2 rounded-full text-[12px] transition-all relative cursor-pointer ${
+              className={`py-2 rounded-full text-[12px] transition-all relative cursor-pointer text-center ${
                 activeTab === "quests"
                   ? "bg-white text-[#0D3528] shadow-sm font-semibold"
                   : "text-emerald-50/80 hover:text-white font-medium"
               }`}
             >
-              Misi & Ritual
+              Misi
               {questSummary.claimableCount > 0 && (
-                <span className="absolute top-1.5 right-2.5 w-2 h-2 rounded-full bg-[#187557] ring-2 ring-white" />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#187557] ring-2 ring-white" />
               )}
             </button>
 
@@ -374,13 +405,13 @@ export function SanctuaryJournalModal({
                 hapticLight();
                 setActiveTab("reflections");
               }}
-              className={`py-2 rounded-full text-[12px] transition-all cursor-pointer ${
+              className={`py-2 rounded-full text-[12px] transition-all cursor-pointer text-center ${
                 activeTab === "reflections"
                   ? "bg-white text-[#0D3528] shadow-sm font-semibold"
                   : "text-emerald-50/80 hover:text-white font-medium"
               }`}
             >
-              Buku Refleksi
+              Refleksi
             </button>
 
             <button
@@ -390,15 +421,34 @@ export function SanctuaryJournalModal({
                 hapticLight();
                 setActiveTab("story");
               }}
-              className={`py-2 rounded-full text-[12px] transition-all relative cursor-pointer ${
+              className={`py-2 rounded-full text-[12px] transition-all relative cursor-pointer text-center ${
                 activeTab === "story"
                   ? "bg-white text-[#0D3528] shadow-sm font-semibold"
                   : "text-emerald-50/80 hover:text-white font-medium"
               }`}
             >
-              Babad Rimba
+              Babad
               {claimableStoryCount > 0 && (
-                <span className="absolute top-1.5 right-2.5 w-2 h-2 rounded-full bg-[#187557] ring-2 ring-white" />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#187557] ring-2 ring-white" />
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                soundManager.playPop();
+                hapticLight();
+                setActiveTab("wisdom");
+              }}
+              className={`py-2 rounded-full text-[12px] transition-all relative cursor-pointer text-center ${
+                activeTab === "wisdom"
+                  ? "bg-white text-[#0D3528] shadow-sm font-semibold"
+                  : "text-emerald-50/80 hover:text-white font-medium"
+              }`}
+            >
+              Altar
+              {claimableWisdomCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-amber-400 ring-2 ring-white animate-pulse" />
               )}
             </button>
           </div>
@@ -940,6 +990,203 @@ export function SanctuaryJournalModal({
                           </span>
                           <span className="tabular-nums text-[10.5px] font-medium text-[#187557] bg-[#E4F4ED] px-2 py-0.5 rounded-md border border-[#BCE5D3] shrink-0">
                             {progressText}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* ======================================================== */}
+          {/* PILAR 4: ALTAR KEBIJAKSANAAN & POHON RESONANSI           */}
+          {/* ======================================================== */}
+          {activeTab === "wisdom" && (
+            <div className="space-y-4 animate-in fade-in duration-200">
+              {/* Header Hero: Pohon Resonansi Suaka */}
+              <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200/80 text-[#187557] flex items-center justify-center shadow-xs">
+                      <Trees className="w-6 h-6 stroke-[1.8]" />
+                    </div>
+                    <div>
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-[20px] font-bold text-[#0D3528] tracking-tight">
+                          {wisdomProgress.currentStage
+                            ? wisdomProgress.currentStage.treeStageName
+                            : "Benih Hening"}
+                        </span>
+                        <span className="text-[12px] font-medium text-[#4C7567]">
+                          · Tahap {wisdomProgress.unlockedCount} / {wisdomProgress.totalCount}
+                        </span>
+                      </div>
+                      <p className="text-[11.5px] text-[#4C7567] font-medium mt-0.5">
+                        Pohon Resonansi & Altar Kebijaksanaan
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="text-right">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-[#187557] px-2 py-0.5 rounded-md bg-[#E4F4ED] border border-[#BCE5D3]">
+                      {wisdomProgress.totalHours} Jam
+                    </span>
+                    <p className="text-[10.5px] text-[#4C7567] font-normal mt-0.5">
+                      Fokus Kumulatif
+                    </p>
+                  </div>
+                </div>
+
+                {/* Progress bar to next evolution */}
+                <div className="space-y-1.5 pt-1">
+                  <div className="flex justify-between items-center text-[11px]">
+                    <span className="text-[#4C7567] font-medium">
+                      {wisdomProgress.nextStage
+                        ? `Menuju ${wisdomProgress.nextStage.treeStageName}`
+                        : "Evolusi Puncak Tercapai"}
+                    </span>
+                    <span className="text-[#187557] font-semibold tabular-nums">
+                      {wisdomProgress.nextStage
+                        ? `${wisdomProgress.nextStage.hoursRemaining} jam lagi`
+                        : "Sempurna"}
+                    </span>
+                  </div>
+                  <div className="h-2 w-full rounded-full bg-[#0D3528]/10 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-[#187557] via-[#2BB688] to-emerald-400 transition-all duration-500"
+                      style={{
+                        width: `${Math.min(
+                          100,
+                          Math.round(
+                            (wisdomProgress.unlockedCount /
+                              wisdomProgress.totalCount) *
+                              100,
+                          ),
+                        )}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-2xl bg-[#E4F4ED]/60 border border-[#BCE5D3]/70 text-[11px] text-[#14664D] leading-relaxed">
+                  Setiap jam hening mengalirkan getaran jiwa ke akar Pohon Resonansi, membuka aforisme adiluhung Nusantara, Stoik, dan Zen untuk memandu perjalanan batinmu.
+                </div>
+              </div>
+
+              {/* Fragment Cards */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between px-1">
+                  <h3 className="text-[14px] font-semibold text-white drop-shadow-xs">
+                    Pecahan Hikmah & Aforisme ({wisdomProgress.unlockedCount}/{wisdomProgress.totalCount})
+                  </h3>
+                  <span className="text-[11px] font-medium text-emerald-100">
+                    Berdasarkan Jam Fokus
+                  </span>
+                </div>
+
+                {wisdomProgress.fragments.map((frag) => {
+                  const traditionStyle =
+                    frag.tradition === "Nusantara"
+                      ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                      : frag.tradition === "Stoik"
+                      ? "bg-slate-100 text-slate-700 border-slate-200"
+                      : frag.tradition === "Zen"
+                      ? "bg-cyan-50 text-cyan-800 border-cyan-200"
+                      : "bg-amber-50 text-amber-800 border-amber-200";
+
+                  return (
+                    <div
+                      key={frag.id}
+                      className={`rounded-3xl border p-4.5 transition-all space-y-3 ${
+                        frag.isUnlocked
+                          ? "bg-white/95 border-white/80 shadow-md shadow-[#0E3B2D]/5"
+                          : "bg-white/60 border-white/40 opacity-75 backdrop-blur-sm"
+                      }`}
+                    >
+                      {/* Top row */}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-3 min-w-0">
+                          <div
+                            className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${
+                              frag.isUnlocked
+                                ? "bg-[#E4F4ED] text-[#187557] border border-[#BCE5D3]"
+                                : "bg-[#0D3528]/5 text-[#4C7567]/50"
+                            }`}
+                          >
+                            {frag.isUnlocked ? (
+                              <ScrollText className="w-5 h-5 stroke-[1.8]" />
+                            ) : (
+                              <Lock className="w-4 h-4 stroke-[1.8]" />
+                            )}
+                          </div>
+
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md bg-[#0D3528]/5 text-[#14664D] shrink-0">
+                                Tahap {frag.stage}
+                              </span>
+                              <span
+                                className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md border shrink-0 ${traditionStyle}`}
+                              >
+                                {frag.tradition}
+                              </span>
+                            </div>
+                            <h4 className="text-[14px] font-semibold text-[#0D3528] tracking-tight truncate mt-1">
+                              {frag.title}
+                            </h4>
+                            <p className="text-[11px] text-[#4C7567] font-medium">
+                              {frag.treeStageName}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Status / Claim Button */}
+                        <div className="shrink-0 pt-0.5">
+                          {frag.isClaimed ? (
+                            <span className="px-2.5 py-1 rounded-full bg-[#E4F4ED] text-[#14664D] border border-[#BCE5D3] text-[10.5px] font-medium flex items-center gap-1 whitespace-nowrap">
+                              <Check className="w-3.5 h-3.5 stroke-[2]" /> Diresapi
+                            </span>
+                          ) : frag.isUnlocked ? (
+                            <button
+                              type="button"
+                              onClick={() => handleClaimWisdom(frag.id)}
+                              className="px-3 py-1.5 rounded-full bg-gradient-to-r from-[#187557] to-[#2BB688] hover:opacity-95 text-white text-[11px] font-medium shadow-xs active:scale-95 transition-all shrink-0 cursor-pointer animate-pulse whitespace-nowrap"
+                            >
+                              Resapi (+{frag.rewardSoul} Soul)
+                            </button>
+                          ) : (
+                            <span className="text-[10.5px] font-medium text-[#4C7567] shrink-0 px-2 py-0.5 rounded-md bg-[#0D3528]/5 tabular-nums whitespace-nowrap">
+                              {frag.hoursRequired} Jam ({frag.progressPct}%)
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Content */}
+                      {frag.isUnlocked ? (
+                        <div className="space-y-2 pt-0.5">
+                          <div className="p-3 rounded-2xl bg-amber-50/60 border border-amber-200/70">
+                            <p className="text-[11.5px] text-amber-950 italic font-medium leading-relaxed">
+                              &ldquo;{frag.aphorism}&rdquo;
+                            </p>
+                          </div>
+                          <p className="text-[12px] text-[#0D3528]/90 leading-relaxed font-normal">
+                            {frag.reflection}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="p-2.5 rounded-2xl bg-[#0D3528]/5 text-[11.5px] text-[#4C7567] flex items-center justify-between font-normal gap-2">
+                          <span className="truncate">
+                            🔒 Butuh{" "}
+                            <strong className="font-semibold text-[#0D3528]">
+                              {frag.hoursRequired} jam
+                            </strong>{" "}
+                            fokus mendalam ({frag.hoursRemaining} jam lagi).
+                          </span>
+                          <span className="tabular-nums text-[10.5px] font-medium text-[#187557] bg-[#E4F4ED] px-2 py-0.5 rounded-md border border-[#BCE5D3] shrink-0">
+                            {frag.progressPct}%
                           </span>
                         </div>
                       )}

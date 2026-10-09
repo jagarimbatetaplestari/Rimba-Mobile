@@ -387,3 +387,123 @@ export function calculatePeriodAnalytics(
   };
 }
 
+export interface CircadianRhythmData {
+  hourlyMinutes: number[];
+  peakHour: number;
+  peakHourMinutes: number;
+  peakWindowLabel: string;
+  quadrantSummaries: {
+    dawn: number;      // 04:00 - 09:59
+    day: number;       // 10:00 - 15:59
+    sunset: number;    // 16:00 - 19:59
+    night: number;     // 20:00 - 03:59
+  };
+}
+
+/**
+ * Calculates 24-hour circadian focus distribution across all completed sessions.
+ */
+export function calculateCircadianFocusRhythm(sessions: FocusSession[]): CircadianRhythmData {
+  const hourly = new Array(24).fill(0);
+  const completed = sessions.filter((s) => s.status === 'completed' && s.completed_at);
+
+  completed.forEach((s) => {
+    const d = new Date(s.completed_at || s.started_at);
+    const hour = d.getHours();
+    const duration = s.duration_minutes || 25;
+    hourly[hour] += duration;
+  });
+
+  let peakHour = 0;
+  let maxMinutes = 0;
+  hourly.forEach((m, h) => {
+    if (m > maxMinutes) {
+      maxMinutes = m;
+      peakHour = h;
+    }
+  });
+
+  const nextHour = (peakHour + 1) % 24;
+  let peakWindowLabel = 'Pagi Hari';
+  if (peakHour >= 4 && peakHour < 10) peakWindowLabel = `Fajar Tenang (${String(peakHour).padStart(2, '0')}:00 – ${String(nextHour).padStart(2, '0')}:00)`;
+  else if (peakHour >= 10 && peakHour < 16) peakWindowLabel = `Siang Berdaya (${String(peakHour).padStart(2, '0')}:00 – ${String(nextHour).padStart(2, '0')}:00)`;
+  else if (peakHour >= 16 && peakHour < 20) peakWindowLabel = `Senja Teduh (${String(peakHour).padStart(2, '0')}:00 – ${String(nextHour).padStart(2, '0')}:00)`;
+  else peakWindowLabel = `Malam Kontemplatif (${String(peakHour).padStart(2, '0')}:00 – ${String(nextHour).padStart(2, '0')}:00)`;
+
+  let dawn = 0;
+  let day = 0;
+  let sunset = 0;
+  let night = 0;
+
+  for (let h = 0; h < 24; h++) {
+    const val = hourly[h];
+    if (h >= 4 && h < 10) dawn += val;
+    else if (h >= 10 && h < 16) day += val;
+    else if (h >= 16 && h < 20) sunset += val;
+    else night += val;
+  }
+
+  return {
+    hourlyMinutes: hourly,
+    peakHour,
+    peakHourMinutes: maxMinutes,
+    peakWindowLabel: maxMinutes > 0 ? peakWindowLabel : 'Mulai sesi untuk memetakan jam emasmu',
+    quadrantSummaries: { dawn, day, sunset, night },
+  };
+}
+
+/**
+ * Filters and returns all focus sessions for a specific local date string YYYY-MM-DD.
+ */
+export function getDetailedSessionsForDate(
+  sessions: FocusSession[],
+  targetDateStr: string
+): FocusSession[] {
+  return sessions
+    .filter((s) => {
+      const dateStr = toLocalDateString(s.completed_at || s.started_at);
+      return dateStr === targetDateStr;
+    })
+    .sort((a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime());
+}
+
+export interface FlowMasteryMetrics {
+  completionRate: number;     // 0..100
+  avgSessionMinutes: number;  // rounded integer
+  deepWorkCount: number;      // sessions >= 25 mins
+  totalFocusHours: number;    // total hours
+  flowHarmonyScore: number;   // 0..100 composite score
+}
+
+/**
+ * Calculates flow and consistency metrics based on sessions and interrupted trees.
+ */
+export function calculateFlowMastery(
+  sessions: FocusSession[],
+  stumpsCount: number
+): FlowMasteryMetrics {
+  const completed = sessions.filter((s) => s.status === 'completed' && s.completed_at);
+  const totalCompleted = completed.length;
+  const totalAttempted = totalCompleted + stumpsCount;
+
+  const completionRate = totalAttempted > 0 ? Math.round((totalCompleted / totalAttempted) * 100) : 100;
+  const totalMinutes = completed.reduce((acc, s) => acc + (s.duration_minutes || 25), 0);
+  const avgSessionMinutes = totalCompleted > 0 ? Math.round(totalMinutes / totalCompleted) : 25;
+  const deepWorkCount = completed.filter((s) => (s.duration_minutes || 25) >= 25).length;
+  const totalFocusHours = Math.round((totalMinutes / 60) * 10) / 10;
+
+  // Composite flow harmony score (weighted: completion rate 50%, deep work consistency 30%, avg duration 20%)
+  const deepRatio = totalCompleted > 0 ? Math.min(1, deepWorkCount / totalCompleted) : 1;
+  const durFactor = Math.min(1, avgSessionMinutes / 45);
+  const flowHarmonyScore = Math.round(completionRate * 0.5 + deepRatio * 100 * 0.3 + durFactor * 100 * 0.2);
+
+  return {
+    completionRate,
+    avgSessionMinutes,
+    deepWorkCount,
+    totalFocusHours,
+    flowHarmonyScore,
+  };
+}
+
+

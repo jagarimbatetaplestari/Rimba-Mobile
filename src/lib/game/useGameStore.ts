@@ -24,6 +24,7 @@ import {
   claimAllClearDailyBonus,
 } from './quests';
 import { STORY_CHAPTERS } from './storyLore';
+import { WISDOM_FRAGMENTS } from './wisdomLore';
 import { calculateAnalytics, toLocalDateString } from './analytics';
 import { claimAchievementReward } from './achievements';
 import { greetFauna, FAUNA_CONFIG } from './faunaRules';
@@ -154,6 +155,7 @@ interface GameState {
   updateSessionNote: (sessionId: string, note: string) => void;
   buyStreakShield: () => boolean;
   claimStoryChapter: (chapterId: string) => boolean;
+  claimWisdomFragment: (fragmentId: string) => boolean;
   placeObject: (type: ObjectType, grid_x: number, grid_y: number) => boolean;
   placeCatalogItem: (item: CatalogItem, grid_x: number, grid_y: number) => boolean;
   restoreReclaimedObject: (objectId: string) => boolean;
@@ -1942,6 +1944,55 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({ saveData: updatedData });
     get().notify(
       `📜 Bab ${chapter.chapterNumber} terbuka! Berkah suaka: +${chapter.reward.gold} Soul & +${chapter.reward.xp} XP!`,
+      'success'
+    );
+    return true;
+  },
+
+  claimWisdomFragment: (fragmentId) => {
+    const { saveData } = get();
+    const claimed = new Set(saveData.claimed_story_chapters || []);
+    if (claimed.has(fragmentId)) {
+      get().notify('Fragmen kebijaksanaan ini sudah pernah diserap!', 'info');
+      return false;
+    }
+    const frag = WISDOM_FRAGMENTS.find((f) => f.id === fragmentId);
+    if (!frag) {
+      get().notify('Fragmen kebijaksanaan tidak ditemukan.', 'error');
+      return false;
+    }
+
+    const sessions = saveData.focus_sessions || [];
+    const totalMinutes = sessions
+      .filter((s) => s.status === 'completed' && s.completed_at)
+      .reduce((acc, s) => acc + (s.duration_minutes || 25), 0);
+    const totalHours = totalMinutes / 60;
+
+    if (totalHours < frag.hoursRequired) {
+      get().notify(`Syarat jam fokus belum terpenuhi (${frag.hoursRequired} jam).`, 'error');
+      return false;
+    }
+
+    const goldEntry = createLedgerEntry('gold', frag.rewardSoul, 'story_chapter_reward', fragmentId);
+    const xpEntry = createLedgerEntry('xp', frag.rewardXp, 'story_chapter_reward', fragmentId);
+    const updatedLedger = [...saveData.currency_ledger, goldEntry, xpEntry];
+    const balances = calculateBalances(updatedLedger);
+    claimed.add(fragmentId);
+
+    const updatedData: RimbaSaveData = {
+      ...saveData,
+      profile: {
+        ...saveData.profile,
+        goldCached: balances.gold,
+        xp: balances.xp,
+      },
+      currency_ledger: updatedLedger,
+      claimed_story_chapters: Array.from(claimed),
+    };
+    saveSaveData(updatedData);
+    set({ saveData: updatedData });
+    get().notify(
+      `✨ Kebijaksanaan '${frag.title}' diserap! Berkah suaka: +${frag.rewardSoul} Soul & +${frag.rewardXp} XP!`,
       'success'
     );
     return true;

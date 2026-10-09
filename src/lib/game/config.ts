@@ -444,7 +444,7 @@ export const GAME_CONFIG = {
     bribe_bulldozer: 40,
     expand_land_tile: 35, // Gold cost to unlock an adjacent tile
   },
-  restore: 30,
+  restore: 50, // 50 Soul cost to restore withered stump / reclaimed tile
   reclamation: {
     inactivityHours: 48,
     devFastInactivityMinutes: 5,

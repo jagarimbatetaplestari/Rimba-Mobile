@@ -201,7 +201,13 @@ export function completeFocusSession(
   };
 
   // 4. Generate currency ledger entries (+Gold, +XP) scaled by session duration
-  const { gold: rewardGold, xp: rewardXp } = calculateFocusRewards(minutesForReward);
+  let { gold: rewardGold, xp: rewardXp } = calculateFocusRewards(minutesForReward);
+
+  // Fase 5: Sinergi Hangat Api Unggun (+20% Soul & XP bonus)
+  if (session.campfire_room_code) {
+    rewardGold = Math.max(5, Math.round(rewardGold * 1.2));
+    rewardXp = Math.max(20, Math.round(rewardXp * 1.2));
+  }
 
   const goldEntry = createLedgerEntry(
     'gold',
@@ -226,6 +232,13 @@ export function completeFocusSession(
     const speciesCfg = TREE_SPECIES_CONFIG.find((s) => s.id === species);
     const variant = speciesCfg?.modelVariant || 'tree_oak';
 
+    const companionSuffix =
+      session.companions && session.companions.length > 0
+        ? ` (Bersama ${session.companions.join(', ')})`
+        : '';
+    const initialNote = session.task_note || (session.campfire_room_code ? 'Pohon Persahabatan Api Unggun' : undefined);
+    const fullNote = initialNote ? `${initialNote}${companionSuffix}` : undefined;
+
     newWorldObject = {
       id: `obj_tree_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       object_type: 'tree',
@@ -238,7 +251,7 @@ export function completeFocusSession(
       reclaimed_at: null,
       model_variant: variant,
       species,
-      task_note: session.task_note,
+      task_note: fullNote,
       focus_tag: session.tag,
       focus_duration: session.duration_minutes,
     };

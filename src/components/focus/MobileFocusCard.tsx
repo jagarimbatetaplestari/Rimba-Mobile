@@ -14,7 +14,7 @@ import {
   findEmptyTileNearCenter,
   gridToWorld,
 } from "@/lib/game/worldRules";
-import { TreeSpecies, CustomTagItem } from "@/types/game";
+import { TreeSpecies, CustomTagItem, FocusSession } from "@/types/game";
 import { getLevelFromXp } from "@/lib/game/levelRules";
 import { soundManager } from "@/lib/audio/sounds";
 import {
@@ -30,6 +30,7 @@ import {
 } from "@/lib/mobile/notificationManager";
 import { FocusHarvestModal } from "@/components/focus/FocusHarvestModal";
 import { AbandonConfirmModal } from "@/components/focus/AbandonConfirmModal";
+import { FocusWitherModal } from "@/components/focus/FocusWitherModal";
 import {
   soundscapeManager,
   SOUNDSCAPES_LIST,
@@ -151,6 +152,9 @@ export function MobileFocusCard({
 
   // Harvest celebration modal & Ambient soundscape popover
   const [showHarvestModal, setShowHarvestModal] = useState<boolean>(false);
+  const [showWitherModal, setShowWitherModal] = useState<boolean>(false);
+  const [witheredSessionSnapshot, setWitheredSessionSnapshot] =
+    useState<FocusSession | null>(null);
   const [showSoundscapePopover, setShowSoundscapePopover] =
     useState<boolean>(false);
   const [activeSoundscape, setActiveSoundscape] = useState<SoundscapeType>(
@@ -345,10 +349,21 @@ export function MobileFocusCard({
   };
 
   const handleConfirmAbandonFromModal = () => {
+    const sessionToRecord = activeSession;
     setShowAbandonModal(false);
     hapticWarning();
     cancelPendingFocusNotifications();
     abandonFocus();
+
+    // If abandoned after the 10-second grace period, present the Wither Reflection modal
+    if (sessionToRecord) {
+      const elapsedSec =
+        (Date.now() - new Date(sessionToRecord.started_at).getTime()) / 1000;
+      if (elapsedSec > 10.5) {
+        setWitheredSessionSnapshot(sessionToRecord);
+        setShowWitherModal(true);
+      }
+    }
   };
 
   const handleComplete = () => {
@@ -1208,6 +1223,18 @@ export function MobileFocusCard({
           onConfirmAbandon={handleConfirmAbandonFromModal}
           session={activeSession}
           secondsRemaining={Math.floor(remainingMs / 1000)}
+        />
+      )}
+
+      {showWitherModal && (
+        <FocusWitherModal
+          isOpen={showWitherModal}
+          onClose={() => setShowWitherModal(false)}
+          session={witheredSessionSnapshot}
+          onRestartFocus={() => {
+            // Re-open focus setup
+            soundManager.playPop();
+          }}
         />
       )}
       {renderSoundscapePopover()}

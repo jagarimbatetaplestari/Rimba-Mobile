@@ -16,6 +16,10 @@ import { TreeSpecies } from '@/types/game';
 useGLTF.preload('/models/plant_bushSmall.glb');
 useGLTF.preload('/models/tree_small.glb');
 useGLTF.preload('/models/tree_default.glb');
+useGLTF.preload('/models/kenney_survival_kit_campfire-pit.glb');
+useGLTF.preload('/models/fauna_fox.glb');
+useGLTF.preload('/models/fauna_koala.glb');
+useGLTF.preload('/models/animal-deer.glb');
 
 interface ModelMeshProps {
   modelPath: string;
@@ -76,6 +80,76 @@ function ModelMesh({ modelPath, leafColor, barkColor = '#B87B40' }: ModelMeshPro
   }, [materials]);
 
   return <primitive object={clonedScene} />;
+}
+
+function CompanionAvatarModel({ modelPath }: { modelPath: string }) {
+  const { scene } = useGLTF(modelPath);
+  const cloned = useMemo(() => scene.clone(true), [scene]);
+  return <primitive object={cloned} scale={0.16} />;
+}
+
+function CampfirePresence3D({ companions = [] }: { companions?: string[] }) {
+  const { scene: pitScene } = useGLTF('/models/kenney_survival_kit_campfire-pit.glb');
+  const flameRef = useRef<THREE.Mesh>(null);
+  const lightRef = useRef<THREE.PointLight>(null);
+
+  useFrame((state) => {
+    const t = state.clock.getElapsedTime();
+    if (flameRef.current) {
+      const flicker = 1 + Math.sin(t * 14) * 0.12 + Math.cos(t * 22) * 0.08;
+      flameRef.current.scale.set(
+        0.18 * flicker,
+        (0.28 + Math.sin(t * 10) * 0.04) * flicker,
+        0.18 * flicker
+      );
+    }
+    if (lightRef.current) {
+      lightRef.current.intensity = 1.4 + Math.sin(t * 12) * 0.3;
+    }
+  });
+
+  const clonedPit = useMemo(() => pitScene.clone(true), [pitScene]);
+
+  const companionSlots = [
+    { pos: [0.55, 0, 0], rot: -Math.PI / 2, model: '/models/fauna_fox.glb' },
+    { pos: [-0.48, 0, 0.32], rot: Math.PI / 3, model: '/models/fauna_koala.glb' },
+    { pos: [-0.38, 0, -0.42], rot: Math.PI * 0.7, model: '/models/animal-deer.glb' },
+  ];
+
+  return (
+    <group position={[0.82, 0, 0.15]}>
+      {/* Campfire Pit Base */}
+      <primitive object={clonedPit} scale={0.65} />
+
+      {/* Dynamic Flickering Fire Core */}
+      <mesh ref={flameRef} position={[0, 0.14, 0]}>
+        <coneGeometry args={[0.16, 0.3, 8]} />
+        <meshBasicMaterial color="#FFA000" />
+      </mesh>
+      <pointLight
+        ref={lightRef}
+        position={[0, 0.25, 0]}
+        color="#FF8C00"
+        distance={2.6}
+        decay={2}
+      />
+
+      {/* Animal Companions sitting around fire */}
+      {companions.slice(0, 3).map((name, idx) => {
+        const slot = companionSlots[idx];
+        if (!slot) return null;
+        return (
+          <group
+            key={name + idx}
+            position={slot.pos as [number, number, number]}
+            rotation={[0, slot.rot, 0]}
+          >
+            <CompanionAvatarModel modelPath={slot.model} />
+          </group>
+        );
+      })}
+    </group>
+  );
 }
 
 export function FocusSapling() {
@@ -186,6 +260,11 @@ export function FocusSapling() {
             opacity={0.65}
           />
         </mesh>
+      )}
+
+      {/* Active Campfire Room Presence if focusing with companions */}
+      {activeSession?.status === 'active' && Boolean(activeSession?.campfire_room_code) && (
+        <CampfirePresence3D companions={activeSession.companions} />
       )}
 
       {/* Focus Tree Group with 3 Dynamic Stages */}

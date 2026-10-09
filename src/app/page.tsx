@@ -40,6 +40,7 @@ import {
   cancelDailyStreakReminder,
 } from "@/lib/mobile/notificationManager";
 import { usePreferencesStore } from "@/lib/settings/usePreferencesStore";
+import { useCampfireStore } from "@/lib/game/campfireStore";
 
 export default function RimbaDioramaApp() {
   const init = useGameStore((state) => state.init);
@@ -93,6 +94,29 @@ export default function RimbaDioramaApp() {
       return () => clearTimeout(dismissTimer);
     }, 800);
     return () => clearTimeout(hardTimer);
+  }, []);
+
+  // Campfire Shared Destiny Severed Listener: Jika teman menyerah di mode Beban Bersama, sesi kita ikut layu
+  useEffect(() => {
+    const unsub = useCampfireStore.subscribe((state) => {
+      const room = state.currentRoom;
+      const active = useGameStore.getState().activeSession;
+      if (
+        room &&
+        room.status === "severed" &&
+        active &&
+        active.status === "active" &&
+        active.campfire_room_code === room.code &&
+        active.is_shared_destiny
+      ) {
+        useGameStore.getState().notify(
+          `🔥 Api unggun padam! ${room.severedBy || "Seorang kawan"} meninggalkan bilik, sesi berakhir bersama.`,
+          "error"
+        );
+        useGameStore.getState().abandonFocus();
+      }
+    });
+    return () => unsub();
   }, []);
 
   // Auto-Zen Mode: Automatically activate immersive Zen Mode after 5s of cursor inactivity during active focus

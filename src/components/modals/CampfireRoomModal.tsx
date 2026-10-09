@@ -13,7 +13,7 @@ import {
   ShieldCheck,
   AlertCircle,
 } from "lucide-react";
-import { useCampfireStore, CampfireAnimal } from "@/lib/game/campfireStore";
+import { useCampfireStore, CampfireAnimal, CampfireMode } from "@/lib/game/campfireStore";
 import { useGameStore } from "@/lib/game/useGameStore";
 import { useAuthStore } from "@/lib/auth/useAuthStore";
 import { soundManager } from "@/lib/audio/sounds";
@@ -55,6 +55,8 @@ export function CampfireRoomModal({
   const [activeTab, setActiveTab] = useState<"create" | "join">("create");
   const [selectedDuration, setSelectedDuration] = useState<number>(25);
   const [selectedAnimal, setSelectedAnimal] = useState<CampfireAnimal>("fox");
+  const [selectedMode, setSelectedMode] =
+    useState<CampfireMode>("shared_destiny");
   const [roomCodeInput, setRoomCodeInput] = useState<string>("");
   const [isCopied, setIsCopied] = useState<boolean>(false);
 
@@ -70,6 +72,7 @@ export function CampfireRoomModal({
       selectedDuration,
       selectedAnimal,
       "oak",
+      selectedMode,
       `Bilik Hening ${rangerName}`
     );
     notify("🔥 Api unggun suaka dinyalakan! Bagikan kode ke kawanmu.", "success");
@@ -126,6 +129,10 @@ export function CampfireRoomModal({
     hapticSuccess();
     startRoomFocus();
 
+    const companionNames = currentRoom.participants
+      .filter((p) => p.name !== rangerName)
+      .map((p) => p.name);
+
     // Trigger parent or store focus timer
     if (onStartFocusSession) {
       onStartFocusSession(
@@ -141,18 +148,26 @@ export function CampfireRoomModal({
         `Bilik Api Unggun (${currentRoom.code})`
       );
     }
+
+    // Attach campfire metadata to active session
+    const active = useGameStore.getState().activeSession;
+    if (active) {
+      useGameStore.setState({
+        activeSession: {
+          ...active,
+          campfire_room_code: currentRoom.code,
+          is_shared_destiny: currentRoom.mode === "shared_destiny",
+          companions: companionNames,
+        },
+      });
+    }
+
     onClose();
     notify("🌲 Sesi Hening Bersama dimulai! Jaga keheningan suaka.", "success");
   };
 
   return (
     <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700&display=swap');
-        .font-urbanist {
-          font-family: 'Urbanist', -apple-system, BlinkMacSystemFont, sans-serif !important;
-        }
-      `}</style>
 
       <div
         className="fixed inset-0 z-50 overflow-y-auto no-scrollbar select-none antialiased font-urbanist text-[#0D3528]"
@@ -435,6 +450,58 @@ export function CampfireRoomModal({
                           </span>
                         </button>
                       ))}
+                    </div>
+                  </div>
+
+                  {/* Mode Bilik Bersama */}
+                  <div className="space-y-1.5 pt-1">
+                    <label className="text-[11px] font-bold uppercase tracking-wider text-[#4C7567]">
+                      Pilihan Komitmen Bilik:
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          soundManager.playPop();
+                          hapticLight();
+                          setSelectedMode("shared_destiny");
+                        }}
+                        className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                          selectedMode === "shared_destiny"
+                            ? "bg-amber-50/90 border-amber-400 text-amber-950 shadow-xs ring-1 ring-amber-400/50"
+                            : "bg-white/70 border-[#0D3528]/10 text-[#0D3528] hover:bg-white"
+                        }`}
+                      >
+                        <div className="flex items-center gap-1.5 font-bold text-[12px] text-amber-900">
+                          <Flame className="w-3.5 h-3.5 fill-amber-500 text-amber-600" />
+                          <span>Beban Bersama</span>
+                        </div>
+                        <p className="text-[10px] text-amber-950/70 mt-1 leading-snug">
+                          1 orang menyerah = api padam & pohon semua kawan layu.
+                        </p>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          soundManager.playPop();
+                          hapticLight();
+                          setSelectedMode("gentle_circle");
+                        }}
+                        className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                          selectedMode === "gentle_circle"
+                            ? "bg-[#E4F4ED] border-[#187557] text-[#0D3528] shadow-xs ring-1 ring-[#187557]/40"
+                            : "bg-white/70 border-[#0D3528]/10 text-[#0D3528] hover:bg-white"
+                        }`}
+                      >
+                        <div className="flex items-center gap-1.5 font-bold text-[12px] text-[#187557]">
+                          <ShieldCheck className="w-3.5 h-3.5 text-[#187557]" />
+                          <span>Lingkaran Teduh</span>
+                        </div>
+                        <p className="text-[10px] text-[#4C7567] mt-1 leading-snug">
+                          Hanya pohon si penyerah yang layu, kawan lain terus fokus.
+                        </p>
+                      </button>
                     </div>
                   </div>
 

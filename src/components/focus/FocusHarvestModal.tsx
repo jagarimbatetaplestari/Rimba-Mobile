@@ -94,7 +94,12 @@ export function FocusHarvestModal({
             60000,
         ),
       );
-  const rewards = calculateFocusRewards(durationMins);
+  const isCampfire = Boolean(session.campfire_room_code);
+  const baseRewards = calculateFocusRewards(durationMins);
+  const rewards = {
+    gold: isCampfire ? Math.max(5, Math.round(baseRewards.gold * 1.2)) : baseRewards.gold,
+    xp: isCampfire ? Math.max(20, Math.round(baseRewards.xp * 1.2)) : baseRewards.xp,
+  };
   const unlockedSet = getUnlockedTilesSet(world, worldObjects);
   const zoneInfo = getLandExpansionZoneInfo(unlockedSet.size);
   const landProgressPct = Math.min(
@@ -256,6 +261,18 @@ export function FocusHarvestModal({
             <span className="text-[9px] text-white/60 mt-1">Pengalaman</span>
           </div>
         </div>
+
+        {/* Campfire Blessing Pill */}
+        {isCampfire && (
+          <div className="p-2.5 rounded-2xl bg-amber-500/20 border border-amber-300/30 flex items-center justify-between text-xs text-amber-100 relative z-10 backdrop-blur-md">
+            <span className="flex items-center gap-1.5 font-medium text-[11px]">
+              <span>🔥</span> Berkat Api Unggun (+20% Soul & XP Bonus)
+            </span>
+            <span className="text-[10px] font-bold text-amber-300 bg-amber-400/20 px-2 py-0.5 rounded-full border border-amber-300/30">
+              Bersama Kawan
+            </span>
+          </div>
+        )}
 
         {/* Sanctuary & Territory Impact Pill */}
         <div className="p-2.5 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-between text-xs text-white relative z-10 backdrop-blur-md">

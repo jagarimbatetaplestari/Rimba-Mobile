@@ -28,6 +28,7 @@ import { WISDOM_FRAGMENTS } from './wisdomLore';
 import { calculateAnalytics, toLocalDateString } from './analytics';
 import { claimAchievementReward } from './achievements';
 import { greetFauna, FAUNA_CONFIG } from './faunaRules';
+import { useCampfireStore } from './campfireStore';
 import {
   executeReclamation,
   restoreObject,
@@ -1032,6 +1033,11 @@ export const useGameStore = create<GameState>((set, get) => ({
     const { activeSession, saveData } = get();
     if (!activeSession || activeSession.status !== 'active') return;
 
+    if (activeSession.campfire_room_code) {
+      const userName = saveData.profile?.name || 'Penjaga Suaka';
+      useCampfireStore.getState().abandonRoom(userName);
+    }
+
     const elapsedSec = (Date.now() - new Date(activeSession.started_at).getTime()) / 1000;
     const isWithinGracePeriod = elapsedSec <= 10.5;
 
@@ -1067,12 +1073,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (emptyTile) {
       updatedObjects.push({
         id: `obj_stump_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-        object_type: 'rock',
+        object_type: 'tree',
         grid_x: emptyTile.grid_x,
         grid_y: emptyTile.grid_y,
         rotation: Math.floor(Math.random() * 4) * (Math.PI / 2),
-        scale: 1.0,
-        status: 'reclaimed',
+        scale: 0.95,
+        status: 'withered',
         created_at: new Date().toISOString(),
         reclaimed_at: new Date().toISOString(),
         model_variant: 'nature_stump',
@@ -1118,6 +1124,10 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (!result.success) {
       get().notify(result.error || 'Gagal menyelesaikan sesi fokus.', 'error');
       return false;
+    }
+
+    if (activeSession.campfire_room_code) {
+      useCampfireStore.getState().completeRoom();
     }
 
     const updatedSessions = saveData.focus_sessions.map((s) =>

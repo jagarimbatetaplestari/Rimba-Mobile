@@ -401,7 +401,7 @@ export function restoreObject(
     return { success: false, error: 'Objek tidak ditemukan di pulau.' };
   }
 
-  if (target.status !== 'reclaimed') {
+  if (target.status !== 'reclaimed' && target.status !== 'withered') {
     return { success: false, error: 'Objek ini tidak dalam kondisi layu/rusak.' };
   }
 

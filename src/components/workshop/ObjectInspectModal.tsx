@@ -56,6 +56,7 @@ export function ObjectInspectModal() {
   const isBulldozer = selectedObject.id === "obj_bulldozer";
   const isMarkedForClearing = selectedObject.status === "marked_for_clearing";
   const isReclaimed = selectedObject.status === "reclaimed";
+  const isWithered = selectedObject.status === "withered" || selectedObject.model_variant === "nature_stump";
 
   const bribeCost = GAME_CONFIG.reclamation.bulldozer_mark_cost;
   const restoreCost = GAME_CONFIG.restore;
@@ -162,13 +163,7 @@ export function ObjectInspectModal() {
 
   return (
     <>
-      {/* Tipografi Urbanist yang Halus & Modern */}
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700&display=swap');
-        .font-urbanist {
-          font-family: 'Urbanist', -apple-system, BlinkMacSystemFont, sans-serif !important;
-        }
-      `}</style>
+
 
       <div className="fixed top-20 right-3.5 sm:right-6 z-30 pointer-events-auto max-w-[310px] w-[calc(100vw-28px)] animate-in fade-in zoom-in-95 duration-200 font-urbanist select-none antialiased">
         <div className="p-4 rounded-3xl border border-white/80 bg-gradient-to-b from-white/95 via-white/95 to-white/90 shadow-2xl shadow-[#0E3B2D]/20 backdrop-blur-xl text-[#0D3528] space-y-3">
@@ -353,6 +348,47 @@ export function ObjectInspectModal() {
                     </span>
                   </button>
                 </div>
+              </div>
+            ) : isWithered ? (
+              /* STATE 3A: WITHERED STUMP (RESTORE 50 SOUL) */
+              <div className="space-y-2.5">
+                <div className="flex items-start gap-2.5 p-3 rounded-2xl border border-rose-200/80 bg-rose-50/80 text-[#0D3528]">
+                  <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5 stroke-[1.8]" />
+                  <div className="space-y-0.5 min-w-0">
+                    <p className="font-semibold text-[12px] text-rose-950 tracking-tight">
+                      Tunggul Lapuk Hangus
+                    </p>
+                    <p className="text-[10.5px] leading-relaxed text-rose-900/90 font-normal">
+                      Pohon ini layu akibat sesi fokus yang terputus di tengah jalan. Lakukan ritual restorasi dengan {restoreCost} Soul untuk menyuburkan kembali tanah ini.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="text-[11px] flex justify-between px-1 text-[#4C7567] font-normal">
+                  <span>Biaya Restorasi Tanah:</span>
+                  <span className="font-semibold text-rose-800 flex items-center gap-1 tabular-nums">
+                    {restoreCost} Soul{" "}
+                    <Sparkles className="w-3 h-3 text-amber-500 fill-amber-500" />
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleRestore}
+                  disabled={!canAffordRestore}
+                  className={`w-full py-2.5 rounded-full text-[12px] font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                    canAffordRestore
+                      ? "bg-[#187557] hover:bg-[#126046] text-white active:scale-95 shadow-xs"
+                      : "bg-black/5 border border-black/10 text-[#4C7567]/40 cursor-not-allowed"
+                  }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                  <span>
+                    {canAffordRestore
+                      ? `Pulihkan Tanah (${restoreCost} Soul)`
+                      : `Butuh ${restoreCost} Soul`}
+                  </span>
+                </button>
               </div>
             ) : isReclaimed ? (
               /* STATE 3: RECLAIMED MOSS (RESTORE) */

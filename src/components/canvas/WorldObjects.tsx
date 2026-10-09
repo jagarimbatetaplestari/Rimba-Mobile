@@ -21,6 +21,7 @@ const STARTER_MODEL_PATHS = [
   '/models/kenney_nature_kit_tree_oak.glb',
   '/models/kenney_nature_kit_rock_largeA.glb',
   '/models/kenney_nature_kit_path_stone.glb',
+  '/models/stump_old.glb',
 ];
 STARTER_MODEL_PATHS.forEach((path) => {
   useGLTF.preload(path);
@@ -202,6 +203,9 @@ function ObjectItem({ object, isSelected, onSelect, riverAdjacency }: ObjectItem
   );
 
   const modelPath = useMemo(() => {
+    if (object.model_variant === 'nature_stump' || object.status === 'withered') {
+      return '/models/stump_old.glb';
+    }
     if (manifestItem) return manifestItem.modelPath;
 
     // Fallbacks
@@ -212,7 +216,7 @@ function ObjectItem({ object, isSelected, onSelect, riverAdjacency }: ObjectItem
       return '/models/kenney_nature_kit_rock_largeA.glb';
     }
     return '/models/kenney_nature_kit_path_stone.glb';
-  }, [object.object_type, manifestItem]);
+  }, [object.object_type, object.model_variant, object.status, manifestItem]);
 
   const { scene } = useGLTF(modelPath);
 
@@ -220,6 +224,7 @@ function ObjectItem({ object, isSelected, onSelect, riverAdjacency }: ObjectItem
   const { clonedScene, materials } = useMemo(() => {
     const cloned = scene.clone(true);
     const clonedMaterials: THREE.Material[] = [];
+    const isWithered = object.status === 'withered' || object.model_variant === 'nature_stump';
     const isReclaimed = object.status === 'reclaimed';
 
     // Resolve species-specific leaf color
@@ -250,7 +255,18 @@ function ObjectItem({ object, isSelected, onSelect, riverAdjacency }: ObjectItem
           const mat = (mesh.material as THREE.MeshStandardMaterial).clone();
           const isCustomBaked = mat.name.startsWith('custom_');
 
-          if (isReclaimed) {
+          if (isWithered) {
+            // Withered/Lapuk: charred ashen wood texture
+            const witheredMat = new THREE.MeshStandardMaterial({
+              color: new THREE.Color('#3A3E40'),
+              roughness: 0.98,
+              metalness: 0.0,
+              map: mat.map || null,
+            });
+            mat.dispose();
+            clonedMaterials.push(witheredMat);
+            mesh.material = witheredMat;
+          } else if (isReclaimed) {
             // Reclaimed: overgrown mossy texture
             const reclaimedMat = new THREE.MeshStandardMaterial({
               color: new THREE.Color('#558244'),

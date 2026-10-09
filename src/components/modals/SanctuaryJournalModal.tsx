@@ -728,6 +728,7 @@ export function SanctuaryJournalModal({
                             (s) => s.id === session.species,
                           ) || TREE_SPECIES_CONFIG[0];
                         const duration = session.duration_minutes || 25;
+                        const isAbandoned = session.status === "abandoned";
                         const hasNote = Boolean(
                           session.task_note && session.task_note.trim(),
                         );
@@ -735,36 +736,47 @@ export function SanctuaryJournalModal({
                         return (
                           <div
                             key={session.id}
-                            className="p-4 rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-3 transition-all hover:bg-white"
+                            className={`p-4 rounded-3xl border shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-3 transition-all ${
+                              isAbandoned
+                                ? "border-stone-300/80 bg-stone-50/90 opacity-90"
+                                : "border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 hover:bg-white"
+                            }`}
                           >
                             {/* Top Meta Bar */}
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2.5">
                                 <span
                                   className="text-xl leading-none"
-                                  title={species.name}
+                                  title={isAbandoned ? "Tunggul Layu" : species.name}
                                 >
-                                  {species.icon}
+                                  {isAbandoned ? "🪵" : species.icon}
                                 </span>
                                 <div>
-                                  <span className="text-[13px] font-semibold text-[#0D3528] block leading-tight">
-                                    {species.name}
+                                  <span className={`text-[13px] font-semibold block leading-tight ${isAbandoned ? "text-stone-700" : "text-[#0D3528]"}`}>
+                                    {isAbandoned ? `Tunggul Lapuk (${species.name})` : species.name}
                                   </span>
                                   <span className="text-[11px] text-[#4C7567] block font-normal tabular-nums mt-0.5">
-                                    {timeStr} · {duration} Menit Fokus
+                                    {timeStr} · {duration} Menit {isAbandoned ? "Terputus" : "Fokus"}
                                   </span>
                                 </div>
                               </div>
 
                               {/* Tag Line Icon Pill */}
-                              <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#E4F4ED] text-[#14664D] border border-[#BCE5D3]">
-                                <TagLineIcon
-                                  name={session.tag}
-                                  className="w-3 h-3 text-[#187557]"
-                                />
-                                <span className="text-[11px] font-medium">
-                                  {session.tag || "Fokus"}
-                                </span>
+                              <div className="flex items-center gap-1.5">
+                                {isAbandoned && (
+                                  <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 border border-rose-200 text-[10px] font-semibold">
+                                    Layu
+                                  </span>
+                                )}
+                                <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#E4F4ED] text-[#14664D] border border-[#BCE5D3]">
+                                  <TagLineIcon
+                                    name={session.tag}
+                                    className="w-3 h-3 text-[#187557]"
+                                  />
+                                  <span className="text-[11px] font-medium">
+                                    {session.tag || "Fokus"}
+                                  </span>
+                                </div>
                               </div>
                             </div>
 

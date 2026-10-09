@@ -1,6 +1,6 @@
 export type FocusSessionStatus = 'active' | 'completed' | 'abandoned';
 export type ObjectType = 'tree' | 'rock' | 'path';
-export type ObjectStatus = 'active' | 'reclaimed' | 'marked_for_clearing';
+export type ObjectStatus = 'active' | 'reclaimed' | 'marked_for_clearing' | 'withered';
 export type CurrencyType = 'gold' | 'xp';
 export type WeatherType = 'clear' | 'rain' | 'mist';
 
@@ -99,6 +99,9 @@ export interface FocusSession {
   task_note?: string;
   todo_id?: string;
   is_stopwatch?: boolean;
+  companions?: string[];
+  campfire_room_code?: string;
+  is_shared_destiny?: boolean;
 }
 
 export interface WorldObject {

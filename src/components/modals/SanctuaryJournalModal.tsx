@@ -47,6 +47,8 @@ import {
   Heart,
   ScrollText,
   BookOpen,
+  Quote,
+  Copy,
 } from "lucide-react";
 
 export type JournalTab =
@@ -108,6 +110,19 @@ export function SanctuaryJournalModal({
   // Full-Screen Story Reader state
   const [isStoryReaderOpen, setIsStoryReaderOpen] = useState<boolean>(false);
   const [selectedStoryIndex, setSelectedStoryIndex] = useState<number>(0);
+
+  // Wisdom/Quotes Tradition Filter
+  const [wisdomTraditionFilter, setWisdomTraditionFilter] =
+    useState<string>("all");
+
+  const handleCopyQuote = (aphorism: string) => {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(aphorism).catch(() => {});
+    }
+    soundManager.playPop();
+    hapticLight();
+    useGameStore.getState().notify(t.journal.copiedQuoteToast, "info");
+  };
 
   useEffect(() => {
     if (isOpen && initialTab) {
@@ -1060,20 +1075,26 @@ export function SanctuaryJournalModal({
           {/* PILAR 4: KOLEKSI KUTIPAN & POHON KEBIJAKSANAAN           */}
           {/* ======================================================== */}
           {activeTab === "wisdom" && (
-            <div className="space-y-4 animate-in fade-in duration-200">
-              {/* Header Hero: Pohon Kebijaksanaan */}
-              <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-4">
-                <div className="flex items-center justify-between">
+            <div className="space-y-4 pb-6 animate-in fade-in duration-200">
+              {/* Header Hero: Pohon Kebijaksanaan (Apple Liquid Glass) */}
+              <div className="rounded-[32px] border border-white/80 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-5 shadow-xl shadow-[#0E3B2D]/10 backdrop-blur-2xl space-y-4 relative overflow-hidden">
+                {/* Top specular sheen */}
+                <div className="absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-white/40 to-transparent pointer-events-none rounded-t-[32px]" />
+
+                <div className="flex items-center justify-between relative z-10">
                   <div className="flex items-center gap-3.5">
-                    <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200/80 text-[#187557] flex items-center justify-center shadow-xs">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-100 to-teal-50 border border-emerald-200/80 text-[#187557] flex items-center justify-center shadow-xs shrink-0">
                       <Trees className="w-6 h-6 stroke-[1.8]" />
                     </div>
                     <div>
-                      <div className="flex items-baseline gap-1.5">
-                        <span className="text-[20px] font-bold text-[#0D3528] tracking-tight">
+                      <div className="flex items-baseline gap-1.5 flex-wrap">
+                        <span className="text-[19px] font-bold text-[#0D3528] tracking-tight">
                           {wisdomProgress.currentStage
-                            ? translateWisdom(wisdomProgress.currentStage as any).treeStageName
-                            : language === "en" ? "Mindful Seed" : "Benih Fokus"}
+                            ? translateWisdom(wisdomProgress.currentStage as any)
+                                .treeStageName
+                            : language === "en"
+                              ? "Mindful Seed"
+                              : "Benih Fokus"}
                         </span>
                         <span className="text-[12px] font-medium text-[#4C7567]">
                           · {wisdomProgress.unlockedCount} / {wisdomProgress.totalCount}
@@ -1085,23 +1106,25 @@ export function SanctuaryJournalModal({
                     </div>
                   </div>
 
-                  <div className="text-right">
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-[#187557] px-2 py-0.5 rounded-md bg-[#E4F4ED] border border-[#BCE5D3]">
+                  <div className="text-right shrink-0">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#187557] px-2.5 py-1 rounded-full bg-[#E4F4ED] border border-[#BCE5D3] shadow-xs">
                       {wisdomProgress.totalHours} {t.common.hours}
                     </span>
-                    <p className="text-[10.5px] text-[#4C7567] font-normal mt-0.5">
+                    <p className="text-[10.5px] text-[#4C7567] font-normal mt-1">
                       {t.journal.cumulativeFocus}
                     </p>
                   </div>
                 </div>
 
                 {/* Progress bar to next evolution */}
-                <div className="space-y-1.5 pt-1">
+                <div className="space-y-1.5 pt-1 relative z-10">
                   <div className="flex justify-between items-center text-[11px]">
                     <span className="text-[#4C7567] font-medium">
                       {wisdomProgress.nextStage
-                        ? `${language === "en" ? "Next:" : "Menuju"} ${translateWisdom(wisdomProgress.nextStage as any).treeStageName}`
-                        : language === "en" ? "Fully Grown" : "Tumbuh Maksimal"}
+                        ? `${language === "en" ? "Next Evolution:" : "Menuju Tahap Berikutnya:"} ${translateWisdom(wisdomProgress.nextStage as any).treeStageName}`
+                        : language === "en"
+                          ? "Fully Grown"
+                          : "Tumbuh Maksimal"}
                     </span>
                     <span className="text-[#187557] font-semibold tabular-nums">
                       {wisdomProgress.nextStage
@@ -1109,9 +1132,9 @@ export function SanctuaryJournalModal({
                         : t.common.done}
                     </span>
                   </div>
-                  <div className="h-2 w-full rounded-full bg-[#0D3528]/10 overflow-hidden">
+                  <div className="h-2.5 w-full rounded-full bg-[#0D3528]/10 overflow-hidden p-0.5 border border-[#0D3528]/5">
                     <div
-                      className="h-full rounded-full bg-gradient-to-r from-[#187557] via-[#2BB688] to-emerald-400 transition-all duration-500"
+                      className="h-full rounded-full bg-gradient-to-r from-[#187557] via-[#2BB688] to-emerald-400 transition-all duration-700 shadow-xs"
                       style={{
                         width: `${Math.min(
                           100,
@@ -1127,12 +1150,54 @@ export function SanctuaryJournalModal({
                 </div>
               </div>
 
-              {/* Fragment Cards */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between px-1">
-                  <h3 className="text-[14px] font-semibold text-white drop-shadow-xs">
+              {/* Tradition Filter Pills Bar */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 px-0.5 no-scrollbar">
+                {[
+                  { id: "all", label: t.journal.allTraditions },
+                  { id: "Nusantara", label: "Nusantara 🌿" },
+                  {
+                    id: "Stoik",
+                    label: language === "en" ? "Stoic 🏛️" : "Stoik 🏛️",
+                  },
+                  { id: "Zen", label: "Zen 🎋" },
+                  {
+                    id: "Hukum Alam",
+                    label: language === "en" ? "Nature 🌊" : "Hukum Alam 🌊",
+                  },
+                ].map((pill) => {
+                  const isActive =
+                    wisdomTraditionFilter.toLowerCase() ===
+                    pill.id.toLowerCase();
+                  return (
+                    <button
+                      key={pill.id}
+                      type="button"
+                      onClick={() => {
+                        soundManager.playPop();
+                        hapticLight();
+                        setWisdomTraditionFilter(pill.id);
+                      }}
+                      className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer border ${
+                        isActive
+                          ? "bg-white text-[#0D3528] border-white/90 shadow-md shadow-[#0E3B2D]/15 scale-100"
+                          : "bg-white/20 hover:bg-white/30 text-white border-white/25 backdrop-blur-md"
+                      }`}
+                    >
+                      {pill.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Fragment Cards List */}
+              <div className="space-y-3.5">
+                <div className="flex items-center justify-between px-1 pt-1">
+                  <h3 className="text-[13px] font-bold text-white uppercase tracking-wider drop-shadow-xs">
                     {t.journal.quotesHeader
-                      .replace("{unlocked}", String(wisdomProgress.unlockedCount))
+                      .replace(
+                        "{unlocked}",
+                        String(wisdomProgress.unlockedCount),
+                      )
                       .replace("{total}", String(wisdomProgress.totalCount))}
                   </h3>
                   <span className="text-[11px] font-medium text-emerald-100">
@@ -1140,118 +1205,156 @@ export function SanctuaryJournalModal({
                   </span>
                 </div>
 
-                {wisdomProgress.fragments.map((frag) => {
-                  const trFrag = translateWisdom(frag);
-                  const traditionStyle =
-                    frag.tradition === "Nusantara"
-                      ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                      : frag.tradition === "Stoik"
-                      ? "bg-slate-100 text-slate-700 border-slate-200"
-                      : frag.tradition === "Zen"
-                      ? "bg-cyan-50 text-cyan-800 border-cyan-200"
-                      : "bg-amber-50 text-amber-800 border-amber-200";
+                {wisdomProgress.fragments
+                  .filter((frag) => {
+                    if (wisdomTraditionFilter === "all") return true;
+                    return (
+                      frag.tradition.toLowerCase() ===
+                      wisdomTraditionFilter.toLowerCase()
+                    );
+                  })
+                  .map((frag) => {
+                    const trFrag = translateWisdom(frag);
+                    const traditionStyle =
+                      frag.tradition === "Nusantara"
+                        ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                        : frag.tradition === "Stoik"
+                          ? "bg-slate-100 text-slate-700 border-slate-200"
+                          : frag.tradition === "Zen"
+                            ? "bg-cyan-50 text-cyan-800 border-cyan-200"
+                            : "bg-amber-50 text-amber-800 border-amber-200";
 
-                  const traditionLabel =
-                    language === "en" && frag.tradition === "Stoik"
-                      ? "Stoic"
-                      : frag.tradition;
+                    const traditionLabel =
+                      language === "en" && frag.tradition === "Stoik"
+                        ? "Stoic"
+                        : frag.tradition;
 
-                  return (
-                    <div
-                      key={frag.id}
-                      className={`rounded-3xl border p-4.5 transition-all space-y-3 ${
-                        frag.isUnlocked
-                          ? "bg-white/95 border-white/80 shadow-md shadow-[#0E3B2D]/5"
-                          : "bg-white/60 border-white/40 opacity-75 backdrop-blur-sm"
-                      }`}
-                    >
-                      {/* Top row */}
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-start gap-3 min-w-0">
-                          <div
-                            className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${
-                              frag.isUnlocked
-                                ? "bg-[#E4F4ED] text-[#187557] border border-[#BCE5D3]"
-                                : "bg-[#0D3528]/5 text-[#4C7567]/50"
-                            }`}
-                          >
-                            {frag.isUnlocked ? (
-                              <ScrollText className="w-5 h-5 stroke-[1.8]" />
+                    return (
+                      <div
+                        key={frag.id}
+                        className={`rounded-[28px] border p-5 transition-all space-y-3.5 relative overflow-hidden ${
+                          frag.isUnlocked
+                            ? "bg-white/95 border-white/80 shadow-lg shadow-[#0E3B2D]/6 hover:border-emerald-300/80 transition-all duration-300"
+                            : "bg-white/55 border-white/40 opacity-80 backdrop-blur-md"
+                        }`}
+                      >
+                        {/* Top row */}
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-start gap-3 min-w-0">
+                            <div
+                              className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-xs ${
+                                frag.isUnlocked
+                                  ? "bg-gradient-to-br from-[#E4F4ED] to-[#D5EFE3] text-[#187557] border border-[#BCE5D3]"
+                                  : "bg-[#0D3528]/8 text-[#4C7567]/50 border border-[#0D3528]/10"
+                              }`}
+                            >
+                              {frag.isUnlocked ? (
+                                <ScrollText className="w-5 h-5 stroke-[1.8]" />
+                              ) : (
+                                <Lock className="w-4 h-4 stroke-[1.8]" />
+                              )}
+                            </div>
+
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-[#0D3528]/6 text-[#14664D] shrink-0 border border-[#0D3528]/8">
+                                  #{frag.stage}
+                                </span>
+                                <span
+                                  className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md border shrink-0 ${traditionStyle}`}
+                                >
+                                  {traditionLabel}
+                                </span>
+                              </div>
+                              <h4 className="text-[15px] font-bold text-[#0D3528] tracking-tight truncate mt-1">
+                                {trFrag.title}
+                              </h4>
+                              <p className="text-[11px] text-[#4C7567] font-medium flex items-center gap-1 mt-0.5">
+                                <Sprout className="w-3 h-3 text-emerald-600 inline" />
+                                <span>{trFrag.treeStageName}</span>
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Right Actions: Claim / Claimed / Copy Quote */}
+                          <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
+                            {frag.isUnlocked && (
+                              <button
+                                type="button"
+                                onClick={() => handleCopyQuote(trFrag.aphorism)}
+                                className="w-8 h-8 rounded-full flex items-center justify-center bg-emerald-50 hover:bg-emerald-100 text-[#187557] border border-emerald-200/80 active:scale-90 transition-all cursor-pointer shadow-xs"
+                                title={t.journal.copyQuote}
+                                aria-label={t.journal.copyQuote}
+                              >
+                                <Copy className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+
+                            {frag.isClaimed ? (
+                              <span className="px-2.5 py-1 rounded-full bg-[#E4F4ED] text-[#14664D] border border-[#BCE5D3] text-[10.5px] font-medium flex items-center gap-1 whitespace-nowrap shadow-xs">
+                                <Check className="w-3.5 h-3.5 stroke-[2.2]" />{" "}
+                                {t.journal.absorbed}
+                              </span>
+                            ) : frag.isUnlocked ? (
+                              <button
+                                type="button"
+                                onClick={() => handleClaimWisdom(frag.id)}
+                                className="px-3 py-1.5 rounded-full bg-gradient-to-r from-[#187557] to-[#2BB688] hover:opacity-95 text-white text-[11px] font-bold shadow-sm shadow-[#187557]/30 active:scale-95 transition-all shrink-0 cursor-pointer animate-pulse whitespace-nowrap flex items-center gap-1"
+                              >
+                                <Sparkles className="w-3 h-3 fill-current" />
+                                <span>
+                                  {t.journal.absorbBtn.replace(
+                                    "{soul}",
+                                    String(frag.rewardSoul),
+                                  )}
+                                </span>
+                              </button>
                             ) : (
-                              <Lock className="w-4 h-4 stroke-[1.8]" />
+                              <span className="text-[10.5px] font-semibold text-[#4C7567] shrink-0 px-2.5 py-1 rounded-full bg-[#0D3528]/6 border border-[#0D3528]/10 tabular-nums whitespace-nowrap">
+                                {frag.hoursRequired} {t.common.hours}
+                              </span>
                             )}
                           </div>
+                        </div>
 
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md bg-[#0D3528]/5 text-[#14664D] shrink-0">
-                                #{frag.stage}
-                              </span>
-                              <span
-                                className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md border shrink-0 ${traditionStyle}`}
-                              >
-                                {traditionLabel}
-                              </span>
+                        {/* Content: Aphorism & Reflection */}
+                        {frag.isUnlocked ? (
+                          <div className="space-y-2.5 pt-0.5">
+                            {/* Aphorism (Serene Zen Quote Box) */}
+                            <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-50/80 via-teal-50/40 to-white/90 border border-emerald-200/80 shadow-xs relative">
+                              <p className="text-[12.5px] text-[#0A3022] font-serif italic font-medium leading-relaxed">
+                                <Quote className="w-3.5 h-3.5 text-emerald-600 inline mr-1 -translate-y-0.5 opacity-80" />
+                                &ldquo;{trFrag.aphorism}&rdquo;
+                              </p>
                             </div>
-                            <h4 className="text-[14px] font-semibold text-[#0D3528] tracking-tight truncate mt-1">
-                              {trFrag.title}
-                            </h4>
-                            <p className="text-[11px] text-[#4C7567] font-medium">
-                              {trFrag.treeStageName}
-                            </p>
-                          </div>
-                        </div>
 
-                        {/* Status / Claim Button */}
-                        <div className="shrink-0 pt-0.5">
-                          {frag.isClaimed ? (
-                            <span className="px-2.5 py-1 rounded-full bg-[#E4F4ED] text-[#14664D] border border-[#BCE5D3] text-[10.5px] font-medium flex items-center gap-1 whitespace-nowrap">
-                              <Check className="w-3.5 h-3.5 stroke-[2]" /> {t.journal.absorbed}
+                            {/* Reflection Box */}
+                            <div className="p-3.5 rounded-2xl bg-[#0D3528]/4 border border-[#0D3528]/8 text-left space-y-1">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-[#187557] block">
+                                {t.journal.reflectionLabel}
+                              </span>
+                              <p className="text-[12px] text-[#0D3528]/90 leading-relaxed font-normal">
+                                {trFrag.reflection}
+                              </p>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="p-3.5 rounded-2xl bg-[#0D3528]/5 border border-[#0D3528]/10 text-[11.5px] text-[#4C7567] flex items-center justify-between font-normal gap-2">
+                            <span className="truncate">
+                              🔒 {t.journal.requirement}{" "}
+                              <strong className="font-semibold text-[#0D3528]">
+                                {frag.hoursRequired}{" "}
+                                {t.common.hours.toLowerCase()}
+                              </strong>
                             </span>
-                          ) : frag.isUnlocked ? (
-                            <button
-                              type="button"
-                              onClick={() => handleClaimWisdom(frag.id)}
-                              className="px-3 py-1.5 rounded-full bg-gradient-to-r from-[#187557] to-[#2BB688] hover:opacity-95 text-white text-[11px] font-medium shadow-xs active:scale-95 transition-all shrink-0 cursor-pointer animate-pulse whitespace-nowrap"
-                            >
-                              {t.journal.absorbBtn.replace("{soul}", String(frag.rewardSoul))}
-                            </button>
-                          ) : (
-                            <span className="text-[10.5px] font-medium text-[#4C7567] shrink-0 px-2 py-0.5 rounded-md bg-[#0D3528]/5 tabular-nums whitespace-nowrap">
-                              {frag.hoursRequired} {t.common.hours} ({frag.progressPct}%)
+                            <span className="tabular-nums text-[10.5px] font-semibold text-[#187557] bg-[#E4F4ED] px-2.5 py-0.5 rounded-full border border-[#BCE5D3] shrink-0">
+                              {frag.progressPct}%
                             </span>
-                          )}
-                        </div>
+                          </div>
+                        )}
                       </div>
-
-                      {/* Content */}
-                      {frag.isUnlocked ? (
-                        <div className="space-y-2 pt-0.5">
-                          <div className="p-3 rounded-2xl bg-amber-50/60 border border-amber-200/70">
-                            <p className="text-[11.5px] text-amber-950 italic font-medium leading-relaxed">
-                              &ldquo;{trFrag.aphorism}&rdquo;
-                            </p>
-                          </div>
-                          <p className="text-[12px] text-[#0D3528]/90 leading-relaxed font-normal">
-                            {trFrag.reflection}
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="p-2.5 rounded-2xl bg-[#0D3528]/5 text-[11.5px] text-[#4C7567] flex items-center justify-between font-normal gap-2">
-                          <span className="truncate">
-                            🔒 {t.journal.requirement}{" "}
-                            <strong className="font-semibold text-[#0D3528]">
-                              {frag.hoursRequired} {t.common.hours.toLowerCase()}
-                            </strong>
-                          </span>
-                          <span className="tabular-nums text-[10.5px] font-medium text-[#187557] bg-[#E4F4ED] px-2 py-0.5 rounded-md border border-[#BCE5D3] shrink-0">
-                            {frag.progressPct}%
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                    );
+                  })}
               </div>
             </div>
           )}

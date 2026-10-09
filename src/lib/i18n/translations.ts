@@ -277,6 +277,11 @@ export const translations = {
       basedOnHours: "Berdasarkan Jam Fokus",
       absorbBtn: "Klaim (+{soul} Soul)",
       absorbed: "Terklaim",
+      copyQuote: "Salin Kutipan",
+      copiedQuoteToast: "Kutipan disalin ke papan klip!",
+      allTraditions: "Semua",
+      reflectionLabel: "Perenungan Batin",
+      remainingHoursText: "Kurang {hours} jam lagi",
     },
     stats: {
       title: "Statistik Fokus",
@@ -868,6 +873,11 @@ export const translations = {
       basedOnHours: "Unlocked by Focus Hours",
       absorbBtn: "Claim (+{soul} Soul)",
       absorbed: "Claimed",
+      copyQuote: "Copy Quote",
+      copiedQuoteToast: "Quote copied to clipboard!",
+      allTraditions: "All",
+      reflectionLabel: "Mindful Reflection",
+      remainingHoursText: "{hours} hrs remaining",
     },
     stats: {
       title: "Focus Stats",

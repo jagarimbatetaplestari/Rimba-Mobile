@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useState, useEffect } from "react";
+import Image from "next/image";
 import confetti from "canvas-confetti";
 import { useGameStore } from "@/lib/game/useGameStore";
 import {
@@ -18,7 +19,9 @@ import {
   hapticLight,
   hapticMedium,
   hapticSuccess,
+  hapticWarning,
 } from "@/lib/mobile/nativeBridge";
+import { StoryReaderModal } from "@/components/modals/StoryReaderModal";
 import { DailyQuestId } from "@/types/game";
 import { useTranslation } from "@/lib/i18n/translations";
 import {
@@ -43,6 +46,7 @@ import {
   Lock,
   Heart,
   ScrollText,
+  BookOpen,
 } from "lucide-react";
 
 export type JournalTab =
@@ -100,6 +104,10 @@ export function SanctuaryJournalModal({
   // Reflection editor state
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [editNoteText, setEditNoteText] = useState<string>("");
+
+  // Full-Screen Story Reader state
+  const [isStoryReaderOpen, setIsStoryReaderOpen] = useState<boolean>(false);
+  const [selectedStoryIndex, setSelectedStoryIndex] = useState<number>(0);
 
   useEffect(() => {
     if (isOpen && initialTab) {
@@ -910,11 +918,11 @@ export function SanctuaryJournalModal({
           )}
 
           {/* ======================================================== */}
-          {/* PILAR 3: CERITA PULAU                                    */}
+          {/* PILAR 3: CERITA SUAKA (HORIZONTAL 9:16 STORY CAROUSEL)    */}
           {/* ======================================================== */}
           {activeTab === "story" && (
             <div className="space-y-3.5 pb-6 animate-in fade-in duration-200">
-              {/* Header Seksi (Rata dengan Kartu) */}
+              {/* Header Seksi */}
               <div className="px-1 pb-0.5">
                 <p className="text-[12px] font-medium uppercase tracking-[0.12em] text-white/90 drop-shadow-xs">
                   {t.journal.storyHeader}
@@ -924,8 +932,9 @@ export function SanctuaryJournalModal({
                 </p>
               </div>
 
-              <div className="space-y-3">
-                {STORY_CHAPTERS.map((chapter) => {
+              {/* Carousel Horizontal Kartu Cerita 9:16 */}
+              <div className="flex gap-3.5 overflow-x-auto pb-4 pt-1 px-1 snap-x snap-mandatory no-scrollbar -mx-1">
+                {STORY_CHAPTERS.map((chapter, index) => {
                   const trChapter = translateChapter(chapter);
                   const { isUnlocked, progressText } =
                     chapter.checkUnlocked(saveData);
@@ -937,95 +946,109 @@ export function SanctuaryJournalModal({
                   return (
                     <div
                       key={chapter.id}
-                      className={`p-4 rounded-3xl border transition-all ${
+                      onClick={() => {
+                        if (isUnlocked) {
+                          soundManager.playPop();
+                          hapticLight();
+                          setSelectedStoryIndex(index);
+                          setIsStoryReaderOpen(true);
+                        } else {
+                          soundManager.playPop();
+                          hapticWarning();
+                          useGameStore
+                            .getState()
+                            .notify(
+                              `${t.journal.lockedToast} (${trChapter.unlockDescription})`,
+                              "info",
+                            );
+                        }
+                      }}
+                      className={`snap-center shrink-0 w-[215px] sm:w-[235px] aspect-[9/16] rounded-[28px] relative overflow-hidden border cursor-pointer transition-all duration-300 active:scale-95 shadow-lg group select-none ${
                         isUnlocked
-                          ? "border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-3"
-                          : "border-white/40 bg-white/50 backdrop-blur-md opacity-75 space-y-3"
+                          ? "border-white/50 hover:border-white/90 shadow-[#0E3B2D]/20"
+                          : "border-white/20 opacity-80"
                       }`}
                     >
-                      {/* Header Kartu: Ikon, Info Bab & Status */}
-                      <div className="flex items-start justify-between gap-2.5">
-                        <div className="flex items-center gap-3 min-w-0">
-                          {/* Maskot / Emblem Bab */}
-                          <div
-                            className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${
-                              isUnlocked
-                                ? "bg-[#E4F4ED] text-[#187557] border border-[#BCE5D3]"
-                                : "bg-[#0D3528]/5 text-[#4C7567]/50"
-                            }`}
+                      {/* Background Story WebP Image */}
+                      <Image
+                        src={chapter.image}
+                        alt={trChapter.title}
+                        fill
+                        sizes="(max-width: 640px) 215px, 235px"
+                        className={`object-cover object-center transition-transform duration-700 ${
+                          isUnlocked
+                            ? "group-hover:scale-105"
+                            : "blur-[3px] scale-105 brightness-75"
+                        }`}
+                      />
+
+                      {/* Gradient Scrim Overlays */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/92 via-black/25 to-black/55 pointer-events-none" />
+
+                      {/* Top Card Badges */}
+                      <div className="absolute top-3 inset-x-3 flex items-center justify-between z-10">
+                        <span className="px-2.5 py-1 rounded-full bg-black/45 backdrop-blur-md border border-white/20 text-[10px] font-bold uppercase tracking-wider text-white/95">
+                          {t.journal.chapterPrefix} {chapter.chapterNumber}
+                        </span>
+
+                        {isClaimed ? (
+                          <span className="w-7 h-7 rounded-full bg-emerald-500/80 backdrop-blur-md text-white flex items-center justify-center border border-white/30 shadow-xs">
+                            <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+                          </span>
+                        ) : isUnlocked ? (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleClaimChapter(chapter.id);
+                            }}
+                            className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 text-[10px] font-bold text-white shadow-xs animate-pulse hover:brightness-110 active:scale-90 transition-transform"
+                            title="Klaim Hadiah"
                           >
-                            {isUnlocked ? (
-                              renderStoryIcon(chapter.icon)
-                            ) : (
-                              <Lock className="w-4 h-4 stroke-[1.8]" />
-                            )}
-                          </div>
-
-                          {/* Judul & Badge */}
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-1.5 min-w-0">
-                              <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md bg-[#E4F4ED] text-[#14664D] border border-[#BCE5D3] shrink-0 whitespace-nowrap">
-                                {t.journal.chapterPrefix} {chapter.chapterNumber}
-                              </span>
-                              <h4 className="text-[14px] font-semibold text-[#0D3528] tracking-tight truncate">
-                                {trChapter.title}
-                              </h4>
-                            </div>
-                            <p className="text-[11px] text-[#4C7567] font-normal truncate mt-0.5">
-                              {trChapter.subtitle}
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Status / Tombol Klaim */}
-                        <div className="shrink-0 pt-0.5">
-                          {isClaimed ? (
-                            <span className="px-2.5 py-1 rounded-full bg-[#E4F4ED] text-[#14664D] border border-[#BCE5D3] text-[10.5px] font-medium flex items-center gap-1 whitespace-nowrap">
-                              <Check className="w-3.5 h-3.5 stroke-[2]" />{" "}
-                              {t.journal.claimed}
-                            </span>
-                          ) : isUnlocked ? (
-                            <button
-                              type="button"
-                              onClick={() => handleClaimChapter(chapter.id)}
-                              className="px-3 py-1.5 rounded-full bg-[#187557] hover:bg-[#126046] text-white text-[11px] font-medium shadow-xs active:scale-95 transition-all shrink-0 cursor-pointer animate-pulse whitespace-nowrap"
-                            >
-                              {t.journal.claimBtn.replace("{soul}", String(chapter.reward.gold))}
-                            </button>
-                          ) : (
-                            <span className="text-[10px] font-medium text-[#4C7567] shrink-0 px-2 py-0.5 rounded-md bg-[#0D3528]/5 tabular-nums whitespace-nowrap">
-                              {progressText}
-                            </span>
-                          )}
-                        </div>
+                            +{chapter.reward.gold} Soul
+                          </button>
+                        ) : (
+                          <span className="w-7 h-7 rounded-full bg-black/50 backdrop-blur-md text-white/70 flex items-center justify-center border border-white/20">
+                            <Lock className="w-3.5 h-3.5 stroke-[2]" />
+                          </span>
+                        )}
                       </div>
 
-                      {/* Konten Narasi & Kutipan (Jika Terbuka) */}
-                      {isUnlocked ? (
-                        <div className="space-y-2.5 pt-0.5">
-                          <p className="text-[12px] text-[#0D3528]/90 leading-relaxed font-normal">
-                            {trChapter.narration}
-                          </p>
-                          <div className="p-3 rounded-2xl bg-[#E4F4ED]/50 border border-[#BCE5D3]/60">
-                            <p className="text-[11.5px] text-[#187557] italic font-medium leading-relaxed">
-                              &ldquo;{trChapter.quote}&rdquo;
-                            </p>
+                      {/* Middle Frosted Glass Lock Notice (Jika Terkunci) */}
+                      {!isUnlocked && (
+                        <div className="absolute inset-x-3 top-1/2 -translate-y-1/2 p-3 rounded-2xl bg-black/60 backdrop-blur-md border border-white/20 text-center flex flex-col items-center gap-1.5 z-10">
+                          <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-amber-300">
+                            <Lock className="w-4 h-4 stroke-[2]" />
                           </div>
-                        </div>
-                      ) : (
-                        <div className="p-2.5 rounded-2xl bg-[#0D3528]/5 text-[11.5px] text-[#4C7567] flex items-center justify-between font-normal gap-2">
-                          <span className="truncate">
-                            🔒{" "}
-                            <strong className="font-semibold text-[#0D3528]">
-                              {t.journal.requirement}
-                            </strong>{" "}
+                          <p className="text-[11px] font-semibold text-white/90 leading-tight">
                             {trChapter.unlockDescription}
-                          </span>
-                          <span className="tabular-nums text-[10.5px] font-medium text-[#187557] bg-[#E4F4ED] px-2 py-0.5 rounded-md border border-[#BCE5D3] shrink-0">
+                          </p>
+                          <span className="text-[9.5px] font-medium text-amber-200 bg-amber-400/20 px-2 py-0.5 rounded-md border border-amber-300/30">
                             {progressText}
                           </span>
                         </div>
                       )}
+
+                      {/* Bottom Card Content */}
+                      <div className="absolute bottom-3 inset-x-3 flex flex-col gap-1.5 z-10 text-left">
+                        <span className="text-[10px] font-semibold text-emerald-300 uppercase tracking-wide truncate">
+                          {trChapter.subtitle}
+                        </span>
+                        <h4 className="text-[15px] font-bold text-white tracking-tight leading-snug drop-shadow-sm line-clamp-2">
+                          {trChapter.title}
+                        </h4>
+
+                        {isUnlocked ? (
+                          <div className="mt-1 flex items-center gap-1.5 text-[11px] font-medium text-white/90 bg-white/15 hover:bg-white/25 backdrop-blur-md py-1.5 px-3 rounded-full border border-white/25 justify-center transition-all">
+                            <BookOpen className="w-3.5 h-3.5 text-emerald-300" />
+                            <span>{t.journal.tapToRead}</span>
+                          </div>
+                        ) : (
+                          <p className="text-[10px] text-white/60 line-clamp-1 italic mt-0.5">
+                            &ldquo;{trChapter.quote}&rdquo;
+                          </p>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
@@ -1234,6 +1257,13 @@ export function SanctuaryJournalModal({
           )}
         </div>
       </div>
+
+      <StoryReaderModal
+        isOpen={isStoryReaderOpen}
+        initialChapterIndex={selectedStoryIndex}
+        onClose={() => setIsStoryReaderOpen(false)}
+        onClaimReward={handleClaimChapter}
+      />
     </>
   );
 }

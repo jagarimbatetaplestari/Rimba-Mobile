@@ -9,6 +9,7 @@ export interface StoryChapter {
   title: string;
   subtitle: string;
   icon: string; // Line icon key (Sprout, Droplets, Trees, HeartHandshake, Compass, Sparkles)
+  image: string; // Path to high-res WebP story background
   unlockDescription: string;
   narration: string;
   quote: string;
@@ -26,6 +27,7 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     title: 'Benih di Tanah Sunyi',
     subtitle: 'Langkah Pertama Menjaga Suaka',
     icon: 'Sprout',
+    image: '/story/story_chapter_1.webp',
     unlockDescription: 'Capai Level 1 (Awal Permainan)',
     narration:
       'Setiap pohon rindang bermula dari sebiji benih kecil yang berani bertunas di tanah sunyi. Ketenangan pikiran bermula dari satu tarikan napas pertama yang sadar dan hadir.',
@@ -42,6 +44,7 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     title: 'Riak Air Penyejuk',
     subtitle: 'Aliran Hidup di Antara Bebatuan',
     icon: 'Droplets',
+    image: '/story/story_chapter_2.webp',
     unlockDescription: 'Capai Level 3 & Hadirkan Aliran Air',
     narration:
       'Air mengalir tanpa memaksa, meliuk ramah melewati rintangan bebatuan suaka. Seperti pikiran yang mengalir jernih, air membawa kesejukan bagi seluruh vegetasi di pulau.',
@@ -69,6 +72,7 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     title: 'Kanopi Bertingkat',
     subtitle: 'Peneduh Jiwa yang Bertumbuh',
     icon: 'Trees',
+    image: '/story/story_chapter_3.webp',
     unlockDescription: 'Capai Level 5 & Tumbuhkan 5 Pohon',
     narration:
       'Dedaunan saling bertaut membentuk kanopi hijau yang menyejukkan. Cahaya matahari menembus sela dahan menjadi berkas harapan, melindungi tanah dari kepenatan dunia luar.',
@@ -92,6 +96,7 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     title: 'Sahabat Satwa Liar',
     subtitle: 'Harmoni Jiwa dan Kehidupan Alam',
     icon: 'HeartHandshake',
+    image: '/story/story_chapter_4.webp',
     unlockDescription: 'Capai Level 7 & Sapa Satwa Liar',
     narration:
       'Satwa rimba mendekat bukan karena dipaksa, melainkan karena merasakan damai di pulau ini. Persahabatan sejati dengan alam lahir dari ketulusan hati dan kesunyian yang tenang.',
@@ -115,6 +120,7 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     title: 'Lembah Penjaga Waktu',
     subtitle: 'Keteguhan Hati Tujuh Purnama',
     icon: 'Compass',
+    image: '/story/story_chapter_5.webp',
     unlockDescription: 'Capai Level 10 & Streak 7 Hari',
     narration:
       'Konsistensi bukan tentang berlari kencang, melainkan tentang kembali hadir hari demi hari. Akar suakamu kini mencengkeram bumi begitu kokoh, tak tergoyahkan oleh angin kencang.',
@@ -143,6 +149,7 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     title: 'Suaka Nirwana Rimba',
     subtitle: 'Puncak Kebijaksanaan Pulau Mengambang',
     icon: 'Sparkles',
+    image: '/story/story_chapter_6.webp',
     unlockDescription: 'Capai Level 15 & Buka 20+ Petak Lahan',
     narration:
       'Dari segenggam tanah sunyi, lahirlah nirwana hijau terapung yang abadi. Di sini, setiap tarikan napas adalah suaka, dan setiap detik fokus adalah warisan ketenangan batin yang murni.',

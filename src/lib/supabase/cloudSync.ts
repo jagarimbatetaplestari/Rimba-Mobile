@@ -170,17 +170,49 @@ export async function smartSyncOnLogin(userId: string): Promise<boolean> {
     const localSave = useGameStore.getState().saveData;
 
     if (cloudSave) {
-      const localTreeCount = (localSave.world_objects || []).length;
-      const cloudTreeCount = (cloudSave.world_objects || []).length;
+      const localSessions = localSave.focus_sessions || [];
+      const cloudSessions = cloudSave.focus_sessions || [];
 
-      // Jika user sebelumnya bermain sebagai guest dan memiliki progress lokal yang lebih baru/banyak,
-      // kita perbarui cloud dengan save lokal agar tidak hilang!
-      if (localTreeCount > cloudTreeCount && localSave.focus_sessions?.length > (cloudSave.focus_sessions?.length || 0)) {
-        await uploadGameSaveToCloud(localSave);
+      const localMins = localSessions
+        .filter((s) => s.status === 'completed')
+        .reduce((acc, s) => acc + (s.duration_minutes || 25), 0);
+      const cloudMins = cloudSessions
+        .filter((s) => s.status === 'completed')
+        .reduce((acc, s) => acc + (s.duration_minutes || 25), 0);
+
+      const localObjects = localSave.world_objects || [];
+      const cloudObjects = cloudSave.world_objects || [];
+
+      // Lossless merge: ensure guest focus sessions and island objects are never wiped
+      const sessionMap = new Map<string, (typeof localSessions)[0]>();
+      cloudSessions.forEach((s) => sessionMap.set(s.id, s));
+      localSessions.forEach((s) => sessionMap.set(s.id, s));
+
+      const objectMap = new Map<string, (typeof localObjects)[0]>();
+      cloudObjects.forEach((o) => objectMap.set(o.id, o));
+      localObjects.forEach((o) => objectMap.set(o.id, o));
+
+      const mergedSessions = Array.from(sessionMap.values());
+      const mergedObjects = Array.from(objectMap.values());
+
+      if (localMins >= cloudMins && localSessions.length >= cloudSessions.length) {
+        const mergedSave: RimbaSaveData = {
+          ...localSave,
+          focus_sessions: mergedSessions,
+          world_objects: mergedObjects,
+        };
+        saveSaveData(mergedSave);
+        useGameStore.setState({ saveData: mergedSave });
+        await uploadGameSaveToCloud(mergedSave);
       } else {
-        // Terapkan save dari cloud
-        saveSaveData(cloudSave);
-        useGameStore.setState({ saveData: cloudSave });
+        const mergedSave: RimbaSaveData = {
+          ...cloudSave,
+          focus_sessions: mergedSessions,
+          world_objects: mergedObjects.length > cloudObjects.length ? mergedObjects : cloudObjects,
+        };
+        saveSaveData(mergedSave);
+        useGameStore.setState({ saveData: mergedSave });
+        await uploadGameSaveToCloud(mergedSave);
       }
     } else {
       // Belum ada save di cloud, unggah save lokal saat ini

@@ -190,8 +190,16 @@ export function createIslandSnapshot(
     data: JSON.parse(JSON.stringify(saveData)), // Deep copy
   };
 
-  const updated = [newSnapshot, ...existing].slice(0, 10); // Keep last 10 snapshots max
-  localStorage.setItem(SNAPSHOTS_STORAGE_KEY, JSON.stringify(updated));
+  let updated = [newSnapshot, ...existing].slice(0, 8);
+  while (updated.length > 0) {
+    try {
+      localStorage.setItem(SNAPSHOTS_STORAGE_KEY, JSON.stringify(updated));
+      break;
+    } catch (err) {
+      console.warn('[BackupManager] LocalStorage quota exceeded, evicting oldest snapshot to free space...', err);
+      updated.pop();
+    }
+  }
 
   return newSnapshot;
 }
@@ -202,6 +210,10 @@ export function createIslandSnapshot(
 export function deleteIslandSnapshot(snapshotId: string): IslandSnapshot[] {
   const existing = getIslandSnapshots();
   const updated = existing.filter((s) => s.id !== snapshotId);
-  localStorage.setItem(SNAPSHOTS_STORAGE_KEY, JSON.stringify(updated));
+  try {
+    localStorage.setItem(SNAPSHOTS_STORAGE_KEY, JSON.stringify(updated));
+  } catch (err) {
+    console.warn('[BackupManager] Failed to save updated snapshots after deletion:', err);
+  }
   return updated;
 }

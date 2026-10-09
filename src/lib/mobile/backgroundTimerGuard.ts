@@ -72,7 +72,8 @@ export function setupBackgroundGuard(): () => void {
       const expectedEnd = new Date(active.expected_end_at).getTime();
       const now = Date.now();
 
-      if (now >= expectedEnd) {
+      // Stopwatch sessions do not have a fixed end time and must never auto-complete on background resume
+      if (!active.is_stopwatch && now >= expectedEnd) {
         console.log('[BackgroundTimerGuard] Session completed while in background. Harvesting tree.');
         cancelPendingFocusNotifications();
         const success = store.completeFocus();

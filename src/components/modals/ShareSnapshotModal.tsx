@@ -292,20 +292,12 @@ export function ShareSnapshotModal({
   if (!isOpen) return null;
 
   return (
-    <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700&display=swap');
-        .font-urbanist {
-          font-family: 'Urbanist', -apple-system, BlinkMacSystemFont, sans-serif !important;
-        }
-      `}</style>
-
-      <div
-        onClick={(e) => {
-          if (e.target === e.currentTarget) onClose();
-        }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 select-none antialiased font-urbanist text-[#0D3528] animate-in fade-in duration-200 pointer-events-auto"
-      >
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-[70] flex items-center justify-center p-4 select-none antialiased font-urbanist text-[#0D3528] animate-in fade-in duration-200 pointer-events-auto"
+    >
         <div
           className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity duration-200 pointer-events-none"
           aria-hidden="true"
@@ -466,6 +458,5 @@ export function ShareSnapshotModal({
           </div>
         </div>
       </div>
-    </>
   );
 }

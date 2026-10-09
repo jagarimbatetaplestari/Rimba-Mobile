@@ -496,7 +496,12 @@ function MeadowBunny({
     groupRef.current.rotation.x = hopRotX;
 
     // Register real-time position
-    groundPositionsRef.current.set(id, new THREE.Vector3(currentX, groundH + 0.02 + hopY, currentZ));
+    let pos = groundPositionsRef.current.get(id);
+    if (!pos) {
+      pos = new THREE.Vector3();
+      groundPositionsRef.current.set(id, pos);
+    }
+    pos.set(currentX, groundH + 0.02 + hopY, currentZ);
 
     // Ear wiggles during idle
     if (leftEarRef.current && rightEarRef.current) {
@@ -690,7 +695,12 @@ function ForestFox({
     groupRef.current.position.set(currentX, groundH + 0.02 + trotBob, currentZ);
 
     // Register real-time position
-    groundPositionsRef.current.set(id, new THREE.Vector3(currentX, groundH + 0.02 + trotBob, currentZ));
+    let pos = groundPositionsRef.current.get(id);
+    if (!pos) {
+      pos = new THREE.Vector3();
+      groundPositionsRef.current.set(id, pos);
+    }
+    pos.set(currentX, groundH + 0.02 + trotBob, currentZ);
   });
 
   return (
@@ -810,7 +820,12 @@ function TreeKoala({ basePos, groundPositionsRef, isNight = false, onSelect }: T
     }
 
     // Register stationary anchor position
-    groundPositionsRef.current.set('koala', new THREE.Vector3(basePos[0], basePos[1] + 0.02, basePos[2]));
+    let pos = groundPositionsRef.current.get('koala');
+    if (!pos) {
+      pos = new THREE.Vector3();
+      groundPositionsRef.current.set('koala', pos);
+    }
+    pos.set(basePos[0], basePos[1] + 0.02, basePos[2]);
   });
 
   return (
@@ -1005,7 +1020,12 @@ function CubePetGroundWalker({
     groupRef.current.rotation.set(currentRotX.current, currentRotY.current, currentRotZ.current);
     groupRef.current.scale.set(scale, scale, scale);
 
-    groundPositionsRef.current.set(id, new THREE.Vector3(currentPos.current.x, groundH + currentYOffset.current, currentPos.current.z));
+    let pos = groundPositionsRef.current.get(id);
+    if (!pos) {
+      pos = new THREE.Vector3();
+      groundPositionsRef.current.set(id, pos);
+    }
+    pos.set(currentPos.current.x, groundH + currentYOffset.current, currentPos.current.z);
   });
 
   if (!roamingTiles || roamingTiles.length === 0) return null;
@@ -1216,7 +1236,12 @@ function TreeMonkey({
     groupRef.current.position.set(p[0], p[1] + yOff, p[2]);
     groupRef.current.rotation.set(rotX, rotY, rotZ);
     groupRef.current.scale.set(scale, scale, scale);
-    groundPositionsRef.current.set('monkey', new THREE.Vector3(p[0], p[1], p[2]));
+    let pos = groundPositionsRef.current.get('monkey');
+    if (!pos) {
+      pos = new THREE.Vector3();
+      groundPositionsRef.current.set('monkey', pos);
+    }
+    pos.set(p[0], p[1], p[2]);
   });
 
   if (!branchWaypoints || branchWaypoints.length === 0) return null;

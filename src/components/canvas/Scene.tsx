@@ -1,4 +1,4 @@
-import React, { Suspense, useMemo, useRef, useEffect } from 'react';
+import React, { Suspense, useMemo, useRef, useEffect, useState } from 'react';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import { OrbitControls, ContactShadows } from '@react-three/drei';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
@@ -169,6 +169,16 @@ export function Scene() {
     getUnlockedTilesSignature(state.saveData.world, state.saveData.world_objects)
   );
 
+  const [isVisible, setIsVisible] = useState(true);
+
+  useEffect(() => {
+    const handleVisibility = () => {
+      setIsVisible(document.visibilityState !== 'hidden');
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, []);
+
   // Dynamic Theme Palettes based on timeOfDay and user background preference
   const theme = useMemo(() => {
     if (timeOfDay === 'sunset') {
@@ -243,6 +253,7 @@ export function Scene() {
 
   return (
     <Canvas
+      frameloop={isVisible ? 'always' : 'never'}
       dpr={graphicsQuality === 'eco' ? [1, 1] : [1, 1.75]}
       gl={{
         preserveDrawingBuffer: true,

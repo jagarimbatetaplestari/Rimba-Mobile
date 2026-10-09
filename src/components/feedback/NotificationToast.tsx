@@ -52,16 +52,7 @@ export function NotificationToast() {
   const style = getStyle();
 
   return (
-    <>
-      {/* Tipografi Urbanist yang Halus & Modern */}
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700&display=swap');
-        .font-urbanist {
-          font-family: 'Urbanist', -apple-system, BlinkMacSystemFont, sans-serif !important;
-        }
-      `}</style>
-
-      <div className="fixed top-16 sm:top-20 left-1/2 -translate-x-1/2 z-50 pointer-events-auto max-w-md w-[92%] animate-in fade-in slide-in-from-top-3 duration-200 select-none font-urbanist text-[#0D3528]">
+    <div className="fixed top-16 sm:top-20 left-1/2 -translate-x-1/2 z-[100] pointer-events-auto max-w-md w-[92%] animate-in fade-in slide-in-from-top-3 duration-200 select-none font-urbanist text-[#0D3528]">
         <div className="relative flex items-center gap-3 p-2.5 pl-3 pr-2.5 rounded-full border border-white/80 bg-gradient-to-b from-white/95 via-white/95 to-white/90 shadow-xl shadow-[#0E3B2D]/15 backdrop-blur-xl overflow-hidden">
           {/* Status Icon Badge */}
           <div
@@ -85,6 +76,5 @@ export function NotificationToast() {
           </button>
         </div>
       </div>
-    </>
   );
 }

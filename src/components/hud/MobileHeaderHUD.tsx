@@ -204,15 +204,15 @@ export function MobileHeaderHUD({
       : "0 14px 32px -4px rgba(10, 35, 20, 0.14), inset 0 1px 0 0 rgba(255, 255, 255, 0.7)",
   };
 
-  // Tombol aksi di dalam pilar (tanpa efek zoom)
+  // Tombol aksi di dalam pilar (tanpa efek zoom, 44px HIG tap target)
   const pillarButton = isNight
-    ? "w-9 h-9 rounded-full flex items-center justify-center text-white/90 hover:text-white hover:bg-white/15 active:bg-white/20 transition-colors cursor-pointer relative"
-    : "w-9 h-9 rounded-full flex items-center justify-center text-[#0b2719] hover:bg-[#0b2719]/10 active:bg-[#0b2719]/15 transition-colors cursor-pointer relative";
+    ? "w-9 h-9 rounded-full flex items-center justify-center text-white/90 hover:text-white hover:bg-white/15 active:bg-white/20 transition-colors cursor-pointer relative before:absolute before:-inset-1 before:content-['']"
+    : "w-9 h-9 rounded-full flex items-center justify-center text-[#0b2719] hover:bg-[#0b2719]/10 active:bg-[#0b2719]/15 transition-colors cursor-pointer relative before:absolute before:-inset-1 before:content-['']";
 
-  // Tombol aksi di sisi kanan (tanpa efek zoom, kontras tinggi)
+  // Tombol aksi di sisi kanan (tanpa efek zoom, kontras tinggi, 44px HIG tap target)
   const iconButtonClass = isNight
-    ? "w-8 h-8 rounded-full flex items-center justify-center text-white hover:bg-white/15 active:bg-white/20 transition-colors cursor-pointer shrink-0 relative z-10"
-    : "w-8 h-8 rounded-full flex items-center justify-center text-[#0b2719] hover:bg-[#0b2719]/10 active:bg-[#0b2719]/15 transition-colors cursor-pointer shrink-0 relative z-10";
+    ? "w-8 h-8 rounded-full flex items-center justify-center text-white hover:bg-white/15 active:bg-white/20 transition-colors cursor-pointer shrink-0 relative z-10 before:absolute before:-inset-1.5 before:content-['']"
+    : "w-8 h-8 rounded-full flex items-center justify-center text-[#0b2719] hover:bg-[#0b2719]/10 active:bg-[#0b2719]/15 transition-colors cursor-pointer shrink-0 relative z-10 before:absolute before:-inset-1.5 before:content-['']";
 
   const showAvatarImage = Boolean(authUser?.avatarUrl) && !avatarError;
 

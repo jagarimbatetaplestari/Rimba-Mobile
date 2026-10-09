@@ -27,19 +27,6 @@ export function createInitialSaveData(): RimbaSaveData {
     model_variant: 'tree_oak',
   };
 
-  const starterRock = {
-    id: 'obj_rock_starter',
-    object_type: 'rock' as const,
-    grid_x: 5,
-    grid_y: 3,
-    rotation: 1.2,
-    scale: 1.0,
-    status: 'active' as const,
-    created_at: new Date(now.getTime() - 42 * 60 * 60 * 1000).toISOString(),
-    reclaimed_at: null,
-    model_variant: 'rock_largeA',
-  };
-
   const starterPath = {
     id: 'obj_path_starter',
     object_type: 'path' as const,
@@ -72,7 +59,7 @@ export function createInitialSaveData(): RimbaSaveData {
       sealed_tiles: [],
     },
     focus_sessions: [],
-    world_objects: [starterTree, starterRock, starterPath],
+    world_objects: [starterTree, starterPath],
     currency_ledger: ledger,
     reclamation_events: [],
     todos: [],
@@ -122,7 +109,12 @@ export function loadSaveData(): RimbaSaveData {
     parsed.world.unlocked_tiles = parsed.world.unlocked_tiles || [...STARTER_UNLOCKED_TILES];
     parsed.world.sealed_tiles = parsed.world.sealed_tiles || [];
     parsed.focus_sessions = parsed.focus_sessions || [];
-    parsed.world_objects = parsed.world_objects || [];
+    parsed.world_objects = (parsed.world_objects || []).filter(
+      (obj) =>
+        obj.model_variant !== 'rock_largeA' &&
+        obj.model_variant !== 'rock_large' &&
+        obj.model_variant !== 'nature_rock_large'
+    );
     parsed.currency_ledger = parsed.currency_ledger || [];
     parsed.reclamation_events = parsed.reclamation_events || [];
     parsed.todos = parsed.todos || [];

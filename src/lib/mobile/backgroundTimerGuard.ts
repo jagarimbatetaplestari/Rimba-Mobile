@@ -26,8 +26,12 @@ export function setupBackgroundGuard(): () => void {
 
     if (!active) return;
 
-    // If Strict Mode is ON, start 10s grace period and fire alert
-    if (active.strict_mode) {
+    // If Strict Mode is ON and session is still actively running, start 10s grace period
+    const isFinished =
+      !active.is_stopwatch &&
+      Date.now() >= new Date(active.expected_end_at).getTime() - 1000;
+
+    if (active.strict_mode && !active.is_paused && !isFinished) {
       isGracePeriodActive = true;
       gracePeriodStartTime = Date.now();
 

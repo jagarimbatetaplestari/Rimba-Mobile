@@ -161,7 +161,7 @@ function CameraEventListener() {
   );
 }
 
-export function Scene() {
+export function Scene({ isPaused = false }: { isPaused?: boolean } = {}) {
   const backgroundTheme = useGameStore((state) => state.backgroundTheme);
   const timeOfDay = useGameStore((state) => state.timeOfDay);
   const weather = useGameStore((state) => state.weather);
@@ -253,7 +253,7 @@ export function Scene() {
 
   return (
     <Canvas
-      frameloop={isVisible ? 'always' : 'never'}
+      frameloop={isVisible && !isPaused ? 'always' : 'never'}
       dpr={graphicsQuality === 'eco' ? [1, 1] : [1, 1.75]}
       gl={{
         preserveDrawingBuffer: true,

@@ -67,7 +67,15 @@ export function SanctuaryJournalModal({
   onClose,
   initialTab = "quests",
 }: SanctuaryJournalModalProps) {
-  const { t, language, translateTag, translateSpecies } = useTranslation();
+  const {
+    t,
+    language,
+    translateTag,
+    translateSpecies,
+    translateQuest,
+    translateChapter,
+    translateWisdom,
+  } = useTranslation();
   const saveData = useGameStore((state) => state.saveData);
   const claimQuest = useGameStore((state) => state.claimQuest);
   const claimAllClearBonus = useGameStore((state) => state.claimAllClearBonus);
@@ -346,7 +354,7 @@ export function SanctuaryJournalModal({
       `}</style>
 
       <div
-        className="fixed inset-0 z-50 overflow-y-auto no-scrollbar select-none antialiased font-urbanist text-[#0D3528]"
+        className="fixed inset-0 z-[100] h-[100dvh] w-full overflow-y-auto overscroll-contain no-scrollbar select-none antialiased font-urbanist text-[#0D3528] pointer-events-auto"
         style={{
           background:
             "radial-gradient(130% 90% at 50% -5%, #38B28B 0%, #289874 34%, #1C7459 70%, #165643 100%)",
@@ -354,7 +362,7 @@ export function SanctuaryJournalModal({
         role="dialog"
         aria-modal="true"
       >
-        <div className="w-full max-w-md mx-auto px-5 pt-[max(env(safe-area-inset-top,1.25rem),1.25rem)] pb-[max(calc(env(safe-area-inset-bottom,0px)+2.5rem),3rem)] space-y-4">
+        <div className="w-full max-w-md mx-auto px-5 safe-modal-content space-y-4">
           {/* HEADER NAV */}
           <div className="flex items-center justify-between py-1">
             <div className="flex items-center gap-2.5">
@@ -567,6 +575,7 @@ export function SanctuaryJournalModal({
                 </div>
 
                 {questSummary.quests.map((q) => {
+                  const trQuest = translateQuest(q);
                   const pct = Math.min(
                     100,
                     Math.round((q.current / q.target) * 100),
@@ -584,10 +593,10 @@ export function SanctuaryJournalModal({
                           </div>
                           <div>
                             <p className="text-[13.5px] font-semibold text-[#0D3528] leading-tight">
-                              {q.title}
+                              {trQuest.title}
                             </p>
                             <p className="text-[11.5px] text-[#4C7567] mt-0.5 font-normal">
-                              {q.description}
+                              {trQuest.description}
                             </p>
                           </div>
                         </div>
@@ -607,7 +616,7 @@ export function SanctuaryJournalModal({
                           </button>
                         ) : (
                           <span className="text-[11.5px] font-medium text-[#4C7567] shrink-0 tabular-nums">
-                            {q.current}/{q.target} {q.unit}
+                            {q.current}/{q.target} {trQuest.unit}
                           </span>
                         )}
                       </div>
@@ -838,7 +847,7 @@ export function SanctuaryJournalModal({
               {/* Edit Note Modal Popover */}
               {editingSessionId && (
                 <div
-                  className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150"
+                  className="fixed inset-0 z-[115] pointer-events-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150"
                   onClick={() => setEditingSessionId(null)}
                 >
                   <div
@@ -917,6 +926,7 @@ export function SanctuaryJournalModal({
 
               <div className="space-y-3">
                 {STORY_CHAPTERS.map((chapter) => {
+                  const trChapter = translateChapter(chapter);
                   const { isUnlocked, progressText } =
                     chapter.checkUnlocked(saveData);
                   const claimed = new Set(
@@ -958,11 +968,11 @@ export function SanctuaryJournalModal({
                                 {t.journal.chapterPrefix} {chapter.chapterNumber}
                               </span>
                               <h4 className="text-[14px] font-semibold text-[#0D3528] tracking-tight truncate">
-                                {chapter.title}
+                                {trChapter.title}
                               </h4>
                             </div>
                             <p className="text-[11px] text-[#4C7567] font-normal truncate mt-0.5">
-                              {chapter.subtitle}
+                              {trChapter.subtitle}
                             </p>
                           </div>
                         </div>
@@ -994,11 +1004,11 @@ export function SanctuaryJournalModal({
                       {isUnlocked ? (
                         <div className="space-y-2.5 pt-0.5">
                           <p className="text-[12px] text-[#0D3528]/90 leading-relaxed font-normal">
-                            {chapter.narration}
+                            {trChapter.narration}
                           </p>
                           <div className="p-3 rounded-2xl bg-[#E4F4ED]/50 border border-[#BCE5D3]/60">
                             <p className="text-[11.5px] text-[#187557] italic font-medium leading-relaxed">
-                              &ldquo;{chapter.quote}&rdquo;
+                              &ldquo;{trChapter.quote}&rdquo;
                             </p>
                           </div>
                         </div>
@@ -1009,7 +1019,7 @@ export function SanctuaryJournalModal({
                             <strong className="font-semibold text-[#0D3528]">
                               {t.journal.requirement}
                             </strong>{" "}
-                            {chapter.unlockDescription}
+                            {trChapter.unlockDescription}
                           </span>
                           <span className="tabular-nums text-[10.5px] font-medium text-[#187557] bg-[#E4F4ED] px-2 py-0.5 rounded-md border border-[#BCE5D3] shrink-0">
                             {progressText}
@@ -1039,7 +1049,7 @@ export function SanctuaryJournalModal({
                       <div className="flex items-baseline gap-1.5">
                         <span className="text-[20px] font-bold text-[#0D3528] tracking-tight">
                           {wisdomProgress.currentStage
-                            ? wisdomProgress.currentStage.treeStageName
+                            ? translateWisdom(wisdomProgress.currentStage as any).treeStageName
                             : language === "en" ? "Mindful Seed" : "Benih Fokus"}
                         </span>
                         <span className="text-[12px] font-medium text-[#4C7567]">
@@ -1067,7 +1077,7 @@ export function SanctuaryJournalModal({
                   <div className="flex justify-between items-center text-[11px]">
                     <span className="text-[#4C7567] font-medium">
                       {wisdomProgress.nextStage
-                        ? `${language === "en" ? "Next:" : "Menuju"} ${wisdomProgress.nextStage.treeStageName}`
+                        ? `${language === "en" ? "Next:" : "Menuju"} ${translateWisdom(wisdomProgress.nextStage as any).treeStageName}`
                         : language === "en" ? "Fully Grown" : "Tumbuh Maksimal"}
                     </span>
                     <span className="text-[#187557] font-semibold tabular-nums">
@@ -1108,6 +1118,7 @@ export function SanctuaryJournalModal({
                 </div>
 
                 {wisdomProgress.fragments.map((frag) => {
+                  const trFrag = translateWisdom(frag);
                   const traditionStyle =
                     frag.tradition === "Nusantara"
                       ? "bg-emerald-50 text-emerald-800 border-emerald-200"
@@ -1116,6 +1127,11 @@ export function SanctuaryJournalModal({
                       : frag.tradition === "Zen"
                       ? "bg-cyan-50 text-cyan-800 border-cyan-200"
                       : "bg-amber-50 text-amber-800 border-amber-200";
+
+                  const traditionLabel =
+                    language === "en" && frag.tradition === "Stoik"
+                      ? "Stoic"
+                      : frag.tradition;
 
                   return (
                     <div
@@ -1151,14 +1167,14 @@ export function SanctuaryJournalModal({
                               <span
                                 className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md border shrink-0 ${traditionStyle}`}
                               >
-                                {frag.tradition}
+                                {traditionLabel}
                               </span>
                             </div>
                             <h4 className="text-[14px] font-semibold text-[#0D3528] tracking-tight truncate mt-1">
-                              {frag.title}
+                              {trFrag.title}
                             </h4>
                             <p className="text-[11px] text-[#4C7567] font-medium">
-                              {frag.treeStageName}
+                              {trFrag.treeStageName}
                             </p>
                           </div>
                         </div>
@@ -1190,11 +1206,11 @@ export function SanctuaryJournalModal({
                         <div className="space-y-2 pt-0.5">
                           <div className="p-3 rounded-2xl bg-amber-50/60 border border-amber-200/70">
                             <p className="text-[11.5px] text-amber-950 italic font-medium leading-relaxed">
-                              &ldquo;{frag.aphorism}&rdquo;
+                              &ldquo;{trFrag.aphorism}&rdquo;
                             </p>
                           </div>
                           <p className="text-[12px] text-[#0D3528]/90 leading-relaxed font-normal">
-                            {frag.reflection}
+                            {trFrag.reflection}
                           </p>
                         </div>
                       ) : (

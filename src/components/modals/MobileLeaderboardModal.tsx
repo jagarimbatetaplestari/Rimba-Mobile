@@ -31,7 +31,7 @@ export function MobileLeaderboardModal({
   isOpen,
   onClose,
 }: MobileLeaderboardModalProps) {
-  const { t } = useTranslation();
+  const { t, translateTier } = useTranslation();
   const saveData = useGameStore((state) => state.saveData);
   const [activeTab, setActiveTab] = useState<"tiers" | "stats">("tiers");
 
@@ -46,6 +46,14 @@ export function MobileLeaderboardModal({
   const totalMinutes = analytics.totalFocusMinutes;
   const activeTrees = currentUserEntry?.treesCount || 0;
 
+  const currentUserTitle = useMemo(() => {
+    if (!currentUserEntry?.title) return "";
+    const matchingTier = RANGER_HALL_OF_FAME_TIERS.find(
+      (tier) => tier.name === currentUserEntry.title,
+    );
+    return matchingTier ? translateTier(matchingTier).name : currentUserEntry.title;
+  }, [currentUserEntry?.title, translateTier]);
+
   if (!isOpen) return null;
 
   return (
@@ -59,7 +67,7 @@ export function MobileLeaderboardModal({
       `}</style>
 
       <div
-        className="fixed inset-0 z-50 overflow-y-auto no-scrollbar select-none antialiased font-urbanist text-[#0D3528]"
+        className="fixed inset-0 z-[100] h-[100dvh] w-full overflow-y-auto overscroll-contain no-scrollbar select-none antialiased font-urbanist text-[#0D3528] pointer-events-auto"
         style={{
           background:
             "radial-gradient(130% 90% at 50% -5%, #38B28B 0%, #289874 34%, #1C7459 70%, #165643 100%)",
@@ -67,7 +75,7 @@ export function MobileLeaderboardModal({
         role="dialog"
         aria-modal="true"
       >
-        <div className="w-full max-w-md mx-auto px-5 pt-[max(env(safe-area-inset-top,1.25rem),1.25rem)] pb-[max(calc(env(safe-area-inset-bottom,0px)+2.5rem),3rem)] space-y-4">
+        <div className="w-full max-w-md mx-auto px-5 safe-modal-content space-y-4">
           {/* HEADER NAV */}
           <div className="flex items-center justify-between py-1">
             <div className="flex items-center gap-2.5">
@@ -108,7 +116,7 @@ export function MobileLeaderboardModal({
                       </span>
                     </div>
                     <p className="truncate text-[12.5px] font-medium text-[#187557] mt-0.5">
-                      {currentUserEntry.title}
+                      {currentUserTitle}
                     </p>
                   </div>
                 </div>
@@ -176,6 +184,7 @@ export function MobileLeaderboardModal({
           {/* 2. TIER HIERARCHY CARD (Translucent Container) */}
           <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-4 sm:p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-2.5">
             {RANGER_HALL_OF_FAME_TIERS.map((tier: RangerTier) => {
+              const trTier = translateTier(tier);
               const isUnlocked =
                 totalMinutes >= tier.minMinutes && activeTrees >= tier.minTrees;
               const isCurrent = currentUserEntry?.title === tier.name;
@@ -215,7 +224,7 @@ export function MobileLeaderboardModal({
                                 : "font-normal text-[#4C7567]"
                           }`}
                         >
-                          {tier.name}
+                          {trTier.name}
                         </p>
                         {isCurrent && (
                           <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-[#187557] text-white">
@@ -224,11 +233,11 @@ export function MobileLeaderboardModal({
                         )}
                       </div>
                       <p className="text-[11.5px] text-[#4C7567] font-normal truncate mt-0.5">
-                        {tier.description}
+                        {trTier.description}
                       </p>
                       <p className="text-[10.5px] font-medium text-[#187557] flex items-center gap-1 mt-0.5 truncate">
                         <Sparkles className="w-3 h-3 text-emerald-600 stroke-[1.8]" />
-                        <span>{tier.perk}</span>
+                        <span>{trTier.perk}</span>
                       </p>
                     </div>
                   </div>

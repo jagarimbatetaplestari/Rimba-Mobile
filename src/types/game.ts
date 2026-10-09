@@ -102,6 +102,10 @@ export interface FocusSession {
   companions?: string[];
   campfire_room_code?: string;
   is_shared_destiny?: boolean;
+  target_tile?: { grid_x: number; grid_y: number };
+  is_paused?: boolean;
+  paused_at?: string | null;
+  total_paused_ms?: number;
 }
 
 export interface WorldObject {

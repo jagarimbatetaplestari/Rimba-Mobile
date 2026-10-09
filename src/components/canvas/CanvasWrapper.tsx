@@ -54,10 +54,10 @@ const DynamicScene = dynamic(
   }
 );
 
-export function CanvasWrapper() {
+export function CanvasWrapper({ isPaused = false }: { isPaused?: boolean }) {
   return (
     <CanvasErrorBoundary fallback={<SceneFallback />}>
-      <DynamicScene />
+      <DynamicScene isPaused={isPaused} />
     </CanvasErrorBoundary>
   );
 }

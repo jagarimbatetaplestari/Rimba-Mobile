@@ -2,11 +2,13 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import { useGameStore } from "@/lib/game/useGameStore";
+import { useTranslation } from "@/lib/i18n/translations";
 import { Flame, ShieldAlert, Sparkles } from "lucide-react";
 
 const GRACE_PERIOD_SECONDS = 10;
 
 export function StrictFocusGuard() {
+  const { t } = useTranslation();
   const activeSession = useGameStore((state) => state.activeSession);
   const abandonFocus = useGameStore((state) => state.abandonFocus);
   const notify = useGameStore((state) => state.notify);
@@ -17,10 +19,18 @@ export function StrictFocusGuard() {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const isWarningActiveRef = useRef(false);
 
+  const isSessionFinished = Boolean(
+    activeSession &&
+    !activeSession.is_stopwatch &&
+    Date.now() >= new Date(activeSession.expected_end_at).getTime() - 1000
+  );
+
   const isStrictMode = Boolean(
     activeSession &&
     activeSession.status === "active" &&
-    activeSession.strict_mode,
+    activeSession.strict_mode &&
+    !activeSession.is_paused &&
+    !isSessionFinished
   );
 
   useEffect(() => {
@@ -57,10 +67,7 @@ export function StrictFocusGuard() {
             setIsWarningActive(false);
             setTabBlurred(false);
             abandonFocus();
-            notify(
-              "Sesi gagal! Mode Ketat mendeteksi kamu meninggalkan Rimba. Bibit pohon layu.",
-              "error",
-            );
+            notify(t.strictGuard.failedNotify, "error");
             return 0;
           }
           return prev - 1;
@@ -74,10 +81,7 @@ export function StrictFocusGuard() {
         timerRef.current = null;
       }
       if (isWarningActiveRef.current && returnedInTime) {
-        notify(
-          "🌱 Kamu kembali tepat waktu! Pohonmu selamat. Tetap fokus!",
-          "success",
-        );
+        notify(t.strictGuard.savedNotify, "success");
       }
       isWarningActiveRef.current = false;
       setIsWarningActive(false);
@@ -113,7 +117,7 @@ export function StrictFocusGuard() {
         timerRef.current = null;
       }
     };
-  }, [isStrictMode, abandonFocus, notify, setTabBlurred]);
+  }, [isStrictMode, abandonFocus, notify, setTabBlurred, t]);
 
   if (!isWarningActive || !isStrictMode) return null;
 
@@ -132,7 +136,7 @@ export function StrictFocusGuard() {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/35 backdrop-blur-xs animate-in fade-in duration-200 select-none"
+      className="fixed inset-0 z-[120] pointer-events-auto flex items-center justify-center p-4 bg-black/35 backdrop-blur-xs animate-in fade-in duration-200 select-none"
       style={{
         fontFamily:
           "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', var(--font-geist-sans), sans-serif",
@@ -155,14 +159,13 @@ export function StrictFocusGuard() {
         {/* Header & Body Text */}
         <div className="space-y-1.5 relative z-10 px-1">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/12 border border-white/25 text-amber-200 text-[11px] font-semibold tracking-tight shadow-xs">
-            <span>Peringatan Mode Ketat</span>
+            <span>{t.strictGuard.alertBadge}</span>
           </div>
           <h2 className="text-xl font-bold tracking-tight text-white drop-shadow-sm">
-            Kamu Meninggalkan Rimba
+            {t.strictGuard.alertTitle}
           </h2>
           <p className="text-[12px] text-white/80 leading-relaxed max-w-xs mx-auto">
-            Kembali ke aplikasi sebelum hitung mundur selesai agar bibit pohonmu
-            tidak layu.
+            {t.strictGuard.alertDesc}
           </p>
         </div>
 
@@ -172,7 +175,7 @@ export function StrictFocusGuard() {
             {countdown}
           </div>
           <span className="block text-[10px] text-white/60 tracking-wider font-semibold uppercase mt-1">
-            Detik Tersisa
+            {t.strictGuard.secondsRemaining}
           </span>
         </div>
 
@@ -186,12 +189,12 @@ export function StrictFocusGuard() {
             isWarningActiveRef.current = false;
             setIsWarningActive(false);
             setTabBlurred(false);
-            notify("🌱 Kamu kembali tepat waktu! Pohonmu selamat.", "success");
+            notify(t.strictGuard.savedNotify, "success");
           }}
           className="w-full py-3.5 px-4 rounded-2xl bg-white text-[#0f2e1e] hover:bg-white/95 font-bold text-[13px] tracking-tight shadow-xs active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer relative z-10"
         >
           <ShieldAlert className="w-4 h-4 stroke-[2.4]" />
-          <span>Saya Kembali & Tetap Fokus</span>
+          <span>{t.strictGuard.resumeBtn}</span>
         </button>
       </div>
     </div>

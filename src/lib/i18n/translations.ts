@@ -95,6 +95,15 @@ export const translations = {
         "Istirahat sejenak, singkirkan distraksi di sekitarmu, dan mulai kembali dengan tenang.",
       ],
     },
+    strictGuard: {
+      alertBadge: "Peringatan Mode Ketat",
+      alertTitle: "Kamu Meninggalkan Rimba",
+      alertDesc: "Kembali ke aplikasi sebelum hitung mundur selesai agar bibit pohonmu tidak layu.",
+      secondsRemaining: "Detik Tersisa",
+      resumeBtn: "Saya Kembali & Tetap Fokus",
+      failedNotify: "Sesi gagal! Mode Ketat mendeteksi kamu meninggalkan Rimba. Bibit pohon layu.",
+      savedNotify: "🌱 Kamu kembali tepat waktu! Pohonmu selamat. Tetap fokus!",
+    },
     harvest: {
       title: "Pohon Tumbuh Subur!",
       subtitlePre: "Fokus selesai! Pohon ",
@@ -111,8 +120,9 @@ export const translations = {
       noteLabel: "Catatan Fokus (Tersimpan di Pohon)",
       notePlaceholder: "Apa yang berhasil kamu selesaikan di sesi ini?...",
       todoCompleteLabel: "Tandai tugas selesai:",
-      plantBtn: "Tanam ke Pulau 🌱",
+      plantBtn: "Simpan Pohon & Ambil Hadiah ✨",
       shareToast: "Teks pencapaian berhasil disalin! 📋",
+      harvestLaterToast: "🌱 Pohonmu siap ditanam! Ketuk tombol 'Panen!' di bawah kapan saja untuk menanamnya.",
     },
     campfire: {
       title: "Fokus Bareng",
@@ -334,6 +344,81 @@ export const translations = {
       backupBtn: "Cadangkan",
       restoreBtn: "Pulihkan",
     },
+    badges: {
+      title: "Lencana Prestasi",
+      unlockedCount: "{count}/{total} Terbuka",
+      progressLabel: "Kemajuan Koleksi Medali",
+      filterAll: "Semua",
+      filterFocus: "Fokus",
+      filterNature: "Alam",
+      filterWorld: "Pulau",
+      claim: "Klaim",
+      claimed: "Terklaim",
+      claimReward: "Klaim Hadiah Medali",
+      shareBadge: "Bagikan Lencana",
+      showOff: "Pamerkan Lencana",
+      locked: "Terkunci",
+      close: "Tutup",
+    },
+    audio: {
+      title: "Sanctum Audio",
+      badge: "Suara Alam & Musik",
+      tabMusic: "Musik Lo-Fi",
+      tabNature: "Suara Alam",
+      nowPlaying: "Sedang Diputar",
+      noTrack: "Belum ada lagu diputar",
+      playlist: "Daftar Putar",
+      chooseAtmosphere: "Pilih Atmosfer Alam",
+      volume: "Volume",
+      natureVolume: "Volume Suara Alam",
+      stopAll: "Hentikan Seluruh Audio",
+      playing: "Memutar",
+      paused: "Jeda",
+      play: "Putar",
+      pause: "Jeda",
+      prev: "Sebelumnya",
+      next: "Selanjutnya",
+      turnOff: "Matikan Suara",
+      repeatAll: "Ulangi Playlist",
+      repeatOne: "Ulangi Lagu Ini",
+      repeatOff: "Tanpa Pengulangan",
+      filterAll: "Semua",
+      filterJazz: "Jazz Cozy",
+      filterChill: "Chill Beat",
+      filterAmbient: "Ambient",
+      soundList: "Koleksi Suara Alam",
+      musicList: "Daftar Putar Musik",
+    },
+    shareModal: {
+      title: "Bagikan Pulau",
+      subtitle: "Kartu Diorama",
+      socialTitle: "Kartu Pamer",
+      socialSubtitle: "Bagikan Suaka",
+      formatStory: "📱 Cerita (9:16)",
+      formatSquare: "⏹️ Persegi (1:1)",
+      preparingStory: "Menyiapkan Cerita...",
+      shareToStory: "Bagikan ke Cerita (Story / WA)",
+      shareStatus: "Bagikan Status",
+      downloadImage: "Unduh Gambar",
+      downloadPng: "Unduh PNG",
+      copyText: "Salin",
+      copyStatus: "Salin Teks Status Ringkas",
+      copied: "Tersalin!",
+      takingSnapshot: "Mengambil foto pulau...",
+      streakDays: "{count} Hari Beruntun",
+      todaySummary: "{minutes}m Fokus · {trees} Pohon Tumbuh",
+      treesLush: "{count} Pohon Lestari",
+      tilesUnlocked: "{unlocked}/100 Petak",
+      badgeTitle: "Lencana: {title}",
+      iosSaveHint: "Pilih 'Simpan Gambar' pada lembar iOS untuk menyimpan ke Galeri!",
+      copySuccessToast: "Teks status berhasil disalin ke clipboard!",
+      quote1: "Setiap pohon tumbuh dari ketenangan yang kamu jaga.",
+      quote2: "Hutan yang rimbun berawal dari satu benih fokus yang tekun.",
+      quote3: "Ketenangan bukan ketiadaan badai, melainkan keteguhan di dalamnya.",
+      quote4: "Fokus adalah caramu merawat masa depan, satu menit demi satu menit.",
+      quote5: "Di antara bising dunia, ada pulau tenang yang terus bertumbuh.",
+      defaultUser: "Penjaga Rimba",
+    },
     settings: {
       title: "Pengaturan",
       subtitle: "Preferensi Aplikasi",
@@ -378,6 +463,127 @@ export const translations = {
       deleteAccountTitle: "Hapus Akun & Semua Data",
       deleteAccountDesc: "Hapus permanen akun dan seluruh data dari perangkat",
       deleteBtn: "Hapus",
+    },
+    snapshotsModal: {
+      title: "Riwayat Snapshot",
+      subtitle: "Titik Pemulihan",
+      createTitleLabel: "Nama Cuplikan Snapshot",
+      placeholder: "Contoh: Suaka 50 Pohon Rimbun",
+      cancel: "Batal",
+      save: "Simpan",
+      createBtn: "Buat Snapshot Kondisi Saat Ini",
+      emptyTitle: "Belum Ada Snapshot Tersimpan",
+      emptyDesc: "Abadikan kemajuan suaka kapan saja untuk menyimpan tata letak pulau yang bisa dipulihkan kembali nanti.",
+      restoreBtn: "Pulihkan ke Kondisi Ini",
+      treesCount: "{count} Pohon",
+    },
+    restoreModal: {
+      title: "Pulihkan Data",
+      subtitle: "Dari File Cadangan",
+      dropzoneTitle: "Pilih File Cadangan JSON",
+      dropzoneDesc: "Ketuk untuk memilih file .json yang telah kamu unduh sebelumnya",
+      validFile: "File Cadangan Valid",
+      invalidFile: "File Tidak Valid",
+      autoBackupLabel: "Cadangkan kondisi saat ini secara otomatis",
+      confirmBtn: "Pulihkan Data Suaka",
+      cancelBtn: "Batal",
+      readingError: "Gagal membaca berkas dari penyimpanan perangkat.",
+    },
+    onboarding: {
+      stepBackTitle: "Kembali",
+      stepBackAria: "Kembali ke langkah sebelumnya",
+      audioMute: "Heningkan Audio",
+      audioPlay: "Putar Musik Rimba",
+      audioTrackName: "Embun Pagi",
+      audioMutedLabel: "Hening",
+      skip: "Lewati",
+      continueBtn: "Lanjutkan",
+      startFirstSession: "Mulai 10 Menit Pertama",
+      enterWithoutTimer: "Masuk ke Suaka Tanpa Timer",
+      notifPermSuccess: "Pengingat hening Rimba aktif.",
+      sessionStartedToast: "Sesi 10 Menit dimulai. Selamat berakar di ketenangan.",
+      bgAlts: [
+        "Lembah Kabut Hening",
+        "Kanopi Menembus Langit",
+        "Katedral Hutan Purba",
+        "Cemara Keteguhan Tebing",
+        "Senja Kawanan Burung Pulang",
+        "Danau Cermin Suaka",
+      ],
+      slide0: {
+        badge: "01 · Hening Lembah",
+        title: "Di antara riuhnya hari, apa yang paling sering menyita benakmu?",
+        subtitle: "Melihatnya dengan sadar adalah langkah awal untuk melepaskannya perlahan.",
+        tags: [
+          { id: "social", label: "Riuh Linimasa" },
+          { id: "notif", label: "Deru Notifikasi" },
+          { id: "overthinking", label: "Kekhawatiran Hari Esok" },
+          { id: "video", label: "Pusaran Konten Singkat" },
+          { id: "work", label: "Beban Tuntutan Harian" },
+        ],
+      },
+      slide1: {
+        badge: "02 · Jejak Langkah",
+        title: "Bagaimana Rimba mengenalmu?",
+        subtitle: "Sebuah nama untuk menandai awal mula tanah suakamu bertumbuh.",
+        placeholder: "Tulis namamu di sini...",
+        hint: "Nama ini akan menyertai setiap benih yang kamu tanam.",
+      },
+      slide2: {
+        badge: "03 · Tarikan Napas",
+        title: "Hadir seutuhnya di saat ini.",
+        subtitle: "Pohon bertumbuh dalam keheningan. Izinkan napasmu mengalir apa adanya tanpa tuntutan.",
+        inhale: "Tarik Napas",
+        exhale: "Lepaskan",
+      },
+      slide3: {
+        badge: "04 · Keteguhan Batin",
+        title: "Pohon tak pernah tergesa untuk tumbuh.",
+        desc: "Bila ritmemu sempat terputus oleh lelahnya hari, Rimba tak pernah menghakimimu.",
+        feature: "Embun Pelindung senantiasa menjaga suakamu hingga kamu siap kembali.",
+      },
+      slide4: {
+        badge: "05 · Ritme Berpulang",
+        title: "Matahari tahu saatnya tenggelam.",
+        desc: "Istirahat bukanlah kekalahan, melainkan cara akar menghimpun kekuatan untuk hari esok.",
+        notifActive: "Sapaan senja suaka telah aktif",
+        notifBtn: "Sapa aku dengan lembut saat tiba waktu hening",
+      },
+      slide5: {
+        badge: "06 · Telaga Cermin",
+        titleWithName: "{name}, suakamu telah menanti.",
+        titleWithoutName: "Suakamu telah menanti.",
+        subtitle: "Seperti air telaga yang hening memantulkan luasnya langit, mulailah dengan langkah yang tenang.",
+        intentLabel: "Niat pertamamu:",
+        intents: [
+          "Kejernihan Pikiran",
+          "Fokus Mendalam",
+          "Ketekunan Berkarya",
+          "Jeda Berkesadaran",
+        ],
+      },
+    },
+    faunaDialog: {
+      statusSleeping: "🌙 Tidur Pulas",
+      statusAwake: "Satwa Suaka",
+      closeAria: "Tutup sapa satwa",
+      defaultSleepQuote: "“💤 {name} sedang terlelap tidur pulas di bawah langit malam.”",
+      actionSleep: "Belai Tidur",
+      actionGreet: "Sapa Satwa",
+      alreadyGreeted: "Sudah Disapa Hari Ini (Kembali lagi esok!)",
+    },
+    avatarPicker: {
+      title: "Foto Profil",
+      subtitle: "Pilih Maskot",
+      closeAria: "Tutup pemilih avatar",
+      uploadTitle: "Unggah Foto",
+      previewHint: "Pratinjau di Status & Peringkat",
+      tabPresets: "Preset Satwa",
+      tabUpload: "Unggah Foto",
+      compressing: "Mengompres foto...",
+      openGallery: "Buka Galeri atau Kamera",
+      uploadFormatHint: "Format JPG, PNG, WEBP (otomatis dioptimalkan)",
+      useAvatarBtn: "Gunakan Avatar Ini",
     },
   },
   en: {
@@ -474,6 +680,15 @@ export const translations = {
         "Step back for a moment, clear your workspace, and start fresh.",
       ],
     },
+    strictGuard: {
+      alertBadge: "Strict Mode Alert",
+      alertTitle: "You Left Rimba",
+      alertDesc: "Return to Rimba before the countdown ends or your sapling will wither.",
+      secondsRemaining: "Seconds Remaining",
+      resumeBtn: "I'm Back, Stay Focused",
+      failedNotify: "Session failed! Strict Mode detected you left Rimba. Your sapling has withered.",
+      savedNotify: "🌱 You returned in time! Your tree is saved. Stay focused!",
+    },
     harvest: {
       title: "Tree Grown!",
       subtitlePre: "Great job! Your ",
@@ -490,8 +705,9 @@ export const translations = {
       noteLabel: "Session Note (Saved to Tree)",
       notePlaceholder: "What did you accomplish during this session?...",
       todoCompleteLabel: "Mark task as done:",
-      plantBtn: "Plant on Island 🌱",
+      plantBtn: "Save Tree & Claim Rewards ✨",
       shareToast: "Session summary copied to clipboard! 📋",
+      harvestLaterToast: "🌱 Your tree is ready! Tap 'Harvest!' below anytime to plant it.",
     },
     campfire: {
       title: "Focus Together",
@@ -713,6 +929,81 @@ export const translations = {
       backupBtn: "Backup",
       restoreBtn: "Restore",
     },
+    badges: {
+      title: "Achievements & Badges",
+      unlockedCount: "{count}/{total} Unlocked",
+      progressLabel: "Badge Collection Progress",
+      filterAll: "All",
+      filterFocus: "Focus",
+      filterNature: "Nature",
+      filterWorld: "Island",
+      claim: "Claim",
+      claimed: "Claimed",
+      claimReward: "Claim Badge Reward",
+      shareBadge: "Share Badge",
+      showOff: "Showcase Badge",
+      locked: "Locked",
+      close: "Close",
+    },
+    audio: {
+      title: "Sanctum Audio",
+      badge: "Nature Sounds & Music",
+      tabMusic: "Lo-Fi Music",
+      tabNature: "Nature Sounds",
+      nowPlaying: "Now Playing",
+      noTrack: "No track playing",
+      playlist: "Playlist",
+      chooseAtmosphere: "Choose Nature Ambience",
+      volume: "Volume",
+      natureVolume: "Nature Sounds Volume",
+      stopAll: "Stop All Audio",
+      playing: "Playing",
+      paused: "Paused",
+      play: "Play",
+      pause: "Pause",
+      prev: "Previous",
+      next: "Next",
+      turnOff: "Turn Off Audio",
+      repeatAll: "Repeat Playlist",
+      repeatOne: "Repeat Current Track",
+      repeatOff: "Repeat Off",
+      filterAll: "All",
+      filterJazz: "Cozy Jazz",
+      filterChill: "Chill Beat",
+      filterAmbient: "Ambient",
+      soundList: "Nature Sounds Library",
+      musicList: "Music Playlist",
+    },
+    shareModal: {
+      title: "Share Island",
+      subtitle: "Diorama Card",
+      socialTitle: "Showcase Card",
+      socialSubtitle: "Share Sanctuary",
+      formatStory: "📱 Story (9:16)",
+      formatSquare: "⏹️ Square (1:1)",
+      preparingStory: "Preparing Story...",
+      shareToStory: "Share to Story / Social",
+      shareStatus: "Share Status",
+      downloadImage: "Save to Photos",
+      downloadPng: "Save Image",
+      copyText: "Copy",
+      copyStatus: "Copy Status Summary",
+      copied: "Copied!",
+      takingSnapshot: "Capturing island photo...",
+      streakDays: "{count}-Day Streak",
+      todaySummary: "{minutes}m Focus · {trees} Trees Grown",
+      treesLush: "{count} Living Trees",
+      tilesUnlocked: "{unlocked}/100 Tiles",
+      badgeTitle: "Badge: {title}",
+      iosSaveHint: "Tap 'Save Image' in the share sheet to save to Apple Photos!",
+      copySuccessToast: "Status text copied to clipboard!",
+      quote1: "Every tree grows from the quiet calm you nurture.",
+      quote2: "A lush forest begins with a single seed of mindful focus.",
+      quote3: "Calm is not the absence of storms, but peace within them.",
+      quote4: "Focus is how you cultivate your future, minute by minute.",
+      quote5: "Amid the noise of the world, your peaceful island thrives.",
+      defaultUser: "Forest Ranger",
+    },
     settings: {
       title: "Settings",
       subtitle: "App Preferences",
@@ -757,6 +1048,127 @@ export const translations = {
       deleteAccountTitle: "Delete Account & Data",
       deleteAccountDesc: "Permanently delete account, sessions & island data",
       deleteBtn: "Delete",
+    },
+    snapshotsModal: {
+      title: "Snapshot History",
+      subtitle: "Restore Points",
+      createTitleLabel: "Snapshot Name",
+      placeholder: "e.g., 50 Trees Lush Sanctuary",
+      cancel: "Cancel",
+      save: "Save",
+      createBtn: "Create Snapshot of Current State",
+      emptyTitle: "No Saved Snapshots Yet",
+      emptyDesc: "Capture your sanctuary progress anytime to save an island layout that you can restore later.",
+      restoreBtn: "Restore to This State",
+      treesCount: "{count} Trees",
+    },
+    restoreModal: {
+      title: "Restore Data",
+      subtitle: "From Backup File",
+      dropzoneTitle: "Select JSON Backup File",
+      dropzoneDesc: "Tap to choose a .json backup file you previously exported",
+      validFile: "Valid Backup File",
+      invalidFile: "Invalid File",
+      autoBackupLabel: "Automatically backup current state before restore",
+      confirmBtn: "Restore Sanctuary Data",
+      cancelBtn: "Cancel",
+      readingError: "Failed to read backup file from device storage.",
+    },
+    onboarding: {
+      stepBackTitle: "Back",
+      stepBackAria: "Return to previous step",
+      audioMute: "Mute Ambient Sound",
+      audioPlay: "Play Rimba Ambient",
+      audioTrackName: "Morning Dew",
+      audioMutedLabel: "Silent",
+      skip: "Skip",
+      continueBtn: "Continue",
+      startFirstSession: "Begin First 10 Minutes",
+      enterWithoutTimer: "Enter Sanctuary Without Timer",
+      notifPermSuccess: "Gentle Rimba reminders enabled.",
+      sessionStartedToast: "10-minute session started. Welcome to your quiet sanctuary.",
+      bgAlts: [
+        "Quiet Misty Valley",
+        "Skyward Canopy",
+        "Ancient Forest Cathedral",
+        "Resilient Cliff Pine",
+        "Flock Returning at Dusk",
+        "Sanctuary Mirror Lake",
+      ],
+      slide0: {
+        badge: "01 · Valley Silence",
+        title: "Amid the rush of daily life, what pulls most at your thoughts?",
+        subtitle: "Noticing it with mindfulness is the first step toward gently letting it go.",
+        tags: [
+          { id: "social", label: "Social Media Rush" },
+          { id: "notif", label: "Endless Notifications" },
+          { id: "overthinking", label: "Worries About Tomorrow" },
+          { id: "video", label: "Short-Video Whirlwind" },
+          { id: "work", label: "Demands & Pressure" },
+        ],
+      },
+      slide1: {
+        badge: "02 · Footprints",
+        title: "How should Rimba know you?",
+        subtitle: "A name to mark where your sanctuary begins to take root.",
+        placeholder: "Write your name here...",
+        hint: "This name will accompany every seed you plant.",
+      },
+      slide2: {
+        badge: "03 · The Breath",
+        title: "Be wholly present in this moment.",
+        subtitle: "Trees grow in quiet stillness. Allow your breath to flow naturally, without pressure.",
+        inhale: "Breathe In",
+        exhale: "Release",
+      },
+      slide3: {
+        badge: "04 · Quiet Resilience",
+        title: "Trees are never in a rush to grow.",
+        desc: "If your rhythm is interrupted by weary days, Rimba will never judge you.",
+        feature: "Protective Dew watches over your sanctuary until you are ready to return.",
+      },
+      slide4: {
+        badge: "05 · The Gentle Dusk",
+        title: "The sun knows when to set.",
+        desc: "Rest is not defeat, but how deep roots gather strength for tomorrow.",
+        notifActive: "Gentle evening reminders are active",
+        notifBtn: "Remind me gently when it's time for quiet focus",
+      },
+      slide5: {
+        badge: "06 · Mirror Lake",
+        titleWithName: "{name}, your sanctuary awaits.",
+        titleWithoutName: "Your sanctuary awaits.",
+        subtitle: "Like still lake waters mirroring the vast open sky, begin with a calm step.",
+        intentLabel: "Your first intention:",
+        intents: [
+          "Mental Clarity",
+          "Deep Focus",
+          "Creative Flow",
+          "Mindful Pause",
+        ],
+      },
+    },
+    faunaDialog: {
+      statusSleeping: "🌙 Sound Asleep",
+      statusAwake: "Sanctuary Wildlife",
+      closeAria: "Close wildlife greeting",
+      defaultSleepQuote: "“💤 {name} is resting peacefully beneath the starry sky.”",
+      actionSleep: "Gently Pet",
+      actionGreet: "Greet Wildlife",
+      alreadyGreeted: "Already Greeted Today (Return tomorrow!)",
+    },
+    avatarPicker: {
+      title: "Profile Avatar",
+      subtitle: "Choose Mascot",
+      closeAria: "Close avatar picker",
+      uploadTitle: "Upload Photo",
+      previewHint: "Preview in Status & Leaderboard",
+      tabPresets: "Wildlife Mascots",
+      tabUpload: "Custom Photo",
+      compressing: "Compressing image...",
+      openGallery: "Open Camera or Photos",
+      uploadFormatHint: "JPG, PNG, WEBP (automatically optimized)",
+      useAvatarBtn: "Use This Avatar",
     },
   },
 } as const;
@@ -831,6 +1243,446 @@ export function getLocalizedRangerTitle(level: number, lang: AppLanguage): strin
   return "Master Rimba";
 }
 
+export const QUEST_TRANSLATIONS_EN: Record<string, { title: string; description: string; unit: string }> = {
+  q_focus_1: {
+    title: "First Mindful Step",
+    description: "Complete at least 1 focus session today to grow a tree.",
+    unit: "session",
+  },
+  q_minutes_45: {
+    title: "Deep Dedication",
+    description: "Accumulate at least 45 minutes of total focus time today.",
+    unit: "minutes",
+  },
+  q_flow_30: {
+    title: "Flowing Stillness",
+    description: "Complete an uninterrupted focus session of at least 30 minutes.",
+    unit: "session",
+  },
+  q_builder_1: {
+    title: "Sanctuary Steward",
+    description: "Plant a tree, decorate your sanctuary, or expand 1 tile today.",
+    unit: "action",
+  },
+  q_fauna_friend: {
+    title: "Wildlife Harmony",
+    description: "Greet a visiting wild animal on your floating sanctuary today.",
+    unit: "greeting",
+  },
+  q_dawn_focus: {
+    title: "Morning Dew Focus",
+    description: "Complete 1 mindful focus session during morning or daytime hours.",
+    unit: "session",
+  },
+  q_evening_calm: {
+    title: "Quiet Dusk & Night",
+    description: "Complete 1 mindful focus session during evening or night hours.",
+    unit: "session",
+  },
+  q_tag_explorer: {
+    title: "Intent Explorer",
+    description: "Focus across at least 2 distinct categories or intention tags today.",
+    unit: "tags",
+  },
+  q_all_clear: {
+    title: "Daily Sweep Bounty",
+    description: "Claim all three daily quests today to unlock the guardian's chest bonus!",
+    unit: "bonus",
+  },
+};
+
+export const CHAPTER_TRANSLATIONS_EN: Record<
+  string,
+  { title: string; subtitle: string; narration: string; quote: string; unlockDescription: string }
+> = {
+  chap_1_seed: {
+    title: "Seed in Silent Soil",
+    subtitle: "First Steps into the Sanctuary",
+    unlockDescription: "Reach Level 1 (Game Start)",
+    narration:
+      "Every lush canopy begins with a modest seed daring to sprout in silent soil. Stillness of mind starts with a single conscious breath.",
+    quote: "A dense forest never hurries to grow, yet its branches embrace the sky.",
+  },
+  chap_2_water: {
+    title: "Cooling Water Ripples",
+    subtitle: "Living Stream Among the Stones",
+    unlockDescription: "Reach Level 3 & Introduce Waterways",
+    narration:
+      "Water flows without force, curving graciously past rocky crags. Like a mind at peace, clear waters bring renewal to all living things.",
+    quote: "Be like forest water: deep and calm, nourishing all that it touches.",
+  },
+  chap_3_canopy: {
+    title: "Layered Canopy",
+    subtitle: "A Growing Shelter for the Soul",
+    unlockDescription: "Reach Level 5 & Grow 5 Trees",
+    narration:
+      "Intertwining branches form a lush green canopy. Sunlight filters through the leaves in beams of quiet hope, sheltering the soil from the world's rush.",
+    quote: "A nurtured mind brings solace amid the world's noise.",
+  },
+  chap_4_fauna: {
+    title: "Kinship with Wildlife",
+    subtitle: "Harmony Between Spirit and Earth",
+    unlockDescription: "Reach Level 7 & Greet Wildlife",
+    narration:
+      "Wild forest creatures draw near not by force, but feeling the deep peace of your sanctuary. True harmony is born from a tranquil, gentle heart.",
+    quote: "Gentleness carries a peace that even wild creatures can feel.",
+  },
+  chap_5_time: {
+    title: "Valley of the Timekeeper",
+    subtitle: "Quiet Resilience of Seven Moons",
+    unlockDescription: "Reach Level 10 & 7-Day Streak",
+    narration:
+      "Consistency is not about sprinting, but returning with presence day after day. Your sanctuary's roots now hold the earth firm, unshaken by wild winds.",
+    quote: "Time cannot be chased, but it can be held with complete presence.",
+  },
+  chap_6_nirvana: {
+    title: "Floating Nirvana",
+    subtitle: "The Pinnacle of Living Stillness",
+    unlockDescription: "Reach Level 15 & Unlock 20+ Tiles",
+    narration:
+      "From a solitary plot of silent soil, a timeless emerald haven arose. Here, every breath is sanctuary, and every mindful moment a lasting legacy of peace.",
+    quote: "The truest sanctuary is not found in the world outside, but cultivated within yourself.",
+  },
+};
+
+export const WISDOM_TRANSLATIONS_EN: Record<
+  string,
+  { title: string; aphorism: string; reflection: string; treeStageName: string }
+> = {
+  wisdom_1_mulat_sarira: {
+    title: "Inner Reflection",
+    aphorism: "Mulat sarira hangrasa wani — Know yourself before attempting to master the world outside.",
+    reflection:
+      "The first step of focus is not isolation, but calming inner ripples and choosing to inhabit this single breath.",
+    treeStageName: "Sprout of Stillness",
+  },
+  wisdom_2_dichotomy_control: {
+    title: "Inner Mastery",
+    aphorism:
+      "Some things are in your control, most are not. True tranquility arrives when you pour your energy into what is yours to guide.",
+    reflection:
+      "External distractions and constant noise are passing weather. Your intention is the only sanctuary that belongs to you.",
+    treeStageName: "Shoot of Awareness",
+  },
+  wisdom_3_mizu_no_kokoro: {
+    title: "Mind Like Water",
+    aphorism:
+      "Mizu no kokoro — Murky water only clears when left to settle without constant stirring.",
+    reflection:
+      "When thoughts grow weary, do not force productivity with inner strain. Sit quietly and let the silt settle naturally.",
+    treeStageName: "Branch of Clarity",
+  },
+  wisdom_4_hamemayu_hayuning_bawana: {
+    title: "Cosmic Harmony",
+    aphorism:
+      "Hamemayu hayuning bawana — Beautify and protect the welfare of the living world with quiet grace.",
+    reflection:
+      "Focus is not self-indulgent; mindful creators bring clarity, patience, and kindness to those around them.",
+    treeStageName: "Foliage of Compassion",
+  },
+  wisdom_5_amor_fati: {
+    title: "Embracing Fate",
+    aphorism:
+      "Amor fati — Do not merely endure what unfolds; embrace every challenge as fuel for your inner fire.",
+    reflection:
+      "Interrupted sessions and weary days are not failures. They are the stone upon which patience and resilience are forged.",
+    treeStageName: "Trunk of Resilience",
+  },
+  wisdom_6_shoshin: {
+    title: "Beginner's Mind",
+    aphorism:
+      "Shoshin — In the beginner's mind there are many possibilities; in the expert's, there are few.",
+    reflection:
+      "Approach every focus session with fresh curiosity, as if planting your very first seed in silent soil.",
+    treeStageName: "Crown of Wonder",
+  },
+  wisdom_7_sumeleh: {
+    title: "Graceful Surrender",
+    aphorism:
+      "Sumeleh — Strive with all your heart, then release attachment to the fruit of your labor.",
+    reflection:
+      "When you give yourself completely to the present task, anxiety about outcomes gently melts away.",
+    treeStageName: "Ancient Canopy",
+  },
+  wisdom_8_satori: {
+    title: "Awakened Presence",
+    aphorism:
+      "The forest does not seek to be a forest; it simply grows. Be whole, be still, and let your work unfold.",
+    reflection:
+      "Stillness is not absence of movement, but effortless presence amid the flow of life.",
+    treeStageName: "Spirit of the Wild",
+  },
+};
+
+export const TIER_TRANSLATIONS_EN: Record<
+  string,
+  { name: string; description: string; perk: string }
+> = {
+  tier_maharaja: {
+    name: "Sanctuary Sovereign",
+    description: "Highest tier of the sanctuary: exceeding 50 hours of deep, mindful focus.",
+    perk: "Eternal Sanctuary Title & Ancient Spirit Tree Seed",
+  },
+  tier_baobab: {
+    name: "Ancient Baobab Guardian",
+    description: "Protector of the ancient giant tree holding the sanctuary's vital roots.",
+    perk: "Aura of Deep Peace & Sacred Giant Baobab Sapling",
+  },
+  tier_pinus: {
+    name: "Alpine Pine Knight",
+    description: "Steadfast focus like mountain pines standing firm on quiet heights.",
+    perk: "Auto Streak Shield Safeguard & Tiered Pine Sapling",
+  },
+  tier_lembah: {
+    name: "River Valley Warden",
+    description: "Nurturing the flowing streams and rich soils of the island.",
+    perk: "Rustic Wooden Bridge & Full River Arcs Unlocked",
+  },
+  tier_kanopi: {
+    name: "Canopy Wanderer",
+    description: "Walking among lush boughs with a steady daily deep work rhythm.",
+    perk: "Mystic Night Deer Wildlife & Nordic Spruce Sapling",
+  },
+  tier_kabut: {
+    name: "Mist Keeper",
+    description: "Cultivating quiet thoughts and steady dawn consistency.",
+    perk: "Neat Hedge Landscaping & Daily Wildlife Bonus",
+  },
+  tier_tunas: {
+    name: "Forest Explorer",
+    description: "Taking your first steps into the world of mindful sanctuary building.",
+    perk: "Island Pioneer Badge & Classic Oak Sapling",
+  },
+};
+
+export const AVATAR_PRESET_NAMES_EN: Record<string, string> = {
+  preset_deer: "Mystic Deer",
+  preset_koala: "Zen Koala",
+  preset_cat: "Sanctuary Cat",
+  preset_bird: "Songbird",
+  preset_tree: "Banyan Tree",
+  preset_orchid: "Wild Orchid",
+  preset_fox: "Golden Fox",
+  preset_ranger: "Forest Ranger",
+};
+
+export const ACHIEVEMENT_TRANSLATIONS_EN: Record<
+  string,
+  { title: string; subtitle: string; description: string; quote: string }
+> = {
+  ach_first_focus: {
+    title: "First Step",
+    subtitle: "Planting the Seed of Mindful Presence",
+    description: "Complete your first focus session and plant your maiden tree in Rimba.",
+    quote: "A journey of a thousand leagues begins with a single breath and a single step.",
+  },
+  ach_tree_variety: {
+    title: "Forest Harmonizer",
+    subtitle: "Living Biodiversity",
+    description: "Grow at least 3 distinct tree species (e.g. Oak, Pine, Autumn, Palm, Ancient).",
+    quote: "A resilient forest embraces every shape and rhythm of living boughs.",
+  },
+  ach_night_owl: {
+    title: "Night Guardian",
+    subtitle: "Stillness Under the Starlit Sky",
+    description: "Complete a mindful focus session at night under stars and fireflies.",
+    quote: "In the quiet stillness of night, a dedicated soul finds boundless clarity.",
+  },
+  ach_streak_3: {
+    title: "Sprouting Habit",
+    subtitle: "3-Day Focus Rhythm",
+    description: "Maintain your daily focus streak for 3 consecutive days.",
+    quote: "Three consecutive days form the bedrock of a lasting mindful habit.",
+  },
+  ach_streak_7: {
+    title: "Steadfast Ranger",
+    subtitle: "7 Days of Unbroken Resolve",
+    description: "Maintain a full focus streak for 7 consecutive days.",
+    quote: "Roots anchored deep through seven moons do not yield before the wind.",
+  },
+  ach_land_expand: {
+    title: "Island Architect",
+    subtitle: "Expand to 14 Sanctuary Tiles",
+    description: "Expand your floating island sanctuary to at least 14 verdant tiles.",
+    quote: "Every newly cultivated tile offers fertile ground for expanding peace.",
+  },
+  ach_fauna_whisperer: {
+    title: "Fauna Whisperer",
+    subtitle: "Greet 3 Wildlife Species",
+    description: "Discover and greet at least 3 different wildlife species in Rimba.",
+    quote: "True warmth is felt when wild creatures welcome you without fear.",
+  },
+  ach_bulldozer_hero: {
+    title: "Sanctuary Guardian",
+    subtitle: "Overcoming the Bulldozer Threat",
+    description: "Repel reclamation threats through a recovery focus session or Soul shield.",
+    quote: "A setback is an invitation to rise again with renewed quiet strength.",
+  },
+  ach_focus_180: {
+    title: "Focus Master",
+    subtitle: "180 Mindful Focus Minutes",
+    description: "Accumulate a total of 180 mindful focus minutes recorded in island history.",
+    quote: "Time invested in what truly matters bears the fruit of enduring peace.",
+  },
+};
+
+export const SOUNDSCAPE_TRANSLATIONS_EN: Record<
+  string,
+  { name: string; description: string }
+> = {
+  rain: {
+    name: "Gentle Rain",
+    description: "Soft raindrops caressing the forest canopy.",
+  },
+  wind: {
+    name: "Pine Breeze",
+    description: "Cool mountain breeze rustling through quiet pine ridges.",
+  },
+  river: {
+    name: "River Stream",
+    description: "Refreshing brook murmuring softly over sanctuary pebbles.",
+  },
+  fire: {
+    name: "Campfire Warmth",
+    description: "Gentle crackle of burning logs in the evening calm.",
+  },
+  waves: {
+    name: "Gentle Waves",
+    description: "Rhythmic ocean swell softly breaking against the shore.",
+  },
+};
+
+export const MUSIC_TRACK_TITLES_EN: Record<string, string> = {
+  amb_1: "Morning Dew",
+  amb_2: "Mountain Mist",
+  amb_3: "Silent Pine Valley",
+  amb_4: "Whispering Leaves",
+  amb_5: "Starry Night Canopy",
+  chill_1: "Mellow Dusk",
+  chill_3: "Calm Focus Flow",
+  jazz_5: "Canopy Jazz Melody",
+};
+
+export function translateQuest(
+  q: { id: string; title: string; description: string; unit: string },
+  lang: AppLanguage,
+) {
+  if (lang === "en" && QUEST_TRANSLATIONS_EN[q.id]) {
+    return {
+      title: QUEST_TRANSLATIONS_EN[q.id].title,
+      description: QUEST_TRANSLATIONS_EN[q.id].description,
+      unit: QUEST_TRANSLATIONS_EN[q.id].unit,
+    };
+  }
+  return { title: q.title, description: q.description, unit: q.unit };
+}
+
+export function translateChapter(
+  c: { id: string; title: string; subtitle: string; narration: string; quote: string; unlockDescription: string },
+  lang: AppLanguage,
+) {
+  if (lang === "en" && CHAPTER_TRANSLATIONS_EN[c.id]) {
+    return {
+      title: CHAPTER_TRANSLATIONS_EN[c.id].title,
+      subtitle: CHAPTER_TRANSLATIONS_EN[c.id].subtitle,
+      narration: CHAPTER_TRANSLATIONS_EN[c.id].narration,
+      quote: CHAPTER_TRANSLATIONS_EN[c.id].quote,
+      unlockDescription: CHAPTER_TRANSLATIONS_EN[c.id].unlockDescription,
+    };
+  }
+  return {
+    title: c.title,
+    subtitle: c.subtitle,
+    narration: c.narration,
+    quote: c.quote,
+    unlockDescription: c.unlockDescription,
+  };
+}
+
+export function translateWisdom(
+  w: { id: string; title: string; aphorism: string; reflection: string; treeStageName: string },
+  lang: AppLanguage,
+) {
+  if (lang === "en" && WISDOM_TRANSLATIONS_EN[w.id]) {
+    return {
+      title: WISDOM_TRANSLATIONS_EN[w.id].title,
+      aphorism: WISDOM_TRANSLATIONS_EN[w.id].aphorism,
+      reflection: WISDOM_TRANSLATIONS_EN[w.id].reflection,
+      treeStageName: WISDOM_TRANSLATIONS_EN[w.id].treeStageName,
+    };
+  }
+  return {
+    title: w.title,
+    aphorism: w.aphorism,
+    reflection: w.reflection,
+    treeStageName: w.treeStageName,
+  };
+}
+
+export function translateTier(
+  t: { id: string; name: string; description: string; perk: string },
+  lang: AppLanguage,
+) {
+  if (lang === "en" && TIER_TRANSLATIONS_EN[t.id]) {
+    return {
+      name: TIER_TRANSLATIONS_EN[t.id].name,
+      description: TIER_TRANSLATIONS_EN[t.id].description,
+      perk: TIER_TRANSLATIONS_EN[t.id].perk,
+    };
+  }
+  return { name: t.name, description: t.description, perk: t.perk };
+}
+
+export function translateAvatarPreset(presetId: string, fallbackLabel: string, lang: AppLanguage) {
+  if (lang === "en" && AVATAR_PRESET_NAMES_EN[presetId]) {
+    return AVATAR_PRESET_NAMES_EN[presetId];
+  }
+  return fallbackLabel;
+}
+
+export function translateAchievement(
+  ach: { id: string; title: string; subtitle: string; description: string; quote: string },
+  lang: AppLanguage,
+) {
+  if (lang === "en" && ACHIEVEMENT_TRANSLATIONS_EN[ach.id]) {
+    return {
+      title: ACHIEVEMENT_TRANSLATIONS_EN[ach.id].title,
+      subtitle: ACHIEVEMENT_TRANSLATIONS_EN[ach.id].subtitle,
+      description: ACHIEVEMENT_TRANSLATIONS_EN[ach.id].description,
+      quote: ACHIEVEMENT_TRANSLATIONS_EN[ach.id].quote,
+    };
+  }
+  return {
+    title: ach.title,
+    subtitle: ach.subtitle,
+    description: ach.description,
+    quote: ach.quote,
+  };
+}
+
+export function translateSoundscape(
+  sc: { id: string; name: string; description: string },
+  lang: AppLanguage,
+) {
+  if (lang === "en" && SOUNDSCAPE_TRANSLATIONS_EN[sc.id]) {
+    return {
+      name: SOUNDSCAPE_TRANSLATIONS_EN[sc.id].name,
+      description: SOUNDSCAPE_TRANSLATIONS_EN[sc.id].description,
+    };
+  }
+  return { name: sc.name, description: sc.description };
+}
+
+export function translateMusicTrack(
+  track: { id: string; title: string },
+  lang: AppLanguage,
+) {
+  if (lang === "en" && MUSIC_TRACK_TITLES_EN[track.id]) {
+    return MUSIC_TRACK_TITLES_EN[track.id];
+  }
+  return track.title;
+}
+
 export function useTranslation() {
   const language = usePreferencesStore((state) => state.language) || "id";
   const setLanguage = usePreferencesStore((state) => state.setLanguage);
@@ -849,5 +1701,21 @@ export function useTranslation() {
     translateTag: (tagOrLabel: string) => translateTagLabel(tagOrLabel, language as AppLanguage),
     translateSpecies: (speciesId: string, fallbackName: string) =>
       translateSpeciesName(speciesId, fallbackName, language as AppLanguage),
+    translateQuest: (q: { id: string; title: string; description: string; unit: string }) =>
+      translateQuest(q, language as AppLanguage),
+    translateChapter: (c: { id: string; title: string; subtitle: string; narration: string; quote: string; unlockDescription: string }) =>
+      translateChapter(c, language as AppLanguage),
+    translateWisdom: (w: { id: string; title: string; aphorism: string; reflection: string; treeStageName: string }) =>
+      translateWisdom(w, language as AppLanguage),
+    translateTier: (tier: { id: string; name: string; description: string; perk: string }) =>
+      translateTier(tier, language as AppLanguage),
+    translateAvatarPreset: (presetId: string, fallback: string) =>
+      translateAvatarPreset(presetId, fallback, language as AppLanguage),
+    translateAchievement: (ach: { id: string; title: string; subtitle: string; description: string; quote: string }) =>
+      translateAchievement(ach, language as AppLanguage),
+    translateSoundscape: (sc: { id: string; name: string; description: string }) =>
+      translateSoundscape(sc, language as AppLanguage),
+    translateMusicTrack: (track: { id: string; title: string }) =>
+      translateMusicTrack(track, language as AppLanguage),
   };
 }

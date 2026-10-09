@@ -199,11 +199,6 @@ export function Island() {
       const cx = (gx + offset) * tileSize;
       const cz = (gy + offset) * tileSize;
 
-      // Unlocked land tiles that are not river get the seamless turf overlay to seal all bevel gaps
-      if (!riverTileMap.has(key)) {
-        turfs.push([cx, 0.001, cz]);
-      }
-
       // Detect exposed exterior edges facing the ocean void
       // (River tiles are valid island tiles, so land adjacent to a river is NOT an ocean cliff!)
       const hasN = staticUnlockedSet.has(`${gx},${gy - 1}`);
@@ -216,6 +211,12 @@ export function Island() {
       const missingW = !hasW;
       const missingE = !hasE;
       const missingCount = (missingN ? 1 : 0) + (missingS ? 1 : 0) + (missingW ? 1 : 0) + (missingE ? 1 : 0);
+
+      // Only interior tiles get the seamless turf overlay plane.
+      // Exterior edge & corner tiles use native modular Kenney geometry so the grass top perfectly follows the chamfered cliff edges without any sharp 90-degree overhangs.
+      if (!riverTileMap.has(key) && missingCount === 0) {
+        turfs.push([cx, 0.001, cz]);
+      }
 
       const blockPos: [number, number, number] = [cx, -0.5, cz];
 

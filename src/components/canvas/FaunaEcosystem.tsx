@@ -12,7 +12,7 @@ import {
   isTileOccupied,
   getTerrainElevation,
 } from '@/lib/game/worldRules';
-import { buildRiverTileMap, getRiverChannelDistance } from '@/lib/game/riverSystem';
+import { buildRiverTileMap, getRiverChannelDistance, getConnectedRiverPatrolPaths } from '@/lib/game/riverSystem';
 import { GAME_CONFIG } from '@/lib/game/config';
 import { FaunaSpecies, WorldObject } from '@/types/game';
 import { soundManager } from '@/lib/audio/sounds';
@@ -431,13 +431,23 @@ function MeadowBunny({
   const leftEarRef = useRef<THREE.Mesh>(null);
   const rightEarRef = useRef<THREE.Mesh>(null);
 
-  const IDLE_DUR = 6.0;
-  const HOP_DUR = 3.0;
-  const CYCLE_DUR = IDLE_DUR + HOP_DUR;
+  const anchor = roamingTiles[0] || [0, 0, 0];
+  const currentPos = useRef<THREE.Vector3>(new THREE.Vector3(anchor[0], anchor[1], anchor[2]));
+  const currentRotY = useRef<number>(phaseOffset);
+  const currentRotX = useRef<number>(0);
+  const currentRotZ = useRef<number>(0);
+  const currentYOffset = useRef<number>(0.02);
+  const currentScaleY = useRef<number>(1.0);
+  const currentScaleXZ = useRef<number>(1.0);
 
-  useFrame(({ clock }) => {
+  const IDLE_DUR = 5.2;
+  const STEER_DUR = 0.7;
+  const HOP_DUR = 2.7;
+  const CYCLE_DUR = IDLE_DUR + STEER_DUR + HOP_DUR;
+
+  useFrame(({ clock }, delta) => {
     if (!groupRef.current || roamingTiles.length === 0) return;
-
+    const dt = Math.min(delta, 0.1);
     const t = clock.getElapsedTime() + phaseOffset;
 
     const count = roamingTiles.length;
@@ -448,52 +458,155 @@ function MeadowBunny({
     const pA = roamingTiles[currentIdx];
     const pB = roamingTiles[nextIdx];
 
-    let currentX = pA[0];
-    let currentZ = pA[2];
-    let hopY = 0;
-    let hopRotX = 0;
+    let targetX = pA[0];
+    let targetZ = pA[2];
+    let targetRotY = currentRotY.current;
+    let targetRotX = 0;
+    let targetRotZ = 0;
+    let targetYOffset = 0.02;
+    let targetScaleY = 1.0;
+    let targetScaleXZ = 1.0;
+
+    const dx = pB[0] - pA[0];
+    const dz = pB[2] - pA[2];
+    const walkAngle = Math.atan2(dx, dz);
 
     if (timeInCycle < IDLE_DUR) {
-      // Resting, sniffing, and looking around at tile A
-      const turnStep = Math.floor(timeInCycle * 0.7);
-      groupRef.current.rotation.y = Math.sin(turnStep * 1.5) * 0.45;
+      // 1. Organic Idle & Foraging Micro-behaviors
+      const idleProg = timeInCycle;
+      if (idleProg < 2.5) {
+        // Sub-phase A: Sniffing grass & foraging
+        const sniffFast = Math.sin(t * 15.0);
+        targetRotX = 0.28 + sniffFast * 0.04;
+        targetYOffset = 0.01 + Math.abs(sniffFast) * 0.006;
+        targetScaleY = 0.96;
+        targetScaleXZ = 1.02;
+      } else if (idleProg < 4.2) {
+        // Sub-phase B: Alert curious scan (sitting upright, looking around)
+        const scan = Math.sin((idleProg - 2.5) * 1.8);
+        targetRotX = -0.12;
+        targetRotY = walkAngle + scan * 0.42;
+        targetRotZ = scan * 0.08;
+        targetYOffset = 0.028 + Math.sin(t * 3.0) * 0.006;
+        targetScaleY = 1.05;
+        targetScaleXZ = 0.97;
+      } else {
+        // Sub-phase C: Calm settling & weight balance
+        targetRotX = 0.02;
+        targetRotY = walkAngle;
+        targetYOffset = 0.02 + Math.sin(t * 2.5) * 0.004;
+      }
+    } else if (timeInCycle < IDLE_DUR + STEER_DUR) {
+      // 2. Pre-Turn & Anticipatory Steering (turns smoothly to face target tile before leaping)
+      const steerProg = (timeInCycle - IDLE_DUR) / STEER_DUR;
+      const smoothSteer = steerProg * steerProg * (3 - 2 * steerProg);
+      targetRotY = walkAngle;
+      targetRotZ = (1 - smoothSteer) * -0.08;
+      // Crouch anticipation
+      targetScaleY = 0.86;
+      targetScaleXZ = 1.08;
+      targetYOffset = 0.008;
+      targetRotX = 0.08;
     } else {
-      // Hopping sequence towards tile B (3 distinct hops)
-      const hopProgress = (timeInCycle - IDLE_DUR) / HOP_DUR; // 0..1
-      const subHop = (hopProgress * 3.0) % 1.0;
-      hopY = Math.sin(subHop * Math.PI) * 0.16;
-      hopRotX = Math.sin(subHop * Math.PI) * 0.18;
+      // 3. Realistic 3-Hop Trajectory (displacement synced strictly to flight arcs)
+      const hopProg = (timeInCycle - IDLE_DUR - STEER_DUR) / HOP_DUR;
+      const totalHops = 3.0;
+      const hopIndex = Math.floor(hopProg * totalHops);
+      const localProg = (hopProg * totalHops) % 1.0;
 
-      currentX = pA[0] + (pB[0] - pA[0]) * hopProgress;
-      currentZ = pA[2] + (pB[2] - pA[2]) * hopProgress;
+      // Displacement advances primarily during air phase (0.15 to 0.85 of each sub-hop)
+      let subDisplacement = 0;
+      if (localProg < 0.15) {
+        // Takeoff push: still anchored
+        subDisplacement = 0;
+      } else if (localProg > 0.85) {
+        // Landing cushion: fully reached hop segment
+        subDisplacement = 1.0;
+      } else {
+        // Air flight smooth glide
+        const airT = (localProg - 0.15) / 0.70;
+        subDisplacement = airT * airT * (3 - 2 * airT);
+      }
 
-      // Orient towards destination tile
-      const dx = pB[0] - pA[0];
-      const dz = pB[2] - pA[2];
-      groupRef.current.rotation.y = Math.atan2(dx, dz);
+      const totalHopFraction = (hopIndex + subDisplacement) / totalHops;
+      targetX = pA[0] + dx * Math.min(1, Math.max(0, totalHopFraction));
+      targetZ = pA[2] + dz * Math.min(1, Math.max(0, totalHopFraction));
+      targetRotY = walkAngle;
+
+      // Parabolic jump arc with squash & stretch dynamics
+      const hopArc = Math.sin(localProg * Math.PI);
+      targetYOffset = 0.015 + hopArc * 0.20;
+
+      if (localProg < 0.22) {
+        // Liftoff stretch
+        targetScaleY = 1.18;
+        targetScaleXZ = 0.92;
+        targetRotX = -0.18;
+      } else if (localProg < 0.78) {
+        // Mid-air streamlined glide
+        targetScaleY = 1.02;
+        targetScaleXZ = 0.98;
+        targetRotX = 0.02;
+      } else {
+        // Touchdown cushion squash
+        targetScaleY = 0.84;
+        targetScaleXZ = 1.10;
+        targetRotX = 0.14;
+      }
     }
 
-    // Dynamic mutual separation: gently steer clear of all other active ground fauna
+    // Mutual ground animal collision avoidance
     const MIN_DIST = 0.72;
+    let avoidX = 0;
+    let avoidZ = 0;
     groundPositionsRef.current.forEach((otherPos, otherId) => {
       if (otherId === id) return;
-      const dx = currentX - otherPos.x;
-      const dz = currentZ - otherPos.z;
-      const dist = Math.hypot(dx, dz);
+      const ddx = targetX - otherPos.x;
+      const ddz = targetZ - otherPos.z;
+      const dist = Math.hypot(ddx, ddz);
       if (dist < MIN_DIST && dist > 0.001) {
-        const push = (MIN_DIST - dist) * 0.85;
-        const candX = currentX + (dx / dist) * push;
-        const candZ = currentZ + (dz / dist) * push;
+        const push = (MIN_DIST - dist) * 0.75;
+        const candX = targetX + (ddx / dist) * push;
+        const candZ = targetZ + (ddz / dist) * push;
         if (!isRiverZone(candX, candZ, 0.40)) {
-          currentX = candX;
-          currentZ = candZ;
+          avoidX += (ddx / dist) * push;
+          avoidZ += (ddz / dist) * push;
         }
       }
     });
 
-    const groundH = getTerrainElevation(currentX, currentZ).height;
-    groupRef.current.position.set(currentX, groundH + 0.02 + hopY, currentZ);
-    groupRef.current.rotation.x = hopRotX;
+    const finalTargetX = targetX + avoidX;
+    const finalTargetZ = targetZ + avoidZ;
+
+    // Smooth movement damping
+    const posDamp = Math.min(1, dt * 5.8);
+    currentPos.current.x += (finalTargetX - currentPos.current.x) * posDamp;
+    currentPos.current.z += (finalTargetZ - currentPos.current.z) * posDamp;
+
+    const yDamp = Math.min(1, dt * 7.5);
+    currentYOffset.current += (targetYOffset - currentYOffset.current) * yDamp;
+
+    const scaleDamp = Math.min(1, dt * 8.0);
+    currentScaleY.current += (targetScaleY - currentScaleY.current) * scaleDamp;
+    currentScaleXZ.current += (targetScaleXZ - currentScaleXZ.current) * scaleDamp;
+
+    // Shortest-arc smooth angular damping
+    let angleDiff = targetRotY - currentRotY.current;
+    while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+    while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+    currentRotY.current += angleDiff * Math.min(1, dt * 4.8);
+
+    currentRotX.current += (targetRotX - currentRotX.current) * Math.min(1, dt * 6.5);
+    currentRotZ.current += (targetRotZ - currentRotZ.current) * Math.min(1, dt * 6.0);
+
+    const groundH = getTerrainElevation(currentPos.current.x, currentPos.current.z).height;
+    groupRef.current.position.set(currentPos.current.x, groundH + currentYOffset.current, currentPos.current.z);
+    groupRef.current.rotation.set(currentRotX.current, currentRotY.current, currentRotZ.current);
+    groupRef.current.scale.set(
+      scale * currentScaleXZ.current,
+      scale * currentScaleY.current,
+      scale * currentScaleXZ.current
+    );
 
     // Register real-time position
     let pos = groundPositionsRef.current.get(id);
@@ -501,13 +614,16 @@ function MeadowBunny({
       pos = new THREE.Vector3();
       groundPositionsRef.current.set(id, pos);
     }
-    pos.set(currentX, groundH + 0.02 + hopY, currentZ);
+    pos.set(currentPos.current.x, groundH + currentYOffset.current, currentPos.current.z);
 
-    // Ear wiggles during idle
+    // Ear wiggles during idle & wind resistance during hop
     if (leftEarRef.current && rightEarRef.current) {
-      const earWiggle = Math.sin(t * 8) * 0.1;
+      const earWiggle = Math.sin(t * 8.5) * 0.10;
+      const hopTilt = currentRotX.current * 0.4;
       leftEarRef.current.rotation.z = -0.15 + earWiggle;
+      leftEarRef.current.rotation.x = hopTilt;
       rightEarRef.current.rotation.z = 0.15 - earWiggle;
+      rightEarRef.current.rotation.x = hopTilt;
     }
   });
 
@@ -631,13 +747,21 @@ function ForestFox({
     return cloned;
   }, [scene, foxTexture]);
 
-  const IDLE_DUR = 6.5;
-  const WALK_DUR = 3.5;
-  const CYCLE_DUR = IDLE_DUR + WALK_DUR;
+  const anchor = roamingTiles[0] || [0, 0, 0];
+  const currentPos = useRef<THREE.Vector3>(new THREE.Vector3(anchor[0], anchor[1], anchor[2]));
+  const currentRotY = useRef<number>(phaseOffset);
+  const currentRotX = useRef<number>(0);
+  const currentRotZ = useRef<number>(0);
+  const currentYOffset = useRef<number>(0.02);
 
-  useFrame(({ clock }) => {
+  const IDLE_DUR = 5.2;
+  const STEER_DUR = 0.8;
+  const WALK_DUR = 3.2;
+  const CYCLE_DUR = IDLE_DUR + STEER_DUR + WALK_DUR;
+
+  useFrame(({ clock }, delta) => {
     if (!groupRef.current || roamingTiles.length === 0) return;
-
+    const dt = Math.min(delta, 0.1);
     const t = clock.getElapsedTime() + phaseOffset;
 
     const count = roamingTiles.length;
@@ -648,51 +772,105 @@ function ForestFox({
     const pA = roamingTiles[currentIdx];
     const pB = roamingTiles[nextIdx];
 
-    let currentX = pA[0];
-    let currentZ = pA[2];
-    let trotBob = 0;
+    let targetX = pA[0];
+    let targetZ = pA[2];
+    let targetRotY = currentRotY.current;
+    let targetRotX = 0;
+    let targetRotZ = 0;
+    let targetYOffset = 0.02;
+
+    const dx = pB[0] - pA[0];
+    const dz = pB[2] - pA[2];
+    const walkAngle = Math.atan2(dx, dz);
 
     if (timeInCycle < IDLE_DUR) {
-      // Alert idle at tile A
-      groupRef.current.rotation.y = 0.5 + Math.sin(t * 1.3) * 0.28;
-      groupRef.current.rotation.z = Math.sin(t * 2.6) * 0.04;
+      // 1. Alert Fox Idle: Inquisitive head tilts, ground sniffing, vigilant glances
+      const idleProg = timeInCycle;
+      if (idleProg < 2.2) {
+        // Sub-phase A: Inquisitive sniffing & head tilt
+        targetRotX = 0.22 + Math.sin(t * 8.0) * 0.035;
+        targetRotZ = Math.sin(idleProg * 2.5) * 0.14;
+        targetRotY = walkAngle + Math.sin(idleProg * 1.2) * 0.18;
+        targetYOffset = 0.012 + Math.abs(Math.sin(t * 8.0)) * 0.005;
+      } else if (idleProg < 4.2) {
+        // Sub-phase B: Looking up, scanning patrol route
+        const look = Math.sin((idleProg - 2.2) * 1.5);
+        targetRotX = -0.06 + Math.sin(t * 2.0) * 0.02;
+        targetRotY = walkAngle + look * 0.40;
+        targetRotZ = -look * 0.06;
+        targetYOffset = 0.024 + Math.sin(t * 2.5) * 0.006;
+      } else {
+        // Sub-phase C: Stance settling before moving
+        targetRotX = 0.02;
+        targetRotY = walkAngle;
+        targetRotZ = 0;
+        targetYOffset = 0.02;
+      }
+    } else if (timeInCycle < IDLE_DUR + STEER_DUR) {
+      // 2. Pre-Steer: Smooth curved torso orientation into walk direction before stepping
+      const steerProg = (timeInCycle - IDLE_DUR) / STEER_DUR;
+      const smoothSteer = steerProg * steerProg * (3 - 2 * steerProg);
+      targetRotY = walkAngle;
+      targetRotZ = (1 - smoothSteer) * -0.07;
+      targetRotX = 0.04;
+      targetYOffset = 0.016;
     } else {
-      // Agile trotting stride towards tile B
-      const walkProg = (timeInCycle - IDLE_DUR) / WALK_DUR;
-      const smoothProg = walkProg * walkProg * (3 - 2 * walkProg);
+      // 3. Agile Trotting Gait: Synchronized stride frequency, zero moonwalking
+      const walkProg = (timeInCycle - IDLE_DUR - STEER_DUR) / WALK_DUR;
+      const smooth = walkProg * walkProg * (3 - 2 * walkProg);
+      targetX = pA[0] + dx * smooth;
+      targetZ = pA[2] + dz * smooth;
+      targetRotY = walkAngle;
 
-      const dx = pB[0] - pA[0];
-      const dz = pB[2] - pA[2];
-      currentX = pA[0] + dx * smoothProg;
-      currentZ = pA[2] + dz * smoothProg;
-
-      // Trotting bounce
-      trotBob = Math.abs(Math.sin(walkProg * Math.PI * 6)) * 0.035;
-
-      groupRef.current.rotation.y = Math.atan2(dx, dz);
-      groupRef.current.rotation.z = Math.sin(walkProg * Math.PI * 6) * 0.04;
+      const trotCycle = walkProg * Math.PI * 8.0;
+      const trotBob = Math.abs(Math.sin(trotCycle)) * 0.042;
+      targetYOffset = 0.02 + trotBob;
+      targetRotX = Math.sin(trotCycle) * 0.032;
+      targetRotZ = Math.sin(trotCycle * 0.5) * 0.040;
     }
 
-    // Dynamic mutual separation: gently steer clear of all other active ground fauna
+    // Mutual ground animal collision avoidance
     const MIN_DIST = 0.78;
+    let avoidX = 0;
+    let avoidZ = 0;
     groundPositionsRef.current.forEach((otherPos, otherId) => {
       if (otherId === id) return;
-      const dx = currentX - otherPos.x;
-      const dz = currentZ - otherPos.z;
-      const dist = Math.hypot(dx, dz);
+      const ddx = targetX - otherPos.x;
+      const ddz = targetZ - otherPos.z;
+      const dist = Math.hypot(ddx, ddz);
       if (dist < MIN_DIST && dist > 0.001) {
-        const push = (MIN_DIST - dist) * 0.85;
-        const candX = currentX + (dx / dist) * push;
-        const candZ = currentZ + (dz / dist) * push;
+        const push = (MIN_DIST - dist) * 0.75;
+        const candX = targetX + (ddx / dist) * push;
+        const candZ = targetZ + (ddz / dist) * push;
         if (!isRiverZone(candX, candZ, 0.40)) {
-          currentX = candX;
-          currentZ = candZ;
+          avoidX += (ddx / dist) * push;
+          avoidZ += (ddz / dist) * push;
         }
       }
     });
 
-    const groundH = getTerrainElevation(currentX, currentZ).height;
-    groupRef.current.position.set(currentX, groundH + 0.02 + trotBob, currentZ);
+    const finalTargetX = targetX + avoidX;
+    const finalTargetZ = targetZ + avoidZ;
+
+    // Movement and rotation damping
+    const posDamp = Math.min(1, dt * 5.2);
+    currentPos.current.x += (finalTargetX - currentPos.current.x) * posDamp;
+    currentPos.current.z += (finalTargetZ - currentPos.current.z) * posDamp;
+
+    const yDamp = Math.min(1, dt * 7.0);
+    currentYOffset.current += (targetYOffset - currentYOffset.current) * yDamp;
+
+    let angleDiff = targetRotY - currentRotY.current;
+    while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+    while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+    currentRotY.current += angleDiff * Math.min(1, dt * 4.6);
+
+    currentRotX.current += (targetRotX - currentRotX.current) * Math.min(1, dt * 5.5);
+    currentRotZ.current += (targetRotZ - currentRotZ.current) * Math.min(1, dt * 5.5);
+
+    const groundH = getTerrainElevation(currentPos.current.x, currentPos.current.z).height;
+    groupRef.current.position.set(currentPos.current.x, groundH + currentYOffset.current, currentPos.current.z);
+    groupRef.current.rotation.set(currentRotX.current, currentRotY.current, currentRotZ.current);
 
     // Register real-time position
     let pos = groundPositionsRef.current.get(id);
@@ -700,7 +878,7 @@ function ForestFox({
       pos = new THREE.Vector3();
       groundPositionsRef.current.set(id, pos);
     }
-    pos.set(currentX, groundH + 0.02 + trotBob, currentZ);
+    pos.set(currentPos.current.x, groundH + currentYOffset.current, currentPos.current.z);
   });
 
   return (
@@ -934,7 +1112,8 @@ function CubePetGroundWalker({
   const currentRotZ = useRef<number>(0);
   const currentYOffset = useRef<number>(0.02);
 
-  const CYCLE_DUR = idleDuration + walkDuration;
+  const STEER_DUR = 0.8;
+  const CYCLE_DUR = idleDuration + STEER_DUR + walkDuration;
 
   useFrame(({ clock }, delta) => {
     if (!groupRef.current || roamingTiles.length === 0) return;
@@ -960,24 +1139,32 @@ function CubePetGroundWalker({
     const walkAngle = Math.atan2(dx, dz);
 
     if (timeInCycle < idleDuration) {
-      // Idle phase: look around, peaceful breathing bob
+      // 1. Idle phase: look around, calm breathing bob
       const idleTime = timeInCycle;
-      const breathe = Math.sin(idleTime * 2.0) * 0.008;
+      const breathe = Math.sin(idleTime * 2.2) * 0.009;
       targetYOffset = 0.02 + breathe;
-      targetRotX = Math.sin(idleTime * 1.2) * 0.03;
-      targetRotY = (pA[0] > 0 ? 0.6 : -0.6) + Math.sin(idleTime * 0.8) * 0.25;
-      targetRotZ = Math.sin(idleTime * 1.5) * 0.02;
+      targetRotX = Math.sin(idleTime * 1.4) * 0.025;
+      targetRotY = (pA[0] > 0 ? 0.45 : -0.45) + Math.sin(idleTime * 0.85) * 0.22;
+      targetRotZ = Math.sin(idleTime * 1.6) * 0.02;
+    } else if (timeInCycle < idleDuration + STEER_DUR) {
+      // 2. Pre-Steer: Smooth curved torso orientation into walk direction before stepping
+      const steerProg = (timeInCycle - idleDuration) / STEER_DUR;
+      const smoothSteer = steerProg * steerProg * (3 - 2 * steerProg);
+      targetRotY = walkAngle;
+      targetRotZ = (1 - smoothSteer) * -0.06;
+      targetRotX = 0.03;
+      targetYOffset = 0.016;
     } else {
-      // Walk phase: smoothstep step toward next tile
-      const walkProg = (timeInCycle - idleDuration) / walkDuration;
+      // 3. Walk phase: Smoothstep step toward next tile with synchronized stride
+      const walkProg = (timeInCycle - idleDuration - STEER_DUR) / walkDuration;
       const smooth = walkProg * walkProg * (3 - 2 * walkProg);
       targetX = pA[0] + dx * smooth;
       targetZ = pA[2] + dz * smooth;
       targetRotY = walkAngle;
-      const stepBob = Math.abs(Math.sin(walkProg * Math.PI * 4)) * 0.035;
+      const stepBob = Math.abs(Math.sin(walkProg * Math.PI * 6)) * 0.036;
       targetYOffset = 0.02 + stepBob;
-      targetRotX = Math.sin(walkProg * Math.PI * 4) * 0.02;
-      targetRotZ = Math.sin(walkProg * Math.PI * 4) * 0.025;
+      targetRotX = Math.sin(walkProg * Math.PI * 6) * 0.025;
+      targetRotZ = Math.sin(walkProg * Math.PI * 3) * 0.030;
     }
 
     // Mutual collision avoidance: Gently steer away from other ground animals
@@ -1102,34 +1289,72 @@ function RiverFish({
     return cloned;
   }, [scene, fishTexture]);
 
-  const SWIM_DUR = 5.0;
+  const currentRotY = useRef<number>(phaseOffset);
+  const currentPos = useRef<THREE.Vector3>(
+    new THREE.Vector3(
+      riverWaypoints[0] ? riverWaypoints[0][0] : 0,
+      -0.14,
+      riverWaypoints[0] ? riverWaypoints[0][2] : 0
+    )
+  );
 
-  useFrame(({ clock }) => {
+  useFrame(({ clock }, delta) => {
     if (!groupRef.current || riverWaypoints.length === 0) return;
+    const dt = Math.min(delta, 0.1);
     const t = clock.getElapsedTime() + phaseOffset;
 
-    const count = riverWaypoints.length;
-    const currentIdx = Math.floor(t / SWIM_DUR) % count;
-    const nextIdx = (currentIdx + 1) % count;
-    const progress = (t % SWIM_DUR) / SWIM_DUR;
+    let targetX = 0;
+    let targetZ = 0;
+    let targetRotY = currentRotY.current;
 
-    const pA = riverWaypoints[currentIdx];
-    const pB = riverWaypoints[nextIdx];
+    if (riverWaypoints.length === 1) {
+      // Single tile pool: serene circular patrol inside the tile boundaries
+      const center = riverWaypoints[0];
+      const radius = 0.22;
+      const angle = t * 1.35;
+      targetX = center[0] + Math.cos(angle) * radius;
+      targetZ = center[2] + Math.sin(angle) * radius;
+      targetRotY = angle + Math.PI / 2; // Swim tangent to the circle
+    } else {
+      // Continuous connected patrol path (each segment is strictly adjacent)
+      const count = riverWaypoints.length;
+      const TILE_SWIM_DUR = 2.4; // 2.4 seconds per tile for gentle, natural gliding
+      const totalCycle = count * TILE_SWIM_DUR;
+      const timeInCycle = t % totalCycle;
 
-    const dx = pB[0] - pA[0];
-    const dz = pB[2] - pA[2];
-    const swimAngle = Math.atan2(dx, dz);
+      const currentIdx = Math.floor(timeInCycle / TILE_SWIM_DUR) % count;
+      const nextIdx = (currentIdx + 1) % count;
+      const progress = (timeInCycle % TILE_SWIM_DUR) / TILE_SWIM_DUR;
 
-    const smooth = progress * progress * (3 - 2 * progress);
-    const posX = pA[0] + dx * smooth;
-    const posZ = pA[2] + dz * smooth;
-    const swimBob = Math.sin(t * 4.0) * 0.02;
+      const pA = riverWaypoints[currentIdx];
+      const pB = riverWaypoints[nextIdx];
 
-    const tailWiggle = Math.sin(t * 8.0) * 0.22;
-    const bodyRoll = Math.sin(t * 4.0) * 0.12;
+      const dx = pB[0] - pA[0];
+      const dz = pB[2] - pA[2];
+      targetRotY = Math.atan2(dx, dz);
 
-    groupRef.current.position.set(posX, -0.14 + swimBob, posZ);
-    groupRef.current.rotation.set(0, swimAngle + tailWiggle, bodyRoll);
+      // Smoothstep easing for swimming between adjacent water tiles
+      const smooth = progress * progress * (3 - 2 * progress);
+      targetX = pA[0] + dx * smooth;
+      targetZ = pA[2] + dz * smooth;
+    }
+
+    // Smooth shortest-arc angular damping for turns and dead-end reversals
+    let angleDiff = targetRotY - currentRotY.current;
+    while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+    while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+    currentRotY.current += angleDiff * Math.min(1, dt * 4.8);
+
+    // Natural fin and tail swimming physics
+    const tailWiggle = Math.sin(t * 8.5) * 0.22;
+    const bodyRoll = (angleDiff * 0.35) + Math.sin(t * 4.2) * 0.08;
+    const swimBob = Math.sin(t * 3.6) * 0.02;
+
+    currentPos.current.x += (targetX - currentPos.current.x) * Math.min(1, dt * 6.0);
+    currentPos.current.z += (targetZ - currentPos.current.z) * Math.min(1, dt * 6.0);
+
+    groupRef.current.position.set(currentPos.current.x, -0.14 + swimBob, currentPos.current.z);
+    groupRef.current.rotation.set(0, currentRotY.current + tailWiggle, bodyRoll);
     groupRef.current.scale.set(scale, scale, scale);
   });
 
@@ -1451,21 +1676,17 @@ export function FaunaEcosystem() {
     return points;
   }, [activeTrees, unoccupiedTiles]);
 
-  // 3. River Water Waypoints (For swimming Koi fish)
-  const riverWaterWaypoints = useMemo<[number, number, number][]>(() => {
-    const pts: [number, number, number][] = [];
-    riverTileMap.forEach((_, key) => {
-      const [gx, gy] = key.split(',').map(Number);
-      const w = gridToWorld(gx, gy);
-      pts.push([w[0], -0.14, w[2]]);
-    });
-    if (pts.length === 0) {
-      return [
-        [0, -0.14, 0],
-        [0.5, -0.14, 0.5],
-      ];
-    }
-    return pts;
+  // 3. Connected River Patrol Networks (Prevents fish from leaping across land or between separate streams)
+  const riverPatrolNetworks = useMemo<[number, number, number][][]>(() => {
+    const paths = getConnectedRiverPatrolPaths(riverTileMap);
+    if (paths.length === 0) return [];
+
+    return paths.map((gridPath) =>
+      gridPath.map(([gx, _, gy]) => {
+        const w = gridToWorld(gx, gy);
+        return [w[0], -0.14, w[2]] as [number, number, number];
+      })
+    );
   }, [riverTileMap]);
 
   // 4. Tree Monkey Branch Waypoints (Sitting & perching on lower tree trunk / mossy base, below foliage)
@@ -1982,17 +2203,20 @@ export function FaunaEcosystem() {
         />
       )}
 
-      {/* 15. River Fish (Ikan Koi Sungai) */}
-      {canFish && (
-        <RiverFish
-          id="fish"
-          riverWaypoints={riverWaterWaypoints}
-          scale={0.18}
-          phaseOffset={1.4}
-          isNight={isNight}
-          onSelect={() => handleSelectSpecies('fish', riverWaterWaypoints[0])}
-        />
-      )}
+      {/* 15. River Fish (Ikan Koi Sungai) - Strictly bounded within connected water networks */}
+      {canFish &&
+        riverPatrolNetworks.length > 0 &&
+        riverPatrolNetworks.slice(0, 3).map((network, idx) => (
+          <RiverFish
+            key={`fish-${idx}`}
+            id={`fish-${idx}`}
+            riverWaypoints={network}
+            scale={0.24}
+            phaseOffset={idx * 2.3 + 1.4}
+            isNight={isNight}
+            onSelect={() => handleSelectSpecies('fish', network[0])}
+          />
+        ))}
 
       {/* 16. Cat (Kucing Kemah Dekat Tenda) */}
       {canCat && (

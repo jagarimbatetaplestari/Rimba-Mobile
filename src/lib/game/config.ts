@@ -44,7 +44,7 @@ export const BUILD_CATALOG: CatalogItem[] = [
     type: 'rock',
     name: 'Batu Air Muara',
     cost: 8,
-    model: 'rock_large',
+    model: 'fabz_rounded_rock',
     category: 'Water & Rivers',
     description: 'Batu kali halus pembelah aliran air di muara sungai rimba.',
   },
@@ -215,15 +215,6 @@ export const BUILD_CATALOG: CatalogItem[] = [
 
   // --- ROCKS & TIMBER ---
   {
-    id: 'rock_large',
-    type: 'rock',
-    name: 'River Boulder',
-    cost: 15,
-    model: 'rock_large',
-    category: 'Rocks & Timber',
-    description: 'Smooth river stone sculpted by water over centuries.',
-  },
-  {
     id: 'rock_tall',
     type: 'rock',
     name: 'Mountain Crag',
@@ -258,6 +249,33 @@ export const BUILD_CATALOG: CatalogItem[] = [
     model: 'log',
     category: 'Rocks & Timber',
     description: 'A rustic fallen birch log offering shelter for wildlife.',
+  },
+  {
+    id: 'survival_rock_flat_grass',
+    type: 'rock',
+    name: 'Batu Pipih Berumput',
+    cost: 14,
+    model: 'survival_rock_flat_grass',
+    category: 'Rocks & Timber',
+    description: 'Batu kali pipih berteras rumput yang tenang di tepi pulau.',
+  },
+  {
+    id: 'survival_tree_log_small',
+    type: 'rock',
+    name: 'Batang Kayu Rebah Alami',
+    cost: 12,
+    model: 'survival_tree_log_small',
+    category: 'Rocks & Timber',
+    description: 'Kayu glondongan kecil alami tempat peristirahatan satwa.',
+  },
+  {
+    id: 'survival_tree_autumn_tall',
+    type: 'tree',
+    name: 'Pohon Keemasan Tinggi',
+    cost: 22,
+    model: 'survival_tree_autumn_tall',
+    category: 'Flora & Fungi',
+    description: 'Pohon musim gugur menjulang tinggi dengan daun keemasan hangat.',
   },
   {
     id: 'lpset_rock_mossy_a',
@@ -340,15 +358,7 @@ export const BUILD_CATALOG: CatalogItem[] = [
     category: 'Rocks & Timber',
     description: 'Sepasang batuan bundar halus bergaya kartun bersahaja.',
   },
-  {
-    id: 'platformer_stones',
-    type: 'rock',
-    name: 'Batu Kerikil Pijakan',
-    cost: 6,
-    model: 'platformer_stones',
-    category: 'Rocks & Timber',
-    description: 'Taburan kerikil halus alami untuk tepian jalan atau sungai.',
-  },
+
 
   // --- COZY SANCTUARY CAMP ---
   {

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
+import { createPortal } from "react-dom";
 import { TreePine, AlertTriangle, Wind, Compass, RefreshCw, X } from "lucide-react";
 import { soundManager } from "@/lib/audio/sounds";
 import { hapticLight, hapticMedium } from "@/lib/mobile/nativeBridge";
@@ -48,13 +49,19 @@ export function FocusWitherModal({
     }
   };
 
-  return (
+  const modalContent = (
     <div
-      className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/65 backdrop-blur-md animate-in fade-in duration-200 select-none font-urbanist"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) handleDismiss();
+      }}
+      className="fixed inset-0 z-[120] pointer-events-auto flex items-center justify-center p-4 bg-black/65 backdrop-blur-md animate-in fade-in duration-200 select-none font-urbanist"
       role="dialog"
       aria-modal="true"
     >
-      <div className="relative w-full max-w-sm rounded-3xl border border-stone-700/30 bg-gradient-to-b from-[#1C2022]/95 via-[#181B1D]/95 to-[#121416]/95 p-6 shadow-2xl shadow-black/60 backdrop-blur-xl text-center space-y-5 animate-in zoom-in-95 duration-200 text-stone-200">
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-sm rounded-3xl border border-stone-700/30 bg-gradient-to-b from-[#1C2022]/95 via-[#181B1D]/95 to-[#121416]/95 p-6 shadow-2xl shadow-black/60 backdrop-blur-xl text-center space-y-5 animate-in zoom-in-95 duration-200 text-stone-200 pointer-events-auto"
+      >
         {/* Tombol Tutup Silang di Sudut */}
         <button
           type="button"
@@ -148,4 +155,9 @@ export function FocusWitherModal({
       </div>
     </div>
   );
+
+  if (typeof document !== "undefined") {
+    return createPortal(modalContent, document.body);
+  }
+  return modalContent;
 }

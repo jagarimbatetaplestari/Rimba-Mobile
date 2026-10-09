@@ -304,7 +304,7 @@ export function GridPlane() {
       const item = getManifestItem(relocatingObject.model_variant);
       if (item) return item.modelPath;
       if (relocatingObject.object_type === 'tree') return '/models/kenney_nature_kit_tree_oak.glb';
-      if (relocatingObject.object_type === 'rock') return '/models/kenney_nature_kit_rock_largeA.glb';
+      if (relocatingObject.object_type === 'rock') return '/models/fabz_rounded_rock.glb';
       return '/models/kenney_nature_kit_path_stone.glb';
     }
 
@@ -315,7 +315,7 @@ export function GridPlane() {
     }
 
     if (selectedTool === 'tree') return '/models/kenney_nature_kit_tree_oak.glb';
-    if (selectedTool === 'rock') return '/models/kenney_nature_kit_rock_largeA.glb';
+    if (selectedTool === 'rock') return '/models/fabz_rounded_rock.glb';
     return '/models/kenney_nature_kit_path_stone.glb';
   }, [isRelocating, relocatingObject, selectedCatalogItem, selectedTool]);
 
@@ -331,37 +331,42 @@ export function GridPlane() {
     setHoveredTile(null);
   };
 
-  const handleClick = (e: { stopPropagation: () => void }) => {
+  const handleExpandTile = (grid_x: number, grid_y: number) => {
+    const isExpandable = canUnlockTile(grid_x, grid_y, unlockedSet);
+    if (isExpandable) {
+      const ok = unlockLandTile(grid_x, grid_y);
+      if (ok) soundManager.playLevelUp();
+    } else {
+      useGameStore.getState().notify('Hanya petak yang menempel langsung dengan pulau yang dapat dibuka!', 'error');
+    }
+  };
+
+  const handleClick = (e: { point?: THREE.Vector3; stopPropagation: () => void }) => {
     if (!isInteractingWithGrid) return;
     e.stopPropagation();
-    if (!hoveredTile) return;
+    const target = (e.point ? worldToGrid(e.point.x, e.point.z) : null) || hoveredTile;
+    if (!target) return;
 
     // 1. Expanding land: strictly when isExpandLandMode is actively true
     if (isExpandLandMode) {
-      const isExpandable = canUnlockTile(hoveredTile.grid_x, hoveredTile.grid_y, unlockedSet);
-      if (isExpandable) {
-        const ok = unlockLandTile(hoveredTile.grid_x, hoveredTile.grid_y);
-        if (ok) soundManager.playLevelUp();
-      } else {
-        useGameStore.getState().notify('Hanya petak yang menempel langsung dengan pulau yang dapat dibuka!', 'error');
-      }
+      handleExpandTile(target.grid_x, target.grid_y);
       return;
     }
 
     if (!placementStatus?.isValid) {
       if (placementStatus?.isSealed) {
         useGameStore.getState().notify('Petak ini disegel Bulldozer karena inaktif! Fokus 1 sesi atau reklamasi tunggul untuk membuka segel.', 'error');
-      } else if (!isTileUnlocked(hoveredTile.grid_x, hoveredTile.grid_y, unlockedSet)) {
+      } else if (!isTileUnlocked(target.grid_x, target.grid_y, unlockedSet)) {
         useGameStore.getState().notify('Petak ini belum dibuka! Klik untuk memperluas lahan Rimba.', 'error');
       }
       return;
     }
 
     if (isRelocating) {
-      const ok = confirmRelocation(hoveredTile.grid_x, hoveredTile.grid_y);
+      const ok = confirmRelocation(target.grid_x, target.grid_y);
       if (ok) soundManager.playPlace();
     } else if (selectedCatalogItem) {
-      const ok = placeCatalogItem(selectedCatalogItem, hoveredTile.grid_x, hoveredTile.grid_y);
+      const ok = placeCatalogItem(selectedCatalogItem, target.grid_x, target.grid_y);
       if (ok) soundManager.playPlace();
     }
   };
@@ -420,12 +425,21 @@ export function GridPlane() {
             const isHovered = hoveredTile?.grid_x === tile.grid_x && hoveredTile?.grid_y === tile.grid_y;
             return (
               <group key={`exp_${tile.grid_x}_${tile.grid_y}`} position={worldPos}>
-                <mesh rotation={[-Math.PI / 2, 0, 0]}>
+                <mesh
+                  rotation={[-Math.PI / 2, 0, 0]}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleExpandTile(tile.grid_x, tile.grid_y);
+                  }}
+                  onPointerDown={(e) => {
+                    e.stopPropagation();
+                  }}
+                >
                   <planeGeometry args={[tileSize * 0.94, tileSize * 0.94]} />
                   <meshBasicMaterial
                     color={isHovered ? '#10B981' : timeOfDay === 'night' ? '#059669' : '#34D399'}
                     transparent
-                    opacity={isHovered ? 0.45 : 0.22}
+                    opacity={isHovered ? 0.65 : 0.38}
                     depthWrite={false}
                   />
                 </mesh>
@@ -436,17 +450,19 @@ export function GridPlane() {
       )}
 
       {/* 3. Invisible raycast plane covering the logical 10x10 garden (only active during grid interaction) */}
-      <mesh
-        rotation={[-Math.PI / 2, 0, 0]}
-        position={[0, 0.05, 0]}
-        onPointerMove={isInteractingWithGrid ? handlePointerMove : undefined}
-        onPointerLeave={isInteractingWithGrid ? handlePointerLeave : undefined}
-        onClick={isInteractingWithGrid ? handleClick : undefined}
-        visible={false}
-      >
-        <planeGeometry args={[gridSize * tileSize, gridSize * tileSize]} />
-        <meshBasicMaterial transparent opacity={0} />
-      </mesh>
+      {isInteractingWithGrid && (
+        <mesh
+          rotation={[-Math.PI / 2, 0, 0]}
+          position={[0, 0.05, 0]}
+          onPointerMove={handlePointerMove}
+          onPointerLeave={handlePointerLeave}
+          onClick={handleClick}
+          onPointerDown={handleClick}
+        >
+          <planeGeometry args={[gridSize * tileSize, gridSize * tileSize]} />
+          <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+        </mesh>
+      )}
 
       {/* 4. Active Ghost & Placement Indicators */}
       {(isBuildActive || isRelocating) && (

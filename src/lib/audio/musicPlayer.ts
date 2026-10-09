@@ -81,11 +81,14 @@ export const RIMBA_PLAYLIST: MusicTrack[] = [
   },
 ];
 
+export type MusicRepeatMode = 'all' | 'one' | 'off';
+
 export interface MusicPlayerState {
   currentTrack: MusicTrack | null;
   isPlaying: boolean;
   volume: number;
   isMuted: boolean;
+  repeatMode: MusicRepeatMode;
 }
 
 class MusicPlayerController {
@@ -94,9 +97,14 @@ class MusicPlayerController {
   private isPlaying: boolean = false;
   private volume: number = 0.50;
   private isMuted: boolean = false;
+  private repeatMode: MusicRepeatMode = 'all';
 
   constructor() {
     if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('rimba_music_repeat_mode');
+      if (stored === 'all' || stored === 'one' || stored === 'off') {
+        this.repeatMode = stored as MusicRepeatMode;
+      }
       this.initAudio();
     }
   }
@@ -110,7 +118,7 @@ class MusicPlayerController {
     this.audio.setAttribute('webkit-playsinline', 'true');
 
     this.audio.addEventListener('ended', () => {
-      this.next();
+      this.handleTrackEnded();
     });
 
     this.audio.addEventListener('error', (e) => {
@@ -118,6 +126,37 @@ class MusicPlayerController {
       this.isPlaying = false;
       this.notifyState();
     });
+  }
+
+  private handleTrackEnded() {
+    if (this.repeatMode === 'one') {
+      if (this.audio) {
+        this.audio.currentTime = 0;
+        this.audio
+          .play()
+          .then(() => {
+            this.isPlaying = true;
+            this.notifyState();
+          })
+          .catch(() => {
+            this.isPlaying = false;
+            this.notifyState();
+          });
+      }
+    } else if (this.repeatMode === 'all') {
+      this.next();
+    } else {
+      // Repeat off: play next if not at the end of playlist; else stop
+      if (!this.currentTrack || RIMBA_PLAYLIST.length === 0) return;
+      const currentIndex = RIMBA_PLAYLIST.findIndex(
+        (t) => t.id === this.currentTrack?.id
+      );
+      if (currentIndex >= 0 && currentIndex < RIMBA_PLAYLIST.length - 1) {
+        this.playTrack(RIMBA_PLAYLIST[currentIndex + 1]);
+      } else {
+        this.stop();
+      }
+    }
   }
 
   private updateMediaSession(track: MusicTrack) {
@@ -163,7 +202,27 @@ class MusicPlayerController {
       isPlaying: this.isPlaying,
       volume: this.volume,
       isMuted: this.isMuted,
+      repeatMode: this.repeatMode,
     };
+  }
+
+  setRepeatMode(mode: MusicRepeatMode) {
+    this.repeatMode = mode;
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('rimba_music_repeat_mode', mode);
+    }
+    this.notifyState();
+  }
+
+  cycleRepeatMode(): MusicRepeatMode {
+    const nextMode: MusicRepeatMode =
+      this.repeatMode === 'all'
+        ? 'one'
+        : this.repeatMode === 'one'
+        ? 'off'
+        : 'all';
+    this.setRepeatMode(nextMode);
+    return nextMode;
   }
 
   playTrack(track: MusicTrack) {

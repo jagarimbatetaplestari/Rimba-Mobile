@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useMemo, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { useGameStore } from "@/lib/game/useGameStore";
 import { useAuthStore } from "@/lib/auth/useAuthStore";
 import { GAME_CONFIG, detectLocalTimeOfDay } from "@/lib/game/config";
@@ -43,6 +44,10 @@ import { usePreferencesStore } from "@/lib/settings/usePreferencesStore";
 import { useCampfireStore } from "@/lib/game/campfireStore";
 
 export default function RimbaDioramaApp() {
+  const router = useRouter();
+  const authUser = useAuthStore((state) => state.user);
+  const [isAuthHydrated, setIsAuthHydrated] = useState(false);
+
   const init = useGameStore((state) => state.init);
   const checkReclamation = useGameStore((state) => state.checkReclamation);
   const isInitialized = useGameStore((state) => state.isInitialized);
@@ -69,6 +74,32 @@ export default function RimbaDioramaApp() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isCampfireOpen, setIsCampfireOpen] = useState(false);
   const [isZenDimmed, setIsZenDimmed] = useState(false);
+
+  // Wait for persisted auth store hydration, then redirect unauthenticated users to /login first
+  useEffect(() => {
+    if (useAuthStore.persist.hasHydrated()) {
+      setIsAuthHydrated(true);
+      return;
+    }
+    const unsub = useAuthStore.persist.onFinishHydration(() => {
+      setIsAuthHydrated(true);
+    });
+    const fallbackTimer = setTimeout(() => {
+      setIsAuthHydrated(true);
+    }, 150);
+    return () => {
+      unsub();
+      clearTimeout(fallbackTimer);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isAuthHydrated) return;
+    if (!authUser) {
+      setIsOnboardingOpen(false);
+      router.replace("/login");
+    }
+  }, [isAuthHydrated, authUser, router]);
 
   // Smooth Crossfade Loading Overlay state
   const [showLoadingOverlay, setShowLoadingOverlay] = useState(true);
@@ -254,10 +285,10 @@ export default function RimbaDioramaApp() {
   const isSunset = timeOfDay === "sunset";
   const isNight = timeOfDay === "night";
 
-  // First-time onboarding check & evaluation triggers
+  // First-time onboarding check (only after user has authenticated or chosen Guest Mode on /login)
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const checkOnboarding = () => {
+      if (isAuthHydrated && authUser) {
         const urlParams = new URLSearchParams(window.location.search);
         const forceOnboarding = urlParams.get("onboarding") === "true";
         const completed = localStorage.getItem("rimba_onboarding_completed");
@@ -265,9 +296,7 @@ export default function RimbaDioramaApp() {
         if (forceOnboarding || !completed) {
           setIsOnboardingOpen(true);
         }
-      };
-
-      checkOnboarding();
+      }
 
       const handleOpenOnboarding = () => {
         setIsOnboardingOpen(true);
@@ -342,7 +371,7 @@ export default function RimbaDioramaApp() {
         window.removeEventListener("rimba:open_campfire", handleOpenCampfire);
       };
     }
-  }, []);
+  }, [isAuthHydrated, authUser]);
 
   // Sync mobile status bar with atmosphere (day/night)
   useEffect(() => {
@@ -360,6 +389,21 @@ export default function RimbaDioramaApp() {
     setZenMode(true);
   }, [setZenMode]);
 
+  const isAnyFullPageModalOpen =
+    isJournalOpen ||
+    isSoundscapeOpen ||
+    isProfileOpen ||
+    isStatisticsOpen ||
+    isLeaderboardOpen ||
+    isSettingsOpen ||
+    isCampfireOpen ||
+    isOnboardingOpen;
+
+  // Prevent flashing main island or onboarding before redirecting unauthenticated user to /login
+  if (!isAuthHydrated || !authUser) {
+    return <div className="fixed inset-0 h-[100dvh] w-full bg-[#040D08]" />;
+  }
+
   const mainThemeClass = isNight
     ? "night-mode text-slate-100"
     : isSunset
@@ -368,13 +412,15 @@ export default function RimbaDioramaApp() {
 
   return (
     <main
-      className={`relative w-screen h-screen h-[100dvh] overflow-hidden select-none font-sans antialiased transition-colors duration-1000 ${mainThemeClass}`}
+      className={`fixed inset-0 w-full h-[100dvh] overflow-hidden overscroll-none select-none font-sans antialiased transition-colors duration-1000 ${mainThemeClass}`}
     >
       {/* ====================================================
           MODERN AMBIENT HORIZON BACKDROP (Zero-Jank GPU Accelerated)
           ==================================================== */}
       <div
-        className="absolute inset-0 z-0 pointer-events-none overflow-hidden"
+        className={`absolute inset-0 z-0 pointer-events-none overflow-hidden ${
+          isAnyFullPageModalOpen ? "invisible" : ""
+        }`}
         aria-hidden="true"
       >
         {/* 1. Day Ambient Horizon (Morning Dew Sage with Sun Ray Shafts - Foto 1 Style) */}
@@ -656,8 +702,14 @@ export default function RimbaDioramaApp() {
       </div>
 
       {/* 3D Isometric Diorama Island Scene */}
-      <div className="absolute inset-0 z-10 overflow-hidden pointer-events-auto">
-        <CanvasWrapper />
+      <div
+        className={`absolute inset-0 z-10 overflow-hidden ${
+          isAnyFullPageModalOpen
+            ? "invisible pointer-events-none"
+            : "pointer-events-auto"
+        }`}
+      >
+        <CanvasWrapper isPaused={isAnyFullPageModalOpen} />
       </div>
 
       {/* Zen Focus Mode Curtain */}
@@ -665,14 +717,14 @@ export default function RimbaDioramaApp() {
 
       {/* Floating Apple Liquid Glass HUD & Ergonomic Controls Layer */}
       <div
-        className={`fixed inset-0 pointer-events-none z-30 flex flex-col justify-between transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-          isZenMode
-            ? "opacity-0 scale-[0.98] pointer-events-none"
-            : "opacity-100 scale-100"
+        className={`fixed inset-0 pointer-events-none z-30 flex flex-col justify-between transition-opacity duration-500 ${
+          isZenMode || isAnyFullPageModalOpen
+            ? "opacity-0 invisible pointer-events-none"
+            : "opacity-100"
         }`}
       >
         {/* Top Floating Island Header */}
-        <div className="w-full pointer-events-none flex flex-col items-center pt-[env(safe-area-inset-top,0.5rem)] px-3">
+        <div className="w-full pointer-events-none flex flex-col items-center px-3">
           <MobileHeaderHUD
             isZenDimmed={isZenDimmed}
             onOpenProfile={() => {

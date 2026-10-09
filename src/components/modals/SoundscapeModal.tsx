@@ -14,6 +14,7 @@ import {
 } from "@/lib/audio/musicPlayer";
 import { soundManager } from "@/lib/audio/sounds";
 import { hapticLight, hapticMedium } from "@/lib/mobile/nativeBridge";
+import { useTranslation } from "@/lib/i18n/translations";
 import {
   X,
   Volume2,
@@ -26,6 +27,8 @@ import {
   Music2,
   Wind,
   Square,
+  Repeat,
+  Repeat1,
 } from "lucide-react";
 
 interface SoundscapeModalProps {
@@ -37,6 +40,7 @@ type ActiveTab = "music" | "nature";
 type MusicFilterCategory = "all" | "jazz" | "chill" | "ambient";
 
 export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
+  const { t, translateSoundscape, translateMusicTrack } = useTranslation();
   const [activeTab, setActiveTab] = useState<ActiveTab>("music");
   const [musicCategory, setMusicCategory] =
     useState<MusicFilterCategory>("all");
@@ -130,6 +134,12 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
     musicPlayer.prev();
   };
 
+  const handleCycleRepeat = () => {
+    soundManager.playPop();
+    hapticLight();
+    musicPlayer.cycleRepeatMode();
+  };
+
   const handleMusicVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseFloat(e.target.value);
     musicPlayer.setVolume(val);
@@ -167,7 +177,7 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
       `}</style>
 
       <div
-        className="fixed inset-0 z-50 overflow-y-auto no-scrollbar select-none antialiased font-urbanist text-[#0D3528]"
+        className="fixed inset-0 z-[100] h-[100dvh] w-full overflow-y-auto overscroll-contain no-scrollbar select-none antialiased font-urbanist text-[#0D3528] pointer-events-auto"
         style={{
           background:
             "radial-gradient(130% 90% at 50% -5%, #38B28B 0%, #289874 34%, #1C7459 70%, #165643 100%)",
@@ -175,15 +185,15 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
         role="dialog"
         aria-modal="true"
       >
-        <div className="w-full max-w-md mx-auto px-5 pt-[max(env(safe-area-inset-top,1.25rem),1.25rem)] pb-[max(calc(env(safe-area-inset-bottom,0px)+2.5rem),3rem)] space-y-4">
+        <div className="w-full max-w-md mx-auto px-5 safe-modal-content space-y-4">
           {/* HEADER NAV */}
           <div className="flex items-center justify-between py-1">
             <div className="flex items-center gap-2.5">
               <h2 className="text-[23px] font-semibold tracking-normal text-white drop-shadow-xs">
-                Sanctum Audio
+                {t.audio.title}
               </h2>
               <span className="rounded-full bg-white/20 border border-white/25 px-3 py-0.5 text-[11.5px] font-medium text-emerald-50 backdrop-blur-md">
-                Suara Alam & Musik
+                {t.audio.badge}
               </span>
             </div>
 
@@ -194,7 +204,7 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
                 onClose();
               }}
               className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 border border-white/30 text-white shadow-sm backdrop-blur-md active:scale-90 transition-transform hover:bg-white/30 cursor-pointer"
-              aria-label="Tutup"
+              aria-label={t.common.close}
             >
               <X className="h-4 w-4 stroke-[2]" />
             </button>
@@ -216,7 +226,7 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
               }`}
             >
               <Music2 className="w-3.5 h-3.5 stroke-[1.8]" />
-              <span>Musik Lo-Fi</span>
+              <span>{t.audio.tabMusic}</span>
               {musicState.isPlaying && (
                 <span className="w-2 h-2 rounded-full bg-[#187557] animate-pulse" />
               )}
@@ -236,7 +246,7 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
               }`}
             >
               <Wind className="w-3.5 h-3.5 stroke-[1.8]" />
-              <span>Suara Alam</span>
+              <span>{t.audio.tabNature}</span>
               {activeNatureTrack !== "off" && (
                 <span className="w-2 h-2 rounded-full bg-[#187557] animate-pulse" />
               )}
@@ -251,7 +261,7 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
               {/* Now Playing Bento Card */}
               <div className="space-y-1.5">
                 <p className="px-1 text-[12px] font-medium uppercase tracking-[0.12em] text-white/90 drop-shadow-xs">
-                  Sedang Diputar
+                  {t.audio.nowPlaying}
                 </p>
 
                 <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-4 min-w-0 overflow-hidden">
@@ -262,18 +272,48 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
                           "Rimba Tunes"}
                       </span>
                       <span className="text-[15.5px] font-semibold text-[#0D3528] tracking-tight truncate block mt-1">
-                        {musicState.currentTrack?.title ||
-                          "Belum ada lagu diputar"}
+                        {musicState.currentTrack
+                          ? translateMusicTrack(musicState.currentTrack)
+                          : t.audio.noTrack}
                       </span>
                     </div>
 
                     {/* Player Controls */}
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        type="button"
+                        onClick={handleCycleRepeat}
+                        className={`h-8.5 w-8.5 rounded-full flex items-center justify-center transition-all active:scale-90 cursor-pointer relative ${
+                          musicState.repeatMode !== "off"
+                            ? "bg-[#E4F4ED] text-[#14664D] border border-[#BCE5D3] shadow-2xs"
+                            : "bg-[#0D3528]/5 hover:bg-[#0D3528]/10 text-[#4C7567]"
+                        }`}
+                        title={
+                          musicState.repeatMode === "one"
+                            ? t.audio.repeatOne
+                            : musicState.repeatMode === "all"
+                              ? t.audio.repeatAll
+                              : t.audio.repeatOff
+                        }
+                      >
+                        {musicState.repeatMode === "one" ? (
+                          <Repeat1 className="w-3.5 h-3.5 stroke-[2.2]" />
+                        ) : (
+                          <Repeat
+                            className={`w-3.5 h-3.5 ${
+                              musicState.repeatMode === "all"
+                                ? "stroke-[2.2]"
+                                : "stroke-[1.8] opacity-60"
+                            }`}
+                          />
+                        )}
+                      </button>
+
                       <button
                         type="button"
                         onClick={handleMusicPrev}
                         className="h-8.5 w-8.5 rounded-full bg-[#0D3528]/5 hover:bg-[#0D3528]/10 text-[#0D3528] flex items-center justify-center transition-all active:scale-90 cursor-pointer"
-                        title="Sebelumnya"
+                        title={t.audio.prev}
                       >
                         <SkipBack className="w-3.5 h-3.5 fill-current" />
                       </button>
@@ -282,7 +322,7 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
                         type="button"
                         onClick={handleToggleMusicPlay}
                         className="h-10 w-10 rounded-full bg-[#187557] hover:bg-[#126046] text-white flex items-center justify-center shadow-xs active:scale-95 transition-all cursor-pointer"
-                        title={musicState.isPlaying ? "Jeda" : "Putar"}
+                        title={musicState.isPlaying ? t.audio.pause : t.audio.play}
                       >
                         {musicState.isPlaying ? (
                           <Pause className="w-4 h-4 fill-current" />
@@ -295,7 +335,7 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
                         type="button"
                         onClick={handleMusicNext}
                         className="h-8.5 w-8.5 rounded-full bg-[#0D3528]/5 hover:bg-[#0D3528]/10 text-[#0D3528] flex items-center justify-center transition-all active:scale-90 cursor-pointer"
-                        title="Selanjutnya"
+                        title={t.audio.next}
                       >
                         <SkipForward className="w-3.5 h-3.5 fill-current" />
                       </button>
@@ -343,7 +383,7 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
               <div className="space-y-2.5">
                 <div className="flex items-center justify-between px-1">
                   <p className="text-[12px] font-medium uppercase tracking-[0.12em] text-white/90 drop-shadow-xs">
-                    Daftar Putar
+                    {t.audio.playlist}
                   </p>
 
                   {/* Filter Pills */}
@@ -370,7 +410,7 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
                             : "bg-white/20 text-emerald-50 hover:bg-white/30 backdrop-blur-md border border-white/20"
                         }`}
                       >
-                        {cat === "all" ? "Semua" : cat}
+                        {cat === "all" ? t.audio.filterAll : cat}
                       </button>
                     ))}
                   </div>
@@ -416,7 +456,7 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
                                   : "font-medium text-[#0D3528]"
                               }`}
                             >
-                              {track.title}
+                              {translateMusicTrack(track)}
                             </p>
                             <p className="text-[11.5px] text-[#4C7567] truncate font-normal mt-0.5">
                               Rimba Lo-Fi · {track.categoryLabel}
@@ -442,11 +482,12 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
             <div className="space-y-4 animate-in fade-in duration-200">
               <div className="space-y-1.5">
                 <p className="px-1 text-[12px] font-medium uppercase tracking-[0.12em] text-white/90 drop-shadow-xs">
-                  Pilih Atmosfer Alam
+                  {t.audio.chooseAtmosphere}
                 </p>
 
                 <div className="grid grid-cols-2 gap-3">
                   {SOUNDSCAPES_LIST.map((sc) => {
+                    const trSc = translateSoundscape(sc);
                     const isActive = activeNatureTrack === sc.id;
 
                     return (
@@ -479,10 +520,10 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
                                 : "font-medium text-[#0D3528]"
                             }`}
                           >
-                            {sc.name}
+                            {trSc.name}
                           </p>
                           <p className="text-[11px] text-[#4C7567] leading-relaxed mt-0.5 line-clamp-2 font-normal">
-                            {sc.description}
+                            {trSc.description}
                           </p>
                         </div>
                       </button>
@@ -495,7 +536,7 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
               {activeNatureTrack !== "off" && (
                 <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-4 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-2.5 min-w-0 overflow-hidden">
                   <div className="flex items-center justify-between text-[12.5px] font-semibold text-[#0D3528]">
-                    <span>Volume Suara Alam</span>
+                    <span>{t.audio.natureVolume}</span>
                     <span className="font-medium text-[#187557] tabular-nums">
                       {Math.round((natureMuted ? 0 : natureVolume) * 100)}%
                     </span>
@@ -541,7 +582,7 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
                 className="w-full py-3 rounded-full flex items-center justify-center gap-2 text-[12px] font-medium text-rose-700 bg-rose-50 border border-rose-200/80 active:scale-[0.98] transition-all cursor-pointer shadow-xs"
               >
                 <Square className="w-3.5 h-3.5 fill-current" />
-                <span>Hentikan Seluruh Audio</span>
+                <span>{t.audio.stopAll}</span>
               </button>
             </div>
           )}

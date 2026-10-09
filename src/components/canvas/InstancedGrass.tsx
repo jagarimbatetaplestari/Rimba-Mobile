@@ -262,10 +262,14 @@ export function InstancedGrass({ count: overrideCount }: InstancedGrassProps) {
       return {
         cx,
         cz,
-        minX: hasLeft ? -0.505 : -0.465,
-        maxX: hasRight ? 0.505 : 0.465,
-        minZ: hasTop ? -0.505 : -0.465,
-        maxZ: hasBottom ? 0.505 : 0.465,
+        minX: hasLeft ? -0.505 : -0.42,
+        maxX: hasRight ? 0.505 : 0.42,
+        minZ: hasTop ? -0.505 : -0.42,
+        maxZ: hasBottom ? 0.505 : 0.42,
+        hasLeft,
+        hasRight,
+        hasTop,
+        hasBottom,
       };
     });
 
@@ -315,6 +319,12 @@ export function InstancedGrass({ count: overrideCount }: InstancedGrassProps) {
       const tb = tileBounds[Math.floor(rnd() * tileBounds.length)];
       const localX = tb.minX + rnd() * (tb.maxX - tb.minX);
       const localZ = tb.minZ + rnd() * (tb.maxZ - tb.minZ);
+
+      // Clamp diagonal corners on exposed cliff edges so blades follow the chamfered block corner
+      if (!tb.hasLeft && !tb.hasTop && (-localX) + (-localZ) > 0.50) continue;
+      if (!tb.hasRight && !tb.hasTop && (localX) + (-localZ) > 0.50) continue;
+      if (!tb.hasLeft && !tb.hasBottom && (-localX) + (localZ) > 0.50) continue;
+      if (!tb.hasRight && !tb.hasBottom && (localX) + (localZ) > 0.50) continue;
 
       const x = tb.cx + localX;
       const z = tb.cz + localZ;

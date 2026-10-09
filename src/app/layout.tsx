@@ -21,7 +21,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: '#051f18',
+  viewportFit: 'cover',
+  themeColor: '#165643',
 };
 
 export default function RootLayout({
@@ -30,8 +31,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className="antialiased min-h-screen w-full overflow-x-hidden bg-[#051f18]">
+    <html lang="en" className="h-full w-full overflow-hidden">
+      <body className="antialiased fixed inset-0 h-[100dvh] w-full overflow-hidden overscroll-none bg-[#165643]">
         {children}
       </body>
     </html>

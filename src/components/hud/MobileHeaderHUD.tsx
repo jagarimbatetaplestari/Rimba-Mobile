@@ -235,10 +235,11 @@ export function MobileHeaderHUD({
       )}
 
       <header
-        className={`fixed top-0 left-0 right-0 z-40 flex justify-center px-4 pt-[max(env(safe-area-inset-top,0px)+8px,12px)] pointer-events-none transition-opacity duration-500 ${
+        className={`fixed top-0 left-0 right-0 z-40 flex justify-center px-4 pointer-events-none transition-opacity duration-500 ${
           isZenDimmed ? "opacity-0 pointer-events-none" : "opacity-100"
         }`}
         style={{
+          paddingTop: "max(calc(env(safe-area-inset-top, 0px) + 10px), 16px)",
           fontFamily:
             "var(--font-urbanist), 'Urbanist', -apple-system, BlinkMacSystemFont, sans-serif",
         }}

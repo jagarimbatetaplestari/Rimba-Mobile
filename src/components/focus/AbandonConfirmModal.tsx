@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { createPortal } from "react-dom";
 import { TreePine, AlertTriangle, ShieldCheck, CloudRain } from "lucide-react";
 import { soundManager } from "@/lib/audio/sounds";
 import { hapticSuccess, hapticWarning } from "@/lib/mobile/nativeBridge";
@@ -47,13 +48,19 @@ export function AbandonConfirmModal({
     onConfirmAbandon();
   };
 
-  return (
+  const modalContent = (
     <div
-      className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200 select-none font-urbanist"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) handleKeepFocusing();
+      }}
+      className="fixed inset-0 z-[120] pointer-events-auto flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200 select-none font-urbanist"
       role="dialog"
       aria-modal="true"
     >
-      <div className="relative w-full max-w-sm rounded-3xl border border-white/60 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-6 shadow-2xl shadow-emerald-950/20 backdrop-blur-xl text-center space-y-5 animate-in zoom-in-95 duration-200">
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-sm rounded-3xl border border-white/60 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-6 shadow-2xl shadow-emerald-950/20 backdrop-blur-xl text-center space-y-5 animate-in zoom-in-95 duration-200 pointer-events-auto"
+      >
         {/* Lingkaran Peringatan & Pohon Layu */}
         <div className="relative mx-auto w-16 h-16 rounded-2xl bg-amber-50 border border-amber-200/80 flex items-center justify-center text-amber-600 shadow-inner">
           <TreePine className="w-8 h-8 stroke-[1.8] text-amber-700/80" />
@@ -116,7 +123,7 @@ export function AbandonConfirmModal({
           <button
             type="button"
             onClick={handleGiveUp}
-            className="w-full py-2 px-4 rounded-full text-rose-600/80 hover:text-rose-700 hover:bg-rose-50/50 font-medium text-[12px] active:scale-[0.98] transition-all cursor-pointer"
+            className="w-full py-3 px-4 rounded-full text-rose-600 hover:text-rose-700 bg-rose-500/10 hover:bg-rose-500/15 font-semibold text-[12.5px] active:scale-[0.98] transition-all cursor-pointer pointer-events-auto"
           >
             {t.abandon.giveUp}
           </button>
@@ -124,4 +131,9 @@ export function AbandonConfirmModal({
       </div>
     </div>
   );
+
+  if (typeof document !== "undefined") {
+    return createPortal(modalContent, document.body);
+  }
+  return modalContent;
 }

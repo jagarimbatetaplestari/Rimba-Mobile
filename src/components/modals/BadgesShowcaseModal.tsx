@@ -8,6 +8,7 @@ import {
 } from "@/lib/game/achievements";
 import { soundManager } from "@/lib/audio/sounds";
 import { hapticLight, hapticSuccess } from "@/lib/mobile/nativeBridge";
+import { useTranslation } from "@/lib/i18n/translations";
 import { X, CheckCircle2, Lock, Sparkles, Share2 } from "lucide-react";
 
 interface BadgesShowcaseModalProps {
@@ -21,6 +22,7 @@ export function BadgesShowcaseModal({
   onClose,
   onShareBadge,
 }: BadgesShowcaseModalProps) {
+  const { t, translateAchievement } = useTranslation();
   const saveData = useGameStore((state) => state.saveData);
   const claimAchievement = useGameStore((state) => state.claimAchievement);
 
@@ -60,7 +62,8 @@ export function BadgesShowcaseModal({
     soundManager.playPop();
     hapticLight();
     if (onShareBadge) {
-      onShareBadge(selectedBadge.config.title, selectedBadge.config.icon);
+      const tr = translateAchievement(selectedBadge.config);
+      onShareBadge(tr.title, selectedBadge.config.icon);
     }
   };
 
@@ -81,7 +84,7 @@ export function BadgesShowcaseModal({
         onClick={(e) => {
           if (e.target === e.currentTarget) onClose();
         }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 select-none antialiased font-urbanist text-[#0D3528] animate-in fade-in duration-200 pointer-events-auto"
+        className="fixed inset-0 z-[115] flex items-center justify-center p-4 select-none antialiased font-urbanist text-[#0D3528] animate-in fade-in duration-200 pointer-events-auto"
       >
         {/* Soft Ambient Backdrop */}
         <div
@@ -95,10 +98,12 @@ export function BadgesShowcaseModal({
           <div className="flex items-center justify-between pb-0.5">
             <div className="flex items-baseline gap-2">
               <h2 className="text-[19px] font-semibold tracking-tight text-[#0D3528]">
-                Lencana Prestasi
+                {t.badges.title}
               </h2>
               <span className="text-[12px] font-normal text-[#4C7567]">
-                {achievements.completedCount}/{achievements.totalCount} Terbuka
+                {t.badges.unlockedCount
+                  .replace("{count}", String(achievements.completedCount))
+                  .replace("{total}", String(achievements.totalCount))}
               </span>
             </div>
 
@@ -106,7 +111,7 @@ export function BadgesShowcaseModal({
               type="button"
               onClick={onClose}
               className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0D3528]/5 hover:bg-[#0D3528]/10 text-[#0D3528] transition-all active:scale-90 cursor-pointer shadow-2xs"
-              aria-label="Tutup lencana"
+              aria-label={t.common.close}
             >
               <X className="h-4 w-4 stroke-[2]" />
             </button>
@@ -115,7 +120,7 @@ export function BadgesShowcaseModal({
           {/* Overall Progress Bento */}
           <div className="rounded-2xl border border-[#0D3528]/8 bg-[#0D3528]/[0.025] p-3 space-y-1.5">
             <div className="flex items-center justify-between text-[11.5px] font-medium text-[#4C7567]">
-              <span>Kemajuan Koleksi Medali</span>
+              <span>{t.badges.progressLabel}</span>
               <span className="text-[#0D3528] font-semibold tabular-nums">
                 {completionPct}%
               </span>
@@ -131,10 +136,10 @@ export function BadgesShowcaseModal({
           {/* Filter Segmented Control */}
           <div className="rounded-full p-1 border border-[#0D3528]/8 bg-[#0D3528]/5 grid grid-cols-4 gap-1">
             {[
-              { id: "all", label: "Semua" },
-              { id: "focus", label: "Fokus" },
-              { id: "nature", label: "Alam" },
-              { id: "world", label: "Pulau" },
+              { id: "all", label: t.badges.filterAll },
+              { id: "focus", label: t.badges.filterFocus },
+              { id: "nature", label: t.badges.filterNature },
+              { id: "world", label: t.badges.filterWorld },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -157,6 +162,7 @@ export function BadgesShowcaseModal({
           {/* Badges 2-Column Bento Grid */}
           <div className="grid grid-cols-2 gap-2.5 overflow-y-auto no-scrollbar flex-1 pr-0.5">
             {filteredItems.map((item) => {
+              const trAch = translateAchievement(item.config);
               const isClaimed = item.isClaimed;
               const isUnlocked = item.isUnlocked;
 
@@ -181,7 +187,7 @@ export function BadgesShowcaseModal({
                         <CheckCircle2 className="w-4 h-4 text-[#187557] stroke-[2]" />
                       ) : isUnlocked ? (
                         <span className="text-[9.5px] px-2 py-0.5 rounded-full bg-emerald-500 text-white font-medium animate-pulse shadow-xs">
-                          KLAIM
+                          {t.badges.claim.toUpperCase()}
                         </span>
                       ) : (
                         <Lock className="w-3.5 h-3.5 text-[#4C7567]/50 stroke-[1.8]" />
@@ -189,10 +195,10 @@ export function BadgesShowcaseModal({
                     </div>
 
                     <h4 className="text-[12.5px] font-semibold text-[#0D3528] truncate">
-                      {item.config.title}
+                      {trAch.title}
                     </h4>
                     <p className="text-[10.5px] text-[#4C7567] line-clamp-2 mt-0.5 leading-snug font-normal">
-                      {item.config.description}
+                      {trAch.description}
                     </p>
                   </div>
 
@@ -221,43 +227,45 @@ export function BadgesShowcaseModal({
           </div>
 
           {/* Selected Badge Detail Modal */}
-          {selectedBadge && (
-            <div
-              onClick={(e) => {
-                if (e.target === e.currentTarget) setSelectedBadge(null);
-              }}
-              className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in pointer-events-auto"
-            >
-              <div className="relative w-full max-w-[310px] rounded-3xl border border-white bg-white p-5 space-y-3.5 text-center shadow-2xl animate-in zoom-in-95 duration-150 text-[#0D3528] font-urbanist">
-                <button
-                  type="button"
-                  onClick={() => setSelectedBadge(null)}
-                  className="absolute top-3.5 right-3.5 h-7 w-7 rounded-full bg-[#0D3528]/5 hover:bg-[#0D3528]/10 text-[#0D3528] flex items-center justify-center transition-all active:scale-90 cursor-pointer shadow-2xs z-10"
-                  aria-label="Tutup detail lencana"
-                >
-                  <X className="w-3.5 h-3.5 stroke-[2]" />
-                </button>
+          {selectedBadge && (() => {
+            const trSelected = translateAchievement(selectedBadge.config);
+            return (
+              <div
+                onClick={(e) => {
+                  if (e.target === e.currentTarget) setSelectedBadge(null);
+                }}
+                className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in pointer-events-auto"
+              >
+                <div className="relative w-full max-w-[310px] rounded-3xl border border-white bg-white p-5 space-y-3.5 text-center shadow-2xl animate-in zoom-in-95 duration-150 text-[#0D3528] font-urbanist">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedBadge(null)}
+                    className="absolute top-3.5 right-3.5 h-7 w-7 rounded-full bg-[#0D3528]/5 hover:bg-[#0D3528]/10 text-[#0D3528] flex items-center justify-center transition-all active:scale-90 cursor-pointer shadow-2xs z-10"
+                    aria-label={t.common.close}
+                  >
+                    <X className="w-3.5 h-3.5 stroke-[2]" />
+                  </button>
 
-                <div className="w-16 h-16 rounded-2xl bg-[#E4F4ED] border border-[#BCE5D3] flex items-center justify-center text-4xl mx-auto shadow-xs">
-                  {selectedBadge.config.icon}
-                </div>
+                  <div className="w-16 h-16 rounded-2xl bg-[#E4F4ED] border border-[#BCE5D3] flex items-center justify-center text-4xl mx-auto shadow-xs">
+                    {selectedBadge.config.icon}
+                  </div>
 
-                <div>
-                  <h3 className="text-[16px] font-semibold tracking-tight text-[#0D3528]">
-                    {selectedBadge.config.title}
-                  </h3>
-                  <p className="text-[12px] text-[#187557] font-medium mt-0.5">
-                    {selectedBadge.config.subtitle}
+                  <div>
+                    <h3 className="text-[16px] font-semibold tracking-tight text-[#0D3528]">
+                      {trSelected.title}
+                    </h3>
+                    <p className="text-[12px] text-[#187557] font-medium mt-0.5">
+                      {trSelected.subtitle}
+                    </p>
+                  </div>
+
+                  <p className="text-[11.5px] text-[#4C7567] leading-relaxed px-1 font-normal">
+                    {trSelected.description}
                   </p>
-                </div>
 
-                <p className="text-[11.5px] text-[#4C7567] leading-relaxed px-1 font-normal">
-                  {selectedBadge.config.description}
-                </p>
-
-                <blockquote className="p-2.5 rounded-2xl bg-[#0D3528]/[0.025] border border-[#0D3528]/8 text-[11px] text-[#0D3528] italic leading-snug font-normal">
-                  "{selectedBadge.config.quote}"
-                </blockquote>
+                  <blockquote className="p-2.5 rounded-2xl bg-[#0D3528]/[0.025] border border-[#0D3528]/8 text-[11px] text-[#0D3528] italic leading-snug font-normal">
+                    "{trSelected.quote}"
+                  </blockquote>
 
                 <div className="flex items-center justify-center gap-2 pt-0.5">
                   <span className="px-3 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200/70 flex items-center gap-1 text-[11px] font-medium">
@@ -281,7 +289,7 @@ export function BadgesShowcaseModal({
                       }}
                       className="w-full py-2.5 rounded-full bg-[#187557] hover:bg-[#126046] text-white font-medium text-[12px] shadow-xs active:scale-95 transition-all cursor-pointer"
                     >
-                      Klaim Hadiah Medali
+                      {t.badges.claimReward}
                     </button>
                   )}
 
@@ -295,13 +303,14 @@ export function BadgesShowcaseModal({
                       className="w-full py-2.5 rounded-full bg-white border border-[#0D3528]/15 text-[#0D3528] hover:bg-[#E4F4ED]/40 font-medium text-[12px] flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-xs cursor-pointer"
                     >
                       <Share2 className="w-3.5 h-3.5 stroke-[2]" />
-                      <span>Pamerkan Lencana</span>
+                      <span>{t.badges.showOff}</span>
                     </button>
                   )}
                 </div>
               </div>
             </div>
-          )}
+          );
+        })()}
         </div>
       </div>
     </>

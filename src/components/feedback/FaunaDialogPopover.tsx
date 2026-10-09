@@ -5,9 +5,11 @@ import confetti from "canvas-confetti";
 import { useGameStore } from "@/lib/game/useGameStore";
 import { FAUNA_CONFIG, canGreetFauna } from "@/lib/game/faunaRules";
 import { soundManager } from "@/lib/audio/sounds";
+import { useTranslation } from "@/lib/i18n/translations";
 import { X, Sparkles, Heart, CheckCircle2 } from "lucide-react";
 
 export function FaunaDialogPopover() {
+  const { t } = useTranslation();
   const selectedFauna = useGameStore((state) => state.selectedFauna);
   const setSelectedFauna = useGameStore((state) => state.setSelectedFauna);
   const saveData = useGameStore((state) => state.saveData);
@@ -68,8 +70,9 @@ export function FaunaDialogPopover() {
 
   return (
     <div
-      className="fixed inset-x-0 bottom-[calc(max(env(safe-area-inset-bottom,0px),12px)+118px)] md:bottom-24 z-40 flex justify-center px-4 pointer-events-none animate-in fade-in slide-in-from-bottom-4 duration-300 select-none"
+      className="fixed inset-x-0 z-40 flex justify-center px-4 pointer-events-none animate-in fade-in slide-in-from-bottom-4 duration-300 select-none"
       style={{
+        bottom: "calc(max(env(safe-area-inset-bottom, 0px), 12px) + 118px)",
         fontFamily:
           "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', var(--font-geist-sans), sans-serif",
       }}
@@ -101,7 +104,7 @@ export function FaunaDialogPopover() {
                       : "bg-white/18 text-white border-white/25 shadow-xs"
                   }`}
                 >
-                  {isNight ? "🌙 Tidur Pulas" : "Satwa Suaka"}
+                  {isNight ? t.faunaDialog.statusSleeping : t.faunaDialog.statusAwake}
                 </span>
               </div>
               <p className="text-[11px] text-white/70 font-medium truncate mt-0.5">
@@ -114,7 +117,7 @@ export function FaunaDialogPopover() {
             type="button"
             onClick={() => setSelectedFauna(null)}
             className="w-7 h-7 rounded-full bg-white/18 hover:bg-white/28 border border-white/25 flex items-center justify-center text-white transition-all active:scale-90 cursor-pointer shadow-xs"
-            aria-label="Tutup sapa satwa"
+            aria-label={t.faunaDialog.closeAria}
           >
             <X className="w-3.5 h-3.5 stroke-[2.4]" />
           </button>
@@ -126,7 +129,7 @@ export function FaunaDialogPopover() {
             {isNight
               ? config.sleepQuote
                 ? `“💤 ${config.sleepQuote}”`
-                : `“💤 ${config.name} sedang terlelap tidur pulas di bawah langit malam.”`
+                : t.faunaDialog.defaultSleepQuote.replace("{name}", config.name)
               : `“${config.greetingQuote}”`}
           </p>
         </div>
@@ -147,14 +150,14 @@ export function FaunaDialogPopover() {
             >
               <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500" />
               <span>
-                {isNight ? "Belai Tidur" : "Sapa Satwa"} (+
+                {isNight ? t.faunaDialog.actionSleep : t.faunaDialog.actionGreet} (+
                 {config.dailyReward.gold} Soul, +{config.dailyReward.xp} XP)
               </span>
             </button>
           ) : (
             <div className="w-full py-2.5 px-3 rounded-2xl bg-white/12 text-white/85 text-xs font-semibold flex items-center justify-center gap-1.5 border border-white/20 backdrop-blur-md">
               <CheckCircle2 className="w-4 h-4 text-emerald-300" />
-              <span>Sudah Disapa Hari Ini (Kembali lagi esok!)</span>
+              <span>{t.faunaDialog.alreadyGreeted}</span>
             </div>
           )}
         </div>

@@ -22,6 +22,7 @@ import {
   hapticMedium,
   hapticSuccess,
 } from "@/lib/mobile/nativeBridge";
+import { useTranslation } from "@/lib/i18n/translations";
 
 interface MobileOnboardingModalProps {
   isOpen: boolean;
@@ -61,25 +62,14 @@ const ONBOARDING_BACKGROUNDS = [
   },
 ];
 
-const DISTRACTION_TAGS = [
-  { id: "social", label: "Riuh Linimasa" },
-  { id: "notif", label: "Deru Notifikasi" },
-  { id: "overthinking", label: "Kekhawatiran Hari Esok" },
-  { id: "video", label: "Pusaran Konten Singkat" },
-  { id: "work", label: "Beban Tuntutan Harian" },
-];
-
-const INTENT_OPTIONS = [
-  "Kejernihan Pikiran",
-  "Fokus Mendalam",
-  "Ketekunan Berkarya",
-  "Jeda Berkesadaran",
-];
 
 export function MobileOnboardingModal({
   isOpen,
   onComplete,
 }: MobileOnboardingModalProps) {
+  const { t, lang } = useTranslation();
+  const ob = t.onboarding;
+
   const setDistractionSource = useGameStore(
     (state) => state.setDistractionSource,
   );
@@ -106,9 +96,10 @@ export function MobileOnboardingModal({
   // Slide 5: Notification state
   const [hasNotifPermission, setHasNotifPermission] = useState<boolean>(false);
 
-  // Slide 6: Starter intent
-  const [selectedIntent, setSelectedIntent] =
-    useState<string>("Kejernihan Pikiran");
+  // Slide 6: Starter intent index
+  const [selectedIntentIndex, setSelectedIntentIndex] = useState<number>(0);
+  const selectedIntent =
+    ob.slide5.intents[selectedIntentIndex] || ob.slide5.intents[0];
 
   // Music ambient state
   const [isMusicPlaying, setIsMusicPlaying] = useState<boolean>(false);
@@ -227,7 +218,7 @@ export function MobileOnboardingModal({
         const res = await Notification.requestPermission();
         if (res === "granted") {
           setHasNotifPermission(true);
-          notify("Pengingat hening Rimba aktif.", "success");
+          notify(ob.notifPermSuccess, "success");
         }
       } catch {
         // Ignore
@@ -242,8 +233,9 @@ export function MobileOnboardingModal({
       setProfileName(userName.trim());
     }
     onComplete();
-    startFocus(10 * 60, "Fokus", false, undefined, selectedIntent);
-    notify("Sesi 10 Menit dimulai. Selamat berakar di ketenangan.", "info");
+    const focusTag = lang === "en" ? "Focus" : "Fokus";
+    startFocus(10 * 60, focusTag, false, undefined, selectedIntent);
+    notify(ob.sessionStartedToast, "info");
   };
 
   const handleCompleteWithoutFocus = () => {
@@ -256,8 +248,10 @@ export function MobileOnboardingModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex flex-col justify-between items-center px-6 bg-[#040D08] text-white overflow-hidden select-none antialiased pt-[max(env(safe-area-inset-top,1.5rem),1.5rem)] pb-[max(env(safe-area-inset-bottom,1.5rem),1.5rem)] pointer-events-auto"
+      className="fixed inset-0 z-[110] h-[100dvh] w-full flex flex-col justify-between items-center px-6 bg-[#040D08] text-white overflow-hidden select-none antialiased pointer-events-auto"
       style={{
+        paddingTop: "max(calc(env(safe-area-inset-top, 0px) + 16px), 28px)",
+        paddingBottom: "max(calc(env(safe-area-inset-bottom, 0px) + 16px), 24px)",
         fontFamily:
           "var(--font-urbanist), 'Urbanist', -apple-system, BlinkMacSystemFont, sans-serif",
       }}
@@ -273,7 +267,7 @@ export function MobileOnboardingModal({
           >
             <Image
               src={bg.src}
-              alt={bg.alt}
+              alt={ob.bgAlts[bg.step] || bg.alt}
               fill
               priority={bg.step <= 1}
               className="object-cover object-center brightness-[0.98] contrast-[1.01]"
@@ -299,8 +293,8 @@ export function MobileOnboardingModal({
                 setStep((prev) => Math.max(0, prev - 1));
               }}
               className="w-7 h-7 rounded-full bg-white/15 hover:bg-white/20 backdrop-blur-md border border-white/25 flex items-center justify-center text-white/90 hover:text-white mr-1 transition-colors cursor-pointer"
-              title="Kembali"
-              aria-label="Kembali ke langkah sebelumnya"
+              title={ob.stepBackTitle}
+              aria-label={ob.stepBackAria}
             >
               <ArrowLeft className="w-3.5 h-3.5" />
             </button>
@@ -332,21 +326,21 @@ export function MobileOnboardingModal({
                 ? "bg-white/25 border-white/40 text-white"
                 : "bg-white/12 border-white/20 text-white/80 hover:text-white"
             }`}
-            title={isMusicPlaying ? "Heningkan Audio" : "Putar Musik Rimba"}
-            aria-label="Kontrol musik latar"
+            title={isMusicPlaying ? ob.audioMute : ob.audioPlay}
+            aria-label={t.hud.menuSoundscape}
           >
             {isMusicPlaying ? (
               <>
                 <Volume2 className="w-3.5 h-3.5 text-white" />
                 <span className="text-[10.5px] font-medium hidden sm:inline text-white">
-                  Embun Pagi
+                  {ob.audioTrackName}
                 </span>
               </>
             ) : (
               <>
                 <VolumeX className="w-3.5 h-3.5" />
                 <span className="text-[10.5px] font-normal hidden sm:inline text-white/80">
-                  Hening
+                  {ob.audioMutedLabel}
                 </span>
               </>
             )}
@@ -357,7 +351,7 @@ export function MobileOnboardingModal({
             onClick={handleCompleteWithoutFocus}
             className="text-xs text-white/80 hover:text-white transition-colors py-1 px-3 rounded-full bg-white/12 hover:bg-white/18 backdrop-blur-md border border-white/20 cursor-pointer"
           >
-            Lewati
+            {ob.skip}
           </button>
         </div>
       </div>
@@ -371,20 +365,19 @@ export function MobileOnboardingModal({
           <div className="w-full space-y-3.5 text-left animate-in fade-in duration-300">
             <div className="space-y-1">
               <span className="text-[10.5px] tracking-widest text-white/60 uppercase font-medium drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
-                01 · Hening Lembah
+                {ob.slide0.badge}
               </span>
               <h1 className="font-serif italic text-[28px] sm:text-[32px] font-normal tracking-tight text-white leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.35)]">
-                Di antara riuhnya hari, apa yang paling sering menyita benakmu?
+                {ob.slide0.title}
               </h1>
               <p className="text-[12.5px] text-white/85 leading-relaxed font-light pt-0.5 drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
-                Melihatnya dengan sadar adalah langkah awal untuk melepaskannya
-                perlahan.
+                {ob.slide0.subtitle}
               </p>
             </div>
 
             {/* Frosted Glass Tags Tanpa Shadow Berat */}
             <div className="flex flex-wrap gap-2 pt-1">
-              {DISTRACTION_TAGS.map((opt) => {
+              {ob.slide0.tags.map((opt) => {
                 const active = selectedDistractions.includes(opt.id);
                 return (
                   <button
@@ -413,13 +406,13 @@ export function MobileOnboardingModal({
           <div className="w-full space-y-4 text-left animate-in fade-in duration-300">
             <div className="space-y-1">
               <span className="text-[10.5px] tracking-widest text-white/60 uppercase font-medium drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
-                02 · Jejak Langkah
+                {ob.slide1.badge}
               </span>
               <h1 className="font-serif italic text-[28px] sm:text-[32px] font-normal tracking-tight text-white leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.35)]">
-                Bagaimana Rimba mengenalmu?
+                {ob.slide1.title}
               </h1>
               <p className="text-[12.5px] text-white/85 leading-relaxed font-light pt-0.5 drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
-                Sebuah nama untuk menandai awal mula tanah suakamu bertumbuh.
+                {ob.slide1.subtitle}
               </p>
             </div>
 
@@ -429,14 +422,14 @@ export function MobileOnboardingModal({
                   type="text"
                   value={userName}
                   onChange={(e) => setUserName(e.target.value)}
-                  placeholder="Tulis namamu di sini..."
+                  placeholder={ob.slide1.placeholder}
                   className="w-full bg-transparent text-xl font-serif italic text-white placeholder-white/40 focus:outline-none tracking-wide"
                   maxLength={24}
                   autoComplete="name"
                 />
               </div>
               <p className="text-[11px] text-white/60 font-light">
-                Nama ini akan menyertai setiap benih yang kamu tanam.
+                {ob.slide1.hint}
               </p>
             </div>
           </div>
@@ -465,7 +458,9 @@ export function MobileOnboardingModal({
                   }`}
                 >
                   <span className="text-[11px] font-medium text-white tracking-widest uppercase transition-opacity duration-700">
-                    {breathPhase === "inhale" ? "Tarik Napas" : "Lepaskan"}
+                    {breathPhase === "inhale"
+                      ? ob.slide2.inhale
+                      : ob.slide2.exhale}
                   </span>
                 </div>
               </div>
@@ -473,14 +468,13 @@ export function MobileOnboardingModal({
 
             <div className="space-y-1">
               <span className="text-[10.5px] tracking-widest text-white/60 uppercase font-medium drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
-                03 · Tarikan Napas
+                {ob.slide2.badge}
               </span>
               <h1 className="font-serif italic text-[28px] sm:text-[32px] font-normal tracking-tight text-white leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.35)]">
-                Hadir seutuhnya di saat ini.
+                {ob.slide2.title}
               </h1>
               <p className="text-[12.5px] text-white/85 leading-relaxed font-light pt-0.5 drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
-                Pohon bertumbuh dalam keheningan. Izinkan napasmu mengalir apa
-                adanya tanpa tuntutan.
+                {ob.slide2.subtitle}
               </p>
             </div>
           </div>
@@ -493,17 +487,16 @@ export function MobileOnboardingModal({
           <div className="w-full space-y-3.5 text-left animate-in fade-in duration-300">
             <div className="space-y-1">
               <span className="text-[10.5px] tracking-widest text-white/60 uppercase font-medium drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
-                04 · Keteguhan Batin
+                {ob.slide3.badge}
               </span>
               <h1 className="font-serif italic text-[28px] sm:text-[32px] font-normal tracking-tight text-white leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.35)]">
-                Pohon tak pernah tergesa untuk tumbuh.
+                {ob.slide3.title}
               </h1>
             </div>
 
             <div className="space-y-2.5 pt-0.5">
               <p className="text-[12.5px] text-white/85 leading-relaxed font-light drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
-                Bila ritmemu sempat terputus oleh lelahnya hari, Rimba tak
-                pernah menghakimimu.
+                {ob.slide3.desc}
               </p>
 
               <div className="flex items-center gap-3 pt-1">
@@ -511,8 +504,7 @@ export function MobileOnboardingModal({
                   <Droplets className="w-3.5 h-3.5 text-white" />
                 </div>
                 <span className="text-xs text-white font-medium drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
-                  Embun Pelindung senantiasa menjaga suakamu hingga kamu siap
-                  kembali.
+                  {ob.slide3.feature}
                 </span>
               </div>
             </div>
@@ -526,14 +518,13 @@ export function MobileOnboardingModal({
           <div className="w-full space-y-3.5 text-left animate-in fade-in duration-300">
             <div className="space-y-1">
               <span className="text-[10.5px] tracking-widest text-white/60 uppercase font-medium drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
-                05 · Ritme Berpulang
+                {ob.slide4.badge}
               </span>
               <h1 className="font-serif italic text-[28px] sm:text-[32px] font-normal tracking-tight text-white leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.35)]">
-                Matahari tahu saatnya tenggelam.
+                {ob.slide4.title}
               </h1>
               <p className="text-[12.5px] text-white/85 leading-relaxed font-light pt-0.5 drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
-                Istirahat bukanlah kekalahan, melainkan cara akar menghimpun
-                kekuatan untuk hari esok.
+                {ob.slide4.desc}
               </p>
             </div>
 
@@ -546,8 +537,8 @@ export function MobileOnboardingModal({
                 <Bell className="w-3.5 h-3.5 text-white" />
                 <span>
                   {hasNotifPermission
-                    ? "Sapaan senja suaka telah aktif"
-                    : "Sapa aku dengan lembut saat tiba waktu hening"}
+                    ? ob.slide4.notifActive
+                    : ob.slide4.notifBtn}
                 </span>
               </button>
             </div>
@@ -561,33 +552,33 @@ export function MobileOnboardingModal({
           <div className="w-full space-y-3.5 text-left animate-in fade-in duration-300">
             <div className="space-y-1">
               <span className="text-[10.5px] tracking-widest text-white/60 uppercase font-medium drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
-                06 · Telaga Cermin
+                {ob.slide5.badge}
               </span>
               <h1 className="font-serif italic text-[28px] sm:text-[32px] font-normal tracking-tight text-white leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.35)]">
-                {userName.trim() ? `${userName.trim()}, suakamu` : "Suakamu"}{" "}
-                telah menanti.
+                {userName.trim()
+                  ? ob.slide5.titleWithName.replace("{name}", userName.trim())
+                  : ob.slide5.titleWithoutName}
               </h1>
               <p className="text-[12.5px] text-white/85 leading-relaxed font-light pt-0.5 drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
-                Seperti air telaga yang hening memantulkan luasnya langit,
-                mulailah dengan langkah yang tenang.
+                {ob.slide5.subtitle}
               </p>
             </div>
 
             {/* Frosted Intent Chips */}
             <div className="space-y-1.5 pt-1">
               <span className="text-[11px] text-white/60 block font-light">
-                Niat pertamamu:
+                {ob.slide5.intentLabel}
               </span>
               <div className="flex flex-wrap gap-1.5">
-                {INTENT_OPTIONS.map((intent) => {
-                  const active = selectedIntent === intent;
+                {ob.slide5.intents.map((intent, idx) => {
+                  const active = selectedIntentIndex === idx;
                   return (
                     <button
                       key={intent}
                       type="button"
                       onClick={() => {
                         hapticLight();
-                        setSelectedIntent(intent);
+                        setSelectedIntentIndex(idx);
                       }}
                       className={`px-3 py-1.5 rounded-full text-xs backdrop-blur-md transition-colors cursor-pointer border ${
                         active
@@ -613,7 +604,7 @@ export function MobileOnboardingModal({
             onClick={handleNextStep}
             className="w-full py-3.5 px-6 rounded-2xl font-semibold text-xs tracking-wide text-white bg-white/16 hover:bg-white/24 backdrop-blur-md border border-white/15 transition-colors flex items-center justify-center cursor-pointer"
           >
-            Lanjutkan
+            {ob.continueBtn}
           </button>
         )}
 
@@ -624,7 +615,7 @@ export function MobileOnboardingModal({
               onClick={handleStartFirstSession}
               className="w-full py-3.5 px-6 rounded-2xl font-semibold text-xs tracking-wide text-white bg-white/25 hover:bg-white/35 backdrop-blur-md border border-white/40 transition-colors flex items-center justify-center cursor-pointer"
             >
-              Mulai 10 Menit Pertama
+              {ob.startFirstSession}
             </button>
 
             <button
@@ -632,7 +623,7 @@ export function MobileOnboardingModal({
               onClick={handleCompleteWithoutFocus}
               className="w-full py-2 text-xs font-normal text-white/75 hover:text-white transition-colors text-center cursor-pointer"
             >
-              Masuk ke Suaka Tanpa Timer
+              {ob.enterWithoutTimer}
             </button>
           </div>
         )}

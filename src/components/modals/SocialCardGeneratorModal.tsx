@@ -10,7 +10,8 @@ import {
 } from "@/lib/game/worldRules";
 import { getLevelFromXp } from "@/lib/game/levelRules";
 import { soundManager } from "@/lib/audio/sounds";
-import { hapticLight, hapticSuccess } from "@/lib/mobile/nativeBridge";
+import { hapticLight, hapticSuccess, shareOrSaveImage } from "@/lib/mobile/nativeBridge";
+import { useTranslation } from "@/lib/i18n/translations";
 import { X, Download, Share2, Copy, Check } from "lucide-react";
 
 interface SocialCardGeneratorModalProps {
@@ -23,19 +24,12 @@ interface SocialCardGeneratorModalProps {
 type CardTheme = "sage" | "emerald" | "sunset";
 type CardFormat = "story" | "square";
 
-const DAILY_QUOTES = [
-  "Setiap pohon tumbuh dari ketenangan yang kamu rawat.",
-  "Hutan yang rimbun berawal dari satu benih fokus yang tekun.",
-  "Di antara bising dunia, ada pulau tenang yang terus bertumbuh.",
-  "Fokus adalah caramu merawat masa depan, menit demi menit.",
-  "Ketenangan jiwa adalah akar dari produktivitas sejati.",
-];
-
 export function SocialCardGeneratorModal({
   isOpen,
   onClose,
   customBadgeTitle,
 }: SocialCardGeneratorModalProps) {
+  const { t, language } = useTranslation();
   const saveData = useGameStore((state) => state.saveData);
   const user = useAuthStore((state) => state.user);
   const notify = useGameStore((state) => state.notify);
@@ -69,8 +63,8 @@ export function SocialCardGeneratorModal({
     );
     return entries.length > 0
       ? entries[0]
-      : ["Fokus", analytics.totalFocusMinutes];
-  }, [analytics]);
+      : [language === "en" ? "Focus" : "Fokus", analytics.totalFocusMinutes];
+  }, [analytics, language]);
 
   const treesCount = useMemo(() => {
     return worldObjects.filter(
@@ -80,19 +74,30 @@ export function SocialCardGeneratorModal({
 
   const currentLevel = getLevelFromXp(saveData.profile.xp);
 
+  const dailyQuotes = useMemo(
+    () => [
+      t.shareModal.quote1,
+      t.shareModal.quote2,
+      t.shareModal.quote3,
+      t.shareModal.quote4,
+      t.shareModal.quote5,
+    ],
+    [t],
+  );
+
   const todayQuote = useMemo(() => {
     const day = Math.floor(Date.now() / 86400000);
-    return DAILY_QUOTES[day % DAILY_QUOTES.length];
-  }, []);
+    return dailyQuotes[day % dailyQuotes.length];
+  }, [dailyQuotes]);
 
   const formattedDate = useMemo(() => {
-    return new Date().toLocaleDateString("id-ID", {
+    return new Date().toLocaleDateString(language === "en" ? "en-US" : "id-ID", {
       weekday: "long",
       day: "numeric",
       month: "long",
       year: "numeric",
     });
-  }, []);
+  }, [language]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -178,7 +183,11 @@ export function SocialCardGeneratorModal({
     ctx.fillStyle = mainTextColor;
     ctx.font = '600 24px "Urbanist", sans-serif';
     ctx.textAlign = "center";
-    ctx.fillText("🌿 RIMBA SUAKA", width / 2, headerY + 38);
+    ctx.fillText(
+      language === "en" ? "🌿 RIMBA SANCTUARY" : "🌿 RIMBA SUAKA",
+      width / 2,
+      headerY + 38,
+    );
     ctx.restore();
 
     const userY = format === "story" ? 220 : 140;
@@ -186,7 +195,9 @@ export function SocialCardGeneratorModal({
     ctx.font = '700 36px "Urbanist", sans-serif';
     ctx.textAlign = "center";
     ctx.fillText(
-      user?.name || saveData.world.name || "Penjaga Rimba",
+      user?.name ||
+        saveData.world.name ||
+        (language === "en" ? "Forest Ranger" : "Penjaga Rimba"),
       width / 2,
       userY,
     );
@@ -219,7 +230,13 @@ export function SocialCardGeneratorModal({
           ctx.save();
           drawRoundedRect(imgX, imgY, imgSize, imgSize, 36);
           ctx.clip();
-          ctx.drawImage(img, imgX, imgY, imgSize, imgSize);
+          // Center-crop to maintain natural square proportions of 3D sanctuary diorama
+          const sWidth = img.width;
+          const sHeight = img.height;
+          const cropDim = Math.min(sWidth, sHeight);
+          const sx = (sWidth - cropDim) / 2;
+          const sy = (sHeight - cropDim) / 2;
+          ctx.drawImage(img, sx, sy, cropDim, cropDim, imgX, imgY, imgSize, imgSize);
           ctx.restore();
           resolve();
         };
@@ -241,7 +258,13 @@ export function SocialCardGeneratorModal({
       ctx.fillStyle = "#FDE68A";
       ctx.font = '600 22px "Urbanist", sans-serif';
       ctx.textAlign = "center";
-      ctx.fillText(`🏆 Lencana: ${customBadgeTitle}`, width / 2, badgeY + 38);
+      ctx.fillText(
+        language === "en"
+          ? `🏆 Badge: ${customBadgeTitle}`
+          : `🏆 Lencana: ${customBadgeTitle}`,
+        width / 2,
+        badgeY + 38,
+      );
       ctx.restore();
     }
 
@@ -264,10 +287,18 @@ export function SocialCardGeneratorModal({
     ctx.fillText("🔥", tile1X + 24, statsY + 56);
     ctx.fillStyle = mainTextColor;
     ctx.font = '600 28px "Urbanist", sans-serif';
-    ctx.fillText(`${analytics.currentStreak} Hari`, tile1X + 76, statsY + 44);
+    ctx.fillText(
+      `${analytics.currentStreak} ${language === "en" ? "Days" : "Hari"}`,
+      tile1X + 76,
+      statsY + 44,
+    );
     ctx.fillStyle = subTextColor;
     ctx.font = '400 16px "Urbanist", sans-serif';
-    ctx.fillText("Ritme Beruntun", tile1X + 76, statsY + 68);
+    ctx.fillText(
+      language === "en" ? "Daily Streak" : "Ritme Beruntun",
+      tile1X + 76,
+      statsY + 68,
+    );
 
     const tile2X = width / 2 + gap / 2;
     drawRoundedRect(tile2X, statsY, cardW, cardH, 24);
@@ -282,10 +313,18 @@ export function SocialCardGeneratorModal({
     ctx.fillText("🌳", tile2X + 24, statsY + 56);
     ctx.fillStyle = mainTextColor;
     ctx.font = '600 28px "Urbanist", sans-serif';
-    ctx.fillText(`${treesCount} Pohon`, tile2X + 76, statsY + 44);
+    ctx.fillText(
+      `${treesCount} ${language === "en" ? "Trees" : "Pohon"}`,
+      tile2X + 76,
+      statsY + 44,
+    );
     ctx.fillStyle = subTextColor;
     ctx.font = '400 16px "Urbanist", sans-serif';
-    ctx.fillText("Pohon Subur", tile2X + 76, statsY + 68);
+    ctx.fillText(
+      language === "en" ? "Lush Trees" : "Pohon Subur",
+      tile2X + 76,
+      statsY + 68,
+    );
 
     const tile3Y = statsY + cardH + 16;
     drawRoundedRect(tile1X, tile3Y, cardW, cardH, 24);
@@ -303,7 +342,11 @@ export function SocialCardGeneratorModal({
     ctx.fillText(`${analytics.totalFocusMinutes}m`, tile1X + 76, tile3Y + 44);
     ctx.fillStyle = subTextColor;
     ctx.font = '400 16px "Urbanist", sans-serif';
-    ctx.fillText(`Fokus: ${topTagEntry[0]}`, tile1X + 76, tile3Y + 68);
+    ctx.fillText(
+      `${language === "en" ? "Focus" : "Fokus"}: ${topTagEntry[0]}`,
+      tile1X + 76,
+      tile3Y + 68,
+    );
 
     drawRoundedRect(tile2X, tile3Y, cardW, cardH, 24);
     ctx.fillStyle = "rgba(255, 255, 255, 0.18)";
@@ -317,7 +360,11 @@ export function SocialCardGeneratorModal({
     ctx.fillText("🏝️", tile2X + 24, tile3Y + 56);
     ctx.fillStyle = mainTextColor;
     ctx.font = '600 28px "Urbanist", sans-serif';
-    ctx.fillText(`${unlockedSet.size}/100 Petak`, tile2X + 76, tile3Y + 44);
+    ctx.fillText(
+      `${unlockedSet.size}/100 ${language === "en" ? "Tiles" : "Petak"}`,
+      tile2X + 76,
+      tile3Y + 44,
+    );
     ctx.fillStyle = subTextColor;
     ctx.font = '400 16px "Urbanist", sans-serif';
     ctx.fillText(zoneInfo.zoneName, tile2X + 76, tile3Y + 68);
@@ -355,15 +402,19 @@ export function SocialCardGeneratorModal({
 
     soundManager.playComplete();
     hapticSuccess();
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `rimba_snapshot_${Date.now()}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    notify("🖼️ Kartu pamer suaka berhasil diunduh ke galeri!", "success");
+
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const dataUrl = reader.result as string;
+      await shareOrSaveImage({
+        title: t.shareModal.downloadPng,
+        text: `Rimba: ${t.shareModal.streakDays.replace("{count}", String(analytics.currentStreak))}`,
+        dataUrl,
+        fileName: `rimba_photocard_${Date.now()}.png`,
+      });
+      notify(t.shareModal.iosSaveHint, "success");
+    };
+    reader.readAsDataURL(blob);
   };
 
   const handleShareNative = async () => {
@@ -375,43 +426,40 @@ export function SocialCardGeneratorModal({
 
     if (!blob) return;
 
-    const file = new File([blob], "rimba_focus_card.png", {
-      type: "image/png",
-    });
+    soundManager.playComplete();
+    hapticSuccess();
 
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      try {
-        await navigator.share({
-          title: `Suaka Rimba: ${analytics.currentStreak} Hari Beruntun`,
-          text: `Saya telah memperluas pulau ke ${unlockedSet.size}/100 petak (${zoneInfo.zoneName}), menanam ${treesCount} pohon, dan fokus ${analytics.totalFocusMinutes}m di Rimba!`,
-          files: [file],
-        });
-        soundManager.playComplete();
-        hapticSuccess();
-        return;
-      } catch {
-        // User cancelled share
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const dataUrl = reader.result as string;
+      const success = await shareOrSaveImage({
+        title: `Rimba: ${t.shareModal.streakDays.replace("{count}", String(analytics.currentStreak))}`,
+        text: `🌱 ${t.shareModal.streakDays.replace("{count}", String(analytics.currentStreak))} · ${t.shareModal.treesLush.replace("{count}", String(treesCount))} · ${t.shareModal.tilesUnlocked.replace("{unlocked}", String(unlockedSet.size))}! https://rimba.app`,
+        dataUrl,
+        fileName: "rimba_focus_card.png",
+      });
+      if (!success) {
+        handleCopyStatus();
       }
-    }
-
-    handleCopyStatus();
+    };
+    reader.readAsDataURL(blob);
   };
 
   const handleCopyStatus = () => {
     soundManager.playPop();
     hapticLight();
-    const statusText = `🌲 Suaka Rimba — ${user?.name || saveData.world.name}
-🔥 Streak: ${analytics.currentStreak} Hari Beruntun
-🏝️ Wilayah: ${unlockedSet.size}/100 Petak (${zoneInfo.zoneName})
-⏱️ Total Fokus: ${analytics.totalFocusMinutes}m
-🌳 Pohon Subur: ${treesCount} Pohon Lestari
+    const statusText = `🌲 Rimba — ${user?.name || saveData.world.name || t.shareModal.defaultUser}
+🔥 ${t.shareModal.streakDays.replace("{count}", String(analytics.currentStreak))}
+🏝️ ${t.shareModal.tilesUnlocked.replace("{unlocked}", String(unlockedSet.size))} (${zoneInfo.zoneName})
+⏱️ ${analytics.totalFocusMinutes}m
+🌳 ${t.shareModal.treesLush.replace("{count}", String(treesCount))}
 "${todayQuote}"
 👉 https://rimba.app`;
 
     navigator.clipboard.writeText(statusText);
     setIsCopied(true);
     setTimeout(() => setIsCopied(false), 3000);
-    notify("📋 Teks status berhasil disalin ke clipboard!", "success");
+    notify(t.shareModal.copySuccessToast, "success");
   };
 
   return (
@@ -427,7 +475,7 @@ export function SocialCardGeneratorModal({
         onClick={(e) => {
           if (e.target === e.currentTarget) onClose();
         }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 select-none antialiased font-urbanist text-[#0D3528] animate-in fade-in duration-200 pointer-events-auto"
+        className="fixed inset-0 z-[115] flex items-center justify-center p-4 select-none antialiased font-urbanist text-[#0D3528] animate-in fade-in duration-200 pointer-events-auto"
       >
         <div
           className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity duration-200 pointer-events-none"
@@ -439,10 +487,10 @@ export function SocialCardGeneratorModal({
           <div className="flex items-center justify-between pb-0.5">
             <div className="flex items-baseline gap-2">
               <h2 className="text-[19px] font-semibold tracking-tight text-[#0D3528]">
-                Kartu Pamer
+                {t.shareModal.socialTitle}
               </h2>
               <span className="text-[12px] font-normal text-[#4C7567]">
-                Bagikan Suaka
+                {t.shareModal.socialSubtitle}
               </span>
             </div>
 
@@ -453,7 +501,7 @@ export function SocialCardGeneratorModal({
                 onClose();
               }}
               className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0D3528]/5 hover:bg-[#0D3528]/10 text-[#0D3528] transition-transform active:scale-90 cursor-pointer shadow-2xs"
-              aria-label="Tutup kartu pamer"
+              aria-label={t.common.close}
             >
               <X className="h-4 w-4 stroke-[2]" />
             </button>
@@ -474,7 +522,7 @@ export function SocialCardGeneratorModal({
                     : "text-[#4C7567] hover:text-[#0D3528] font-medium"
                 }`}
               >
-                📱 Cerita (9:16)
+                {t.shareModal.formatStory}
               </button>
               <button
                 type="button"
@@ -488,7 +536,7 @@ export function SocialCardGeneratorModal({
                     : "text-[#4C7567] hover:text-[#0D3528] font-medium"
                 }`}
               >
-                ⏹️ Persegi (1:1)
+                {t.shareModal.formatSquare}
               </button>
             </div>
 
@@ -535,7 +583,7 @@ export function SocialCardGeneratorModal({
               } ${format === "story" ? "w-44 h-72" : "w-48 h-48"}`}
             >
               <div className="px-2.5 py-0.5 rounded-full border border-white/20 bg-white/10 text-[9px] font-semibold tracking-wider">
-                🌿 RIMBA SUAKA
+                {language === "en" ? "🌿 RIMBA SANCTUARY" : "🌿 RIMBA SUAKA"}
               </div>
 
               <div className="w-20 h-20 rounded-xl border border-white/30 bg-white/20 p-0.5 flex items-center justify-center overflow-hidden my-auto shadow-2xs">
@@ -555,9 +603,9 @@ export function SocialCardGeneratorModal({
                   {user?.name || saveData.world.name}
                 </span>
                 <div className="flex items-center justify-center gap-1.5 text-[9px] font-medium text-emerald-100/90 tabular-nums">
-                  <span>🔥 {analytics.currentStreak} Hari</span>
+                  <span>🔥 {t.shareModal.streakDays.replace("{count}", String(analytics.currentStreak))}</span>
                   <span>·</span>
-                  <span>🌳 {treesCount} Pohon</span>
+                  <span>🌳 {treesCount}</span>
                 </div>
               </div>
             </div>
@@ -572,7 +620,7 @@ export function SocialCardGeneratorModal({
               className="py-2.5 px-3 rounded-full border border-[#0D3528]/15 bg-white hover:bg-[#E4F4ED]/50 text-xs font-medium text-[#0D3528] flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all cursor-pointer shadow-2xs"
             >
               <Download className="w-4 h-4 text-[#187557] stroke-[1.8]" />
-              <span>Unduh PNG</span>
+              <span>{t.shareModal.downloadPng}</span>
             </button>
 
             <button
@@ -582,7 +630,7 @@ export function SocialCardGeneratorModal({
               className="py-2.5 px-3 rounded-full bg-[#187557] hover:bg-[#126046] text-white font-medium text-xs flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all cursor-pointer shadow-xs"
             >
               <Share2 className="w-4 h-4 stroke-[1.8]" />
-              <span>Bagikan Status</span>
+              <span>{t.shareModal.shareStatus}</span>
             </button>
           </div>
 
@@ -594,7 +642,7 @@ export function SocialCardGeneratorModal({
           >
             <Copy className="w-3 h-3 stroke-[1.8]" />
             <span>
-              {isCopied ? "Teks Tersalin!" : "Salin Teks Status Ringkas"}
+              {isCopied ? t.shareModal.copied : t.shareModal.copyStatus}
             </span>
           </button>
         </div>

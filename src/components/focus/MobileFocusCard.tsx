@@ -31,6 +31,7 @@ import {
 import { FocusHarvestModal } from "@/components/focus/FocusHarvestModal";
 import { AbandonConfirmModal } from "@/components/focus/AbandonConfirmModal";
 import { FocusWitherModal } from "@/components/focus/FocusWitherModal";
+import { FocusReturnOverlay } from "@/components/focus/FocusReturnOverlay";
 import {
   soundscapeManager,
   SOUNDSCAPES_LIST,
@@ -53,6 +54,8 @@ import {
   Headphones,
   Volume2,
   VolumeX,
+  Pause,
+  Play,
 } from "lucide-react";
 
 import { TagLineIcon, LINE_ICON_KEYS } from "@/components/common/TagLineIcon";
@@ -77,7 +80,7 @@ export function MobileFocusCard({
   onEnterZen,
   claimableCount = 0,
 }: MobileFocusCardProps = {}) {
-  const { t, translateTag, translateSpecies } = useTranslation();
+  const { t, language, translateTag, translateSpecies } = useTranslation();
   const activeSession = useGameStore((state) => state.activeSession);
   const startFocus = useGameStore((state) => state.startFocus);
   const updateActiveSessionMeta = useGameStore(
@@ -86,6 +89,8 @@ export function MobileFocusCard({
   const addCustomTag = useGameStore((state) => state.addCustomTag);
   const deleteCustomTag = useGameStore((state) => state.deleteCustomTag);
   const abandonFocus = useGameStore((state) => state.abandonFocus);
+  const pauseFocus = useGameStore((state) => state.pauseFocus);
+  const resumeFocus = useGameStore((state) => state.resumeFocus);
   const completeFocus = useGameStore((state) => state.completeFocus);
   const setZenMode = useGameStore((state) => state.setZenMode);
   const devFastMode = useGameStore((state) => state.devFastMode);
@@ -167,6 +172,62 @@ export function MobileFocusCard({
   );
 
   const hasChimedRef = useRef<string | null>(null);
+  const [showReturnOverlay, setShowReturnOverlay] = useState<boolean>(false);
+  const [awaySeconds, setAwaySeconds] = useState<number>(0);
+  const backgroundTimestampRef = useRef<number | null>(null);
+
+  // Background away time detector for Focus Return Overlay (Option 1)
+  useEffect(() => {
+    if (!activeSession || activeSession.status !== "active") {
+      setShowReturnOverlay(false);
+      return;
+    }
+
+    const handleBackground = () => {
+      backgroundTimestampRef.current = Date.now();
+    };
+
+    const handleForeground = () => {
+      if (backgroundTimestampRef.current) {
+        const elapsed = Math.round(
+          (Date.now() - backgroundTimestampRef.current) / 1000,
+        );
+        backgroundTimestampRef.current = null;
+        const expectedEndMs = new Date(activeSession.expected_end_at).getTime();
+        const isFinished =
+          !activeSession.is_stopwatch && Date.now() >= expectedEndMs - 1000;
+
+        // In normal mode (not strict) & not yet finished, show return overlay if away for >= 15 seconds
+        if (
+          elapsed >= 15 &&
+          !activeSession.strict_mode &&
+          !isFinished &&
+          !activeSession.is_paused
+        ) {
+          setAwaySeconds(elapsed);
+          setShowReturnOverlay(true);
+        }
+      }
+    };
+
+    const handleVisibility = () => {
+      if (document.hidden) {
+        handleBackground();
+      } else {
+        handleForeground();
+      }
+    };
+
+    window.addEventListener("blur", handleBackground);
+    window.addEventListener("focus", handleForeground);
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      window.removeEventListener("blur", handleBackground);
+      window.removeEventListener("focus", handleForeground);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, [activeSession]);
 
   // Listen for MobileBottomNav "Fokus" button tap & start/soundscape/harvest events
   useEffect(() => {
@@ -230,11 +291,14 @@ export function MobileFocusCard({
       }
       return;
     }
+    if (activeSession.is_paused) {
+      return;
+    }
     const interval = setInterval(() => {
       setNow(Date.now());
     }, 500);
     return () => clearInterval(interval);
-  }, [activeSession]);
+  }, [activeSession, activeSession?.is_paused]);
 
   // Play gentle completion chime & update tab title when countdown reaches 00:00
   useEffect(() => {
@@ -264,7 +328,7 @@ export function MobileFocusCard({
         useGameStore
           .getState()
           .notify(
-            '🌱 Waktu fokus selesai! Klik "Panen!" untuk menanam pohonmu.',
+            '🌱 Waktu fokus selesai! Klik "Panen!" untuk mengumpulkan hasil fokusmu.',
             "success",
           );
       }
@@ -326,7 +390,7 @@ export function MobileFocusCard({
     if (!isStopwatch) {
       scheduleFocusCompletionNotification({
         expectedEndAt,
-        speciesName: speciesCfg?.name || "Pohon Rimba",
+        speciesName: translateSpecies(selectedSpecies, speciesCfg?.name || "Rimba Tree"),
         durationMinutes: Math.round(durationSec / 60),
       });
     }
@@ -1018,6 +1082,9 @@ export function MobileFocusCard({
   if (!activeSession) {
     return (
       <>
+        {renderTagManagerModal()}
+        {renderSpeciesPickerModal()}
+        {renderRulerModal()}
         {renderSoundscapePopover()}
 
         {showHarvestModal && (
@@ -1026,6 +1093,17 @@ export function MobileFocusCard({
             onClose={() => setShowHarvestModal(false)}
             session={activeSession}
             onConfirmHarvest={handleConfirmHarvest}
+          />
+        )}
+
+        {showWitherModal && (
+          <FocusWitherModal
+            isOpen={showWitherModal}
+            onClose={() => setShowWitherModal(false)}
+            session={witheredSessionSnapshot}
+            onRestartFocus={() => {
+              soundManager.playPop();
+            }}
           />
         )}
 
@@ -1071,13 +1149,17 @@ export function MobileFocusCard({
   // ==========================================
   // STATE 2: ACTIVE RUNNING FOCUS SESSION
   // ==========================================
+  const referenceNow =
+    activeSession.is_paused && activeSession.paused_at
+      ? new Date(activeSession.paused_at).getTime()
+      : now;
   const start = new Date(activeSession.started_at).getTime();
   const expectedEnd = new Date(activeSession.expected_end_at).getTime();
   const totalDuration = Math.max(1000, expectedEnd - start);
-  const elapsedMs = Math.max(0, now - start);
-  const remainingMs = Math.max(0, expectedEnd - now);
+  const elapsedMs = Math.max(0, referenceNow - start);
+  const remainingMs = Math.max(0, expectedEnd - referenceNow);
 
-  const isTimeReached = now >= expectedEnd - 500;
+  const isTimeReached = referenceNow >= expectedEnd - 500;
   const graceSecondsLeft = Math.max(0, Math.ceil((10000 - elapsedMs) / 1000));
   const isWithinGracePeriod = graceSecondsLeft > 0 && !isTimeReached;
   const formatTime = (ms: number) => {
@@ -1117,9 +1199,16 @@ export function MobileFocusCard({
               className="flex items-center gap-2 text-left active:scale-95 transition-transform cursor-pointer"
               title={t.cockpit.sessionTag}
             >
-              <span className="text-2xl font-bold font-mono tracking-tight text-white tabular-nums drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
-                {formatTime(
-                  activeSession.is_stopwatch ? elapsedMs : remainingMs,
+              <span className="text-2xl font-bold font-mono tracking-tight text-white tabular-nums drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)] flex items-center gap-1.5">
+                <span>
+                  {formatTime(
+                    activeSession.is_stopwatch ? elapsedMs : remainingMs,
+                  )}
+                </span>
+                {activeSession.is_paused && (
+                  <span className="text-[10px] font-sans font-semibold tracking-wider text-amber-200 bg-amber-400/25 border border-amber-300/40 px-1.5 py-0.5 rounded-full uppercase">
+                    {language === "en" ? "Paused" : "Jeda"}
+                  </span>
                 )}
               </span>
             </button>
@@ -1128,7 +1217,7 @@ export function MobileFocusCard({
           {/* VERTICAL DIVIDER PRESISI */}
           <div className="h-6 w-[1px] bg-white/25 shrink-0 mx-1 relative z-10" />
 
-          {/* SISI TENGAH: Kontrol Audio & Mode Zen */}
+          {/* SISI TENGAH: Kontrol Audio, Mode Zen & Pause */}
           <div className="flex items-center gap-1.5 shrink-0 relative z-10">
             {/* Ambient Sound Button */}
             <button
@@ -1147,6 +1236,40 @@ export function MobileFocusCard({
             >
               <Headphones className="w-4 h-4 stroke-[2.2] drop-shadow-xs" />
             </button>
+
+            {/* Pause / Resume Button */}
+            {!isTimeReached && (
+              <button
+                type="button"
+                onClick={() => {
+                  soundManager.playPop();
+                  if (activeSession.is_paused) {
+                    resumeFocus();
+                  } else {
+                    pauseFocus();
+                  }
+                }}
+                className={`w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90 cursor-pointer border backdrop-blur-md ${
+                  activeSession.is_paused
+                    ? "bg-amber-400/35 text-amber-200 border-amber-300/60 shadow-xs"
+                    : "bg-white/12 hover:bg-white/20 text-white border-white/25"
+                }`}
+                title={
+                  activeSession.is_paused
+                    ? (language === "en" ? "Resume Focus" : "Lanjutkan Fokus")
+                    : (language === "en" ? "Pause Session" : "Jeda Sesi")
+                }
+                aria-label={
+                  activeSession.is_paused ? "Resume Focus" : "Pause Session"
+                }
+              >
+                {activeSession.is_paused ? (
+                  <Play className="w-3.5 h-3.5 fill-current translate-x-0.5" />
+                ) : (
+                  <Pause className="w-3.5 h-3.5 fill-current" />
+                )}
+              </button>
+            )}
 
             {/* Zen Mode Button */}
             {onEnterZen && (
@@ -1211,11 +1334,33 @@ export function MobileFocusCard({
       {showHarvestModal && (
         <FocusHarvestModal
           isOpen={showHarvestModal}
-          onClose={() => setShowHarvestModal(false)}
+          onClose={() => {
+            setShowHarvestModal(false);
+            useGameStore.getState().notify(t.harvest.harvestLaterToast, "info");
+          }}
           session={activeSession}
           onConfirmHarvest={handleConfirmHarvest}
         />
       )}
+
+      <FocusReturnOverlay
+        isOpen={showReturnOverlay}
+        awaySeconds={awaySeconds}
+        onResume={() => {
+          setShowReturnOverlay(false);
+          hapticLight();
+        }}
+        onPause={() => {
+          setShowReturnOverlay(false);
+          if (activeSession && !activeSession.is_paused) {
+            pauseFocus();
+          }
+        }}
+        onAbandon={() => {
+          setShowReturnOverlay(false);
+          setShowAbandonModal(true);
+        }}
+      />
 
       {showAbandonModal && (
         <AbandonConfirmModal

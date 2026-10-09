@@ -6,6 +6,7 @@ import { useGameStore } from "@/lib/game/useGameStore";
 import { RangerAvatar } from "@/components/ui/RangerAvatar";
 import { hapticLight, hapticSuccess } from "@/lib/mobile/nativeBridge";
 import { soundManager } from "@/lib/audio/sounds";
+import { useTranslation } from "@/lib/i18n/translations";
 import {
   X,
   Upload,
@@ -37,6 +38,7 @@ export function AvatarPickerModal({
   onClose,
   currentAvatarUrl,
 }: AvatarPickerModalProps) {
+  const { t, translateAvatarPreset } = useTranslation();
   const updateProfile = useAuthStore((state) => state.updateProfile);
   const uploadAvatarFile = useAuthStore((state) => state.uploadAvatarFile);
   const setProfileAvatar = useGameStore((state) => state.setProfileAvatar);
@@ -133,7 +135,7 @@ export function AvatarPickerModal({
         onClick={(e) => {
           if (e.target === e.currentTarget) onClose();
         }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 select-none antialiased font-urbanist text-[#0D3528] animate-in fade-in duration-200 pointer-events-auto"
+        className="fixed inset-0 z-[115] flex items-center justify-center p-4 select-none antialiased font-urbanist text-[#0D3528] animate-in fade-in duration-200 pointer-events-auto"
       >
         {/* Soft Ambient Backdrop */}
         <div
@@ -147,10 +149,10 @@ export function AvatarPickerModal({
           <div className="flex items-center justify-between pb-0.5">
             <div className="flex items-baseline gap-2">
               <h2 className="text-[19px] font-semibold tracking-tight text-[#0D3528]">
-                Foto Profil
+                {t.avatarPicker.title}
               </h2>
               <span className="text-[12px] font-normal text-[#4C7567]">
-                Pilih Maskot
+                {t.avatarPicker.subtitle}
               </span>
             </div>
 
@@ -158,7 +160,7 @@ export function AvatarPickerModal({
               type="button"
               onClick={onClose}
               className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0D3528]/5 hover:bg-[#0D3528]/10 text-[#0D3528] transition-all active:scale-90 cursor-pointer shadow-2xs"
-              aria-label="Tutup pemilih avatar"
+              aria-label={t.avatarPicker.closeAria}
             >
               <X className="h-4 w-4 stroke-[2]" />
             </button>
@@ -179,13 +181,13 @@ export function AvatarPickerModal({
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 className="absolute bottom-1 right-1 w-8 h-8 rounded-full bg-[#187557] hover:bg-[#126046] text-white flex items-center justify-center shadow-md active:scale-90 transition-transform cursor-pointer border-2 border-white z-10"
-                title="Unggah Foto"
+                title={t.avatarPicker.uploadTitle}
               >
                 <Camera className="w-4 h-4 stroke-[2]" />
               </button>
             </div>
             <span className="text-[11.5px] text-[#4C7567] mt-1.5 font-normal">
-              Pratinjau di Status & Peringkat
+              {t.avatarPicker.previewHint}
             </span>
           </div>
 
@@ -205,7 +207,7 @@ export function AvatarPickerModal({
               }`}
             >
               <Sparkles className="w-3.5 h-3.5 stroke-[1.8] text-[#187557]" />
-              <span>Preset Satwa</span>
+              <span>{t.avatarPicker.tabPresets}</span>
             </button>
 
             <button
@@ -222,7 +224,7 @@ export function AvatarPickerModal({
               }`}
             >
               <ImageIcon className="w-3.5 h-3.5 stroke-[1.8] text-[#187557]" />
-              <span>Unggah Foto</span>
+              <span>{t.avatarPicker.tabUpload}</span>
             </button>
           </div>
 
@@ -252,7 +254,7 @@ export function AvatarPickerModal({
                           : "font-normal text-[#4C7567]"
                       }`}
                     >
-                      {preset.label}
+                      {translateAvatarPreset(preset.id, preset.label)}
                     </span>
                   </button>
                 );
@@ -283,11 +285,11 @@ export function AvatarPickerModal({
                 <div className="text-center">
                   <span className="text-[13px] font-semibold text-[#0D3528] block">
                     {isProcessing
-                      ? "Mengompres foto..."
-                      : "Buka Galeri atau Kamera"}
+                      ? t.avatarPicker.compressing
+                      : t.avatarPicker.openGallery}
                   </span>
                   <span className="text-[11px] text-[#4C7567] block mt-0.5 font-normal">
-                    Format JPG, PNG, WEBP (otomatis dioptimalkan)
+                    {t.avatarPicker.uploadFormatHint}
                   </span>
                 </div>
               </button>
@@ -301,7 +303,7 @@ export function AvatarPickerModal({
             className="w-full py-3 rounded-full bg-[#187557] hover:bg-[#126046] text-white font-medium text-[13px] tracking-tight shadow-xs flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all cursor-pointer"
           >
             <Check className="w-4 h-4 stroke-[2]" />
-            <span>Gunakan Avatar Ini</span>
+            <span>{t.avatarPicker.useAvatarBtn}</span>
           </button>
         </div>
       </div>

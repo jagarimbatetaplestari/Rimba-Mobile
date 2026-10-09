@@ -146,6 +146,8 @@ interface GameState {
   markPioneerStepDone: (stepId: string) => void;
   claimPioneerMysteryReward: () => boolean;
   abandonFocus: () => void;
+  pauseFocus: () => boolean;
+  resumeFocus: () => boolean;
   completeFocus: () => boolean;
   addTodo: (text: string, tag?: FocusTag) => TodoItem | null;
   toggleTodo: (id: string) => void;
@@ -818,6 +820,9 @@ export const useGameStore = create<GameState>((set, get) => ({
         ? (focusSetup.minutes === 0 ? 86400 : focusSetup.minutes * 60)
         : GAME_CONFIG.focus.defaultDurationSec;
 
+    const unlockedSet = getUnlockedTilesSet(saveData.world, saveData.world_objects);
+    const targetTile = findEmptyTileNearCenter(saveData.world_objects, unlockedSet);
+
     const newSession = startFocusSession({
       durationSeconds: duration,
       tag: finalTag,
@@ -826,6 +831,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       taskNote: finalTaskNote,
       todoId,
       isStopwatch,
+      targetTile: targetTile ? { grid_x: targetTile.grid_x, grid_y: targetTile.grid_y } : undefined,
     });
 
     const updatedData: RimbaSaveData = {
@@ -1033,6 +1039,18 @@ export const useGameStore = create<GameState>((set, get) => ({
     const { activeSession, saveData } = get();
     if (!activeSession || activeSession.status !== 'active') return;
 
+    // Safety shield: If the focus duration is ALREADY finished, the tree must NEVER wither!
+    // Instead, safely complete the session and harvest the tree.
+    const nowMs = Date.now();
+    const expectedEndMs = new Date(activeSession.expected_end_at).getTime();
+    const isSessionFinished = !activeSession.is_stopwatch && nowMs >= expectedEndMs - 1000;
+
+    if (isSessionFinished) {
+      console.log('[useGameStore] abandonFocus called on finished session. Auto-completing harvest instead.');
+      get().completeFocus();
+      return;
+    }
+
     if (activeSession.campfire_room_code) {
       const userName = saveData.profile?.name || 'Penjaga Suaka';
       useCampfireStore.getState().abandonRoom(userName);
@@ -1110,6 +1128,79 @@ export const useGameStore = create<GameState>((set, get) => ({
         : '🥀 Sesi fokus dihentikan. Bibit pohon layu tanpa menghasilkan hadiah.',
       'error'
     );
+  },
+
+  pauseFocus: () => {
+    const { activeSession, saveData } = get();
+    if (!activeSession || activeSession.status !== 'active' || activeSession.is_paused) {
+      return false;
+    }
+
+    const pausedAt = new Date().toISOString();
+    const updatedSession: FocusSession = {
+      ...activeSession,
+      is_paused: true,
+      paused_at: pausedAt,
+    };
+
+    const updatedSessions = saveData.focus_sessions.map((s) =>
+      s.id === updatedSession.id ? updatedSession : s
+    );
+
+    const updatedData: RimbaSaveData = {
+      ...saveData,
+      focus_sessions: updatedSessions,
+    };
+
+    saveSaveData(updatedData);
+    set({
+      saveData: updatedData,
+      activeSession: updatedSession,
+    });
+
+    get().notify('⏸️ Sesi fokus dijeda sejenak. Tarik napas dan istirahat.', 'info');
+    return true;
+  },
+
+  resumeFocus: () => {
+    const { activeSession, saveData } = get();
+    if (!activeSession || activeSession.status !== 'active' || !activeSession.is_paused) {
+      return false;
+    }
+
+    const now = Date.now();
+    const pausedMs = activeSession.paused_at
+      ? Math.max(0, now - new Date(activeSession.paused_at).getTime())
+      : 0;
+
+    const currentExpected = new Date(activeSession.expected_end_at).getTime();
+    const newExpectedEnd = new Date(currentExpected + pausedMs).toISOString();
+
+    const updatedSession: FocusSession = {
+      ...activeSession,
+      is_paused: false,
+      paused_at: null,
+      expected_end_at: newExpectedEnd,
+      total_paused_ms: (activeSession.total_paused_ms || 0) + pausedMs,
+    };
+
+    const updatedSessions = saveData.focus_sessions.map((s) =>
+      s.id === updatedSession.id ? updatedSession : s
+    );
+
+    const updatedData: RimbaSaveData = {
+      ...saveData,
+      focus_sessions: updatedSessions,
+    };
+
+    saveSaveData(updatedData);
+    set({
+      saveData: updatedData,
+      activeSession: updatedSession,
+    });
+
+    get().notify('▶️ Melanjutkan fokus. Selamat menumbuhkan suaka!', 'success');
+    return true;
   },
 
   completeFocus: () => {
@@ -1574,7 +1665,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       { id: 'thrive_r3_0', object_type: 'rock', grid_x: 0, grid_y: 3, rotation: 0.4, scale: 1.1, status: 'active', created_at: nowIso, reclaimed_at: null, model_variant: 'lpset_rock_mossy_a' },
       { id: 'thrive_r3_1', object_type: 'rock', grid_x: 1, grid_y: 3, rotation: 1.2, scale: 1.05, status: 'active', created_at: nowIso, reclaimed_at: null, model_variant: 'fabz_plant_fern' },
       { id: 'thrive_r3_2', object_type: 'path', grid_x: 2, grid_y: 3, rotation: 0.0, scale: 1.0, status: 'active', created_at: nowIso, reclaimed_at: null, model_variant: 'path_stepping' },
-      { id: 'thrive_r3_3', object_type: 'rock', grid_x: 3, grid_y: 3, rotation: 0.8, scale: 1.15, status: 'active', created_at: nowIso, reclaimed_at: null, model_variant: 'rock_large' },
+      { id: 'thrive_r3_3', object_type: 'rock', grid_x: 3, grid_y: 3, rotation: 0.8, scale: 1.15, status: 'active', created_at: nowIso, reclaimed_at: null, model_variant: 'fabz_rounded_rock' },
       { id: 'thrive_r3_4', object_type: 'rock', grid_x: 4, grid_y: 3, rotation: 0.6, scale: 1.15, status: 'active', created_at: nowIso, reclaimed_at: null, model_variant: 'lpset_rock_mossy_a' },
       { id: 'thrive_r3_5', object_type: 'path', grid_x: 5, grid_y: 3, rotation: halfPi, scale: 1.0, status: 'active', created_at: nowIso, reclaimed_at: null, model_variant: 'path_wood' },
       { id: 'thrive_r3_6', object_type: 'rock', grid_x: 6, grid_y: 3, rotation: 1.6, scale: 1.12, status: 'active', created_at: nowIso, reclaimed_at: null, model_variant: 'lpset_rock_mossy_b' },

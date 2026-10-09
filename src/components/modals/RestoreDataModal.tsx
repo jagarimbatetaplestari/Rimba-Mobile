@@ -24,6 +24,7 @@ import {
   ShieldCheck,
   Check,
 } from "lucide-react";
+import { useTranslation } from "@/lib/i18n/translations";
 
 interface RestoreDataModalProps {
   isOpen: boolean;
@@ -31,6 +32,7 @@ interface RestoreDataModalProps {
 }
 
 export function RestoreDataModal({ isOpen, onClose }: RestoreDataModalProps) {
+  const { t, language } = useTranslation();
   const currentSaveData = useGameStore((state) => state.saveData);
   const importSaveData = useGameStore((state) => state.importSaveData);
 
@@ -70,7 +72,7 @@ export function RestoreDataModal({ isOpen, onClose }: RestoreDataModalProps) {
     reader.onerror = () => {
       setValidation({
         isValid: false,
-        error: "Gagal membaca berkas dari penyimpanan perangkat.",
+        error: t.restoreModal.readingError,
       });
       setIsProcessing(false);
       soundManager.playError();
@@ -87,7 +89,7 @@ export function RestoreDataModal({ isOpen, onClose }: RestoreDataModalProps) {
     if (autoBackupCurrent) {
       createIslandSnapshot(
         currentSaveData,
-        `Auto-Backup Sebelum Pulihkan (${new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })})`,
+        `Auto-Backup (${new Date().toLocaleTimeString(language === "en" ? "en-US" : "id-ID", { hour: "2-digit", minute: "2-digit" })})`,
       );
     }
 
@@ -117,7 +119,7 @@ export function RestoreDataModal({ isOpen, onClose }: RestoreDataModalProps) {
         onClick={(e) => {
           if (e.target === e.currentTarget) onClose();
         }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 select-none antialiased font-urbanist text-[#0D3528] animate-in fade-in duration-200 pointer-events-auto"
+        className="fixed inset-0 z-[115] flex items-center justify-center p-4 select-none antialiased font-urbanist text-[#0D3528] animate-in fade-in duration-200 pointer-events-auto"
       >
         {/* Soft Ambient Backdrop */}
         <div
@@ -131,10 +133,10 @@ export function RestoreDataModal({ isOpen, onClose }: RestoreDataModalProps) {
           <div className="flex items-center justify-between pb-0.5">
             <div className="flex items-baseline gap-2">
               <h2 className="text-[19px] font-semibold tracking-tight text-[#0D3528]">
-                Pulihkan Data
+                {t.restoreModal.title}
               </h2>
               <span className="text-[12px] font-normal text-[#4C7567]">
-                Impor Cadangan
+                {t.restoreModal.subtitle}
               </span>
             </div>
 
@@ -142,7 +144,7 @@ export function RestoreDataModal({ isOpen, onClose }: RestoreDataModalProps) {
               type="button"
               onClick={onClose}
               className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0D3528]/5 hover:bg-[#0D3528]/10 text-[#0D3528] transition-all active:scale-90 cursor-pointer shadow-2xs"
-              aria-label="Tutup pulihkan data"
+              aria-label={t.common.close}
             >
               <X className="h-4 w-4 stroke-[2]" />
             </button>
@@ -169,11 +171,11 @@ export function RestoreDataModal({ isOpen, onClose }: RestoreDataModalProps) {
                 <div>
                   <p className="text-[13.5px] font-semibold text-[#0D3528]">
                     {isProcessing
-                      ? "Memeriksa berkas..."
-                      : "Pilih Berkas Cadangan (.json)"}
+                      ? (language === "en" ? "Checking file..." : "Memeriksa berkas...")
+                      : t.restoreModal.dropzoneTitle}
                   </p>
                   <p className="text-[11.5px] text-[#4C7567] mt-0.5 font-normal">
-                    Ketuk untuk mencari dokumen lokal
+                    {t.restoreModal.dropzoneDesc}
                   </p>
                 </div>
               </div>
@@ -184,7 +186,7 @@ export function RestoreDataModal({ isOpen, onClose }: RestoreDataModalProps) {
                   <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5 stroke-[2]" />
                   <div>
                     <span className="font-semibold block">
-                      Gagal Memvalidasi Berkas
+                      {t.restoreModal.invalidFile}
                     </span>
                     <span className="text-[11px] text-rose-600/80 mt-0.5 block font-normal">
                       {validation.error}
@@ -213,7 +215,7 @@ export function RestoreDataModal({ isOpen, onClose }: RestoreDataModalProps) {
                   onClick={handleResetPicker}
                   className="text-[11px] font-medium px-3 py-1 rounded-full bg-white border border-[#BCE5D3] text-[#14664D] hover:bg-[#E4F4ED] transition-colors cursor-pointer shrink-0 shadow-2xs"
                 >
-                  Ganti
+                  {language === "en" ? "Change" : "Ganti"}
                 </button>
               </div>
 
@@ -223,10 +225,10 @@ export function RestoreDataModal({ isOpen, onClose }: RestoreDataModalProps) {
                   <TreePine className="w-4 h-4 text-[#187557] shrink-0 stroke-[1.8]" />
                   <div>
                     <span className="text-[10px] text-[#4C7567] uppercase font-medium tracking-wider block">
-                      Pohon Subur
+                      {language === "en" ? "Lush Trees" : "Pohon Subur"}
                     </span>
                     <span className="font-semibold text-[#0D3528] text-xs tabular-nums">
-                      {validation.summary?.treesCount} Pohon
+                      {validation.summary?.treesCount} {language === "en" ? "Trees" : "Pohon"}
                     </span>
                   </div>
                 </div>
@@ -235,7 +237,7 @@ export function RestoreDataModal({ isOpen, onClose }: RestoreDataModalProps) {
                   <Coins className="w-4 h-4 text-amber-600 shrink-0 stroke-[1.8]" />
                   <div>
                     <span className="text-[10px] text-[#4C7567] uppercase font-medium tracking-wider block">
-                      Energi Soul
+                      Soul
                     </span>
                     <span className="font-semibold text-[#0D3528] text-xs tabular-nums">
                       {validation.summary?.gold.toLocaleString()}
@@ -247,7 +249,7 @@ export function RestoreDataModal({ isOpen, onClose }: RestoreDataModalProps) {
                   <Clock className="w-4 h-4 text-[#187557] shrink-0 stroke-[1.8]" />
                   <div>
                     <span className="text-[10px] text-[#4C7567] uppercase font-medium tracking-wider block">
-                      Total Fokus
+                      {language === "en" ? "Total Focus" : "Total Fokus"}
                     </span>
                     <span className="font-semibold text-[#0D3528] text-xs tabular-nums">
                       {validation.summary?.totalFocusMinutes}m
@@ -259,7 +261,7 @@ export function RestoreDataModal({ isOpen, onClose }: RestoreDataModalProps) {
                   <ShieldCheck className="w-4 h-4 text-[#187557] shrink-0 stroke-[1.8]" />
                   <div>
                     <span className="text-[10px] text-[#4C7567] uppercase font-medium tracking-wider block">
-                      Level Suaka
+                      {language === "en" ? "Sanctuary Level" : "Level Suaka"}
                     </span>
                     <span className="font-semibold text-[#0D3528] text-xs tabular-nums">
                       Level {validation.summary?.level}
@@ -272,10 +274,10 @@ export function RestoreDataModal({ isOpen, onClose }: RestoreDataModalProps) {
               <div className="p-3.5 rounded-2xl border border-[#0D3528]/8 bg-[#0D3528]/[0.025] flex items-center justify-between">
                 <div className="flex flex-col pr-2 text-left">
                   <span className="text-[13px] font-semibold text-[#0D3528]">
-                    Amankan Data Saat Ini
+                    {language === "en" ? "Auto-Backup Current Island" : "Amankan Data Saat Ini"}
                   </span>
                   <span className="text-[11px] text-[#4C7567] font-normal">
-                    Buat snapshot otomatis sebelum menimpa
+                    {language === "en" ? "Automatically snapshot before overwriting" : "Buat snapshot otomatis sebelum menimpa"}
                   </span>
                 </div>
                 <button
@@ -297,8 +299,9 @@ export function RestoreDataModal({ isOpen, onClose }: RestoreDataModalProps) {
 
               {/* Catatan Peringatan */}
               <p className="text-[11.5px] text-amber-900 bg-amber-50/80 border border-amber-200/70 p-3 rounded-2xl leading-relaxed font-normal">
-                Memulihkan data akan menggantikan tata letak pulau yang aktif
-                saat ini.
+                {language === "en"
+                  ? "Restoring data will replace your current active island layout."
+                  : "Memulihkan data akan menggantikan tata letak pulau yang aktif saat ini."}
               </p>
             </div>
           )}
@@ -311,7 +314,7 @@ export function RestoreDataModal({ isOpen, onClose }: RestoreDataModalProps) {
               className="w-full py-3 rounded-full bg-[#187557] hover:bg-[#126046] text-white font-medium text-[13px] tracking-tight shadow-xs flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all cursor-pointer"
             >
               <Check className="w-4 h-4 stroke-[2]" />
-              <span>Terapkan & Pulihkan Suaka</span>
+              <span>{t.restoreModal.confirmBtn}</span>
             </button>
           )}
         </div>

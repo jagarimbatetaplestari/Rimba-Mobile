@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import confetti from "canvas-confetti";
 import { FocusSession, TodoItem } from "@/types/game";
 import { TREE_SPECIES_CONFIG, FOCUS_TAGS } from "@/lib/game/config";
@@ -179,20 +180,21 @@ export function FocusHarvestModal({
       "inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.75), inset 0 -1px 1px 0 rgba(0, 0, 0, 0.3), 0 28px 60px rgba(0, 0, 0, 0.35)",
   };
 
-  return (
+  const modalContent = (
     <div
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
-      className="fixed inset-0 z-[80] bg-black/25 backdrop-blur-xs flex items-end sm:items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200 pointer-events-auto select-none"
+      className="fixed inset-0 z-[120] bg-black/45 backdrop-blur-xs flex items-end sm:items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200 pointer-events-auto select-none"
       style={{
+        paddingBottom: "max(calc(env(safe-area-inset-bottom, 0px) + 12px), 16px)",
         fontFamily:
           "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', var(--font-geist-sans), sans-serif",
       }}
     >
       <div
         style={modalGlassStyle}
-        className="w-full max-w-md rounded-[36px] p-5 sm:p-6 flex flex-col gap-3.5 text-white relative overflow-hidden max-h-[92vh] overflow-y-auto no-scrollbar shadow-2xl"
+        className="w-full max-w-md rounded-[36px] p-5 sm:p-6 flex flex-col gap-3.5 text-white relative overflow-hidden max-h-[90dvh] overflow-y-auto no-scrollbar shadow-2xl pointer-events-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top ambient glass arch */}
@@ -357,7 +359,7 @@ export function FocusHarvestModal({
             onClick={handleHarvestClick}
             className="w-full py-3 px-4 rounded-2xl bg-white text-[#0f2e1e] hover:bg-white/95 font-bold text-xs shadow-xs active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
-            <CheckCircle2 className="w-4 h-4 stroke-[2.4]" />
+            <Sparkles className="w-4 h-4 fill-current" />
             <span>{t.harvest.plantBtn}</span>
           </button>
 
@@ -374,4 +376,9 @@ export function FocusHarvestModal({
       </div>
     </div>
   );
+
+  if (typeof document !== "undefined") {
+    return createPortal(modalContent, document.body);
+  }
+  return modalContent;
 }

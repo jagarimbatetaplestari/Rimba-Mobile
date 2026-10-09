@@ -12,6 +12,7 @@ import {
 import { hapticLight } from "@/lib/mobile/nativeBridge";
 import { TREE_SPECIES_CONFIG, FOCUS_TAGS } from "@/lib/game/config";
 import { TreeSpecies, FocusTag } from "@/types/game";
+import { useTranslation } from "@/lib/i18n/translations";
 import {
   Minimize2,
   Sparkles,
@@ -21,12 +22,17 @@ import {
   Volume2,
   VolumeX,
   X,
+  Pause,
+  Play,
 } from "lucide-react";
 
 export function ZenFocusOverlay() {
+  const { language } = useTranslation();
   const isZenMode = useGameStore((state) => state.isZenMode);
   const activeSession = useGameStore((state) => state.activeSession);
   const setZenMode = useGameStore((state) => state.setZenMode);
+  const pauseFocus = useGameStore((state) => state.pauseFocus);
+  const resumeFocus = useGameStore((state) => state.resumeFocus);
   const completeFocus = useGameStore((state) => state.completeFocus);
   const timeOfDay = useGameStore((state) => state.timeOfDay);
 
@@ -87,7 +93,11 @@ export function ZenFocusOverlay() {
     }
 
     const updateTimer = () => {
-      const now = Date.now();
+      const now =
+        activeSession.is_paused && activeSession.paused_at
+          ? new Date(activeSession.paused_at).getTime()
+          : Date.now();
+
       if (activeSession.is_stopwatch) {
         const start = new Date(activeSession.started_at).getTime();
         const elapsedSec = Math.max(0, Math.floor((now - start) / 1000));
@@ -218,9 +228,16 @@ export function ZenFocusOverlay() {
           </span>
 
           {/* Large Clean Monospace Countdown */}
-          <span className="text-2xl font-bold font-mono tracking-tight text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)] tabular-nums relative z-10">
-            {timeDisplay}
-          </span>
+          <div className="flex items-center gap-1.5 relative z-10">
+            <span className="text-2xl font-bold font-mono tracking-tight text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)] tabular-nums">
+              {timeDisplay}
+            </span>
+            {activeSession.is_paused && (
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-400/25 text-amber-200 border border-amber-300/40 uppercase tracking-wider">
+                {language === "en" ? "Paused" : "Jeda"}
+              </span>
+            )}
+          </div>
 
           {/* Glass Divider */}
           <div className="h-4 w-px bg-white/25 relative z-10" />
@@ -245,10 +262,10 @@ export function ZenFocusOverlay() {
             <button
               onClick={handleHarvest}
               className="px-3.5 py-1 rounded-full bg-white text-[#0f2e1e] font-bold text-xs shadow-xs flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer relative z-10"
-              title="Panen Pohon dan raih hadiah!"
+              title={language === "en" ? "Harvest tree and claim rewards!" : "Panen Pohon dan raih hadiah!"}
             >
               <Sparkles className="w-3.5 h-3.5 fill-current" />
-              <span>Panen!</span>
+              <span>{language === "en" ? "Harvest!" : "Panen!"}</span>
             </button>
           ) : (
             <div className="flex items-center gap-1 ml-0.5 relative z-10">
@@ -257,9 +274,43 @@ export function ZenFocusOverlay() {
                   type="button"
                   onClick={handleEarlyStopwatchFinish}
                   className="px-2.5 py-1 rounded-full bg-white/14 hover:bg-white/25 active:scale-90 transition-all text-white text-[11px] font-semibold border border-white/20"
-                  title="Selesai sekarang (di bawah 5 menit tidak menumbuhkan pohon suaka)"
+                  title={language === "en" ? "Finish now (under 5m does not plant a tree)" : "Selesai sekarang (di bawah 5 menit tidak menumbuhkan pohon suaka)"}
                 >
-                  Selesai (&lt;5m)
+                  {language === "en" ? "Finish (<5m)" : "Selesai (<5m)"}
+                </button>
+              )}
+              {/* Pause / Resume Button */}
+              {!activeSession.is_stopwatch && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    soundManager.playPop();
+                    hapticLight();
+                    if (activeSession.is_paused) {
+                      resumeFocus();
+                    } else {
+                      pauseFocus();
+                    }
+                  }}
+                  className={`p-1.5 rounded-full transition-all active:scale-90 text-white border border-white/20 cursor-pointer ${
+                    activeSession.is_paused
+                      ? "bg-amber-500/40 text-amber-200 border-amber-300/50"
+                      : "bg-white/12 hover:bg-white/22"
+                  }`}
+                  title={
+                    activeSession.is_paused
+                      ? (language === "en" ? "Resume Focus" : "Lanjutkan Fokus")
+                      : (language === "en" ? "Pause Session" : "Jeda Sesi")
+                  }
+                  aria-label={
+                    activeSession.is_paused ? "Resume Focus" : "Pause Session"
+                  }
+                >
+                  {activeSession.is_paused ? (
+                    <Play className="w-3.5 h-3.5 fill-current translate-x-0.2" />
+                  ) : (
+                    <Pause className="w-3.5 h-3.5 fill-current" />
+                  )}
                 </button>
               )}
               {/* Soundscape Pill */}
@@ -270,7 +321,7 @@ export function ZenFocusOverlay() {
                   setShowSoundscapePopover(!showSoundscapePopover);
                 }}
                 className="p-1.5 rounded-full bg-white/12 hover:bg-white/22 active:scale-90 transition-all text-white border border-white/20 cursor-pointer"
-                title="Atur Suara Latar Alam (Soundscape)"
+                title={language === "en" ? "Nature Soundscape" : "Atur Suara Latar Alam (Soundscape)"}
               >
                 <Headphones className="w-3.5 h-3.5" />
                 {activeSoundscape !== "off" && (
@@ -284,7 +335,7 @@ export function ZenFocusOverlay() {
               <button
                 onClick={() => setZenMode(false)}
                 className="p-1.5 rounded-full bg-white/12 hover:bg-white/22 active:scale-90 transition-all text-white border border-white/20 cursor-pointer"
-                title="Keluar Mode Zen (Esc atau Z)"
+                title={language === "en" ? "Exit Zen Mode (Esc or Z)" : "Keluar Mode Zen (Esc atau Z)"}
               >
                 <Minimize2 className="w-3.5 h-3.5" />
               </button>
@@ -298,7 +349,7 @@ export function ZenFocusOverlay() {
         <div
           onClick={() => setZenMode(false)}
           className="relative flex items-center justify-center cursor-pointer group"
-          title="Klik untuk keluar dari Mode Zen"
+          title={language === "en" ? "Click to exit Zen Mode" : "Klik untuk keluar dari Mode Zen"}
         >
           {/* Outer Breathing Soft Glow */}
           <div
@@ -341,15 +392,15 @@ export function ZenFocusOverlay() {
         <div className="mt-3 text-center">
           <p className="text-[13px] font-semibold tracking-tight text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)] transition-all duration-700">
             {breathPhase === "inhale"
-              ? "Tarik Napas Perlahan..."
-              : "Hembuskan Napas Rileks..."}
+              ? (language === "en" ? "Breathe In Slowly..." : "Tarik Napas Perlahan...")
+              : (language === "en" ? "Breathe Out & Relax..." : "Hembuskan Napas Rileks...")}
           </p>
           <p className="text-[10.5px] text-white/60 tracking-tight font-medium mt-0.5">
-            Tekan{" "}
+            {language === "en" ? "Press " : "Tekan "}
             <kbd className="px-1.5 py-0.5 rounded-md bg-white/15 text-white font-mono text-[9.5px] border border-white/20">
               Esc
             </kbd>{" "}
-            untuk kembali
+            {language === "en" ? "to exit" : "untuk kembali"}
           </p>
         </div>
       </div>
@@ -371,13 +422,13 @@ export function ZenFocusOverlay() {
               <div className="flex items-center gap-2">
                 <Headphones className="w-4 h-4 text-emerald-300 stroke-[2.3]" />
                 <span className="text-xs font-bold tracking-tight text-white drop-shadow-xs">
-                  Suara Alam (Ambience)
+                  {language === "en" ? "Nature Ambience" : "Suara Alam (Ambience)"}
                 </span>
               </div>
               <button
                 onClick={() => setShowSoundscapePopover(false)}
                 className="w-7 h-7 rounded-full flex items-center justify-center bg-white/20 hover:bg-white/30 border border-white/30 text-white active:scale-90 transition-transform cursor-pointer shadow-xs"
-                aria-label="Tutup suara latar"
+                aria-label="Close"
               >
                 <X className="w-3.5 h-3.5 stroke-[2.4]" />
               </button>

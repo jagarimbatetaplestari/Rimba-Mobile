@@ -213,7 +213,7 @@ export function MobileSettingsSheet({
       `}</style>
 
       <div
-        className="fixed inset-0 z-50 overflow-y-auto no-scrollbar select-none antialiased font-urbanist text-[#0D3528]"
+        className="fixed inset-0 z-[100] h-[100dvh] w-full overflow-y-auto overscroll-contain no-scrollbar select-none antialiased font-urbanist text-[#0D3528] pointer-events-auto"
         style={{
           background:
             "radial-gradient(130% 90% at 50% -5%, #38B28B 0%, #289874 34%, #1C7459 70%, #165643 100%)",
@@ -221,7 +221,7 @@ export function MobileSettingsSheet({
         role="dialog"
         aria-modal="true"
       >
-        <div className="w-full max-w-md mx-auto px-5 pt-[max(env(safe-area-inset-top,1.25rem),1.25rem)] pb-[max(calc(env(safe-area-inset-bottom,0px)+2.5rem),3rem)] space-y-4">
+        <div className="w-full max-w-md mx-auto px-5 safe-modal-content space-y-4">
           {/* HEADER NAV */}
           <div className="flex items-center justify-between py-1">
             {currentView === "storage" ? (
@@ -883,7 +883,7 @@ export function MobileSettingsSheet({
             onClick={(e) => {
               if (e.target === e.currentTarget) setIsResetConfirmOpen(false);
             }}
-            className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150 pointer-events-auto"
+            className="fixed inset-0 z-[115] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150 pointer-events-auto"
           >
             <div className="relative z-10 w-full max-w-[290px] rounded-3xl border border-white bg-white p-5 space-y-4 shadow-2xl text-center animate-in zoom-in-95 duration-150 font-urbanist text-[#0D3528]">
               <div className="w-10 h-10 rounded-2xl bg-amber-50 border border-amber-200 mx-auto flex items-center justify-center text-amber-700">
@@ -891,12 +891,22 @@ export function MobileSettingsSheet({
               </div>
               <div>
                 <h3 className="text-[15px] font-semibold text-[#0D3528] tracking-tight">
-                  Konfirmasi Atur Ulang
+                  {lang === "en" ? "Confirm Island Reset" : "Konfirmasi Atur Ulang"}
                 </h3>
                 <p className="text-[12px] text-[#4C7567] mt-1 leading-relaxed font-normal">
-                  Ketik kata{" "}
-                  <span className="font-semibold text-rose-600">RESET</span>{" "}
-                  untuk mereset tata letak pulau suaka.
+                  {lang === "en" ? (
+                    <>
+                      Type the word{" "}
+                      <span className="font-semibold text-rose-600">RESET</span>{" "}
+                      to reset the sanctuary island layout.
+                    </>
+                  ) : (
+                    <>
+                      Ketik kata{" "}
+                      <span className="font-semibold text-rose-600">RESET</span>{" "}
+                      untuk mereset tata letak pulau suaka.
+                    </>
+                  )}
                 </p>
               </div>
               <input
@@ -916,7 +926,7 @@ export function MobileSettingsSheet({
                   }}
                   className="py-2.5 rounded-full bg-white border border-[#0D3528]/15 text-[#4C7567] font-medium text-xs active:scale-95 transition-all cursor-pointer hover:bg-black/5"
                 >
-                  Batal
+                  {t.common.cancel}
                 </button>
                 <button
                   type="button"
@@ -924,7 +934,7 @@ export function MobileSettingsSheet({
                   disabled={confirmInput.trim().toUpperCase() !== "RESET"}
                   className="py-2.5 rounded-full bg-rose-600 hover:bg-rose-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium text-xs active:scale-95 transition-all shadow-xs cursor-pointer"
                 >
-                  Reset Pulau
+                  {lang === "en" ? "Reset Island" : "Reset Pulau"}
                 </button>
               </div>
             </div>
@@ -940,7 +950,7 @@ export function MobileSettingsSheet({
                 setDeleteAccountInput("");
               }
             }}
-            className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150 pointer-events-auto"
+            className="fixed inset-0 z-[115] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150 pointer-events-auto"
           >
             <div className="relative z-10 w-full max-w-[300px] rounded-3xl border border-white bg-white p-5 space-y-4 shadow-2xl text-center animate-in zoom-in-95 duration-150 font-urbanist text-[#0D3528]">
               <div className="w-11 h-11 rounded-2xl bg-rose-50 border border-rose-200 mx-auto flex items-center justify-center text-rose-600">
@@ -948,23 +958,34 @@ export function MobileSettingsSheet({
               </div>
               <div>
                 <h3 className="text-[15px] font-semibold text-rose-900 tracking-tight">
-                  Hapus Akun & Data Suaka
+                  {lang === "en" ? "Delete Account & Sanctuary Data" : "Hapus Akun & Data Suaka"}
                 </h3>
                 <p className="text-[11.5px] text-rose-700/85 mt-1 leading-relaxed font-normal">
-                  Tindakan ini permanen. Seluruh riwayat fokus, pohon suaka,
-                  koin, dan data akun akan dihapus dari perangkat ini.
+                  {lang === "en"
+                    ? "This action is permanent. All focus history, sanctuary trees, coins, and account data will be wiped from this device."
+                    : "Tindakan ini permanen. Seluruh riwayat fokus, pohon suaka, koin, dan data akun akan dihapus dari perangkat ini."}
                 </p>
                 <p className="text-[11.5px] text-[#4C7567] mt-1.5 leading-relaxed font-normal">
-                  Ketik kata{" "}
-                  <span className="font-semibold text-rose-600">HAPUS</span>{" "}
-                  untuk konfirmasi.
+                  {lang === "en" ? (
+                    <>
+                      Type the word{" "}
+                      <span className="font-semibold text-rose-600">DELETE</span>{" "}
+                      to confirm.
+                    </>
+                  ) : (
+                    <>
+                      Ketik kata{" "}
+                      <span className="font-semibold text-rose-600">HAPUS</span>{" "}
+                      untuk konfirmasi.
+                    </>
+                  )}
                 </p>
               </div>
               <input
                 type="text"
                 value={deleteAccountInput}
                 onChange={(e) => setDeleteAccountInput(e.target.value)}
-                placeholder="HAPUS"
+                placeholder={lang === "en" ? "DELETE" : "HAPUS"}
                 className="w-full px-3 py-2 rounded-xl bg-[#0D3528]/5 border border-rose-300 text-rose-700 font-semibold text-center text-xs tracking-widest focus:outline-none focus:border-rose-600 uppercase"
                 autoFocus
               />
@@ -977,15 +998,18 @@ export function MobileSettingsSheet({
                   }}
                   className="py-2.5 rounded-full bg-white border border-[#0D3528]/15 text-[#4C7567] font-medium text-xs active:scale-95 transition-all cursor-pointer hover:bg-black/5"
                 >
-                  Batal
+                  {t.common.cancel}
                 </button>
                 <button
                   type="button"
                   onClick={handleExecuteDeleteAccount}
-                  disabled={deleteAccountInput.trim().toUpperCase() !== "HAPUS"}
+                  disabled={
+                    deleteAccountInput.trim().toUpperCase() !== "HAPUS" &&
+                    deleteAccountInput.trim().toUpperCase() !== "DELETE"
+                  }
                   className="py-2.5 rounded-full bg-rose-600 hover:bg-rose-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium text-xs active:scale-95 transition-all shadow-xs cursor-pointer"
                 >
-                  Hapus Semua
+                  {lang === "en" ? "Delete All" : "Hapus Semua"}
                 </button>
               </div>
             </div>

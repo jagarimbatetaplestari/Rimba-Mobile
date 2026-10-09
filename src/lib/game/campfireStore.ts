@@ -72,30 +72,6 @@ function generateRoomCode(): string {
   return `RIMBA-${num}`;
 }
 
-const MOCK_WANDERERS: Omit<CampfireParticipant, "id" | "joinedAt">[] = [
-  {
-    name: "Ranger Arya",
-    animal: "fox",
-    species: "oak",
-    isHost: false,
-    status: "ready",
-  },
-  {
-    name: "Dewi Lestari",
-    animal: "bunny",
-    species: "pine",
-    isHost: false,
-    status: "ready",
-  },
-  {
-    name: "Bayu Hening",
-    animal: "bird",
-    species: "autumn",
-    isHost: false,
-    status: "ready",
-  },
-];
-
 export const useCampfireStore = create<CampfireState>()(
   persist(
     (set, get) => ({
@@ -125,14 +101,6 @@ export const useCampfireStore = create<CampfireState>()(
           joinedAt: new Date().toISOString(),
         };
 
-        // Add 1 friendly mock wanderer so demo/offline sessions remain cozy
-        const mockCompanion = MOCK_WANDERERS[Math.floor(Math.random() * MOCK_WANDERERS.length)];
-        const companion: CampfireParticipant = {
-          ...mockCompanion,
-          id: `p_mock_${Date.now()}`,
-          joinedAt: new Date().toISOString(),
-        };
-
         const newRoom: CampfireRoom = {
           code,
           name: roomName,
@@ -140,7 +108,7 @@ export const useCampfireStore = create<CampfireState>()(
           mode,
           status: "lobby",
           startedAt: null,
-          participants: [host, companion],
+          participants: [host],
         };
 
         set({
@@ -281,16 +249,6 @@ export const useCampfireStore = create<CampfireState>()(
           joinedAt: new Date().toISOString(),
         };
 
-        const hostWanderer: CampfireParticipant = {
-          id: `p_host_${normalized}`,
-          name: "Ranger Arya",
-          animal: "fox",
-          species: "ancient",
-          isHost: true,
-          status: "ready",
-          joinedAt: new Date().toISOString(),
-        };
-
         const room: CampfireRoom = {
           code: normalized,
           name: `Bilik Hening ${normalized}`,
@@ -298,7 +256,7 @@ export const useCampfireStore = create<CampfireState>()(
           mode: "shared_destiny",
           status: "lobby",
           startedAt: null,
-          participants: [hostWanderer, selfParticipant],
+          participants: [selfParticipant],
         };
 
         set({

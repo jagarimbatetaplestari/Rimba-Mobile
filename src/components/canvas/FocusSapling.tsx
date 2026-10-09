@@ -162,18 +162,35 @@ export function FocusSapling() {
   const currentScaleRef = useRef(0);
   const [currentStage, setCurrentStage] = useState<1 | 2 | 3>(1);
 
+  // Lock sapling target tile for the duration of this specific session
+  // Prevents the sapling from jumping to an adjacent tile when completeFocus adds the tree to worldObjects
+  const lockedTileRef = useRef<{ grid_x: number; grid_y: number } | null>(null);
+  const lastSessionIdRef = useRef<string | null>(null);
+
   const unlockedSet = useMemo(() => {
     const state = useGameStore.getState();
     return getUnlockedTilesSet(state.saveData.world, state.saveData.world_objects);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [unlockedSignature]);
 
+  if (activeSession && activeSession.id !== lastSessionIdRef.current) {
+    lastSessionIdRef.current = activeSession.id;
+    const targetTile = findEmptyTileNearCenter(worldObjects, unlockedSet);
+    lockedTileRef.current = targetTile ? { grid_x: targetTile.grid_x, grid_y: targetTile.grid_y } : null;
+  } else if (!activeSession) {
+    lastSessionIdRef.current = null;
+    lockedTileRef.current = null;
+  }
+
   // Compute exact world position where the completed focus tree will spawn
   const saplingWorldPos = useMemo<[number, number, number]>(() => {
-    const targetTile = findEmptyTileNearCenter(worldObjects, unlockedSet);
+    const targetTile =
+      activeSession?.target_tile ||
+      lockedTileRef.current ||
+      findEmptyTileNearCenter(worldObjects, unlockedSet);
     if (!targetTile) return [0, 0.05, 0];
     return gridToWorld(targetTile.grid_x, targetTile.grid_y, 0.05);
-  }, [worldObjects, unlockedSet]);
+  }, [activeSession?.target_tile, worldObjects, unlockedSet]);
 
   const species = (activeSession?.species || 'oak') as TreeSpecies;
   const speciesConfig =
@@ -187,10 +204,11 @@ export function FocusSapling() {
   useFrame(() => {
     if (!groupRef.current) return;
 
+    // Immediately hide when session is no longer active so it never flickers or ghosts onto adjacent tiles
     if (!activeSession || activeSession.status !== 'active') {
-      currentScaleRef.current = THREE.MathUtils.lerp(currentScaleRef.current, 0, 0.15);
-      groupRef.current.scale.setScalar(currentScaleRef.current);
-      groupRef.current.visible = currentScaleRef.current > 0.01;
+      currentScaleRef.current = 0;
+      groupRef.current.scale.setScalar(0);
+      groupRef.current.visible = false;
       return;
     }
 
@@ -247,7 +265,21 @@ export function FocusSapling() {
   });
 
   return (
-    <group position={saplingWorldPos}>
+    <group
+      position={saplingWorldPos}
+      onClick={(e) => {
+        e.stopPropagation();
+        if (!activeSession) return;
+        const now = Date.now();
+        const end = new Date(activeSession.expected_end_at).getTime();
+        const isReady = activeSession.is_stopwatch
+          ? now - new Date(activeSession.started_at).getTime() >= 300000
+          : now >= end - 1000;
+        if (isReady && typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('rimba:open_harvest'));
+        }
+      }}
+    >
       {/* Grove Sacred Pedestal Ring (Hanya muncul saat sesi fokus aktif) */}
       {activeSession?.status === 'active' && (
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]}>

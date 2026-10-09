@@ -51,6 +51,7 @@ export interface StartSessionParams {
   taskNote?: string;
   todoId?: string;
   isStopwatch?: boolean;
+  targetTile?: { grid_x: number; grid_y: number };
 }
 
 export function startFocusSession({
@@ -61,6 +62,7 @@ export function startFocusSession({
   taskNote,
   todoId,
   isStopwatch = false,
+  targetTile,
 }: StartSessionParams = {}): FocusSession {
   const now = new Date();
   const startedAt = now.toISOString();
@@ -82,6 +84,7 @@ export function startFocusSession({
     task_note: cleanNote,
     todo_id: todoId || undefined,
     is_stopwatch: isStopwatch,
+    target_tile: targetTile,
   };
 }
 
@@ -224,7 +227,7 @@ export function completeFocusSession(
   );
 
   // 5. Spawn a persistent tree at empty center tile with selected species variant
-  const emptyTile = findEmptyTileNearCenter(existingObjects, unlockedTiles);
+  const emptyTile = session.target_tile || findEmptyTileNearCenter(existingObjects, unlockedTiles);
   let newWorldObject: WorldObject | undefined;
 
   if (emptyTile) {

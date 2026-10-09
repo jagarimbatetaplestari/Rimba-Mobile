@@ -4,14 +4,23 @@ const config: CapacitorConfig = {
   appId: 'com.rimba.focus',
   appName: 'Rimba',
   webDir: 'out',
+  backgroundColor: '#165643',
   server: {
     androidScheme: 'https',
     cleartext: true
   },
   ios: {
-    contentInset: 'always',
+    contentInset: 'never',
     preferredContentMode: 'mobile',
-    scheme: 'Rimba'
+    scheme: 'Rimba',
+    backgroundColor: '#165643'
+  },
+  plugins: {
+    StatusBar: {
+      overlaysWebView: true,
+      style: 'DARK',
+      backgroundColor: '#00000000'
+    }
   }
 };
 

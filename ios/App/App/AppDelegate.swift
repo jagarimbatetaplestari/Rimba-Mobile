@@ -8,6 +8,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        // Lock WKWebView scrollView to full-bleed viewport without native scrollbars or rubber-band bounce
+        UIScrollView.appearance().bounces = false
+        UIScrollView.appearance().showsVerticalScrollIndicator = false
+        UIScrollView.appearance().showsHorizontalScrollIndicator = false
+        UIScrollView.appearance().contentInsetAdjustmentBehavior = .never
+
         // Configure AVAudioSession for background music & ambient soundscape playback
         do {
             try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [.mixWithOthers])

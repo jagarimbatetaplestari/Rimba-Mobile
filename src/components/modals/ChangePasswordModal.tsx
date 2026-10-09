@@ -8,6 +8,7 @@ import {
   hapticWarning,
 } from "@/lib/mobile/nativeBridge";
 import { soundManager } from "@/lib/audio/sounds";
+import { useTranslation } from "@/lib/i18n/translations";
 import {
   X,
   Eye,
@@ -27,6 +28,7 @@ export function ChangePasswordModal({
   isOpen,
   onClose,
 }: ChangePasswordModalProps) {
+  const { t, language } = useTranslation();
   const { user, changePassword, upgradeGuestAccount } = useAuthStore();
   const isGuest = user?.isGuest ?? true;
 
@@ -46,16 +48,16 @@ export function ChangePasswordModal({
   if (!isOpen) return null;
 
   const getPasswordStrength = (pass: string) => {
-    if (!pass) return { score: 0, text: "Kosong", color: "bg-transparent" };
+    if (!pass) return { score: 0, text: language === "en" ? "Empty" : "Kosong", color: "bg-transparent" };
     let score = 0;
     if (pass.length >= 6) score += 1;
     if (pass.length >= 8) score += 1;
     if (/[A-Z]/.test(pass) || /[0-9]/.test(pass)) score += 1;
     if (/[^A-Za-z0-9]/.test(pass)) score += 1;
 
-    if (score <= 1) return { score: 1, text: "Lemah", color: "bg-rose-500" };
-    if (score === 2) return { score: 2, text: "Cukup", color: "bg-amber-500" };
-    return { score: 3, text: "Kuat", color: "bg-[#187557]" };
+    if (score <= 1) return { score: 1, text: language === "en" ? "Weak" : "Lemah", color: "bg-rose-500" };
+    if (score === 2) return { score: 2, text: language === "en" ? "Fair" : "Cukup", color: "bg-amber-500" };
+    return { score: 3, text: language === "en" ? "Strong" : "Kuat", color: "bg-[#187557]" };
   };
 
   const strength = getPasswordStrength(newPassword);
@@ -67,17 +69,29 @@ export function ChangePasswordModal({
 
     if (isGuest) {
       if (!guestEmail.includes("@")) {
-        setErrorMessage("Masukkan alamat email yang valid.");
+        setErrorMessage(
+          language === "en"
+            ? "Please enter a valid email address."
+            : "Masukkan alamat email yang valid.",
+        );
         hapticWarning();
         return;
       }
       if (newPassword.length < 6) {
-        setErrorMessage("Kata sandi baru minimal 6 karakter.");
+        setErrorMessage(
+          language === "en"
+            ? "New password must be at least 6 characters."
+            : "Kata sandi baru minimal 6 karakter.",
+        );
         hapticWarning();
         return;
       }
       if (newPassword !== confirmPassword) {
-        setErrorMessage("Konfirmasi kata sandi tidak cocok.");
+        setErrorMessage(
+          language === "en"
+            ? "Password confirmation does not match."
+            : "Konfirmasi kata sandi tidak cocok.",
+        );
         hapticWarning();
         return;
       }
@@ -90,7 +104,9 @@ export function ChangePasswordModal({
         soundManager.playComplete();
         hapticSuccess();
         setSuccessMessage(
-          "Akun berhasil didaftarkan! Silakan cek email untuk verifikasi.",
+          language === "en"
+            ? "Account registered! Please check email to verify."
+            : "Akun berhasil didaftarkan! Silakan cek email untuk verifikasi.",
         );
         setTimeout(() => {
           onClose();
@@ -98,16 +114,29 @@ export function ChangePasswordModal({
       } else {
         soundManager.playError();
         hapticWarning();
-        setErrorMessage(ok.error || "Gagal mendaftarkan akun.");
+        setErrorMessage(
+          ok.error ||
+            (language === "en"
+              ? "Failed to register account."
+              : "Gagal mendaftarkan akun."),
+        );
       }
     } else {
       if (newPassword.length < 6) {
-        setErrorMessage("Kata sandi baru minimal 6 karakter.");
+        setErrorMessage(
+          language === "en"
+            ? "New password must be at least 6 characters."
+            : "Kata sandi baru minimal 6 karakter.",
+        );
         hapticWarning();
         return;
       }
       if (newPassword !== confirmPassword) {
-        setErrorMessage("Konfirmasi kata sandi tidak cocok.");
+        setErrorMessage(
+          language === "en"
+            ? "Password confirmation does not match."
+            : "Konfirmasi kata sandi tidak cocok.",
+        );
         hapticWarning();
         return;
       }
@@ -119,7 +148,11 @@ export function ChangePasswordModal({
       if (res.success) {
         soundManager.playComplete();
         hapticSuccess();
-        setSuccessMessage("Kata sandi berhasil diperbarui!");
+        setSuccessMessage(
+          language === "en"
+            ? "Password updated successfully!"
+            : "Kata sandi berhasil diperbarui!",
+        );
         setOldPassword("");
         setNewPassword("");
         setConfirmPassword("");
@@ -128,7 +161,12 @@ export function ChangePasswordModal({
         }, 1200);
       } else {
         hapticWarning();
-        setErrorMessage(res.error || "Gagal mengubah kata sandi.");
+        setErrorMessage(
+          res.error ||
+            (language === "en"
+              ? "Failed to change password."
+              : "Gagal mengubah kata sandi."),
+        );
       }
     }
   };
@@ -149,7 +187,7 @@ export function ChangePasswordModal({
         onClick={(e) => {
           if (e.target === e.currentTarget) onClose();
         }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 select-none antialiased font-urbanist text-[#0D3528] animate-in fade-in duration-200 pointer-events-auto"
+        className="fixed inset-0 z-[115] flex items-center justify-center p-4 select-none antialiased font-urbanist text-[#0D3528] animate-in fade-in duration-200 pointer-events-auto"
       >
         {/* Soft Ambient Backdrop */}
         <div
@@ -163,10 +201,14 @@ export function ChangePasswordModal({
           <div className="flex items-center justify-between pb-0.5">
             <div className="flex items-baseline gap-2">
               <h2 className="text-[19px] font-semibold tracking-tight text-[#0D3528]">
-                {isGuest ? "Daftar Akun" : "Ubah Sandi"}
+                {isGuest
+                  ? (language === "en" ? "Register Account" : "Daftar Akun")
+                  : (language === "en" ? "Change Password" : "Ubah Sandi")}
               </h2>
               <span className="text-[12px] font-normal text-[#4C7567]">
-                {isGuest ? "Simpan Progres" : "Keamanan"}
+                {isGuest
+                  ? (language === "en" ? "Save Progress" : "Simpan Progres")
+                  : (language === "en" ? "Security" : "Keamanan")}
               </span>
             </div>
 
@@ -177,7 +219,7 @@ export function ChangePasswordModal({
                 onClose();
               }}
               className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0D3528]/5 hover:bg-[#0D3528]/10 text-[#0D3528] transition-all active:scale-90 cursor-pointer shadow-2xs"
-              aria-label="Tutup ubah kata sandi"
+              aria-label={language === "en" ? "Close password dialog" : "Tutup ubah kata sandi"}
             >
               <X className="h-4 w-4 stroke-[2]" />
             </button>
@@ -188,10 +230,19 @@ export function ChangePasswordModal({
             <div className="p-3.5 rounded-2xl border border-amber-200/80 bg-amber-50/80 shadow-xs flex items-start gap-2.5">
               <Sparkles className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
               <p className="text-[11.5px] text-amber-900 leading-relaxed font-normal">
-                Anda masuk sebagai{" "}
-                <strong className="font-semibold text-amber-950">Tamu</strong>.
-                Daftarkan email untuk menjaga pulau suaka dan streak fokus Anda
-                tetap aman permanen.
+                {language === "en" ? (
+                  <>
+                    You are logged in as a{" "}
+                    <strong className="font-semibold text-amber-950">Guest</strong>.
+                    Register your email to keep your sanctuary island and focus streaks permanently safe.
+                  </>
+                ) : (
+                  <>
+                    Anda masuk sebagai{" "}
+                    <strong className="font-semibold text-amber-950">Tamu</strong>.
+                    Daftarkan email untuk menjaga pulau suaka dan streak fokus Anda tetap aman permanen.
+                  </>
+                )}
               </p>
             </div>
           )}
@@ -220,13 +271,13 @@ export function ChangePasswordModal({
               <>
                 <div>
                   <label className="text-[11px] font-medium uppercase tracking-[0.1em] text-[#4C7567] block mb-1 px-1">
-                    Nama Ranger
+                    {language === "en" ? "Ranger Name" : "Nama Ranger"}
                   </label>
                   <input
                     type="text"
                     value={guestName}
                     onChange={(e) => setGuestName(e.target.value)}
-                    placeholder="Nama Ranger Anda"
+                    placeholder={language === "en" ? "Your Ranger Name" : "Nama Ranger Anda"}
                     className={inputStyle}
                     required
                   />
@@ -234,7 +285,7 @@ export function ChangePasswordModal({
 
                 <div>
                   <label className="text-[11px] font-medium uppercase tracking-[0.1em] text-[#4C7567] block mb-1 px-1">
-                    Alamat Email
+                    {language === "en" ? "Email Address" : "Alamat Email"}
                   </label>
                   <input
                     type="email"
@@ -251,14 +302,14 @@ export function ChangePasswordModal({
             {!isGuest && (
               <div>
                 <label className="text-[11px] font-medium uppercase tracking-[0.1em] text-[#4C7567] block mb-1 px-1">
-                  Kata Sandi Saat Ini
+                  {language === "en" ? "Current Password" : "Kata Sandi Saat Ini"}
                 </label>
                 <div className="relative">
                   <input
                     type={showOld ? "text" : "password"}
                     value={oldPassword}
                     onChange={(e) => setOldPassword(e.target.value)}
-                    placeholder="Masukkan kata sandi lama"
+                    placeholder={language === "en" ? "Enter current password" : "Masukkan kata sandi lama"}
                     className={`${inputStyle} pr-10`}
                     required
                   />
@@ -279,14 +330,14 @@ export function ChangePasswordModal({
 
             <div>
               <label className="text-[11px] font-medium uppercase tracking-[0.1em] text-[#4C7567] block mb-1 px-1">
-                Kata Sandi Baru
+                {language === "en" ? "New Password" : "Kata Sandi Baru"}
               </label>
               <div className="relative">
                 <input
                   type={showNew ? "text" : "password"}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Minimal 6 karakter"
+                  placeholder={language === "en" ? "Minimum 6 characters" : "Minimal 6 karakter"}
                   className={`${inputStyle} pr-10`}
                   required
                 />
@@ -325,14 +376,14 @@ export function ChangePasswordModal({
 
             <div>
               <label className="text-[11px] font-medium uppercase tracking-[0.1em] text-[#4C7567] block mb-1 px-1">
-                Konfirmasi Kata Sandi Baru
+                {language === "en" ? "Confirm New Password" : "Konfirmasi Kata Sandi Baru"}
               </label>
               <div className="relative">
                 <input
                   type={showConfirm ? "text" : "password"}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Ulangi kata sandi baru"
+                  placeholder={language === "en" ? "Re-enter new password" : "Ulangi kata sandi baru"}
                   className={`${inputStyle} pr-10`}
                   required
                 />
@@ -358,10 +409,10 @@ export function ChangePasswordModal({
               <Check className="w-4 h-4 stroke-[2]" />
               <span>
                 {isSubmitting
-                  ? "Memproses..."
+                  ? (language === "en" ? "Processing..." : "Memproses...")
                   : isGuest
-                    ? "Daftarkan Akun Rimba"
-                    : "Perbarui Kata Sandi"}
+                    ? (language === "en" ? "Register Rimba Account" : "Daftarkan Akun Rimba")
+                    : (language === "en" ? "Update Password" : "Perbarui Kata Sandi")}
               </span>
             </button>
           </form>

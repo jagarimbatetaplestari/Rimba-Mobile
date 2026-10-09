@@ -119,6 +119,9 @@ function WelcomeAuthPageContent() {
         if (result.success) {
           soundManager.playComplete();
           hapticSuccess();
+          if (typeof window !== "undefined") {
+            localStorage.setItem("rimba_onboarding_completed", "true");
+          }
           router.push("/");
         } else {
           soundManager.playError();
@@ -259,7 +262,13 @@ function WelcomeAuthPageContent() {
   };
 
   return (
-    <div className="relative min-h-screen w-full flex flex-col justify-between items-center px-6 bg-[#040D08] text-slate-100 overflow-hidden select-none antialiased pt-[max(env(safe-area-inset-top,2rem),2rem)] pb-[max(env(safe-area-inset-bottom,1.5rem),1.5rem)]">
+    <div
+      className="fixed inset-0 h-[100dvh] w-full flex flex-col justify-between items-center px-6 bg-[#040D08] text-slate-100 overflow-hidden select-none antialiased"
+      style={{
+        paddingTop: "max(calc(env(safe-area-inset-top, 0px) + 16px), 32px)",
+        paddingBottom: "max(calc(env(safe-area-inset-bottom, 0px) + 16px), 24px)",
+      }}
+    >
       {/* 1. Background Art & Smooth Scrim */}
       <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
         <Image

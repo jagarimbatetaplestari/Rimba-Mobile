@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useRef } from 'react';
+import React, { useMemo, useEffect, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useGLTF } from '@react-three/drei';
@@ -19,7 +19,7 @@ import {
 // Eagerly preload only the 3 starter models needed on initial island render
 const STARTER_MODEL_PATHS = [
   '/models/kenney_nature_kit_tree_oak.glb',
-  '/models/kenney_nature_kit_rock_largeA.glb',
+  '/models/fabz_rounded_rock.glb',
   '/models/kenney_nature_kit_path_stone.glb',
   '/models/stump_old.glb',
 ];
@@ -213,7 +213,7 @@ function ObjectItem({ object, isSelected, onSelect, riverAdjacency }: ObjectItem
       return '/models/kenney_nature_kit_tree_oak.glb';
     }
     if (object.object_type === 'rock') {
-      return '/models/kenney_nature_kit_rock_largeA.glb';
+      return '/models/fabz_rounded_rock.glb';
     }
     return '/models/kenney_nature_kit_path_stone.glb';
   }, [object.object_type, object.model_variant, object.status, manifestItem]);
@@ -256,10 +256,10 @@ function ObjectItem({ object, isSelected, onSelect, riverAdjacency }: ObjectItem
           const isCustomBaked = mat.name.startsWith('custom_');
 
           if (isWithered) {
-            // Withered/Lapuk: charred ashen wood texture
+            // Withered/Lapuk: natural weathered driftwood & deadwood cedar tone (warm earthy dry timber, not pitch-black)
             const witheredMat = new THREE.MeshStandardMaterial({
-              color: new THREE.Color('#3A3E40'),
-              roughness: 0.98,
+              color: new THREE.Color('#8E7E70'),
+              roughness: 0.94,
               metalness: 0.0,
               map: mat.map || null,
             });
@@ -373,11 +373,56 @@ function ObjectItem({ object, isSelected, onSelect, riverAdjacency }: ObjectItem
     : object.scale || manifestItem?.defaultScale || 1.15;
   const clampedScale = isRiver ? 1.0 : isTent ? 0.58 : Math.max(0.40, Math.min(1.45, baseScale));
 
+  // Organic bloom entrance animation for newly planted / harvested trees
+  const isNewlyCreated = useMemo(() => {
+    const age = Date.now() - new Date(object.created_at).getTime();
+    return age >= 0 && age < 3000;
+  }, [object.created_at]);
+
+  const isTree = object.object_type === 'tree';
+  const [bloomProgress, setBloomProgress] = useState(
+    isNewlyCreated ? (isTree ? 1.0 : 0.15) : 1.0
+  );
+
+  useEffect(() => {
+    if (!isNewlyCreated) return;
+    let animFrame: number;
+    const start = performance.now();
+    const duration = isTree ? 350 : 450;
+
+    const step = (t: number) => {
+      const elapsed = t - start;
+      const p = Math.min(1, elapsed / duration);
+      if (isTree) {
+        // Gentle celebratory settle for trees that were already fully grown in focus mode
+        const settle = 1.0 + Math.sin(p * Math.PI) * 0.08;
+        setBloomProgress(settle);
+      } else {
+        // Soft organic easeOutBack curve for newly purchased shop items
+        const c1 = 1.4;
+        const c3 = c1 + 1;
+        const eased = 1 + c3 * Math.pow(p - 1, 3) + c1 * Math.pow(p - 1, 2);
+        setBloomProgress(Math.max(0.15, Math.min(1.08, eased)));
+      }
+
+      if (p < 1) {
+        animFrame = requestAnimationFrame(step);
+      } else {
+        setBloomProgress(1.0);
+      }
+    };
+
+    animFrame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(animFrame);
+  }, [isNewlyCreated, isTree]);
+
+  const currentScale = clampedScale * bloomProgress;
+
   return (
     <group
       position={[x, y, z]}
       rotation={isRiver ? [0, 0, 0] : [0, object.rotation, 0]}
-      scale={[clampedScale, clampedScale, clampedScale]}
+      scale={[currentScale, currentScale, currentScale]}
       onClick={(e) => {
         e.stopPropagation();
         onSelect(object);

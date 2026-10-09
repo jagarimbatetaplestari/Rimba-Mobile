@@ -449,3 +449,100 @@ export interface RiverPebbleData {
 export function getRiverPebbles(_mask: number): RiverPebbleData[] {
   return [];
 }
+
+/**
+ * Decomposes all water conduit tiles into connected river networks and generates
+ * continuous, strictly-adjacent patrol waypoints (distance between step i and i+1 is strictly 1 tile).
+ * This completely prevents fish from jumping across dry land or between disconnected river bodies.
+ */
+export function getConnectedRiverPatrolPaths(
+  riverTileMap: Map<string, RiverAdjacency>
+): [number, number, number][][] {
+  if (riverTileMap.size === 0) return [];
+
+  const allKeys = Array.from(riverTileMap.keys());
+  const visitedGlobal = new Set<string>();
+  const clusters: string[][] = [];
+
+  for (const startKey of allKeys) {
+    if (visitedGlobal.has(startKey)) continue;
+
+    const cluster: string[] = [];
+    const queue = [startKey];
+    visitedGlobal.add(startKey);
+
+    while (queue.length > 0) {
+      const curr = queue.shift()!;
+      cluster.push(curr);
+      const [gx, gy] = curr.split(',').map(Number);
+      const neighbors = [
+        `${gx},${gy - 1}`,
+        `${gx},${gy + 1}`,
+        `${gx - 1},${gy}`,
+        `${gx + 1},${gy}`,
+      ];
+
+      for (const nKey of neighbors) {
+        if (riverTileMap.has(nKey) && !visitedGlobal.has(nKey)) {
+          visitedGlobal.add(nKey);
+          queue.push(nKey);
+        }
+      }
+    }
+
+    clusters.push(cluster);
+  }
+
+  // For each cluster, build a continuous patrol path
+  const patrolPaths: [number, number, number][][] = [];
+
+  for (const cluster of clusters) {
+    if (cluster.length === 1) {
+      const [gx, gy] = cluster[0].split(',').map(Number);
+      patrolPaths.push([[gx, 0, gy]]);
+      continue;
+    }
+
+    const clusterSet = new Set(cluster);
+    const visitedDfs = new Set<string>();
+    const patrolKeys: string[] = [];
+
+    const getNeighbors = (key: string): string[] => {
+      const [gx, gy] = key.split(',').map(Number);
+      return [
+        `${gx + 1},${gy}`,
+        `${gx},${gy + 1}`,
+        `${gx - 1},${gy}`,
+        `${gx},${gy - 1}`,
+      ].filter((n) => clusterSet.has(n));
+    };
+
+    const dfs = (node: string) => {
+      visitedDfs.add(node);
+      patrolKeys.push(node);
+      const nbrs = getNeighbors(node);
+      for (const nxt of nbrs) {
+        if (!visitedDfs.has(nxt)) {
+          dfs(nxt);
+          patrolKeys.push(node); // Backtrack step ensures step from nxt to node is adjacent!
+        }
+      }
+    };
+
+    dfs(cluster[0]);
+
+    // If DFS returned back to the start node, pop the redundant duplicate so wrapping from end to start is strictly adjacent
+    if (patrolKeys.length > 2 && patrolKeys[patrolKeys.length - 1] === patrolKeys[0]) {
+      patrolKeys.pop();
+    }
+
+    const coords: [number, number, number][] = patrolKeys.map((k) => {
+      const [gx, gy] = k.split(',').map(Number);
+      return [gx, 0, gy];
+    });
+
+    patrolPaths.push(coords);
+  }
+
+  return patrolPaths;
+}

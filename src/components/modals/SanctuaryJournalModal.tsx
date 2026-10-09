@@ -20,6 +20,7 @@ import {
   hapticSuccess,
 } from "@/lib/mobile/nativeBridge";
 import { DailyQuestId } from "@/types/game";
+import { useTranslation } from "@/lib/i18n/translations";
 import {
   X,
   Flame,
@@ -66,6 +67,7 @@ export function SanctuaryJournalModal({
   onClose,
   initialTab = "quests",
 }: SanctuaryJournalModalProps) {
+  const { t, language, translateTag, translateSpecies } = useTranslation();
   const saveData = useGameStore((state) => state.saveData);
   const claimQuest = useGameStore((state) => state.claimQuest);
   const claimAllClearBonus = useGameStore((state) => state.claimAllClearBonus);
@@ -76,11 +78,11 @@ export function SanctuaryJournalModal({
 
   // Normalize initial tab aliases
   const normalizeTab = (
-    t: JournalTab,
+    tab: JournalTab,
   ): "quests" | "reflections" | "story" | "wisdom" => {
-    if (t === "streak") return "quests";
-    if (t === "almanac") return "reflections";
-    return t as "quests" | "reflections" | "story" | "wisdom";
+    if (tab === "streak") return "quests";
+    if (tab === "almanac") return "reflections";
+    return tab as "quests" | "reflections" | "story" | "wisdom";
   };
 
   const [activeTab, setActiveTab] = useState<
@@ -155,7 +157,7 @@ export function SanctuaryJournalModal({
       d.setDate(d.getDate() - i);
       const dateStr = toLocalDateString(d);
       const dayNum = d.getDate();
-      const dayName = d.toLocaleDateString("id-ID", { weekday: "narrow" });
+      const dayName = d.toLocaleDateString(language === "en" ? "en-US" : "id-ID", { weekday: "narrow" });
       const stat = analytics.activityMap[dateStr];
       const minutes = stat ? stat.totalMinutes : 0;
       const isShielded = protectedDates.includes(dateStr);
@@ -163,7 +165,7 @@ export function SanctuaryJournalModal({
       days.push({ dateStr, dayNum, dayName, minutes, isShielded, isActive });
     }
     return days;
-  }, [analytics.activityMap, protectedDates]);
+  }, [analytics.activityMap, protectedDates, language]);
 
   // Completed sessions sorted descending
   const completedSessions = useMemo(() => {
@@ -176,7 +178,7 @@ export function SanctuaryJournalModal({
       );
   }, [saveData.focus_sessions]);
 
-  // Grouped sessions into: Hari Ini, Kemarin, Pekan Ini & Riwayat
+  // Grouped sessions into: Today, Yesterday, Earlier
   const groupedSessions = useMemo(() => {
     const todayStr = toLocalDateString(new Date());
     const yesterday = new Date();
@@ -199,11 +201,11 @@ export function SanctuaryJournalModal({
     });
 
     return [
-      { label: "Hari Ini", items: todayList },
-      { label: "Kemarin", items: yesterdayList },
-      { label: "Pekan Ini & Riwayat Suaka", items: olderList },
+      { label: t.journal.today, items: todayList },
+      { label: t.journal.yesterday, items: yesterdayList },
+      { label: t.journal.olderHistory, items: olderList },
     ].filter((g) => g.items.length > 0);
-  }, [completedSessions]);
+  }, [completedSessions, t.journal]);
 
   const handleClaimQuest = (questId: DailyQuestId) => {
     hapticMedium();
@@ -357,10 +359,10 @@ export function SanctuaryJournalModal({
           <div className="flex items-center justify-between py-1">
             <div className="flex items-center gap-2.5">
               <h2 className="text-[23px] font-semibold tracking-normal text-white drop-shadow-xs">
-                Jurnal Suaka
+                {t.journal.title}
               </h2>
               <span className="rounded-full bg-white/20 border border-white/25 px-3 py-0.5 text-[11.5px] font-medium text-emerald-50 backdrop-blur-md">
-                Ritual & Refleksi
+                {t.journal.subtitle}
               </span>
             </div>
 
@@ -371,7 +373,7 @@ export function SanctuaryJournalModal({
                 onClose();
               }}
               className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 border border-white/30 text-white shadow-sm backdrop-blur-md active:scale-90 transition-transform hover:bg-white/30 cursor-pointer"
-              aria-label="Tutup"
+              aria-label={t.common.close}
             >
               <X className="h-4 w-4 stroke-[2]" />
             </button>
@@ -392,7 +394,7 @@ export function SanctuaryJournalModal({
                   : "text-emerald-50/80 hover:text-white font-medium"
               }`}
             >
-              Misi
+              {t.journal.tabQuests}
               {questSummary.claimableCount > 0 && (
                 <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#187557] ring-2 ring-white" />
               )}
@@ -411,7 +413,7 @@ export function SanctuaryJournalModal({
                   : "text-emerald-50/80 hover:text-white font-medium"
               }`}
             >
-              Refleksi
+              {t.journal.tabNotes}
             </button>
 
             <button
@@ -427,7 +429,7 @@ export function SanctuaryJournalModal({
                   : "text-emerald-50/80 hover:text-white font-medium"
               }`}
             >
-              Babad
+              {t.journal.tabStory}
               {claimableStoryCount > 0 && (
                 <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#187557] ring-2 ring-white" />
               )}
@@ -446,7 +448,7 @@ export function SanctuaryJournalModal({
                   : "text-emerald-50/80 hover:text-white font-medium"
               }`}
             >
-              Altar
+              {t.journal.tabQuotes}
               {claimableWisdomCount > 0 && (
                 <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-amber-400 ring-2 ring-white animate-pulse" />
               )}
@@ -454,11 +456,11 @@ export function SanctuaryJournalModal({
           </div>
 
           {/* ======================================================== */}
-          {/* PILAR 1: MISI & RITUAL                                   */}
+          {/* PILAR 1: MISI HARIAN & STREAK                            */}
           {/* ======================================================== */}
           {activeTab === "quests" && (
             <div className="space-y-4 animate-in fade-in duration-200">
-              {/* Streak & Embun Pelindung Banner */}
+              {/* Streak & Pelindung Streak Banner */}
               <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3.5">
@@ -471,11 +473,11 @@ export function SanctuaryJournalModal({
                           {analytics.currentStreak}
                         </span>
                         <span className="text-[12px] font-medium text-[#4C7567]">
-                          Hari Beruntun
+                          {t.journal.streakDays}
                         </span>
                       </div>
                       <p className="text-[12px] text-[#4C7567] mt-0.5 font-normal">
-                        Gelar:{" "}
+                        {t.journal.rankLabel}{" "}
                         <span className="font-semibold text-[#0D3528]">
                           {milestone.title}
                         </span>
@@ -483,12 +485,12 @@ export function SanctuaryJournalModal({
                     </div>
                   </div>
 
-                  {/* Embun Pelindung (Streak Shield) Pill */}
+                  {/* Pelindung Streak (Streak Freeze) Pill */}
                   <div className="flex flex-col items-end gap-1">
                     <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-50 border border-cyan-200/70 text-cyan-800">
                       <ShieldCheck className="w-3.5 h-3.5 stroke-[1.8]" />
                       <span className="text-[11px] font-medium">
-                        {currentShields}/2 Perisai
+                        {t.journal.shieldsCount.replace("{count}", String(currentShields))}
                       </span>
                     </div>
                     {currentShields < 2 ? (
@@ -497,31 +499,31 @@ export function SanctuaryJournalModal({
                         onClick={handleBuyShield}
                         className="text-[11px] font-medium text-[#187557] hover:underline cursor-pointer"
                       >
-                        + Beli (15 Soul)
+                        {t.journal.buyShieldBtn}
                       </button>
                     ) : (
                       <span className="text-[10px] text-[#4C7567]/70 font-normal">
-                        Perisai Maksimal
+                        {t.journal.maxShield}
                       </span>
                     )}
                   </div>
                 </div>
 
-                {/* Embun Info Note */}
+                {/* Streak Freeze Info Note */}
                 <div className="p-3 rounded-2xl bg-[#0D3528]/[0.025] border border-[#0D3528]/8 text-[11.5px] text-[#4C7567] flex items-center justify-between">
                   <span>
                     🛡️{" "}
                     <strong className="font-semibold text-[#0D3528]">
-                      Embun Pelindung:
+                      {t.journal.shieldNoteTitle}
                     </strong>{" "}
-                    Memaafkan 1 hari absen agar streak tidak terputus.
+                    {t.journal.shieldNoteDesc}
                   </span>
                 </div>
 
                 {/* Mini Calendar (28 Days) */}
                 <div className="space-y-2 pt-1 border-t border-[#0D3528]/8">
                   <p className="text-[11.5px] font-medium uppercase tracking-[0.12em] text-[#4C7567]">
-                    Kalender Ritual (28 Hari Terakhir)
+                    {t.journal.calendarTitle}
                   </p>
                   <div className="grid grid-cols-7 gap-1.5">
                     {calendarDays.map((day) => (
@@ -532,7 +534,7 @@ export function SanctuaryJournalModal({
                             ? "bg-[#187557] text-white shadow-xs"
                             : "bg-[#0D3528]/5 text-[#0D3528]/45 border border-black/5"
                         }`}
-                        title={`${day.dateStr}: ${day.minutes}m fokus${day.isShielded ? " (Diselamatkan Perisai)" : ""}`}
+                        title={`${day.dateStr}: ${day.minutes}m`}
                       >
                         <span className="text-[10.5px] font-semibold leading-none">
                           {day.dayNum}
@@ -554,11 +556,13 @@ export function SanctuaryJournalModal({
               <div className="space-y-2.5">
                 <div className="flex items-baseline justify-between px-1">
                   <p className="text-[12px] font-medium uppercase tracking-[0.12em] text-white/90 drop-shadow-xs">
-                    Misi Harian Bergilir
+                    {t.journal.dailyQuestsTitle}
                   </p>
                   <span className="text-[11.5px] text-emerald-100 font-normal">
-                    {questSummary.quests.filter((q) => q.isClaimed).length}/3
-                    Selesai
+                    {t.journal.completedCount.replace(
+                      "{done}",
+                      String(questSummary.quests.filter((q) => q.isClaimed).length)
+                    )}
                   </span>
                 </div>
 
@@ -591,7 +595,7 @@ export function SanctuaryJournalModal({
                         {/* Claim Button / Status */}
                         {q.isClaimed ? (
                           <span className="px-3 py-1 rounded-full bg-[#E4F4ED] text-[#14664D] border border-[#BCE5D3] text-[11px] font-medium shrink-0 flex items-center gap-1">
-                            <Check className="w-3.5 h-3.5 stroke-[2]" /> Selesai
+                            <Check className="w-3.5 h-3.5 stroke-[2]" /> {t.journal.claimed}
                           </span>
                         ) : q.isCompleted ? (
                           <button
@@ -599,7 +603,7 @@ export function SanctuaryJournalModal({
                             onClick={() => handleClaimQuest(q.id)}
                             className="px-3.5 py-1.5 rounded-full bg-[#187557] hover:bg-[#126046] text-white text-[11px] font-medium shadow-xs active:scale-95 transition-all shrink-0 cursor-pointer animate-pulse"
                           >
-                            Klaim (+{q.rewardGold} Soul)
+                            {t.journal.claimBtn.replace("{soul}", String(q.rewardGold))}
                           </button>
                         ) : (
                           <span className="text-[11.5px] font-medium text-[#4C7567] shrink-0 tabular-nums">
@@ -619,7 +623,7 @@ export function SanctuaryJournalModal({
                   );
                 })}
 
-                {/* Peti Sapu Bersih Harian (All-Clear Chest) */}
+                {/* Bonus Semua Misi (All-Clear Chest) */}
                 <div className="p-4 rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#2BB688] to-[#187557] text-white flex items-center justify-center shadow-xs">
@@ -627,17 +631,17 @@ export function SanctuaryJournalModal({
                     </div>
                     <div>
                       <p className="text-[13.5px] font-semibold text-[#0D3528]">
-                        Peti Sapu Bersih Harian
+                        {t.journal.bonusChestTitle}
                       </p>
                       <p className="text-[11.5px] text-[#4C7567] font-normal">
-                        Bonus +30 Soul & +60 XP jika ketiga misi tuntas.
+                        {t.journal.bonusChestDesc}
                       </p>
                     </div>
                   </div>
 
                   {questSummary.allClearClaimed ? (
                     <span className="px-3 py-1 rounded-full bg-[#E4F4ED] text-[#14664D] border border-[#BCE5D3] text-[11px] font-medium flex items-center gap-1">
-                      <Check className="w-3.5 h-3.5 stroke-[2]" /> Terklaim
+                      <Check className="w-3.5 h-3.5 stroke-[2]" /> {t.journal.claimed}
                     </span>
                   ) : questSummary.allQuestsClaimed ? (
                     <button
@@ -645,11 +649,11 @@ export function SanctuaryJournalModal({
                       onClick={handleClaimAllClear}
                       className="px-4 py-1.5 rounded-full bg-[#187557] hover:bg-[#126046] text-white text-[11.5px] font-medium shadow-xs active:scale-95 transition-all cursor-pointer animate-bounce"
                     >
-                      Buka Peti ✨
+                      {t.journal.openChestBtn}
                     </button>
                   ) : (
                     <span className="text-[11px] font-medium text-[#4C7567]/70">
-                      Klaim 3/3 Misi
+                      {t.journal.claimAll3}
                     </span>
                   )}
                 </div>
@@ -658,7 +662,7 @@ export function SanctuaryJournalModal({
           )}
 
           {/* ======================================================== */}
-          {/* PILAR 2: BUKU HARIAN REFLEKSI                            */}
+          {/* PILAR 2: CATATAN FOKUS                                   */}
           {/* ======================================================== */}
           {activeTab === "reflections" && (
             <div className="space-y-4 animate-in fade-in duration-200">
@@ -666,7 +670,7 @@ export function SanctuaryJournalModal({
               <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-4 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl grid grid-cols-3 py-2 divide-x divide-[#0D3528]/10 text-center">
                 <div className="px-1">
                   <span className="text-[11px] text-[#4C7567] block font-normal">
-                    Total Sesi
+                    {t.journal.totalSessions}
                   </span>
                   <span className="text-[20px] font-semibold text-[#0D3528] mt-0.5 block tracking-normal tabular-nums">
                     {analytics.totalCompletedSessions}
@@ -674,7 +678,7 @@ export function SanctuaryJournalModal({
                 </div>
                 <div className="px-1">
                   <span className="text-[11px] text-[#4C7567] block font-normal">
-                    Waktu Fokus
+                    {t.journal.focusTime}
                   </span>
                   <span className="text-[20px] font-semibold text-[#0D3528] mt-0.5 block tracking-normal tabular-nums">
                     {analytics.totalFocusMinutes}m
@@ -682,7 +686,7 @@ export function SanctuaryJournalModal({
                 </div>
                 <div className="px-1">
                   <span className="text-[11px] text-[#4C7567] block font-normal">
-                    Refleksi
+                    {t.journal.notesCount}
                   </span>
                   <span className="text-[20px] font-semibold text-[#187557] mt-0.5 block tracking-normal tabular-nums">
                     {
@@ -699,11 +703,10 @@ export function SanctuaryJournalModal({
                 <div className="p-7 rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 text-center space-y-2 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl">
                   <BookMarked className="w-8 h-8 text-[#187557]/40 mx-auto stroke-[1.8]" />
                   <p className="text-[14px] font-semibold text-[#0D3528]">
-                    Lembaran Refleksi Masih Bersih
+                    {t.journal.emptyNotesTitle}
                   </p>
                   <p className="text-[11.5px] text-[#4C7567] max-w-xs mx-auto font-normal leading-relaxed">
-                    Selesaikan sesi fokus pertamamu untuk menumbuhkan pohon
-                    suaka dan menuliskan refleksi di sini.
+                    {t.journal.emptyNotesDesc}
                   </p>
                 </div>
               ) : (
@@ -717,7 +720,7 @@ export function SanctuaryJournalModal({
                       {group.items.map((session) => {
                         const completedDate = new Date(session.completed_at!);
                         const timeStr = completedDate.toLocaleTimeString(
-                          "id-ID",
+                          language === "en" ? "en-US" : "id-ID",
                           {
                             hour: "2-digit",
                             minute: "2-digit",
@@ -727,6 +730,10 @@ export function SanctuaryJournalModal({
                           TREE_SPECIES_CONFIG.find(
                             (s) => s.id === session.species,
                           ) || TREE_SPECIES_CONFIG[0];
+                        const localizedSpeciesName = translateSpecies(
+                          species.id,
+                          species.name,
+                        );
                         const duration = session.duration_minutes || 25;
                         const isAbandoned = session.status === "abandoned";
                         const hasNote = Boolean(
@@ -747,16 +754,23 @@ export function SanctuaryJournalModal({
                               <div className="flex items-center gap-2.5">
                                 <span
                                   className="text-xl leading-none"
-                                  title={isAbandoned ? "Tunggul Layu" : species.name}
+                                  title={
+                                    isAbandoned
+                                      ? t.journal.witheredBadge
+                                      : localizedSpeciesName
+                                  }
                                 >
                                   {isAbandoned ? "🪵" : species.icon}
                                 </span>
                                 <div>
                                   <span className={`text-[13px] font-semibold block leading-tight ${isAbandoned ? "text-stone-700" : "text-[#0D3528]"}`}>
-                                    {isAbandoned ? `Tunggul Lapuk (${species.name})` : species.name}
+                                    {isAbandoned
+                                      ? t.journal.witheredTreeName.replace("{name}", localizedSpeciesName)
+                                      : localizedSpeciesName}
                                   </span>
                                   <span className="text-[11px] text-[#4C7567] block font-normal tabular-nums mt-0.5">
-                                    {timeStr} · {duration} Menit {isAbandoned ? "Terputus" : "Fokus"}
+                                    {timeStr} · {duration} {t.common.Minutes}{" "}
+                                    {isAbandoned ? t.journal.interrupted : t.journal.focused}
                                   </span>
                                 </div>
                               </div>
@@ -765,7 +779,7 @@ export function SanctuaryJournalModal({
                               <div className="flex items-center gap-1.5">
                                 {isAbandoned && (
                                   <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 border border-rose-200 text-[10px] font-semibold">
-                                    Layu
+                                    {t.journal.witheredBadge}
                                   </span>
                                 )}
                                 <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#E4F4ED] text-[#14664D] border border-[#BCE5D3]">
@@ -774,7 +788,7 @@ export function SanctuaryJournalModal({
                                     className="w-3 h-3 text-[#187557]"
                                   />
                                   <span className="text-[11px] font-medium">
-                                    {session.tag || "Fokus"}
+                                    {translateTag(session.tag || "Fokus")}
                                   </span>
                                 </div>
                               </div>
@@ -794,7 +808,7 @@ export function SanctuaryJournalModal({
                                     setEditNoteText(session.task_note || "");
                                   }}
                                   className="p-1 rounded-lg text-[#4C7567] hover:text-[#0D3528] shrink-0 cursor-pointer transition-colors"
-                                  title="Ubah refleksi"
+                                  title={t.journal.editNoteTitle}
                                 >
                                   <Edit3 className="w-3.5 h-3.5 stroke-[1.8]" />
                                 </button>
@@ -810,7 +824,7 @@ export function SanctuaryJournalModal({
                                 className="w-full text-left p-2.5 rounded-2xl border border-dashed border-[#187557]/30 hover:border-[#187557]/60 text-[11.5px] text-[#187557] font-medium flex items-center gap-1.5 cursor-pointer bg-[#E4F4ED]/30 transition-colors"
                               >
                                 <Plus className="w-3.5 h-3.5 stroke-[2]" />{" "}
-                                Tambah catatan refleksi sesi ini...
+                                {t.journal.addNoteBtn}
                               </button>
                             )}
                           </div>
@@ -821,7 +835,7 @@ export function SanctuaryJournalModal({
                 ))
               )}
 
-              {/* Edit Reflection Modal Popover */}
+              {/* Edit Note Modal Popover */}
               {editingSessionId && (
                 <div
                   className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150"
@@ -833,7 +847,7 @@ export function SanctuaryJournalModal({
                   >
                     <div className="flex items-center justify-between pb-0.5">
                       <span className="text-[15px] font-semibold text-[#0D3528]">
-                        Tulis Refleksi Sesi
+                        {t.journal.editNoteTitle}
                       </span>
                       <button
                         type="button"
@@ -845,8 +859,7 @@ export function SanctuaryJournalModal({
                     </div>
 
                     <p className="text-[11.5px] text-[#4C7567] font-normal">
-                      Apa yang kamu pelajari, syukuri, atau rasakan selama sesi
-                      hening ini?
+                      {t.journal.editNoteDesc}
                     </p>
 
                     <textarea
@@ -854,7 +867,7 @@ export function SanctuaryJournalModal({
                       onChange={(e) =>
                         setEditNoteText(e.target.value.slice(0, 140))
                       }
-                      placeholder="Tuliskan catatan mindfulness..."
+                      placeholder={t.journal.editNotePlaceholder}
                       rows={3}
                       className="w-full p-3 rounded-2xl border border-[#0D3528]/15 text-[12.5px] text-[#0D3528] placeholder-[#4C7567]/50 outline-none resize-none focus:border-[#187557] focus:ring-1 focus:ring-[#187557]"
                       autoFocus
@@ -862,7 +875,7 @@ export function SanctuaryJournalModal({
 
                     <div className="flex items-center justify-between pt-1">
                       <span className="text-[11px] text-[#4C7567]/70 font-normal tabular-nums">
-                        {editNoteText.length}/140 Karakter
+                        {editNoteText.length}/140
                       </span>
                       <div className="flex items-center gap-2">
                         <button
@@ -870,14 +883,14 @@ export function SanctuaryJournalModal({
                           onClick={() => setEditingSessionId(null)}
                           className="px-3.5 py-1.5 rounded-full text-[12px] font-medium text-[#4C7567] hover:bg-black/5 cursor-pointer"
                         >
-                          Batal
+                          {t.common.cancel}
                         </button>
                         <button
                           type="button"
                           onClick={handleSaveNote}
                           className="px-4 py-1.5 rounded-full bg-[#187557] text-white text-[12px] font-medium shadow-xs hover:bg-[#126046] cursor-pointer"
                         >
-                          Simpan Refleksi
+                          {t.journal.saveNoteBtn}
                         </button>
                       </div>
                     </div>
@@ -888,19 +901,17 @@ export function SanctuaryJournalModal({
           )}
 
           {/* ======================================================== */}
-          {/* ======================================================== */}
-          {/* PILAR 3: BABAD RIMBA                                     */}
+          {/* PILAR 3: CERITA PULAU                                    */}
           {/* ======================================================== */}
           {activeTab === "story" && (
             <div className="space-y-3.5 pb-6 animate-in fade-in duration-200">
               {/* Header Seksi (Rata dengan Kartu) */}
               <div className="px-1 pb-0.5">
                 <p className="text-[12px] font-medium uppercase tracking-[0.12em] text-white/90 drop-shadow-xs">
-                  Hikayat Pembukaan Suaka (6 Bab)
+                  {t.journal.storyHeader}
                 </p>
                 <p className="text-[11.5px] text-emerald-100 font-normal mt-0.5">
-                  Kisah mindfulness yang terbuka bertahap seiring pertumbuhan
-                  pulau suakamu.
+                  {t.journal.storySub}
                 </p>
               </div>
 
@@ -944,7 +955,7 @@ export function SanctuaryJournalModal({
                           <div className="min-w-0">
                             <div className="flex items-center gap-1.5 min-w-0">
                               <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md bg-[#E4F4ED] text-[#14664D] border border-[#BCE5D3] shrink-0 whitespace-nowrap">
-                                Bab {chapter.chapterNumber}
+                                {t.journal.chapterPrefix} {chapter.chapterNumber}
                               </span>
                               <h4 className="text-[14px] font-semibold text-[#0D3528] tracking-tight truncate">
                                 {chapter.title}
@@ -961,7 +972,7 @@ export function SanctuaryJournalModal({
                           {isClaimed ? (
                             <span className="px-2.5 py-1 rounded-full bg-[#E4F4ED] text-[#14664D] border border-[#BCE5D3] text-[10.5px] font-medium flex items-center gap-1 whitespace-nowrap">
                               <Check className="w-3.5 h-3.5 stroke-[2]" />{" "}
-                              Selesai
+                              {t.journal.claimed}
                             </span>
                           ) : isUnlocked ? (
                             <button
@@ -969,7 +980,7 @@ export function SanctuaryJournalModal({
                               onClick={() => handleClaimChapter(chapter.id)}
                               className="px-3 py-1.5 rounded-full bg-[#187557] hover:bg-[#126046] text-white text-[11px] font-medium shadow-xs active:scale-95 transition-all shrink-0 cursor-pointer animate-pulse whitespace-nowrap"
                             >
-                              Klaim (+{chapter.reward.gold} Soul)
+                              {t.journal.claimBtn.replace("{soul}", String(chapter.reward.gold))}
                             </button>
                           ) : (
                             <span className="text-[10px] font-medium text-[#4C7567] shrink-0 px-2 py-0.5 rounded-md bg-[#0D3528]/5 tabular-nums whitespace-nowrap">
@@ -996,7 +1007,7 @@ export function SanctuaryJournalModal({
                           <span className="truncate">
                             🔒{" "}
                             <strong className="font-semibold text-[#0D3528]">
-                              Syarat:
+                              {t.journal.requirement}
                             </strong>{" "}
                             {chapter.unlockDescription}
                           </span>
@@ -1013,11 +1024,11 @@ export function SanctuaryJournalModal({
           )}
 
           {/* ======================================================== */}
-          {/* PILAR 4: ALTAR KEBIJAKSANAAN & POHON RESONANSI           */}
+          {/* PILAR 4: KOLEKSI KUTIPAN & POHON KEBIJAKSANAAN           */}
           {/* ======================================================== */}
           {activeTab === "wisdom" && (
             <div className="space-y-4 animate-in fade-in duration-200">
-              {/* Header Hero: Pohon Resonansi Suaka */}
+              {/* Header Hero: Pohon Kebijaksanaan */}
               <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3.5">
@@ -1029,24 +1040,24 @@ export function SanctuaryJournalModal({
                         <span className="text-[20px] font-bold text-[#0D3528] tracking-tight">
                           {wisdomProgress.currentStage
                             ? wisdomProgress.currentStage.treeStageName
-                            : "Benih Hening"}
+                            : language === "en" ? "Mindful Seed" : "Benih Fokus"}
                         </span>
                         <span className="text-[12px] font-medium text-[#4C7567]">
-                          · Tahap {wisdomProgress.unlockedCount} / {wisdomProgress.totalCount}
+                          · {wisdomProgress.unlockedCount} / {wisdomProgress.totalCount}
                         </span>
                       </div>
                       <p className="text-[11.5px] text-[#4C7567] font-medium mt-0.5">
-                        Pohon Resonansi & Altar Kebijaksanaan
+                        {t.journal.quotesStageSub}
                       </p>
                     </div>
                   </div>
 
                   <div className="text-right">
                     <span className="text-[10px] font-semibold uppercase tracking-wider text-[#187557] px-2 py-0.5 rounded-md bg-[#E4F4ED] border border-[#BCE5D3]">
-                      {wisdomProgress.totalHours} Jam
+                      {wisdomProgress.totalHours} {t.common.hours}
                     </span>
                     <p className="text-[10.5px] text-[#4C7567] font-normal mt-0.5">
-                      Fokus Kumulatif
+                      {t.journal.cumulativeFocus}
                     </p>
                   </div>
                 </div>
@@ -1056,13 +1067,13 @@ export function SanctuaryJournalModal({
                   <div className="flex justify-between items-center text-[11px]">
                     <span className="text-[#4C7567] font-medium">
                       {wisdomProgress.nextStage
-                        ? `Menuju ${wisdomProgress.nextStage.treeStageName}`
-                        : "Evolusi Puncak Tercapai"}
+                        ? `${language === "en" ? "Next:" : "Menuju"} ${wisdomProgress.nextStage.treeStageName}`
+                        : language === "en" ? "Fully Grown" : "Tumbuh Maksimal"}
                     </span>
                     <span className="text-[#187557] font-semibold tabular-nums">
                       {wisdomProgress.nextStage
-                        ? `${wisdomProgress.nextStage.hoursRemaining} jam lagi`
-                        : "Sempurna"}
+                        ? `${wisdomProgress.nextStage.hoursRemaining} ${t.common.hours.toLowerCase()}`
+                        : t.common.done}
                     </span>
                   </div>
                   <div className="h-2 w-full rounded-full bg-[#0D3528]/10 overflow-hidden">
@@ -1081,20 +1092,18 @@ export function SanctuaryJournalModal({
                     />
                   </div>
                 </div>
-
-                <div className="p-3 rounded-2xl bg-[#E4F4ED]/60 border border-[#BCE5D3]/70 text-[11px] text-[#14664D] leading-relaxed">
-                  Setiap jam hening mengalirkan getaran jiwa ke akar Pohon Resonansi, membuka aforisme adiluhung Nusantara, Stoik, dan Zen untuk memandu perjalanan batinmu.
-                </div>
               </div>
 
               {/* Fragment Cards */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between px-1">
                   <h3 className="text-[14px] font-semibold text-white drop-shadow-xs">
-                    Pecahan Hikmah & Aforisme ({wisdomProgress.unlockedCount}/{wisdomProgress.totalCount})
+                    {t.journal.quotesHeader
+                      .replace("{unlocked}", String(wisdomProgress.unlockedCount))
+                      .replace("{total}", String(wisdomProgress.totalCount))}
                   </h3>
                   <span className="text-[11px] font-medium text-emerald-100">
-                    Berdasarkan Jam Fokus
+                    {t.journal.basedOnHours}
                   </span>
                 </div>
 
@@ -1137,7 +1146,7 @@ export function SanctuaryJournalModal({
                           <div className="min-w-0">
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md bg-[#0D3528]/5 text-[#14664D] shrink-0">
-                                Tahap {frag.stage}
+                                #{frag.stage}
                               </span>
                               <span
                                 className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md border shrink-0 ${traditionStyle}`}
@@ -1158,7 +1167,7 @@ export function SanctuaryJournalModal({
                         <div className="shrink-0 pt-0.5">
                           {frag.isClaimed ? (
                             <span className="px-2.5 py-1 rounded-full bg-[#E4F4ED] text-[#14664D] border border-[#BCE5D3] text-[10.5px] font-medium flex items-center gap-1 whitespace-nowrap">
-                              <Check className="w-3.5 h-3.5 stroke-[2]" /> Diresapi
+                              <Check className="w-3.5 h-3.5 stroke-[2]" /> {t.journal.absorbed}
                             </span>
                           ) : frag.isUnlocked ? (
                             <button
@@ -1166,11 +1175,11 @@ export function SanctuaryJournalModal({
                               onClick={() => handleClaimWisdom(frag.id)}
                               className="px-3 py-1.5 rounded-full bg-gradient-to-r from-[#187557] to-[#2BB688] hover:opacity-95 text-white text-[11px] font-medium shadow-xs active:scale-95 transition-all shrink-0 cursor-pointer animate-pulse whitespace-nowrap"
                             >
-                              Resapi (+{frag.rewardSoul} Soul)
+                              {t.journal.absorbBtn.replace("{soul}", String(frag.rewardSoul))}
                             </button>
                           ) : (
                             <span className="text-[10.5px] font-medium text-[#4C7567] shrink-0 px-2 py-0.5 rounded-md bg-[#0D3528]/5 tabular-nums whitespace-nowrap">
-                              {frag.hoursRequired} Jam ({frag.progressPct}%)
+                              {frag.hoursRequired} {t.common.hours} ({frag.progressPct}%)
                             </span>
                           )}
                         </div>
@@ -1191,11 +1200,10 @@ export function SanctuaryJournalModal({
                       ) : (
                         <div className="p-2.5 rounded-2xl bg-[#0D3528]/5 text-[11.5px] text-[#4C7567] flex items-center justify-between font-normal gap-2">
                           <span className="truncate">
-                            🔒 Butuh{" "}
+                            🔒 {t.journal.requirement}{" "}
                             <strong className="font-semibold text-[#0D3528]">
-                              {frag.hoursRequired} jam
-                            </strong>{" "}
-                            fokus mendalam ({frag.hoursRemaining} jam lagi).
+                              {frag.hoursRequired} {t.common.hours.toLowerCase()}
+                            </strong>
                           </span>
                           <span className="tabular-nums text-[10.5px] font-medium text-[#187557] bg-[#E4F4ED] px-2 py-0.5 rounded-md border border-[#BCE5D3] shrink-0">
                             {frag.progressPct}%

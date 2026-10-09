@@ -56,6 +56,7 @@ import {
 } from "lucide-react";
 
 import { TagLineIcon, LINE_ICON_KEYS } from "@/components/common/TagLineIcon";
+import { useTranslation } from "@/lib/i18n/translations";
 
 export interface MobileFocusCardProps {
   onEnterZen?: () => void;
@@ -76,6 +77,7 @@ export function MobileFocusCard({
   onEnterZen,
   claimableCount = 0,
 }: MobileFocusCardProps = {}) {
+  const { t, translateTag, translateSpecies } = useTranslation();
   const activeSession = useGameStore((state) => state.activeSession);
   const startFocus = useGameStore((state) => state.startFocus);
   const updateActiveSessionMeta = useGameStore(
@@ -463,13 +465,13 @@ export function MobileFocusCard({
             <div className="flex items-center gap-2">
               <Tag className="w-4 h-4 text-emerald-300 stroke-[2.3]" />
               <span className="text-sm font-bold tracking-tight text-white drop-shadow-xs">
-                Pilih Tag Kategori
+                {t.cockpit.tagModalTitle}
               </span>
             </div>
             <button
               onClick={() => setShowTagModal(false)}
               className="w-7 h-7 rounded-full flex items-center justify-center bg-white/20 hover:bg-white/30 border border-white/30 text-white active:scale-90 transition-transform cursor-pointer shadow-xs"
-              aria-label="Tutup tag"
+              aria-label={t.common.close}
             >
               <X className="w-3.5 h-3.5 stroke-[2.4]" />
             </button>
@@ -482,18 +484,18 @@ export function MobileFocusCard({
               type="text"
               value={tagSearch}
               onChange={(e) => setTagSearch(e.target.value)}
-              placeholder="Cari tag fokus..."
+              placeholder={t.cockpit.tagSearchPlaceholder}
               className="w-full bg-transparent text-xs text-white placeholder-white/50 outline-none font-medium"
             />
           </div>
 
           {/* Tag List */}
           <div className="max-h-52 overflow-y-auto space-y-1.5 pr-1 relative z-10 no-scrollbar">
-            {filteredTags.map((t) => {
-              const isSelected = activeTagId === t.id;
+            {filteredTags.map((tg) => {
+              const isSelected = activeTagId === tg.id;
               return (
                 <div
-                  key={t.id}
+                  key={tg.id}
                   className={`flex items-center justify-between px-3 py-2 rounded-2xl border transition-all backdrop-blur-md ${
                     isSelected
                       ? "bg-white/35 text-white border-white/60 font-semibold shadow-[inset_0_1px_1px_rgba(255,255,255,0.7)]"
@@ -506,9 +508,9 @@ export function MobileFocusCard({
                       soundManager.playPop();
                       hapticLight();
                       if (activeSession) {
-                        updateActiveSessionMeta({ tag: t.id });
+                        updateActiveSessionMeta({ tag: tg.id });
                       } else {
-                        setFocusSetup({ tag: t.id });
+                        setFocusSetup({ tag: tg.id });
                       }
                       setShowTagModal(false);
                     }}
@@ -516,12 +518,12 @@ export function MobileFocusCard({
                   >
                     <span className="flex items-center justify-center w-6 h-6 rounded-lg bg-black/20 text-white shrink-0">
                       <TagLineIcon
-                        name={t.icon}
+                        name={tg.icon}
                         className="w-3.5 h-3.5 stroke-[2.2]"
                       />
                     </span>
                     <span className="text-xs font-semibold truncate drop-shadow-xs">
-                      {t.label}
+                      {translateTag(tg.label)}
                     </span>
                   </button>
 
@@ -529,17 +531,16 @@ export function MobileFocusCard({
                     {isSelected && (
                       <Check className="w-3.5 h-3.5 text-white stroke-[2.5]" />
                     )}
-                    {t.isCustom && (
+                    {tg.isCustom && (
                       <button
                         type="button"
                         onClick={() => {
                           soundManager.playPop();
-                          deleteCustomTag(t.id);
-                          if (selectedTag === t.id)
+                          deleteCustomTag(tg.id);
+                          if (selectedTag === tg.id)
                             setFocusSetup({ tag: "Belajar" });
                         }}
                         className="p-1 rounded-lg text-white/60 hover:text-rose-400 hover:bg-rose-500/20 transition-colors"
-                        title="Hapus tag kustom"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -553,7 +554,7 @@ export function MobileFocusCard({
           {/* Create New Tag */}
           <div className="pt-2 border-t border-white/20 flex flex-col gap-2 relative z-10">
             <span className="text-[10px] font-bold uppercase tracking-wider text-white/80">
-              + Buat Tag Baru
+              {t.cockpit.newTagLabel}
             </span>
             {/* Line Icon Selector */}
             <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
@@ -601,7 +602,7 @@ export function MobileFocusCard({
                 value={newTagName}
                 onChange={(e) => setNewTagName(e.target.value)}
                 maxLength={24}
-                placeholder="Nama tag baru..."
+                placeholder={t.cockpit.newTagPlaceholder}
                 className="flex-1 px-3 py-2 rounded-2xl bg-white/12 border border-white/25 text-xs text-white placeholder-white/50 outline-none font-medium"
               />
               <button
@@ -627,7 +628,7 @@ export function MobileFocusCard({
                 className="px-3 py-2 rounded-2xl bg-white text-[#0f2e1e] hover:bg-white/90 text-xs font-bold flex items-center gap-1 shadow-xs active:scale-95 transition-all cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-                <span>Tambah</span>
+                <span>{t.cockpit.addBtn}</span>
               </button>
             </div>
           </div>
@@ -658,17 +659,14 @@ export function MobileFocusCard({
               <span className="text-xl">🌲</span>
               <div className="flex flex-col">
                 <span className="text-sm font-bold tracking-tight text-white drop-shadow-xs">
-                  Pilih Bibit Pohon Rimba
-                </span>
-                <span className="text-[10px] text-white/70">
-                  Pohon yang akan mekar selama kamu fokus
+                  {t.cockpit.treeSeed}
                 </span>
               </div>
             </div>
             <button
               onClick={() => setShowSpeciesModal(false)}
               className="w-7 h-7 rounded-full flex items-center justify-center bg-white/20 hover:bg-white/30 border border-white/30 text-white active:scale-90 transition-transform cursor-pointer shadow-xs"
-              aria-label="Tutup bibit pohon"
+              aria-label={t.common.close}
             >
               <X className="w-3.5 h-3.5 stroke-[2.4]" />
             </button>
@@ -705,7 +703,7 @@ export function MobileFocusCard({
                   <div className="flex flex-col min-w-0 flex-1">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold truncate drop-shadow-xs">
-                        {sp.name}
+                        {translateSpecies(sp.id, sp.name)}
                       </span>
                       <span
                         className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
@@ -716,7 +714,9 @@ export function MobileFocusCard({
                             : "bg-black/25 text-white/50"
                         }`}
                       >
-                        {isUnlocked ? "Tersedia" : `Lvl ${sp.levelRequired}`}
+                        {isUnlocked
+                          ? t.ranks.unlocked
+                          : `Lvl ${sp.levelRequired}`}
                       </span>
                     </div>
                     <span
@@ -760,13 +760,13 @@ export function MobileFocusCard({
             <div className="flex items-center gap-2">
               <Headphones className="w-4 h-4 text-emerald-300 stroke-[2.3]" />
               <span className="text-xs font-bold tracking-tight text-white drop-shadow-xs">
-                Suara Alam (Ambience)
+                {t.cockpit.ambientTitle}
               </span>
             </div>
             <button
               onClick={() => setShowSoundscapePopover(false)}
               className="w-7 h-7 rounded-full flex items-center justify-center bg-white/20 hover:bg-white/30 border border-white/30 text-white active:scale-90 transition-transform cursor-pointer shadow-xs"
-              aria-label="Tutup suara latar"
+              aria-label={t.common.close}
             >
               <X className="w-3.5 h-3.5 stroke-[2.4]" />
             </button>
@@ -787,7 +787,7 @@ export function MobileFocusCard({
               }`}
             >
               <VolumeX className="w-3.5 h-3.5 opacity-70" />
-              <span>Hening (Mati)</span>
+              <span>{t.cockpit.ambientOff}</span>
             </button>
 
             {SOUNDSCAPES_LIST.map((sc) => {
@@ -824,7 +824,7 @@ export function MobileFocusCard({
             <div className="flex items-center justify-between text-[11px] text-white/80">
               <span className="flex items-center gap-1 font-semibold">
                 <Volume2 className="w-3.5 h-3.5" />
-                <span>Volume Alam</span>
+                <span>{t.cockpit.ambientVolume}</span>
               </span>
               <span className="font-mono font-bold text-white">
                 {Math.round(soundscapeVolume * 100)}%
@@ -842,7 +842,7 @@ export function MobileFocusCard({
                 soundscapeManager.setVolume(val);
               }}
               className="w-full accent-white cursor-pointer h-1.5 bg-white/20 rounded-lg appearance-none"
-              aria-label="Volume suara latar alam"
+              aria-label={t.cockpit.ambientVolume}
             />
           </div>
         </div>
@@ -856,13 +856,13 @@ export function MobileFocusCard({
       <div className="flex items-center justify-between">
         <div className="flex flex-col">
           <span className="text-[10px] font-bold uppercase tracking-wider text-white/70">
-            Geser Durasi Fokus
+            {t.cockpit.targetDuration}
           </span>
           <div className="flex items-baseline gap-1.5">
             {selectedMinutes === 0 ? (
               <span className="text-xl font-bold font-mono text-white flex items-center gap-1 drop-shadow-xs">
                 <span>⏱️</span>
-                <span>Bebas (Stopwatch)</span>
+                <span>{t.cockpit.freeStopwatch}</span>
               </span>
             ) : (
               <>
@@ -870,7 +870,7 @@ export function MobileFocusCard({
                   {selectedMinutes}
                 </span>
                 <span className="text-xs font-semibold text-white/80">
-                  menit
+                  {t.common.minutes.toLowerCase()}
                 </span>
               </>
             )}
@@ -886,7 +886,7 @@ export function MobileFocusCard({
           <span className="text-[10px] text-white/70 flex items-center gap-1">
             <Maximize2 className="w-2.5 h-2.5 text-white/80" />
             <span>
-              Menutup <b>{landProgressPct}%</b> petak baru
+              {t.cockpit.coversNextTile.replace("{pct}", String(landProgressPct))}
             </span>
           </span>
         </div>
@@ -937,10 +937,10 @@ export function MobileFocusCard({
             }
           }}
           className="w-full accent-white cursor-pointer h-1.5 bg-white/25 rounded-lg appearance-none mt-1"
-          aria-label="Penggaris durasi fokus (0 untuk stopwatch)"
+          aria-label={t.cockpit.targetDuration}
         />
         <div className="flex justify-between text-[9px] font-mono text-white/60 px-0.5 mt-0.5 font-semibold">
-          <span>⏱️ Bebas</span>
+          <span>⏱️ {t.common.free}</span>
           <span>30m</span>
           <span>60m</span>
           <span>90m</span>
@@ -963,10 +963,10 @@ export function MobileFocusCard({
       >
         <span className="flex items-center gap-1.5">
           <Flame className="w-3.5 h-3.5" />
-          <span>Mode Ketat (Tenggang 10s)</span>
+          <span>{t.cockpit.strictMode}</span>
         </span>
         <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/15">
-          {isStrictMode ? "Aktif" : "Mati"}
+          {isStrictMode ? t.common.active : t.common.off}
         </span>
       </button>
     </div>
@@ -990,12 +990,12 @@ export function MobileFocusCard({
 
           <div className="flex items-center justify-between pb-2 border-b border-white/20 relative z-10">
             <span className="text-xs font-bold tracking-tight text-white drop-shadow-xs">
-              Atur Durasi Fokus
+              {t.cockpit.targetDuration}
             </span>
             <button
               onClick={() => setShowRulerModal(false)}
               className="w-7 h-7 rounded-full flex items-center justify-center bg-white/20 hover:bg-white/30 border border-white/30 text-white active:scale-90 transition-transform cursor-pointer shadow-xs"
-              aria-label="Tutup atur durasi"
+              aria-label={t.common.close}
             >
               <X className="w-3.5 h-3.5 stroke-[2.4]" />
             </button>
@@ -1005,7 +1005,7 @@ export function MobileFocusCard({
             onClick={() => setShowRulerModal(false)}
             className="w-full py-2.5 rounded-2xl bg-white text-[#0f2e1e] hover:bg-white/95 font-bold text-xs shadow-xs active:scale-95 transition-all cursor-pointer relative z-10"
           >
-            Pilih {selectedMinutes} Menit
+            {t.cockpit.selectMinutes.replace("{mins}", String(selectedMinutes))}
           </button>
         </div>
       </div>
@@ -1115,7 +1115,7 @@ export function MobileFocusCard({
                 setShowTagModal(true);
               }}
               className="flex items-center gap-2 text-left active:scale-95 transition-transform cursor-pointer"
-              title="Ketuk untuk melihat Tag atau Bibit Pohon"
+              title={t.cockpit.sessionTag}
             >
               <span className="text-2xl font-bold font-mono tracking-tight text-white tabular-nums drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
                 {formatTime(
@@ -1142,8 +1142,8 @@ export function MobileFocusCard({
                   ? "bg-white/35 text-white border-white/60 shadow-xs"
                   : "bg-white/12 hover:bg-white/20 text-white border-white/25"
               }`}
-              title="Atur Suara Alam"
-              aria-label="Atur Suara Alam"
+              title={t.cockpit.ambientTitle}
+              aria-label={t.cockpit.ambientTitle}
             >
               <Headphones className="w-4 h-4 stroke-[2.2] drop-shadow-xs" />
             </button>
@@ -1157,8 +1157,8 @@ export function MobileFocusCard({
                   onEnterZen();
                 }}
                 className="w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90 cursor-pointer border bg-white/12 hover:bg-white/20 text-white border-white/25 backdrop-blur-md"
-                title="Mode Zen Layar Penuh"
-                aria-label="Mode Zen"
+                title="Zen Mode"
+                aria-label="Zen Mode"
               >
                 <Maximize2 className="w-3.5 h-3.5 stroke-[2.2] drop-shadow-xs" />
               </button>
@@ -1173,10 +1173,10 @@ export function MobileFocusCard({
                 type="button"
                 onClick={handleComplete}
                 className="h-9 px-4 rounded-full font-bold text-xs shadow-xs flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer bg-white text-[#0f2e1e] hover:bg-white/95"
-                title="Panen hasil fokusmu!"
+                title={t.cockpit.harvestReady}
               >
                 <Sparkles className="w-3.5 h-3.5 fill-current" />
-                <span>Panen!</span>
+                <span>{t.cockpit.harvestReady}</span>
               </button>
             ) : (
               <button
@@ -1187,19 +1187,20 @@ export function MobileFocusCard({
                     ? "bg-amber-400/25 text-amber-200 border-amber-300/40 shadow-xs"
                     : "bg-white/14 hover:bg-white/22 text-white border-white/25 shadow-xs"
                 }`}
-                title={
-                  isWithinGracePeriod
-                    ? `Masa tenggang ${graceSecondsLeft}s: Batalkan tanpa penalti`
-                    : "Batalkan Sesi"
-                }
+                title={t.cockpit.cancelSession}
               >
                 {isWithinGracePeriod ? (
                   <>
                     <ShieldCheck className="w-3.5 h-3.5 text-amber-200 mr-1" />
-                    <span>Batal ({graceSecondsLeft}s)</span>
+                    <span>
+                      {t.cockpit.cancelGrace.replace(
+                        "{sec}",
+                        String(graceSecondsLeft),
+                      )}
+                    </span>
                   </>
                 ) : (
-                  <span>Batal</span>
+                  <span>{t.cockpit.cancelSession}</span>
                 )}
               </button>
             )}

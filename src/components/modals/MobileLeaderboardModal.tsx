@@ -9,6 +9,7 @@ import {
   RangerTier,
 } from "@/lib/game/community";
 import { hapticLight } from "@/lib/mobile/nativeBridge";
+import { useTranslation } from "@/lib/i18n/translations";
 import {
   X,
   Flame,
@@ -30,6 +31,7 @@ export function MobileLeaderboardModal({
   isOpen,
   onClose,
 }: MobileLeaderboardModalProps) {
+  const { t } = useTranslation();
   const saveData = useGameStore((state) => state.saveData);
   const [activeTab, setActiveTab] = useState<"tiers" | "stats">("tiers");
 
@@ -70,10 +72,10 @@ export function MobileLeaderboardModal({
           <div className="flex items-center justify-between py-1">
             <div className="flex items-center gap-2.5">
               <h2 className="text-[23px] font-semibold tracking-normal text-white drop-shadow-xs">
-                Pencapaian
+                {t.ranks.title}
               </h2>
               <span className="rounded-full bg-white/20 border border-white/25 px-3 py-0.5 text-[11.5px] font-medium text-emerald-50 backdrop-blur-md">
-                Piramida Ranger
+                {t.ranks.subtitle}
               </span>
             </div>
 
@@ -84,7 +86,7 @@ export function MobileLeaderboardModal({
                 onClose();
               }}
               className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 border border-white/30 text-white shadow-sm backdrop-blur-md active:scale-90 transition-transform hover:bg-white/30 cursor-pointer"
-              aria-label="Tutup peringkat"
+              aria-label={t.common.close}
             >
               <X className="h-4 w-4 stroke-[2]" />
             </button>
@@ -114,7 +116,7 @@ export function MobileLeaderboardModal({
                 <div className="text-right shrink-0">
                   <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E4F4ED] border border-[#BCE5D3] text-[#14664D] text-[11px] font-medium">
                     <Sparkles className="w-3.5 h-3.5 stroke-[1.8] text-emerald-600" />
-                    Aktif
+                    {t.common.active}
                   </span>
                 </div>
               </div>
@@ -124,7 +126,7 @@ export function MobileLeaderboardModal({
                 <div className="px-1 text-center">
                   <div className="flex items-center justify-center gap-1 text-[#4C7567] text-[11px] mb-0.5 font-normal">
                     <Clock className="w-3.5 h-3.5 stroke-[1.8]" />
-                    <span>Fokus</span>
+                    <span>{t.stats.focusBadge}</span>
                   </div>
                   <div className="text-[20px] font-medium text-[#0D3528] tracking-normal">
                     {totalMinutes}
@@ -137,7 +139,7 @@ export function MobileLeaderboardModal({
                 <div className="px-1 text-center">
                   <div className="flex items-center justify-center gap-1 text-[#4C7567] text-[11px] mb-0.5 font-normal">
                     <TreePine className="w-3.5 h-3.5 stroke-[1.8]" />
-                    <span>Pohon</span>
+                    <span>{t.ranks.treesLabel}</span>
                   </div>
                   <div className="text-[20px] font-medium text-[#0D3528] tracking-normal">
                     {activeTrees}
@@ -152,7 +154,7 @@ export function MobileLeaderboardModal({
                   <div className="text-[20px] font-medium text-[#0D3528] tracking-normal">
                     {analytics.currentStreak}
                     <span className="text-[12px] font-normal text-[#4C7567] ml-0.5">
-                      Hari
+                      {t.common.days}
                     </span>
                   </div>
                 </div>
@@ -163,11 +165,11 @@ export function MobileLeaderboardModal({
           {/* SECTION HEADER */}
           <div className="flex items-center justify-between px-1 pt-1">
             <p className="text-[12px] font-medium uppercase tracking-[0.12em] text-white/90 drop-shadow-xs">
-              Pencapaian Rimba
+              {t.ranks.tiersHeader}
             </p>
             <div className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-50 bg-white/20 border border-white/25 px-2.5 py-0.5 rounded-full backdrop-blur-md">
               <Trophy className="w-3.5 h-3.5 text-emerald-100 stroke-[1.8]" />
-              <span>7 Tingkatan</span>
+              <span>{t.ranks.tiersCount}</span>
             </div>
           </div>
 
@@ -217,7 +219,7 @@ export function MobileLeaderboardModal({
                         </p>
                         {isCurrent && (
                           <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-[#187557] text-white">
-                            Peringkatmu
+                            {t.ranks.yourRank}
                           </span>
                         )}
                       </div>
@@ -235,7 +237,7 @@ export function MobileLeaderboardModal({
                     {isUnlocked ? (
                       <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#14664D] bg-[#E4F4ED] border border-[#BCE5D3] px-2.5 py-1 rounded-full">
                         <CheckCircle2 className="w-3 h-3 stroke-[2]" />
-                        Terbuka
+                        {t.ranks.unlocked}
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 text-[10.5px] font-normal text-[#4C7567] bg-black/5 px-2.5 py-1 rounded-full">
@@ -256,11 +258,9 @@ export function MobileLeaderboardModal({
             </div>
             <p className="text-[12px] text-[#4C7567] leading-relaxed font-normal">
               <span className="font-semibold text-[#0D3528]">
-                Kedaulatan Privasi Penuh:
+                {t.ranks.privacyTitle}
               </span>{" "}
-              Rimba tidak menggunakan bot tiruan maupun telemetri pelacak.
-              Seluruh jenjang dihitung murni dari waktu fokus dan pohon asli
-              yang kamu tanam di perangkat ini.
+              {t.ranks.privacyDesc}
             </p>
           </div>
         </div>

@@ -27,6 +27,7 @@ import {
 } from "@/components/canvas/WorldObjects";
 import { getManifestItem } from "@/lib/game/assetManifest";
 import { hapticLight, hapticMedium } from "@/lib/mobile/nativeBridge";
+import { useTranslation } from "@/lib/i18n/translations";
 
 type CategoryType =
   | "Water & Rivers"
@@ -44,6 +45,7 @@ const CATEGORIES: CategoryType[] = [
 ];
 
 export function NatureWorkshopSheet() {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"catalog" | "expansion">(
     "catalog",
@@ -137,18 +139,7 @@ export function NatureWorkshopSheet() {
   };
 
   const getCategoryLabel = (cat: CategoryType) => {
-    switch (cat) {
-      case "Water & Rivers":
-        return "Air & Sungai";
-      case "Flora & Fungi":
-        return "Flora";
-      case "Rocks & Timber":
-        return "Batu";
-      case "Structures":
-        return "Kemah";
-      case "Paths":
-        return "Setapak";
-    }
+    return t.workshop.categories[cat] || cat;
   };
 
   const getCatalogItemIcon = (item: CatalogItem): string => {
@@ -253,10 +244,10 @@ export function NatureWorkshopSheet() {
               </div>
               <div className="flex flex-col min-w-0">
                 <span className="text-xs font-semibold truncate tracking-tight text-[#143525]">
-                  Mode Perluas Lahan
+                  {t.workshop.expandModeTitle}
                 </span>
                 <span className="text-[10px] text-[#456b57] font-medium">
-                  +{zoneInfo.nextTileCost} Soul / petak
+                  +{zoneInfo.nextTileCost} Soul {t.workshop.perTile}
                 </span>
               </div>
             </div>
@@ -271,12 +262,12 @@ export function NatureWorkshopSheet() {
               className="py-1.5 px-3.5 rounded-full bg-[#1e5638] hover:bg-[#16442e] text-white font-semibold text-xs tracking-tight shadow-xs active:scale-95 transition-all flex items-center gap-1.5 shrink-0 cursor-pointer"
             >
               <Check className="w-3.5 h-3.5 stroke-[2.4]" />
-              <span>Selesai</span>
+              <span>{t.common.done}</span>
             </button>
           </div>
 
           <span className="text-[10.5px] font-medium text-[#143525] bg-white/70 border border-white/85 backdrop-blur-md px-3.5 py-1 rounded-full shadow-2xs">
-            Ketuk petak bercahaya di pinggir pulau untuk memperluas
+            {t.workshop.expandHint}
           </span>
         </div>
       )}
@@ -298,10 +289,10 @@ export function NatureWorkshopSheet() {
                 <span className="text-xs font-semibold truncate tracking-tight text-[#143525]">
                   {selectedCatalogItem
                     ? selectedCatalogItem.name
-                    : "Pindahkan Objek"}
+                    : t.workshop.moveObjTitle}
                 </span>
                 <span className="text-[10px] text-[#456b57]">
-                  {rotationDegrees}° rotasi
+                  {rotationDegrees}° {t.workshop.rotation}
                 </span>
               </div>
             </div>
@@ -315,7 +306,6 @@ export function NatureWorkshopSheet() {
                   rotatePlacement();
                 }}
                 className="w-8 h-8 rounded-full bg-white hover:bg-slate-50 text-[#143525] flex items-center justify-center active:scale-95 transition-all border border-white/90 shadow-2xs cursor-pointer"
-                title="Putar Rotasi 90°"
               >
                 <RotateCw className="w-3.5 h-3.5 stroke-[2.2]" />
               </button>
@@ -331,13 +321,13 @@ export function NatureWorkshopSheet() {
                 className="py-1.5 px-3 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/80 font-medium text-xs active:scale-95 transition-all flex items-center gap-1 cursor-pointer"
               >
                 <X className="w-3.5 h-3.5" />
-                <span>Batal</span>
+                <span>{t.common.cancel}</span>
               </button>
             </div>
           </div>
 
           <span className="text-[10.5px] font-medium text-[#143525] bg-white/70 border border-white/85 backdrop-blur-md px-3.5 py-1 rounded-full shadow-2xs">
-            Ketuk petak rumput di pulau untuk meletakkan
+            {t.workshop.placeHint}
           </span>
         </div>
       )}
@@ -367,10 +357,10 @@ export function NatureWorkshopSheet() {
                 </div>
                 <div>
                   <h2 className="text-[15px] font-semibold tracking-tight text-[#143525]">
-                    Bengkel Alam
+                    {t.workshop.title}
                   </h2>
                   <p className="text-[11px] text-[#456b57]">
-                    Perluas lahan & tata vegetasi pulau
+                    {t.workshop.subtitle}
                   </p>
                 </div>
               </div>
@@ -384,7 +374,7 @@ export function NatureWorkshopSheet() {
                   type="button"
                   onClick={() => setIsOpen(false)}
                   className="flex h-8 w-8 items-center justify-center rounded-full border border-white/80 bg-white/60 hover:bg-white/80 text-[#143525] transition-transform active:scale-90 cursor-pointer shadow-2xs"
-                  aria-label="Tutup Workshop"
+                  aria-label={t.common.close}
                 >
                   <X className="w-4 h-4 stroke-[2.2]" />
                 </button>
@@ -406,7 +396,7 @@ export function NatureWorkshopSheet() {
                     : "text-[#456b57] hover:text-[#143525] font-medium"
                 }`}
               >
-                Katalog Objek
+                {t.workshop.tabCatalog}
               </button>
               <button
                 type="button"
@@ -421,7 +411,7 @@ export function NatureWorkshopSheet() {
                     : "text-[#456b57] hover:text-[#143525] font-medium"
                 }`}
               >
-                Perluas Lahan
+                {t.workshop.tabExpand}
               </button>
             </div>
 
@@ -528,7 +518,7 @@ export function NatureWorkshopSheet() {
 
                   <div className="flex items-center justify-between text-[11px] pt-1.5 border-t border-[#143525]/8">
                     <span className="text-[#456b57]">
-                      Biaya Petak Berikutnya
+                      {t.workshop.nextTileCost}
                     </span>
                     <span className="font-semibold text-amber-800 flex items-center gap-1">
                       <Sparkles className="w-3 h-3 fill-amber-500 text-amber-500" />
@@ -546,12 +536,7 @@ export function NatureWorkshopSheet() {
                       </div>
                       <div className="flex flex-col min-w-0">
                         <span className="text-xs font-semibold text-[#143525] truncate">
-                          Bulldozer Mengancam
-                        </span>
-                        <span className="text-[10.5px] text-[#456b57]">
-                          {sealedTilesCount > 0
-                            ? `${sealedTilesCount} petak tersegel`
-                            : "Mendekati pulau suaka"}
+                          {t.inspect.bulldozerTitle}
                         </span>
                       </div>
                     </div>
@@ -565,7 +550,7 @@ export function NatureWorkshopSheet() {
                       }}
                       className="py-1.5 px-3 rounded-full bg-amber-400 hover:bg-amber-300 text-slate-950 font-semibold text-xs active:scale-95 transition-all shadow-2xs shrink-0 cursor-pointer"
                     >
-                      Halau (40)
+                      {t.inspect.repelBtn.replace("{cost}", "40")}
                     </button>
                   </div>
                 )}
@@ -582,12 +567,11 @@ export function NatureWorkshopSheet() {
                   className="w-full py-3 px-4 rounded-full bg-[#1e5638] hover:bg-[#16442e] text-white font-semibold text-xs active:scale-[0.98] transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Maximize2 className="w-4 h-4 stroke-[2.2]" />
-                  <span>Pilih Petak di Pulau (+1 Petak)</span>
+                  <span>{t.workshop.pickTileBtn}</span>
                 </button>
 
                 <p className="text-[11px] text-center text-[#456b57] px-2 leading-relaxed">
-                  Petak baru akan bangkit perlahan dari kedalaman air dengan
-                  animasi 3D.
+                  {t.workshop.expandAnimNote}
                 </p>
               </div>
             )}

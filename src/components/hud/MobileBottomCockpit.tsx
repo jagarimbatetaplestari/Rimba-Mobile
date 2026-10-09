@@ -10,6 +10,7 @@ import { getLevelFromXp } from "@/lib/game/levelRules";
 import { useGameStore } from "@/lib/game/useGameStore";
 import { TreeSpecies } from "@/types/game";
 import { TagLineIcon } from "@/components/common/TagLineIcon";
+import { useTranslation } from "@/lib/i18n/translations";
 
 export interface MobileBottomCockpitProps {
   tagLabel: string;
@@ -50,6 +51,7 @@ export function MobileBottomCockpit({
 }: MobileBottomCockpitProps) {
   const [activeFlyout, setActiveFlyout] = useState<FlyoutType>(null);
   const [categoryTab, setCategoryTab] = useState<CategoryTab>("tags");
+  const { t, translateTag, translateSpecies } = useTranslation();
 
   /*
    * ---------------------------------------------------------
@@ -259,15 +261,17 @@ export function MobileBottomCockpit({
                 onClick={() => toggleFlyout("category")}
                 style={chipGlassStyle}
                 className="mb-2.5 px-4 py-1 rounded-full text-[11.5px] font-medium tracking-tight flex items-center gap-1.5 transition-colors cursor-pointer relative overflow-hidden"
-                title="Kategori & Durasi Terpilih (Ketuk untuk ubah)"
+                title={t.cockpit.sessionTag}
               >
                 <div className="absolute inset-x-2 top-0 h-[45%] bg-gradient-to-b from-white/25 to-transparent rounded-t-full pointer-events-none" />
                 <span className="font-semibold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.2)]">
-                  {tagLabel}
+                  {translateTag(tagLabel)}
                 </span>
                 <span className="text-white/40 font-normal">|</span>
                 <span className="font-semibold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.2)]">
-                  {selectedMinutes === 0 ? "∞" : `${selectedMinutes} Menit`}
+                  {selectedMinutes === 0
+                    ? "∞"
+                    : `${selectedMinutes} ${t.common.Minutes}`}
                 </span>
               </button>
 
@@ -279,8 +283,8 @@ export function MobileBottomCockpit({
                   onClick={() => toggleFlyout("category")}
                   style={glassCapsuleStyle}
                   className="w-[58px] h-[58px] rounded-full flex items-center justify-center transition-colors cursor-pointer shrink-0 relative overflow-hidden"
-                  title="Pilih Kategori Fokus"
-                  aria-label="Pilih Kategori Fokus"
+                  title={t.cockpit.sessionTag}
+                  aria-label={t.cockpit.sessionTag}
                 >
                   <div className="absolute inset-x-2 top-0 h-[45%] bg-gradient-to-b from-white/25 to-transparent rounded-t-full pointer-events-none" />
                   <TagLineIcon
@@ -299,17 +303,13 @@ export function MobileBottomCockpit({
                   }}
                   style={glassCapsuleStyle}
                   className="flex-1 h-[58px] px-6 rounded-full flex items-center justify-center gap-2 transition-colors cursor-pointer relative overflow-hidden"
-                  title={
-                    selectedMinutes === 0
-                      ? "Mulai sesi fokus Bebas (∞)"
-                      : `Mulai sesi fokus ${selectedMinutes} menit`
-                  }
-                  aria-label="Mulai Fokus"
+                  title={t.cockpit.startFocus}
+                  aria-label={t.cockpit.startFocus}
                 >
                   <div className="absolute inset-x-4 top-0 h-[45%] bg-gradient-to-b from-white/25 to-transparent rounded-t-full pointer-events-none" />
                   <Play className="w-4 h-4 fill-white text-white shrink-0 drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)] relative z-10" />
                   <span className="text-[15.5px] font-semibold tracking-tight text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)] relative z-10">
-                    Mulai Fokus
+                    {t.cockpit.startFocus}
                   </span>
                 </button>
 
@@ -319,8 +319,8 @@ export function MobileBottomCockpit({
                   onClick={() => toggleFlyout("timer")}
                   style={glassCapsuleStyle}
                   className="w-[58px] h-[58px] rounded-full flex items-center justify-center transition-colors cursor-pointer shrink-0 relative overflow-hidden"
-                  title="Atur Target Durasi Fokus"
-                  aria-label="Atur Durasi Fokus"
+                  title={t.cockpit.targetDuration}
+                  aria-label={t.cockpit.targetDuration}
                 >
                   <div className="absolute inset-x-2 top-0 h-[45%] bg-gradient-to-b from-white/25 to-transparent rounded-t-full pointer-events-none" />
                   <Clock3 className="w-5 h-5 text-white stroke-[2.2] drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)] relative z-10" />
@@ -366,7 +366,7 @@ export function MobileBottomCockpit({
                               : "text-white/75 hover:text-white"
                           }`}
                         >
-                          Kategori Sesi
+                          {t.cockpit.sessionTag}
                         </button>
                         <button
                           type="button"
@@ -381,7 +381,7 @@ export function MobileBottomCockpit({
                               : "text-white/75 hover:text-white"
                           }`}
                         >
-                          Bibit Pohon
+                          {t.cockpit.treeSeed}
                         </button>
                       </div>
 
@@ -432,7 +432,7 @@ export function MobileBottomCockpit({
                                     : "text-white/90 drop-shadow-[0_1px_1px_rgba(0,0,0,0.2)]"
                                 }`}
                               >
-                                {tag.label}
+                                {translateTag(tag.label)}
                               </span>
                             </button>
                           );
@@ -476,7 +476,7 @@ export function MobileBottomCockpit({
                                     : "text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.2)]"
                                 }`}
                               >
-                                {sp.name}
+                                {translateSpecies(sp.id, sp.name)}
                               </span>
 
                               {!unlocked && (
@@ -501,7 +501,7 @@ export function MobileBottomCockpit({
                     {/* Header + Close Button */}
                     <div className="flex items-center justify-between px-1">
                       <span className="text-[12px] font-medium text-white/80 tracking-tight">
-                        Target Durasi
+                        {t.cockpit.targetDuration}
                       </span>
                       <button
                         type="button"
@@ -557,7 +557,7 @@ export function MobileBottomCockpit({
                           handleMinutesSelect(Number(e.target.value))
                         }
                         className="w-full h-1.5 bg-white/25 rounded-full appearance-none cursor-pointer accent-white"
-                        aria-label="Atur durasi menit"
+                        aria-label={t.cockpit.targetDuration}
                       />
                     </div>
 
@@ -581,12 +581,12 @@ export function MobileBottomCockpit({
                         </div>
                         <div className="text-left">
                           <p className="text-[12.5px] font-semibold text-white leading-tight drop-shadow-[0_1px_1px_rgba(0,0,0,0.2)]">
-                            Mode Ketat
+                            {t.cockpit.strictMode}
                           </p>
                           <p className="text-[10.5px] text-white/70">
                             {isStrictMode
-                              ? "Aktif · Lindungi fokus"
-                              : "Nonaktif"}
+                              ? t.cockpit.strictActive
+                              : t.cockpit.strictOff}
                           </p>
                         </div>
                       </div>

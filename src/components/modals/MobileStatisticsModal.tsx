@@ -14,6 +14,7 @@ import {
 import { getUnlockedTilesSet } from "@/lib/game/worldRules";
 import { soundManager } from "@/lib/audio/sounds";
 import { hapticLight } from "@/lib/mobile/nativeBridge";
+import { useTranslation } from "@/lib/i18n/translations";
 import {
   X,
   Flame,
@@ -54,6 +55,7 @@ export function MobileStatisticsModal({
   isOpen,
   onClose,
 }: MobileStatisticsModalProps) {
+  const { t, language, translateTag } = useTranslation();
   const saveData = useGameStore((state) => state.saveData);
   const sessions = saveData.focus_sessions || [];
   const world = saveData.world;
@@ -167,7 +169,7 @@ export function MobileStatisticsModal({
           dateStr,
           minutes: stat?.totalMinutes || 0,
           isToday,
-          label: current.toLocaleDateString("id-ID", {
+          label: current.toLocaleDateString(language === "en" ? "en-US" : "id-ID", {
             day: "numeric",
             month: "short",
           }),
@@ -178,7 +180,7 @@ export function MobileStatisticsModal({
       weeks.push({ days: daysInWeek });
     }
     return weeks;
-  }, [analytics.activityMap]);
+  }, [analytics.activityMap, language]);
 
   // Circadian Rhythm (24h) and Flow Mastery calculations
   const circadianData = useMemo(
@@ -235,10 +237,10 @@ export function MobileStatisticsModal({
           <div className="flex items-center justify-between py-1">
             <div className="flex items-center gap-2.5">
               <h2 className="text-[23px] font-semibold tracking-normal text-white drop-shadow-xs">
-                Statistik
+                {t.stats.title}
               </h2>
               <span className="rounded-full bg-white/20 border border-white/25 px-3 py-0.5 text-[11.5px] font-medium text-emerald-50 backdrop-blur-md">
-                Pertumbuhan Suaka
+                {t.stats.subtitle}
               </span>
             </div>
 
@@ -251,10 +253,10 @@ export function MobileStatisticsModal({
                   setIsShareOpen(true);
                 }}
                 className="flex items-center gap-1.5 h-9 px-3 rounded-full bg-white/20 border border-white/30 text-white shadow-sm backdrop-blur-md active:scale-90 transition-transform hover:bg-white/30 cursor-pointer text-[12px] font-medium"
-                title="Bagikan Cermin Suaka (9:16)"
+                title={t.stats.shareBannerTitle}
               >
                 <Share2 className="h-3.5 w-3.5 stroke-[2.2]" />
-                <span>Bagikan</span>
+                <span>{t.common.share}</span>
               </button>
 
               <button
@@ -265,7 +267,7 @@ export function MobileStatisticsModal({
                   onClose();
                 }}
                 className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 border border-white/30 text-white shadow-sm backdrop-blur-md active:scale-90 transition-transform hover:bg-white/30 cursor-pointer"
-                aria-label="Tutup statistik"
+                aria-label={t.common.close}
               >
                 <X className="h-4 w-4 stroke-[2]" />
               </button>
@@ -277,7 +279,7 @@ export function MobileStatisticsModal({
           {/* ========================================================= */}
           <div className="space-y-1.5">
             <p className="px-1 text-[12px] font-medium uppercase tracking-[0.12em] text-white/90 drop-shadow-xs">
-              Ringkasan Suaka
+              {t.stats.overviewSection}
             </p>
 
             <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl">
@@ -287,17 +289,17 @@ export function MobileStatisticsModal({
                   <div className="flex items-center justify-between">
                     <Clock className="h-4 w-4 text-[#187557] stroke-[1.8]" />
                     <span className="text-[10.5px] font-medium px-2 py-0.5 rounded-full bg-[#E4F4ED] border border-[#BCE5D3] text-[#14664D]">
-                      Fokus
+                      {t.stats.focusBadge}
                     </span>
                   </div>
                   <div className="mt-3">
                     <p className="text-[20px] font-semibold tracking-normal text-[#0D3528] tabular-nums">
                       {totalHours > 0
-                        ? `${totalHours}j ${remainingMins}m`
+                        ? `${totalHours}${language === "en" ? "h" : "j"} ${remainingMins}m`
                         : `${remainingMins}m`}
                     </p>
                     <p className="text-[11.5px] leading-snug text-[#4C7567] mt-0.5 font-normal">
-                      {analytics.totalCompletedSessions} sesi selesai
+                      {t.stats.sessionsDone.replace("{count}", String(analytics.totalCompletedSessions))}
                     </p>
                   </div>
                 </div>
@@ -307,7 +309,7 @@ export function MobileStatisticsModal({
                   <div className="flex items-center justify-between">
                     <CheckCircle2 className="h-4 w-4 text-[#187557] stroke-[1.8]" />
                     <span className="text-[10.5px] font-medium px-2 py-0.5 rounded-full bg-[#E4F4ED] border border-[#BCE5D3] text-[#14664D]">
-                      Presisi
+                      {t.stats.completionBadge}
                     </span>
                   </div>
                   <div className="mt-3">
@@ -316,8 +318,8 @@ export function MobileStatisticsModal({
                     </p>
                     <p className="text-[11.5px] leading-snug text-[#4C7567] mt-0.5 font-normal">
                       {stumpsCount > 0
-                        ? `${stumpsCount} sesi terganggu`
-                        : "Disiplin sempurna"}
+                        ? t.stats.interruptedSessions.replace("{count}", String(stumpsCount))
+                        : t.stats.perfectDiscipline}
                     </p>
                   </div>
                 </div>
@@ -327,15 +329,15 @@ export function MobileStatisticsModal({
                   <div className="flex items-center justify-between">
                     <Flame className="h-4 w-4 text-amber-600 stroke-[1.8]" />
                     <span className="text-[10.5px] font-medium px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200/70 text-amber-800">
-                      Streak
+                      {t.stats.streakBadge}
                     </span>
                   </div>
                   <div className="mt-3">
                     <p className="text-[20px] font-semibold tracking-normal text-[#0D3528] tabular-nums">
-                      {analytics.currentStreak} Hari
+                      {analytics.currentStreak} {t.common.days}
                     </p>
                     <p className="text-[11.5px] leading-snug text-[#4C7567] mt-0.5 font-normal">
-                      Rekor: {analytics.longestStreak} hari
+                      {t.stats.bestStreak.replace("{days}", String(analytics.longestStreak))}
                     </p>
                   </div>
                 </div>
@@ -345,21 +347,21 @@ export function MobileStatisticsModal({
                   <div className="flex items-center justify-between">
                     <TreePine className="h-4 w-4 text-[#187557] stroke-[1.8]" />
                     <span className="text-[10.5px] font-medium px-2 py-0.5 rounded-full bg-[#E4F4ED] border border-[#BCE5D3] text-[#14664D]">
-                      Flora
+                      {t.stats.treesBadge}
                     </span>
                   </div>
                   <div className="mt-3">
                     <p className="text-[20px] font-semibold tracking-normal text-[#0D3528] tabular-nums">
-                      {treesCount} Pohon
+                      {t.stats.treesCountVal.replace("{count}", String(treesCount))}
                     </p>
                     <p className="text-[11.5px] leading-snug text-[#4C7567] mt-0.5 font-normal">
-                      {unlockedSet.size} petak dibuka
+                      {t.stats.tilesUnlockedVal.replace("{count}", String(unlockedSet.size))}
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* Flow Mastery & Keseimbangan Jiwa Banner */}
+              {/* Flow Mastery Banner */}
               <div className="mt-3 pt-3 border-t border-[#0D3528]/8 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <div className="flex h-8 w-8 items-center justify-center rounded-2xl bg-[#E4F4ED] border border-[#BCE5D3] text-[#187557] shadow-2xs">
@@ -368,14 +370,18 @@ export function MobileStatisticsModal({
                   <div>
                     <div className="flex items-center gap-1.5">
                       <p className="text-[13px] font-semibold text-[#0D3528]">
-                        Flow Harmony: {flowMastery.flowHarmonyScore}/100
+                        {language === "en" ? "Focus Score" : "Skor Fokus"}: {flowMastery.flowHarmonyScore}/100
                       </p>
                       <span className="text-[10px] font-medium px-2 py-0.2 rounded-full bg-[#E4F4ED] text-[#14664D] border border-[#BCE5D3]">
-                        {flowMastery.flowHarmonyScore >= 80 ? "Harmonis" : "Bertumbuh"}
+                        {flowMastery.flowHarmonyScore >= 80
+                          ? language === "en" ? "Consistent" : "Konsisten"
+                          : language === "en" ? "Growing" : "Bertumbuh"}
                       </span>
                     </div>
                     <p className="text-[11px] text-[#4C7567] mt-0.5 font-normal">
-                      {flowMastery.deepWorkCount} sesi deep work (≥25m) · Rata-rata {flowMastery.avgSessionMinutes}m/sesi
+                      {language === "en"
+                        ? `${flowMastery.deepWorkCount} deep focus sessions (≥25m) · Avg ${flowMastery.avgSessionMinutes}m/session`
+                        : `${flowMastery.deepWorkCount} sesi fokus penuh (≥25m) · Rata-rata ${flowMastery.avgSessionMinutes}m/sesi`}
                     </p>
                   </div>
                 </div>
@@ -388,7 +394,7 @@ export function MobileStatisticsModal({
           {/* ========================================================= */}
           <div className="space-y-1.5">
             <p className="px-1 text-[12px] font-medium uppercase tracking-[0.12em] text-white/90 drop-shadow-xs">
-              Aktivitas Fokus
+              {t.stats.activitySection}
             </p>
 
             <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-4">
@@ -396,10 +402,10 @@ export function MobileStatisticsModal({
               <div className="p-1 rounded-full bg-[#0D3528]/7 border border-white/60 grid grid-cols-4 gap-1">
                 {(
                   [
-                    { id: "day", label: "Hari" },
-                    { id: "week", label: "Minggu" },
-                    { id: "month", label: "Bulan" },
-                    { id: "year", label: "Tahun" },
+                    { id: "day", label: t.stats.periodDay },
+                    { id: "week", label: t.stats.periodWeek },
+                    { id: "month", label: t.stats.periodMonth },
+                    { id: "year", label: t.stats.periodYear },
                   ] as { id: AnalyticsPeriod; label: string }[]
                 ).map((tab) => (
                   <button
@@ -432,7 +438,6 @@ export function MobileStatisticsModal({
                     setSelectedBarIdx(null);
                   }}
                   className="flex h-7 w-7 items-center justify-center rounded-full border border-white/80 bg-white/80 hover:bg-white active:scale-90 text-[#0D3528] transition-transform cursor-pointer shadow-xs"
-                  title="Periode Sebelumnya"
                 >
                   <ChevronLeft className="h-4 w-4 stroke-[2]" />
                 </button>
@@ -442,8 +447,8 @@ export function MobileStatisticsModal({
                     {periodStats.periodLabel}
                   </p>
                   <p className="text-[11.5px] font-normal text-[#4C7567]">
-                    {periodStats.totalMinutes} Menit ·{" "}
-                    {periodStats.completedCount} Sesi
+                    {periodStats.totalMinutes} {t.common.Minutes} ·{" "}
+                    {periodStats.completedCount} {language === "en" ? "Sessions" : "Sesi"}
                   </p>
                 </div>
 
@@ -560,7 +565,7 @@ export function MobileStatisticsModal({
           {/* ========================================================= */}
           <div className="space-y-1.5">
             <p className="px-1 text-[12px] font-medium uppercase tracking-[0.12em] text-white/90 drop-shadow-xs">
-              Ritme Sirkadian Fokus
+              {t.stats.circadianSection}
             </p>
 
             <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-3.5">
@@ -568,11 +573,11 @@ export function MobileStatisticsModal({
                 <div className="flex items-center gap-2">
                   <Activity className="h-4 w-4 text-[#187557] stroke-[1.8]" />
                   <span className="text-[14.5px] font-semibold text-[#0D3528] tracking-wide">
-                    Pola Jam Produktivitas
+                    {t.stats.circadianTitle}
                   </span>
                 </div>
                 <span className="text-[11px] font-medium text-[#187557] bg-[#E4F4ED] border border-[#BCE5D3] px-2.5 py-0.5 rounded-full">
-                  24 Jam Sirkadian
+                  {t.stats.circadianBadge}
                 </span>
               </div>
 
@@ -581,7 +586,7 @@ export function MobileStatisticsModal({
                 <div className="p-2 rounded-2xl bg-[#0D3528]/[0.03] border border-[#0D3528]/8">
                   <div className="flex items-center justify-center gap-1 text-[#187557]">
                     <Sunrise className="w-3.5 h-3.5" />
-                    <span className="text-[10px] font-semibold">Fajar</span>
+                    <span className="text-[10px] font-semibold">{t.stats.dawn}</span>
                   </div>
                   <p className="text-[12px] font-bold text-[#0D3528] mt-1 tabular-nums">{circadianData.quadrantSummaries.dawn}m</p>
                   <span className="text-[8.5px] text-[#4C7567]">04:00-10:00</span>
@@ -589,7 +594,7 @@ export function MobileStatisticsModal({
                 <div className="p-2 rounded-2xl bg-[#0D3528]/[0.03] border border-[#0D3528]/8">
                   <div className="flex items-center justify-center gap-1 text-amber-600">
                     <Sun className="w-3.5 h-3.5" />
-                    <span className="text-[10px] font-semibold">Siang</span>
+                    <span className="text-[10px] font-semibold">{t.stats.day}</span>
                   </div>
                   <p className="text-[12px] font-bold text-[#0D3528] mt-1 tabular-nums">{circadianData.quadrantSummaries.day}m</p>
                   <span className="text-[8.5px] text-[#4C7567]">10:00-16:00</span>
@@ -597,7 +602,7 @@ export function MobileStatisticsModal({
                 <div className="p-2 rounded-2xl bg-[#0D3528]/[0.03] border border-[#0D3528]/8">
                   <div className="flex items-center justify-center gap-1 text-orange-600">
                     <Sunset className="w-3.5 h-3.5" />
-                    <span className="text-[10px] font-semibold">Senja</span>
+                    <span className="text-[10px] font-semibold">{t.stats.sunset}</span>
                   </div>
                   <p className="text-[12px] font-bold text-[#0D3528] mt-1 tabular-nums">{circadianData.quadrantSummaries.sunset}m</p>
                   <span className="text-[8.5px] text-[#4C7567]">16:00-20:00</span>
@@ -605,7 +610,7 @@ export function MobileStatisticsModal({
                 <div className="p-2 rounded-2xl bg-[#0D3528]/[0.03] border border-[#0D3528]/8">
                   <div className="flex items-center justify-center gap-1 text-indigo-600">
                     <Moon className="w-3.5 h-3.5" />
-                    <span className="text-[10px] font-semibold">Malam</span>
+                    <span className="text-[10px] font-semibold">{t.stats.night}</span>
                   </div>
                   <p className="text-[12px] font-bold text-[#0D3528] mt-1 tabular-nums">{circadianData.quadrantSummaries.night}m</p>
                   <span className="text-[8.5px] text-[#4C7567]">20:00-04:00</span>
@@ -663,12 +668,12 @@ export function MobileStatisticsModal({
                   <Sparkles className="w-3.5 h-3.5 text-[#187557] shrink-0" />
                   {selectedHour !== null ? (
                     <span>
-                      Pukul <strong>{String(selectedHour).padStart(2, '0')}:00 – {String((selectedHour + 1) % 24).padStart(2, '0')}:00</strong>:{" "}
-                      <strong>{circadianData.hourlyMinutes[selectedHour]} menit fokus</strong>
+                      <strong>{String(selectedHour).padStart(2, '0')}:00 – {String((selectedHour + 1) % 24).padStart(2, '0')}:00</strong>:{" "}
+                      <strong>{circadianData.hourlyMinutes[selectedHour]} {t.common.minShort}</strong>
                     </span>
                   ) : (
                     <span>
-                      Jam Emas: <strong>{circadianData.peakWindowLabel}</strong>
+                      {t.stats.goldenHour} <strong>{circadianData.peakWindowLabel}</strong>
                     </span>
                   )}
                 </div>
@@ -690,7 +695,7 @@ export function MobileStatisticsModal({
           {/* ========================================================= */}
           <div className="space-y-1.5">
             <p className="px-1 text-[12px] font-medium uppercase tracking-[0.12em] text-white/90 drop-shadow-xs">
-              Distribusi Kategori
+              {t.stats.categorySection}
             </p>
 
             <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-4">
@@ -698,11 +703,11 @@ export function MobileStatisticsModal({
                 <div className="flex items-center gap-2">
                   <PieChart className="h-4 w-4 text-[#187557] stroke-[1.8]" />
                   <span className="text-[14.5px] font-semibold text-[#0D3528] tracking-wide">
-                    Fokus Sesuai Tag
+                    {t.stats.categoryTitle}
                   </span>
                 </div>
                 <span className="text-[11px] font-medium text-[#187557] bg-[#E4F4ED] border border-[#BCE5D3] px-2.5 py-0.5 rounded-full">
-                  Semua Waktu
+                  {t.stats.allTime}
                 </span>
               </div>
 
@@ -779,7 +784,7 @@ export function MobileStatisticsModal({
                 <div className="flex-1 w-full space-y-1.5">
                   {tagBreakdown.length === 0 ? (
                     <p className="text-[12px] text-[#4C7567]/60 italic py-3 text-center">
-                      Belum ada sesi fokus tercatat.
+                      {t.stats.noDataYet}
                     </p>
                   ) : (
                     tagBreakdown.map((item) => {
@@ -806,7 +811,7 @@ export function MobileStatisticsModal({
                                 style={{ backgroundColor: item.color }}
                               />
                               <span className="font-medium text-[#0D3528] text-[12.5px] truncate">
-                                {item.label}
+                                {translateTag(item.label)}
                               </span>
                             </div>
                             <div className="flex items-center gap-1 text-[11.5px] shrink-0 font-normal">
@@ -843,7 +848,7 @@ export function MobileStatisticsModal({
           {/* ========================================================= */}
           <div className="space-y-1.5">
             <p className="px-1 text-[12px] font-medium uppercase tracking-[0.12em] text-white/90 drop-shadow-xs">
-              Konsistensi Harian
+              {t.stats.consistencySection}
             </p>
 
             <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-4">
@@ -851,11 +856,11 @@ export function MobileStatisticsModal({
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-[#187557] stroke-[1.8]" />
                   <span className="text-[14.5px] font-semibold text-[#0D3528] tracking-wide">
-                    Matriks 12 Minggu
+                    {t.stats.heatmapTitle}
                   </span>
                 </div>
                 <span className="text-[11px] font-medium text-[#187557] bg-[#E4F4ED] border border-[#BCE5D3] px-2.5 py-0.5 rounded-full">
-                  84 Hari Terakhir
+                  {t.stats.last84Days}
                 </span>
               </div>
 
@@ -865,8 +870,8 @@ export function MobileStatisticsModal({
                   <span>{selectedHeatmapDay.dateStr}</span>
                   <span className="font-medium text-emerald-100">
                     {selectedHeatmapDay.minutes > 0
-                      ? `${selectedHeatmapDay.minutes} Menit Fokus`
-                      : "Tidak ada fokus"}
+                      ? `${selectedHeatmapDay.minutes} ${t.common.Minutes}`
+                      : t.stats.noFocusDay}
                   </span>
                 </div>
               )}
@@ -926,14 +931,14 @@ export function MobileStatisticsModal({
 
               {/* Heatmap Intensity Legend */}
               <div className="flex items-center justify-between pt-0.5 text-[11px] text-[#4C7567] font-normal">
-                <span>Kurang</span>
+                <span>{t.stats.less}</span>
                 <div className="flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 rounded-[4px] bg-[#0D3528]/8" />
                   <span className="w-2.5 h-2.5 rounded-[4px] bg-[#BCE5D3]" />
                   <span className="w-2.5 h-2.5 rounded-[4px] bg-[#38B28B]" />
                   <span className="w-2.5 h-2.5 rounded-[4px] bg-[#187557]" />
                 </div>
-                <span>Banyak</span>
+                <span>{t.stats.more}</span>
               </div>
             </div>
           </div>
@@ -945,7 +950,7 @@ export function MobileStatisticsModal({
             <div className="space-y-1.5 animate-in fade-in slide-in-from-bottom-2 duration-200">
               <div className="flex items-center justify-between px-1">
                 <p className="text-[12px] font-medium uppercase tracking-[0.12em] text-white/90 drop-shadow-xs">
-                  Riwayat Sesi: {drilldownDate.label}
+                  {language === "en" ? "Sessions:" : "Riwayat Sesi:"} {drilldownDate.label}
                 </p>
                 <button
                   type="button"
@@ -956,18 +961,18 @@ export function MobileStatisticsModal({
                   }}
                   className="text-[11.5px] text-white/90 hover:text-white underline cursor-pointer"
                 >
-                  Tutup
+                  {t.common.close}
                 </button>
               </div>
 
               <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-4 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-2">
                 {drilldownSessions.length === 0 ? (
                   <p className="text-[12px] text-[#4C7567] italic py-2.5 text-center font-normal">
-                    Tidak ada sesi fokus pada tanggal ini.
+                    {t.stats.noFocusDay}
                   </p>
                 ) : (
                   drilldownSessions.map((session, sIdx) => {
-                    const sTime = new Date(session.started_at).toLocaleTimeString("id-ID", {
+                    const sTime = new Date(session.started_at).toLocaleTimeString(language === "en" ? "en-US" : "id-ID", {
                       hour: "2-digit",
                       minute: "2-digit",
                     });
@@ -994,7 +999,7 @@ export function MobileStatisticsModal({
                                 style={{ backgroundColor: tagCol }}
                               />
                               <span className="text-[12.5px] font-semibold text-[#0D3528]">
-                                {session.tag || "Fokus"}
+                                {translateTag(session.tag || "Fokus")}
                               </span>
                               <span className="text-[10px] text-[#4C7567]">· {sTime}</span>
                             </div>
@@ -1004,7 +1009,9 @@ export function MobileStatisticsModal({
                               </p>
                             ) : (
                               <p className="text-[11px] text-[#4C7567] mt-0.5">
-                                {isSuccess ? "Pohon mekar sempurna" : "Sesi terganggu"}
+                                {isSuccess
+                                  ? language === "en" ? "Tree grown" : "Pohon tumbuh subur"
+                                  : language === "en" ? "Incomplete session" : "Sesi terhenti"}
                               </p>
                             )}
                           </div>
@@ -1015,7 +1022,7 @@ export function MobileStatisticsModal({
                             {session.duration_minutes || 25}m
                           </span>
                           <p className={`text-[10px] font-medium ${isSuccess ? "text-[#14664D]" : "text-red-500"}`}>
-                            {isSuccess ? "Mekar" : "Tumbang"}
+                            {isSuccess ? t.common.done : t.journal.witheredBadge}
                           </p>
                         </div>
                       </div>
@@ -1027,7 +1034,7 @@ export function MobileStatisticsModal({
           )}
 
           {/* ========================================================= */}
-          {/* 7. CERMIN SUAKA (SHARE CARD FLEX BANNER)                  */}
+          {/* 7. KARTU PENCAPAIAN (SHARE CARD FLEX BANNER)              */}
           {/* ========================================================= */}
           <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-4.5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
@@ -1036,10 +1043,10 @@ export function MobileStatisticsModal({
               </div>
               <div className="min-w-0">
                 <h4 className="text-[13.5px] font-semibold text-[#0D3528] tracking-tight">
-                  Cermin Suaka (Kisah 9:16)
+                  {t.stats.shareBannerTitle}
                 </h4>
                 <p className="text-[11px] text-[#4C7567] font-normal truncate">
-                  Ekspor kartu estetik pulau & ritme fokusmu
+                  {t.stats.shareBannerDesc}
                 </p>
               </div>
             </div>
@@ -1054,7 +1061,7 @@ export function MobileStatisticsModal({
               className="py-2 px-3.5 rounded-full bg-[#187557] hover:bg-[#126046] text-white text-[11.5px] font-medium shadow-xs active:scale-95 transition-all shrink-0 cursor-pointer flex items-center gap-1.5 whitespace-nowrap"
             >
               <Share2 className="w-3.5 h-3.5 stroke-[2]" />
-              <span>Buat Kartu</span>
+              <span>{t.stats.createCardBtn}</span>
             </button>
           </div>
         </div>

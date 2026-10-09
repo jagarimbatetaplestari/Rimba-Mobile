@@ -5,8 +5,13 @@ import { persist } from 'zustand/middleware';
 
 export type HapticIntensity = 'light' | 'medium' | 'heavy';
 export type GraphicsQuality = 'eco' | 'balanced' | 'ultra';
+export type AppLanguage = 'id' | 'en';
 
 export interface PreferencesState {
+  // Language Preference
+  language: AppLanguage;
+  setLanguage: (lang: AppLanguage) => void;
+
   // Graphics & Performance
   graphicsQuality: GraphicsQuality;
   setGraphicsQuality: (quality: GraphicsQuality) => void;
@@ -59,6 +64,7 @@ export interface PreferencesState {
 }
 
 const DEFAULT_PREFERENCES = {
+  language: 'id' as AppLanguage,
   graphicsQuality: 'ultra' as GraphicsQuality,
   soundFxEnabled: true,
   soundFxVolume: 80,
@@ -86,6 +92,7 @@ export const usePreferencesStore = create<PreferencesState>()(
     (set) => ({
       ...DEFAULT_PREFERENCES,
 
+      setLanguage: (language) => set({ language }),
       setGraphicsQuality: (graphicsQuality) => set({ graphicsQuality }),
       setSoundFxEnabled: (soundFxEnabled) => set({ soundFxEnabled }),
       setSoundFxVolume: (soundFxVolume) => set({ soundFxVolume }),

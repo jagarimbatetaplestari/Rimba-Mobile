@@ -1,10 +1,11 @@
 "use client";
 
 import React from "react";
-import { TreePine, AlertTriangle, ShieldCheck, HeartHandshake, CloudRain } from "lucide-react";
+import { TreePine, AlertTriangle, ShieldCheck, CloudRain } from "lucide-react";
 import { soundManager } from "@/lib/audio/sounds";
-import { hapticLight, hapticSuccess, hapticWarning } from "@/lib/mobile/nativeBridge";
+import { hapticSuccess, hapticWarning } from "@/lib/mobile/nativeBridge";
 import { FocusSession } from "@/types/game";
+import { useTranslation } from "@/lib/i18n/translations";
 
 interface AbandonConfirmModalProps {
   isOpen: boolean;
@@ -21,6 +22,8 @@ export function AbandonConfirmModal({
   session,
   secondsRemaining,
 }: AbandonConfirmModalProps) {
+  const { t } = useTranslation();
+
   if (!isOpen || !session) return null;
 
   const totalSeconds = (session.duration_minutes || 25) * 60;
@@ -59,26 +62,30 @@ export function AbandonConfirmModal({
           </span>
         </div>
 
-        {/* Judul & Pesan Filosofis */}
+        {/* Judul & Pesan */}
         <div className="space-y-1.5">
           <h3 className="text-[19px] font-bold text-[#0D3528] tracking-tight">
-            Ikhlaskan Sesi Ini?
+            {t.abandon.title}
           </h3>
           <p className="text-[13px] text-[#4C7567] leading-relaxed">
-            Bibit pohon yang sedang kamu rawat akan{" "}
+            {t.abandon.subtitlePre}
             <strong className="text-amber-800 font-semibold">
-              layu menjadi tunggul lapuk
-            </strong>{" "}
-            di pulaumu.
+              {t.abandon.subtitleHighlight}
+            </strong>
+            {t.abandon.subtitlePost}
           </p>
         </div>
 
         {/* Progress Card */}
         <div className="p-3.5 rounded-2xl bg-[#0D3528]/5 border border-[#0D3528]/10 text-left space-y-2">
           <div className="flex justify-between items-center text-[11.5px]">
-            <span className="text-[#4C7567] font-medium">Perjalanan Batin:</span>
+            <span className="text-[#4C7567] font-medium">
+              {t.abandon.progressLabel}
+            </span>
             <span className="font-semibold text-[#187557] tabular-nums">
-              {elapsedMinutes} mnt tercapai · sisa {remainingMinutes} mnt
+              {t.abandon.progressValue
+                .replace("{elapsed}", String(elapsedMinutes))
+                .replace("{remaining}", String(remainingMinutes))}
             </span>
           </div>
 
@@ -91,31 +98,27 @@ export function AbandonConfirmModal({
 
           <p className="text-[11px] text-[#4C7567]/90 leading-normal flex items-center gap-1.5 pt-0.5">
             <CloudRain className="w-3.5 h-3.5 shrink-0 text-slate-500" />
-            <span>
-              Tinggal sedikit lagi sebelum bibit ini tumbuh kokoh dan abadi.
-            </span>
+            <span>{t.abandon.encouragement}</span>
           </p>
         </div>
 
         {/* Tombol Aksi */}
         <div className="space-y-2.5 pt-1">
-          {/* Tombol Utama: Terus Bertahan */}
           <button
             type="button"
             onClick={handleKeepFocusing}
             className="w-full py-3 px-4 rounded-full bg-gradient-to-r from-[#187557] via-[#208b68] to-[#2BB688] hover:opacity-95 text-white font-semibold text-[13.5px] shadow-md shadow-[#187557]/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
             <ShieldCheck className="w-4 h-4 stroke-[2.2]" />
-            <span>Lanjutkan Fokus (Jaga Bibit)</span>
+            <span>{t.abandon.keepFocusing}</span>
           </button>
 
-          {/* Tombol Sekunder: Menyerah */}
           <button
             type="button"
             onClick={handleGiveUp}
             className="w-full py-2 px-4 rounded-full text-rose-600/80 hover:text-rose-700 hover:bg-rose-50/50 font-medium text-[12px] active:scale-[0.98] transition-all cursor-pointer"
           >
-            Ikhlaskan & Biarkan Layu
+            {t.abandon.giveUp}
           </button>
         </div>
       </div>

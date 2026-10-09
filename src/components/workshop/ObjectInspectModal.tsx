@@ -8,6 +8,7 @@ import { getManifestItem } from "@/lib/game/assetManifest";
 import { soundManager } from "@/lib/audio/sounds";
 import { getObjectBaseCost } from "@/lib/game/economy";
 import { hapticLight, hapticMedium } from "@/lib/mobile/nativeBridge";
+import { useTranslation } from "@/lib/i18n/translations";
 import {
   Sparkles,
   X,
@@ -24,6 +25,7 @@ import {
 } from "lucide-react";
 
 export function ObjectInspectModal() {
+  const { t, lang, translateTag } = useTranslation();
   const selectedObject = useGameStore((state) => state.selectedObject);
   const setSelectedObject = useGameStore((state) => state.setSelectedObject);
   const restoreReclaimedObject = useGameStore(
@@ -56,7 +58,9 @@ export function ObjectInspectModal() {
   const isBulldozer = selectedObject.id === "obj_bulldozer";
   const isMarkedForClearing = selectedObject.status === "marked_for_clearing";
   const isReclaimed = selectedObject.status === "reclaimed";
-  const isWithered = selectedObject.status === "withered" || selectedObject.model_variant === "nature_stump";
+  const isWithered =
+    selectedObject.status === "withered" ||
+    selectedObject.model_variant === "nature_stump";
 
   const bribeCost = GAME_CONFIG.reclamation.bulldozer_mark_cost;
   const restoreCost = GAME_CONFIG.restore;
@@ -71,8 +75,10 @@ export function ObjectInspectModal() {
     (c) => c.model === selectedObject.model_variant,
   );
   const displayName = isBulldozer
-    ? "Bulldozer Konstruksi"
-    : manifestItem?.name || catalogItem?.name || selectedObject.object_type;
+    ? t.inspect.bulldozerName
+    : isWithered
+      ? t.inspect.witheredTitle
+      : manifestItem?.name || catalogItem?.name || selectedObject.object_type;
 
   const handleRestore = () => {
     hapticMedium();
@@ -112,12 +118,16 @@ export function ObjectInspectModal() {
     if (!activeSession || activeSession.status !== "active") {
       startFocus();
       notify(
-        "Sesi fokus dimulai! Selesaikan sesi ini untuk mengusir kru konstruksi dan menyelamatkan pohonmu.",
+        lang === "en"
+          ? "Focus session started! Complete it to save your tree."
+          : "Sesi fokus dimulai! Selesaikan sesi ini untuk menyelamatkan pohonmu.",
         "info",
       );
     } else {
       notify(
-        "Kamu sedang dalam sesi fokus! Selesaikan sesi ini untuk mengusir kru konstruksi.",
+        lang === "en"
+          ? "You're already focusing! Complete this session to save your tree."
+          : "Kamu sedang dalam sesi fokus! Selesaikan sesi ini untuk menyelamatkan pohonmu.",
         "info",
       );
     }
@@ -163,8 +173,6 @@ export function ObjectInspectModal() {
 
   return (
     <>
-
-
       <div className="fixed top-20 right-3.5 sm:right-6 z-30 pointer-events-auto max-w-[310px] w-[calc(100vw-28px)] animate-in fade-in zoom-in-95 duration-200 font-urbanist select-none antialiased">
         <div className="p-4 rounded-3xl border border-white/80 bg-gradient-to-b from-white/95 via-white/95 to-white/90 shadow-2xl shadow-[#0E3B2D]/20 backdrop-blur-xl text-[#0D3528] space-y-3">
           {/* Header */}
@@ -179,8 +187,10 @@ export function ObjectInspectModal() {
                 </h3>
                 <p className="text-[10.5px] text-[#4C7567] truncate font-normal">
                   {isBulldozer
-                    ? "Ancaman Inaktivitas"
-                    : `Petak Lahan (${selectedObject.grid_x}, ${selectedObject.grid_y})`}
+                    ? t.inspect.inactivityThreat
+                    : t.inspect.tileCoord
+                        .replace("{x}", String(selectedObject.grid_x))
+                        .replace("{y}", String(selectedObject.grid_y))}
                 </p>
               </div>
             </div>
@@ -189,7 +199,7 @@ export function ObjectInspectModal() {
               type="button"
               onClick={() => setSelectedObject(null)}
               className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0D3528]/5 hover:bg-[#0D3528]/10 text-[#0D3528] transition-transform active:scale-90 cursor-pointer shadow-2xs shrink-0"
-              aria-label="Tutup inspeksi"
+              aria-label={t.common.close}
             >
               <X className="w-3.5 h-3.5 stroke-[2]" />
             </button>
@@ -204,12 +214,12 @@ export function ObjectInspectModal() {
                 <div className="p-3 rounded-2xl border border-[#0D3528]/8 bg-[#0D3528]/[0.025] space-y-1.5">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-[10.5px] font-medium text-[#187557] flex items-center gap-1">
-                      <span>🌱</span> Memori Fokus
+                      <span>🌱</span> {t.inspect.focusNoteTitle}
                     </span>
                     <div className="flex items-center gap-1">
                       {selectedObject.focus_tag && (
                         <span className="text-[9.5px] font-medium px-2 py-0.5 rounded-full bg-[#E4F4ED] border border-[#BCE5D3] text-[#14664D]">
-                          {selectedObject.focus_tag}
+                          {translateTag(selectedObject.focus_tag)}
                         </span>
                       )}
                       {selectedObject.focus_duration && (
@@ -223,14 +233,14 @@ export function ObjectInspectModal() {
                   <p className="text-[11.5px] font-normal leading-relaxed text-[#0D3528] italic">
                     {selectedObject.task_note
                       ? `“${selectedObject.task_note}”`
-                      : "Ditanam dari sesi fokus hening di pulau Rimba."}
+                      : t.inspect.defaultTreeNote}
                   </p>
 
                   <div className="text-[10.5px] flex items-center justify-between pt-1 border-t border-[#0D3528]/6 text-[#4C7567] font-normal">
-                    <span>Ditanam pada</span>
+                    <span>{t.inspect.plantedOn}</span>
                     <span className="font-medium text-[#0D3528]">
                       {new Date(selectedObject.created_at).toLocaleDateString(
-                        "id-ID",
+                        lang === "en" ? "en-US" : "id-ID",
                         {
                           day: "numeric",
                           month: "short",
@@ -249,18 +259,16 @@ export function ObjectInspectModal() {
                   <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5 stroke-[1.8]" />
                   <div className="space-y-0.5 min-w-0">
                     <p className="font-semibold text-[12px] text-amber-950 tracking-tight">
-                      Kru Konstruksi di Pulau
+                      {t.inspect.bulldozerTitle}
                     </p>
                     <p className="text-[10.5px] leading-relaxed text-amber-900/80 font-normal">
-                      Bulldozer akan menebang 1 pohon jika tidak ada aktivitas
-                      selama 24 jam. Selesaikan sesi fokus atau halau dengan
-                      Soul.
+                      {t.inspect.bulldozerDesc}
                     </p>
                   </div>
                 </div>
 
                 <div className="text-[11px] flex justify-between px-1 text-[#4C7567] font-normal">
-                  <span>Energi Penghalau:</span>
+                  <span>{t.inspect.repelCost}</span>
                   <span className="font-semibold text-amber-800 flex items-center gap-1 tabular-nums">
                     {bribeCost} Soul{" "}
                     <Sparkles className="w-3 h-3 text-amber-500 fill-amber-500" />
@@ -274,7 +282,7 @@ export function ObjectInspectModal() {
                     className="py-2.5 px-3 rounded-full text-[12px] font-medium bg-[#187557] hover:bg-[#126046] text-white active:scale-95 transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
                   >
                     <Play className="w-3 h-3 fill-current" />
-                    <span>Fokus (Gratis)</span>
+                    <span>{t.inspect.focusFreeBtn}</span>
                   </button>
 
                   <button
@@ -290,8 +298,14 @@ export function ObjectInspectModal() {
                     <Sparkles className="w-3 h-3 text-current" />
                     <span>
                       {canAffordBribe
-                        ? `Halau (${bribeCost})`
-                        : `Butuh ${bribeCost}`}
+                        ? t.inspect.repelBtn.replace(
+                            "{cost}",
+                            String(bribeCost),
+                          )
+                        : t.inspect.needSoulBtn.replace(
+                            "{cost}",
+                            String(bribeCost),
+                          )}
                     </span>
                   </button>
                 </div>
@@ -303,17 +317,16 @@ export function ObjectInspectModal() {
                   <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5 stroke-[1.8]" />
                   <div className="space-y-0.5 min-w-0">
                     <p className="font-semibold text-[12px] text-amber-950 tracking-tight">
-                      Ditandai untuk Ditebang
+                      {t.inspect.markedTitle}
                     </p>
                     <p className="text-[10.5px] leading-relaxed text-amber-900/80 font-normal">
-                      Kru konstruksi menandai pohon ini. Selesaikan 1 Sesi Fokus
-                      untuk menyelamatkannya atau halau dengan 40 Soul.
+                      {t.inspect.markedDesc}
                     </p>
                   </div>
                 </div>
 
                 <div className="text-[11px] flex justify-between px-1 text-[#4C7567] font-normal">
-                  <span>Energi Penyelamatan:</span>
+                  <span>{t.inspect.repelCost}</span>
                   <span className="font-semibold text-amber-800 flex items-center gap-1 tabular-nums">
                     {bribeCost} Soul{" "}
                     <Sparkles className="w-3 h-3 text-amber-500 fill-amber-500" />
@@ -327,7 +340,7 @@ export function ObjectInspectModal() {
                     className="py-2.5 px-3 rounded-full text-[12px] font-medium bg-[#187557] hover:bg-[#126046] text-white active:scale-95 transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
                   >
                     <Play className="w-3 h-3 fill-current" />
-                    <span>Fokus</span>
+                    <span>{t.inspect.focusFreeBtn}</span>
                   </button>
 
                   <button
@@ -343,29 +356,38 @@ export function ObjectInspectModal() {
                     <Sparkles className="w-3 h-3 text-current" />
                     <span>
                       {canAffordBribe
-                        ? `Halau (${bribeCost})`
-                        : `Butuh ${bribeCost}`}
+                        ? t.inspect.repelBtn.replace(
+                            "{cost}",
+                            String(bribeCost),
+                          )
+                        : t.inspect.needSoulBtn.replace(
+                            "{cost}",
+                            String(bribeCost),
+                          )}
                     </span>
                   </button>
                 </div>
               </div>
             ) : isWithered ? (
-              /* STATE 3A: WITHERED STUMP (RESTORE 50 SOUL) */
+              /* STATE 3A: WITHERED TREE (RESTORE 50 SOUL) */
               <div className="space-y-2.5">
                 <div className="flex items-start gap-2.5 p-3 rounded-2xl border border-rose-200/80 bg-rose-50/80 text-[#0D3528]">
                   <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5 stroke-[1.8]" />
                   <div className="space-y-0.5 min-w-0">
                     <p className="font-semibold text-[12px] text-rose-950 tracking-tight">
-                      Tunggul Lapuk Hangus
+                      {t.inspect.witheredTitle}
                     </p>
                     <p className="text-[10.5px] leading-relaxed text-rose-900/90 font-normal">
-                      Pohon ini layu akibat sesi fokus yang terputus di tengah jalan. Lakukan ritual restorasi dengan {restoreCost} Soul untuk menyuburkan kembali tanah ini.
+                      {t.inspect.witheredDesc.replace(
+                        "{cost}",
+                        String(restoreCost),
+                      )}
                     </p>
                   </div>
                 </div>
 
                 <div className="text-[11px] flex justify-between px-1 text-[#4C7567] font-normal">
-                  <span>Biaya Restorasi Tanah:</span>
+                  <span>{t.inspect.restoreCostLabel}</span>
                   <span className="font-semibold text-rose-800 flex items-center gap-1 tabular-nums">
                     {restoreCost} Soul{" "}
                     <Sparkles className="w-3 h-3 text-amber-500 fill-amber-500" />
@@ -385,8 +407,14 @@ export function ObjectInspectModal() {
                   <Sparkles className="w-3.5 h-3.5 text-amber-300" />
                   <span>
                     {canAffordRestore
-                      ? `Pulihkan Tanah (${restoreCost} Soul)`
-                      : `Butuh ${restoreCost} Soul`}
+                      ? t.inspect.restoreTreeBtn.replace(
+                          "{cost}",
+                          String(restoreCost),
+                        )
+                      : t.inspect.needSoulBtn.replace(
+                          "{cost}",
+                          String(restoreCost),
+                        )}
                   </span>
                 </button>
               </div>
@@ -397,16 +425,16 @@ export function ObjectInspectModal() {
                   <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0 mt-0.5 stroke-[1.8]" />
                   <div className="space-y-0.5 min-w-0">
                     <p className="font-semibold text-[12px] text-amber-950 tracking-tight">
-                      Tertutup Lumut Liar
+                      {t.inspect.reclaimedTitle}
                     </p>
                     <p className="text-[10.5px] leading-relaxed text-amber-900/80 font-normal">
-                      Pulihkan objek ini untuk mengembalikan kesegaran alaminya.
+                      {t.inspect.reclaimedDesc}
                     </p>
                   </div>
                 </div>
 
                 <div className="text-[11px] flex justify-between px-1 text-[#4C7567] font-normal">
-                  <span>Energi Pemulihan:</span>
+                  <span>{t.inspect.restoreCostLabel}</span>
                   <span className="font-semibold text-amber-800 flex items-center gap-1 tabular-nums">
                     {restoreCost} Soul{" "}
                     <Sparkles className="w-3 h-3 text-amber-500 fill-amber-500" />
@@ -426,8 +454,14 @@ export function ObjectInspectModal() {
                   <Sparkles className="w-3.5 h-3.5 text-amber-300" />
                   <span>
                     {canAffordRestore
-                      ? `Pulihkan (${restoreCost} Soul)`
-                      : `Butuh ${restoreCost} Soul`}
+                      ? t.inspect.restoreObjBtn.replace(
+                          "{cost}",
+                          String(restoreCost),
+                        )
+                      : t.inspect.needSoulBtn.replace(
+                          "{cost}",
+                          String(restoreCost),
+                        )}
                   </span>
                 </button>
               </div>
@@ -438,10 +472,10 @@ export function ObjectInspectModal() {
                   <CheckCircle2 className="w-4 h-4 text-[#187557] shrink-0 stroke-[2]" />
                   <div className="min-w-0">
                     <p className="font-semibold text-[12.5px] text-[#0D3528]">
-                      Subur & Terawat
+                      {t.inspect.healthyTitle}
                     </p>
                     <p className="text-[10.5px] text-[#4C7567] font-normal">
-                      Tumbuh dari ketekunan fokusmu di Rimba.
+                      {t.inspect.healthyDesc}
                     </p>
                   </div>
                 </div>
@@ -456,7 +490,7 @@ export function ObjectInspectModal() {
                 {!activeSession && (
                   <div className="pt-2 border-t border-[#0D3528]/8 space-y-2">
                     <div className="text-[10px] font-medium uppercase tracking-[0.1em] text-[#4C7567] px-1">
-                      Tata Letak & Lahan
+                      {t.inspect.layoutSection}
                     </div>
 
                     <div className="grid grid-cols-2 gap-2">
@@ -464,10 +498,9 @@ export function ObjectInspectModal() {
                         type="button"
                         onClick={handleStartRelocate}
                         className="py-2.5 px-3 rounded-full text-[12px] font-medium border border-[#0D3528]/12 bg-white hover:bg-[#E4F4ED]/50 text-[#0D3528] flex items-center justify-center gap-1.5 shadow-2xs active:scale-95 transition-all cursor-pointer"
-                        title="Pindahkan objek ke petak lain"
                       >
                         <Move className="w-3.5 h-3.5 stroke-[1.8]" />
-                        <span>Pindahkan</span>
+                        <span>{t.inspect.moveBtn}</span>
                       </button>
 
                       {selectedObject.object_type === "tree" ? (
@@ -476,10 +509,9 @@ export function ObjectInspectModal() {
                             type="button"
                             onClick={handleRemove}
                             className="py-2.5 px-3 rounded-full text-[12px] font-medium bg-[#E4F4ED] hover:bg-[#d5eee2] border border-[#BCE5D3] text-[#14664D] flex items-center justify-center gap-1.5 shadow-2xs active:scale-95 transition-all cursor-pointer"
-                            title="Bersihkan tunggul kayu lapuk untuk memulihkan kesuburan tanah (Gratis)"
                           >
                             <Trash2 className="w-3.5 h-3.5 text-[#187557] stroke-[1.8]" />
-                            <span>Bersihkan (Gratis)</span>
+                            <span>{t.inspect.clearFreeBtn}</span>
                           </button>
                         ) : (
                           <button
@@ -491,14 +523,9 @@ export function ObjectInspectModal() {
                                 ? "bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 active:scale-95 cursor-pointer"
                                 : "bg-black/5 border border-black/10 text-[#4C7567]/40 cursor-not-allowed"
                             }`}
-                            title={
-                              gold >= 2
-                                ? "Mencabut pohon suaka hidup berkonsekuensi -2 Soul demi keseimbangan alam"
-                                : "Butuh minimal 2 Soul untuk mencabut pohon hidup"
-                            }
                           >
                             <Trash2 className="w-3.5 h-3.5 stroke-[1.8]" />
-                            <span>Cabut (-2 Soul)</span>
+                            <span>{t.inspect.removeTreeBtn}</span>
                           </button>
                         )
                       ) : (
@@ -506,10 +533,14 @@ export function ObjectInspectModal() {
                           type="button"
                           onClick={handleRemove}
                           className="py-2.5 px-3 rounded-full text-[12px] font-medium bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 flex items-center justify-center gap-1.5 shadow-2xs active:scale-95 transition-all cursor-pointer"
-                          title={`Bongkar objek dan daur ulang material (+${refundAmount} Soul)`}
                         >
                           <Trash2 className="w-3.5 h-3.5 stroke-[1.8]" />
-                          <span>Bongkar (+{refundAmount})</span>
+                          <span>
+                            {t.inspect.recycleBtn.replace(
+                              "{refund}",
+                              String(refundAmount),
+                            )}
+                          </span>
                         </button>
                       )}
                     </div>

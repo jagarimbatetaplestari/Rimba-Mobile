@@ -29,6 +29,7 @@ import { hapticLight } from "@/lib/mobile/nativeBridge";
 import { useAuthStore } from "@/lib/auth/useAuthStore";
 import { getLevelFromXp } from "@/lib/game/levelRules";
 import { RangerAvatar } from "@/components/ui/RangerAvatar";
+import { useTranslation } from "@/lib/i18n/translations";
 
 export interface MobileHeaderHUDProps {
   onOpenStreak?: () => void;
@@ -78,6 +79,7 @@ export function MobileHeaderHUD({
   const activeBiome = useGameStore((state) => state.activeBiome);
   const toggleActiveBiome = useGameStore((state) => state.toggleActiveBiome);
   const devFastMode = useGameStore((state) => state.devFastMode);
+  const { t, lang, setLanguage } = useTranslation();
 
   const currentLevel = getLevelFromXp(profile.xp);
   const nickname = authUser?.name?.trim() || "Penjaga";
@@ -127,9 +129,9 @@ export function MobileHeaderHUD({
   };
 
   const getTimeLabel = () => {
-    if (timeOfDay === "day") return "Siang";
-    if (timeOfDay === "sunset") return "Sore";
-    return "Malam";
+    if (timeOfDay === "day") return t.hud.timeDay;
+    if (timeOfDay === "sunset") return t.hud.timeSunset;
+    return t.hud.timeNight;
   };
 
   const handleCycleWeather = (e: React.MouseEvent) => {
@@ -150,9 +152,9 @@ export function MobileHeaderHUD({
   };
 
   const getWeatherLabel = () => {
-    if (weather === "rain") return "Hujan";
-    if (weather === "mist") return "Kabut";
-    return "Cerah";
+    if (weather === "rain") return t.hud.weatherRain;
+    if (weather === "mist") return t.hud.weatherMist;
+    return t.hud.weatherClear;
   };
 
   const toggleDropdown = (type: "profile" | "settings") => {
@@ -170,6 +172,12 @@ export function MobileHeaderHUD({
     hapticLight();
     closeDropdown();
     callback?.();
+  };
+
+  const handleToggleLanguage = () => {
+    soundManager.playPop();
+    hapticLight();
+    setLanguage(lang === "id" ? "en" : "id");
   };
 
   /*
@@ -247,8 +255,8 @@ export function MobileHeaderHUD({
                 onClick={() => toggleDropdown("profile")}
                 style={glassCapsuleStyle}
                 className="relative flex items-center gap-2 h-[44px] pl-2 pr-3.5 rounded-full transition-colors cursor-pointer overflow-hidden group"
-                title="Menu Profil & Catatan Suaka"
-                aria-label="Buka Menu Profil dan Suaka"
+                title={t.hud.menuProfile}
+                aria-label={t.hud.menuProfile}
               >
                 {/* Specular Highlight Sheen Halus */}
                 <div className="absolute inset-x-2 top-0 h-[45%] bg-gradient-to-b from-white/25 to-transparent rounded-t-full pointer-events-none" />
@@ -280,7 +288,7 @@ export function MobileHeaderHUD({
                     isNight ? "text-white" : "text-[#0b2719]"
                   }`}
                 >
-                  {nickname === "Penjaga" ? "Tamu Rimba" : nickname}
+                  {nickname === "Penjaga" ? t.common.guestName : nickname}
                 </span>
 
                 {/* Level Pill Suaka */}
@@ -311,8 +319,8 @@ export function MobileHeaderHUD({
                       ? "bg-white/20 hover:bg-white/30 border-white/30 text-white"
                       : "bg-[#0b2719]/12 hover:bg-[#0b2719]/20 border-[#0b2719]/20 text-[#0b2719]"
                   }`}
-                  title="Tutup Menu"
-                  aria-label="Tutup Menu"
+                  title={t.common.close}
+                  aria-label={t.common.close}
                 >
                   <X className="w-3.5 h-3.5 stroke-[2.4]" />
                 </button>
@@ -322,8 +330,8 @@ export function MobileHeaderHUD({
                   type="button"
                   onClick={() => handleAction(onOpenProfile)}
                   className={pillarButton}
-                  title="Profil Akun"
-                  aria-label="Profil Akun"
+                  title={t.hud.menuProfile}
+                  aria-label={t.hud.menuProfile}
                 >
                   <User className="w-4 h-4 stroke-[2.2]" />
                 </button>
@@ -333,8 +341,8 @@ export function MobileHeaderHUD({
                   type="button"
                   onClick={() => handleAction(onOpenStats || onOpenProfile)}
                   className={pillarButton}
-                  title="Statistik & Riwayat Fokus"
-                  aria-label="Statistik Fokus"
+                  title={t.hud.menuStats}
+                  aria-label={t.hud.menuStats}
                 >
                   <BarChart3 className="w-4 h-4 stroke-[2.2]" />
                 </button>
@@ -344,8 +352,8 @@ export function MobileHeaderHUD({
                   type="button"
                   onClick={() => handleAction(onOpenJournal || onOpenAlmanac)}
                   className={pillarButton}
-                  title="Jurnal Suaka & Misi"
-                  aria-label="Jurnal Suaka"
+                  title={t.hud.menuJournal}
+                  aria-label={t.hud.menuJournal}
                 >
                   <BookMarked className="w-4 h-4 stroke-[2.2]" />
                   {claimableCount > 0 && (
@@ -360,30 +368,30 @@ export function MobileHeaderHUD({
                   type="button"
                   onClick={() => handleAction(onOpenLeaderboard)}
                   className={pillarButton}
-                  title="Papan Peringkat"
-                  aria-label="Papan Peringkat"
+                  title={t.hud.menuRanks}
+                  aria-label={t.hud.menuRanks}
                 >
                   <Trophy className="w-4 h-4 stroke-[2.2]" />
                 </button>
 
-                {/* 6. Bilik Hening (Campfire Focus Room) */}
+                {/* 6. Fokus Bareng (Campfire Focus Room) */}
                 <button
                   type="button"
                   onClick={() => handleAction(onOpenCampfire)}
                   className={pillarButton}
-                  title="Bilik Hening (Api Unggun Bersama)"
-                  aria-label="Bilik Hening"
+                  title={t.hud.menuCampfire}
+                  aria-label={t.hud.menuCampfire}
                 >
                   <Flame className="w-4 h-4 stroke-[2.2] text-amber-500 fill-amber-500/30" />
                 </button>
 
-                {/* 7. Bagikan Suaka */}
+                {/* 7. Bagikan Pulau */}
                 <button
                   type="button"
                   onClick={() => handleAction(onOpenShare)}
                   className={pillarButton}
-                  title="Bagikan Suaka"
-                  aria-label="Bagikan Suaka"
+                  title={t.hud.menuShare}
+                  aria-label={t.hud.menuShare}
                 >
                   <Share2 className="w-4 h-4 stroke-[2.2]" />
                 </button>
@@ -408,8 +416,8 @@ export function MobileHeaderHUD({
                   type="button"
                   onClick={handleCycleWeather}
                   className={iconButtonClass}
-                  title={`Cuaca Suaka: ${getWeatherLabel()} (Ketuk untuk ganti)`}
-                  aria-label={`Ganti Cuaca (${getWeatherLabel()})`}
+                  title={getWeatherLabel()}
+                  aria-label={getWeatherLabel()}
                 >
                   {getWeatherIcon()}
                 </button>
@@ -431,10 +439,14 @@ export function MobileHeaderHUD({
                     `}
                     title={
                       activeBiome === "snow"
-                        ? "Bioma: Salju Abadi (Beralih ke Padang Rumput)"
-                        : "Bioma: Padang Rumput (Beralih ke Salju Abadi)"
+                        ? t.hud.biomeSnow
+                        : t.hud.biomeGrass
                     }
-                    aria-label={`Ganti Bioma (${activeBiome === "snow" ? "Salju" : "Rumput"})`}
+                    aria-label={
+                      activeBiome === "snow"
+                        ? t.hud.biomeSnow
+                        : t.hud.biomeGrass
+                    }
                   >
                     {activeBiome === "snow" ? (
                       <Snowflake className="w-4 h-4 stroke-[2.4]" />
@@ -449,8 +461,8 @@ export function MobileHeaderHUD({
                   type="button"
                   onClick={handleCycleTime}
                   className={iconButtonClass}
-                  title={`Waktu Suaka: ${getTimeLabel()} (Ketuk untuk ganti)`}
-                  aria-label={`Ganti Waktu (${getTimeLabel()})`}
+                  title={getTimeLabel()}
+                  aria-label={getTimeLabel()}
                 >
                   {getTimeIcon()}
                 </button>
@@ -460,8 +472,8 @@ export function MobileHeaderHUD({
                   type="button"
                   onClick={() => toggleDropdown("settings")}
                   className={iconButtonClass}
-                  title="Pengaturan & Sarana"
-                  aria-label="Pengaturan dan Sarana"
+                  title={t.hud.menuSettings}
+                  aria-label={t.hud.menuSettings}
                 >
                   <Settings
                     className={`w-4 h-4 stroke-[2.4] ${iconThemeClass}`}
@@ -469,7 +481,7 @@ export function MobileHeaderHUD({
                 </button>
               </div>
             ) : (
-              /* Dynamic Vertical Pillar Pengaturan (tanpa zoom-in-95) */
+              /* Dynamic Vertical Pillar Pengaturan */
               <div
                 style={pillarGlassStyle}
                 className="w-[44px] rounded-full p-1.5 z-50 flex flex-col items-center gap-1 relative overflow-hidden animate-in fade-in duration-200"
@@ -485,8 +497,8 @@ export function MobileHeaderHUD({
                       ? "bg-white/20 hover:bg-white/30 border-white/30 text-white"
                       : "bg-[#0b2719]/12 hover:bg-[#0b2719]/20 border-[#0b2719]/20 text-[#0b2719]"
                   }`}
-                  title="Tutup Pengaturan"
-                  aria-label="Tutup Pengaturan"
+                  title={t.common.close}
+                  aria-label={t.common.close}
                 >
                   <X className="w-3.5 h-3.5 stroke-[2.4]" />
                 </button>
@@ -496,19 +508,19 @@ export function MobileHeaderHUD({
                   type="button"
                   onClick={() => handleAction(onOpenSettings)}
                   className={pillarButton}
-                  title="Pengaturan Suaka"
-                  aria-label="Pengaturan Suaka"
+                  title={t.hud.menuSettings}
+                  aria-label={t.hud.menuSettings}
                 >
                   <Settings className="w-4 h-4 stroke-[2.2]" />
                 </button>
 
-                {/* 3. Bengkel Alam */}
+                {/* 3. Dekorasi Pulau */}
                 <button
                   type="button"
                   onClick={() => handleAction(onOpenWorkshop)}
                   className={pillarButton}
-                  title="Bengkel Alam (Dekorasi Lahan)"
-                  aria-label="Bengkel Alam"
+                  title={t.hud.menuWorkshop}
+                  aria-label={t.hud.menuWorkshop}
                 >
                   <Hammer className="w-4 h-4 stroke-[2.2]" />
                 </button>
@@ -518,19 +530,30 @@ export function MobileHeaderHUD({
                   type="button"
                   onClick={() => handleAction(onOpenSoundscapes)}
                   className={pillarButton}
-                  title="Audio Alam (Soundscape)"
-                  aria-label="Audio Alam"
+                  title={t.hud.menuSoundscape}
+                  aria-label={t.hud.menuSoundscape}
                 >
                   <Headphones className="w-4 h-4 stroke-[2.2]" />
                 </button>
 
-                {/* 5. Panduan & Onboarding */}
+                {/* 5. Quick Language Switcher (ID / EN) */}
+                <button
+                  type="button"
+                  onClick={handleToggleLanguage}
+                  className={`${pillarButton} text-[10.5px] font-bold tracking-tight`}
+                  title={t.hud.langToggleTitle}
+                  aria-label={t.hud.langToggleTitle}
+                >
+                  <span>{lang.toUpperCase()}</span>
+                </button>
+
+                {/* 6. Panduan & Onboarding */}
                 <button
                   type="button"
                   onClick={() => handleAction(onOpenOnboarding)}
                   className={pillarButton}
-                  title="Panduan & Onboarding Suaka"
-                  aria-label="Bantuan dan Panduan"
+                  title={t.hud.menuGuide}
+                  aria-label={t.hud.menuGuide}
                 >
                   <HelpCircle className="w-4 h-4 stroke-[2.2]" />
                 </button>

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import confetti from "canvas-confetti";
-import { FocusSession, TreeSpecies, TodoItem } from "@/types/game";
+import { FocusSession, TodoItem } from "@/types/game";
 import { TREE_SPECIES_CONFIG, FOCUS_TAGS } from "@/lib/game/config";
 import { calculateFocusRewards } from "@/lib/game/sessionRules";
 import {
@@ -10,6 +10,7 @@ import {
   getLandExpansionZoneInfo,
 } from "@/lib/game/worldRules";
 import { useGameStore } from "@/lib/game/useGameStore";
+import { useTranslation } from "@/lib/i18n/translations";
 
 const EMPTY_TODOS: TodoItem[] = [];
 import { soundManager } from "@/lib/audio/sounds";
@@ -41,6 +42,7 @@ export function FocusHarvestModal({
   session,
   onConfirmHarvest,
 }: FocusHarvestModalProps) {
+  const { t, language, translateTag, translateSpecies } = useTranslation();
   const world = useGameStore((state) => state.saveData.world);
   const worldObjects = useGameStore((state) => state.saveData.world_objects);
   const todos = useGameStore((state) => state.saveData.todos) || EMPTY_TODOS;
@@ -110,14 +112,16 @@ export function FocusHarvestModal({
   const speciesCfg =
     TREE_SPECIES_CONFIG.find((s) => s.id === session.species) ||
     TREE_SPECIES_CONFIG[0];
-  const tagCfg = FOCUS_TAGS.find((t) => t.id === session.tag) || {
-    id: session.tag,
-    label: session.tag,
+  const localizedSpeciesName = translateSpecies(speciesCfg.id, speciesCfg.name);
+  const tagCfg = FOCUS_TAGS.find((tItem) => tItem.id === session.tag) || {
+    id: session.tag || "Fokus",
+    label: session.tag || "Fokus",
     color: "#10B981",
   };
+  const localizedTagLabel = translateTag(tagCfg.label || "Fokus");
 
   const linkedTodo = session.todo_id
-    ? todos.find((t) => t.id === session.todo_id)
+    ? todos.find((td) => td.id === session.todo_id)
     : null;
 
   const hadBulldozerThreat =
@@ -136,14 +140,17 @@ export function FocusHarvestModal({
     hapticLight();
 
     const noteText = reflectionNote.trim()
-      ? `\n📝 Refleksi: "${reflectionNote.trim()}"`
+      ? `\n📝 "${reflectionNote.trim()}"`
       : "";
-    const shareText = `🌱 Saya baru saja menyelesaikan sesi fokus ${durationMins} menit di Rimba!\n🌳 Menumbuhkan: ${speciesCfg.name}\n🏷️ Tag: #${tagCfg.label}${noteText}\n✨ Hadiah: +${rewards.gold} Soul & +${rewards.xp} XP\n\nJaga fokus dan rawat suaka pulaumu bersama Rimba 🌿`;
+    const shareText =
+      language === "en"
+        ? `🌱 Just completed a ${durationMins}-minute focus session on Rimba!\n🌳 Planted: ${localizedSpeciesName}\n🏷️ Tag: #${localizedTagLabel}${noteText}\n✨ Earned: +${rewards.gold} Soul & +${rewards.xp} XP\n\nStay focused and grow your island on Rimba 🌿`
+        : `🌱 Baru saja menyelesaikan fokus ${durationMins} menit di Rimba!\n🌳 Menanam: ${localizedSpeciesName}\n🏷️ Kategori: #${localizedTagLabel}${noteText}\n✨ Hadiah: +${rewards.gold} Soul & +${rewards.xp} XP\n\nYuk fokus bareng dan tumbuhkan pulaumu di Rimba 🌿`;
 
     if (typeof navigator !== "undefined" && navigator.share) {
       try {
         await navigator.share({
-          title: "Panen Pohon Rimba",
+          title: "Rimba Focus",
           text: shareText,
         });
         return;
@@ -153,7 +160,7 @@ export function FocusHarvestModal({
     if (typeof navigator !== "undefined" && navigator.clipboard) {
       await navigator.clipboard.writeText(shareText);
       setCopiedShare(true);
-      notify("Teks momen berhasil disalin ke papan klip! 📋", "success");
+      notify(t.harvest.shareToast, "success");
       setTimeout(() => setCopiedShare(false), 3000);
     }
   };
@@ -195,8 +202,8 @@ export function FocusHarvestModal({
         <button
           onClick={onClose}
           className="absolute top-4 right-4 w-7 h-7 rounded-full flex items-center justify-center bg-white/20 hover:bg-white/30 border border-white/30 text-white transition-all z-10 active:scale-90 cursor-pointer shadow-xs"
-          title="Tutup dialog"
-          aria-label="Tutup dialog"
+          title={t.common.close}
+          aria-label={t.common.close}
         >
           <X className="w-3.5 h-3.5 stroke-[2.4]" />
         </button>
@@ -214,12 +221,13 @@ export function FocusHarvestModal({
 
           <div className="space-y-1">
             <h3 className="text-lg font-bold tracking-tight text-white flex items-center justify-center gap-1.5 drop-shadow-xs">
-              <span>Pohon Telah Mekar</span>
+              <span>{t.harvest.title}</span>
               <span className="text-emerald-300">🌱</span>
             </h3>
             <p className="text-[12px] text-white/80 max-w-xs mx-auto leading-relaxed">
-              Ketenangan dan ketekunanmu melahirkan pohon{" "}
-              <b>{speciesCfg.name}</b> di Pulau Suaka Rimba.
+              {t.harvest.subtitlePre}
+              <b>{localizedSpeciesName}</b>
+              {t.harvest.subtitlePost}
             </p>
           </div>
         </div>
@@ -229,13 +237,13 @@ export function FocusHarvestModal({
           <div className="flex flex-col items-center text-center p-2 rounded-xl bg-white/10">
             <span className="text-[10px] text-white/70 flex items-center gap-1 font-medium">
               <Clock className="w-3 h-3 stroke-[2.2]" />
-              <span>Durasi</span>
+              <span>{t.harvest.duration}</span>
             </span>
             <span className="text-sm font-bold font-mono text-white mt-0.5 tabular-nums">
               {durationMins}m
             </span>
             <span className="text-[9.5px] font-semibold px-1.5 py-0.2 rounded-md mt-1 truncate max-w-full border border-white/20 bg-white/10 text-white">
-              #{tagCfg.label}
+              #{localizedTagLabel}
             </span>
           </div>
 
@@ -247,7 +255,9 @@ export function FocusHarvestModal({
             <span className="text-sm font-bold font-mono text-amber-200 mt-0.5 tabular-nums">
               +{rewards.gold}
             </span>
-            <span className="text-[9px] text-white/60 mt-1">Energi Suaka</span>
+            <span className="text-[9px] text-white/60 mt-1">
+              {t.harvest.soulSub}
+            </span>
           </div>
 
           <div className="flex flex-col items-center text-center p-2 rounded-xl bg-white/10">
@@ -258,7 +268,9 @@ export function FocusHarvestModal({
             <span className="text-sm font-bold font-mono text-emerald-200 mt-0.5 tabular-nums">
               +{rewards.xp}
             </span>
-            <span className="text-[9px] text-white/60 mt-1">Pengalaman</span>
+            <span className="text-[9px] text-white/60 mt-1">
+              {t.harvest.xpSub}
+            </span>
           </div>
         </div>
 
@@ -266,10 +278,10 @@ export function FocusHarvestModal({
         {isCampfire && (
           <div className="p-2.5 rounded-2xl bg-amber-500/20 border border-amber-300/30 flex items-center justify-between text-xs text-amber-100 relative z-10 backdrop-blur-md">
             <span className="flex items-center gap-1.5 font-medium text-[11px]">
-              <span>🔥</span> Berkat Api Unggun (+20% Soul & XP Bonus)
+              <span>🔥</span> {t.harvest.campfireBonus}
             </span>
             <span className="text-[10px] font-bold text-amber-300 bg-amber-400/20 px-2 py-0.5 rounded-full border border-amber-300/30">
-              Bersama Kawan
+              {t.harvest.withFriends}
             </span>
           </div>
         )}
@@ -279,12 +291,13 @@ export function FocusHarvestModal({
           <div className="flex items-center gap-2">
             <Maximize2 className="w-3.5 h-3.5 text-white/80 shrink-0" />
             <span className="text-[11px] leading-tight">
-              Menutup <b>{landProgressPct}%</b> biaya petak baru (
-              {zoneInfo.nextTileCost} Soul)
+              {t.harvest.tileProgress
+                .replace("{pct}", String(landProgressPct))
+                .replace("{cost}", String(zoneInfo.nextTileCost))}
             </span>
           </div>
           <span className="text-[10px] font-mono font-bold text-white bg-white/20 px-2 py-0.5 rounded-lg border border-white/25">
-            {unlockedSet.size}/100 Petak
+            {t.harvest.tilesCount.replace("{count}", String(unlockedSet.size))}
           </span>
         </div>
 
@@ -293,8 +306,7 @@ export function FocusHarvestModal({
           <div className="p-2.5 rounded-2xl bg-amber-400/20 border border-amber-300/35 flex items-center gap-2 text-xs text-amber-100 relative z-10 backdrop-blur-md">
             <ShieldCheck className="w-4 h-4 text-amber-300 shrink-0 stroke-[2.2]" />
             <span className="text-[11px]">
-              🚜 <b>Bulldozer Dihalau!</b> Aura fokusmu memancarkan ketenangan
-              yang memulihkan lahan suaka!
+              🚜 <b>{t.harvest.bulldozerSavedTitle}</b> {t.harvest.bulldozerSavedDesc}
             </span>
           </div>
         )}
@@ -303,7 +315,7 @@ export function FocusHarvestModal({
         <div className="flex flex-col gap-1.5 pt-0.5 relative z-10">
           <label className="text-[11px] font-semibold text-white/80 flex items-center gap-1.5">
             <Edit3 className="w-3.5 h-3.5 text-white/70" />
-            <span>Jurnal Refleksi Sesi (Tersimpan di Pohon)</span>
+            <span>{t.harvest.noteLabel}</span>
           </label>
           <div className="relative">
             <textarea
@@ -311,7 +323,7 @@ export function FocusHarvestModal({
               onChange={(e) => setReflectionNote(e.target.value)}
               maxLength={120}
               rows={2}
-              placeholder="Apa yang berhasil kamu selesaikan dalam sesi fokus ini?..."
+              placeholder={t.harvest.notePlaceholder}
               className="w-full px-3.5 py-2.5 rounded-2xl bg-white/12 border border-white/25 focus:border-white/50 text-xs text-white placeholder-white/45 outline-none resize-none transition-colors backdrop-blur-md"
             />
             <span className="absolute bottom-2 right-3 text-[10px] font-mono text-white/50">
@@ -332,7 +344,7 @@ export function FocusHarvestModal({
                 <Square className="w-3.5 h-3.5 text-white/40" />
               )}
               <span className="truncate">
-                Tandai to-do selesai: <b>&quot;{linkedTodo.text}&quot;</b>
+                {t.harvest.todoCompleteLabel} <b>&quot;{linkedTodo.text}&quot;</b>
               </span>
             </button>
           )}
@@ -346,17 +358,17 @@ export function FocusHarvestModal({
             className="w-full py-3 px-4 rounded-2xl bg-white text-[#0f2e1e] hover:bg-white/95 font-bold text-xs shadow-xs active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
             <CheckCircle2 className="w-4 h-4 stroke-[2.4]" />
-            <span>Tanam ke Pulau Rimba 🌱</span>
+            <span>{t.harvest.plantBtn}</span>
           </button>
 
           <button
             type="button"
             onClick={handleShareClick}
             className="w-full sm:w-auto py-3 px-3.5 rounded-2xl bg-white/15 hover:bg-white/25 text-white font-semibold text-xs border border-white/25 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 shrink-0 cursor-pointer backdrop-blur-md"
-            title="Bagikan Momen"
+            title={t.common.share}
           >
             <Share2 className="w-3.5 h-3.5 stroke-[2.2]" />
-            <span>{copiedShare ? "Disalin!" : "Bagikan"}</span>
+            <span>{copiedShare ? t.common.copied : t.common.share}</span>
           </button>
         </div>
       </div>

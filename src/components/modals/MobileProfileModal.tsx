@@ -17,6 +17,7 @@ import { AvatarPickerModal } from "@/components/modals/AvatarPickerModal";
 import { BadgesShowcaseModal } from "@/components/modals/BadgesShowcaseModal";
 import { RestoreDataModal } from "@/components/modals/RestoreDataModal";
 import { RangerAvatar } from "@/components/ui/RangerAvatar";
+import { useTranslation, getLocalizedRangerTitle } from "@/lib/i18n/translations";
 import {
   X,
   Camera,
@@ -45,22 +46,12 @@ interface MobileProfileModalProps {
   initialTab?: ProfileTab;
 }
 
-function getRangerTitle(level: number): string {
-  if (level <= 2) return "Penjelajah Rimba";
-  if (level <= 4) return "Penjaga Kabut";
-  if (level <= 6) return "Pengembara Kanopi";
-  if (level <= 8) return "Penjaga Lembah";
-  if (level <= 10) return "Ksatria Pinus";
-  if (level <= 12) return "Penjaga Sabana";
-  if (level <= 14) return "Pelindung Baobab";
-  return "Maharesi Suaka";
-}
-
 export function MobileProfileModal({
   isOpen,
   onClose,
   onOpenLeaderboard,
 }: MobileProfileModalProps) {
+  const { t, language, translateSpecies } = useTranslation();
   const saveData = useGameStore((state) => state.saveData);
   const grassPalette = useGameStore((state) => state.grassPalette);
   const setGrassPalette = useGameStore((state) => state.setGrassPalette);
@@ -80,8 +71,8 @@ export function MobileProfileModal({
   const worldObjects = saveData.world_objects || [];
 
   useEffect(() => {
-    setNameInput(profile.name || user?.name || "Tamu Rimba");
-  }, [profile.name, user?.name]);
+    setNameInput(profile.name || user?.name || t.common.guestName);
+  }, [profile.name, user?.name, t.common.guestName]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -138,15 +129,18 @@ export function MobileProfileModal({
   }, [currentLevel]);
 
   const rangerTitle = useMemo(
-    () => getRangerTitle(currentLevel),
-    [currentLevel],
+    () => getLocalizedRangerTitle(currentLevel, language),
+    [currentLevel, language],
   );
 
   const handleSaveName = () => {
     const trimmed = nameInput.trim();
     if (trimmed) {
       setProfileName(trimmed);
-      notify(`Nama diperbarui: "${trimmed}"`, "success");
+      notify(
+        language === "en" ? `Name updated: "${trimmed}"` : `Nama diperbarui: "${trimmed}"`,
+        "success"
+      );
     }
     setIsEditingName(false);
     hapticSuccess();
@@ -156,7 +150,10 @@ export function MobileProfileModal({
     hapticSuccess();
     soundManager.playPop();
     downloadSaveDataBackup(saveData);
-    notify("Cadangan data suaka berhasil diunduh.", "success");
+    notify(
+      language === "en" ? "Island backup file downloaded." : "File cadangan pulau berhasil diunduh.",
+      "success"
+    );
   };
 
   if (!isOpen) return null;
@@ -185,7 +182,7 @@ export function MobileProfileModal({
           <div className="flex items-center justify-between py-1">
             <div className="flex items-center gap-2.5">
               <h2 className="text-[23px] font-semibold tracking-normal text-white drop-shadow-xs">
-                Profil
+                {t.profile.title}
               </h2>
               <span className="rounded-full bg-white/20 border border-white/25 px-3 py-0.5 text-[11.5px] font-medium text-emerald-50 backdrop-blur-md">
                 {rangerTitle}
@@ -201,7 +198,7 @@ export function MobileProfileModal({
                     onOpenLeaderboard();
                   }}
                   className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 border border-white/30 text-white shadow-sm backdrop-blur-md active:scale-90 transition-transform hover:bg-white/30"
-                  aria-label="Peringkat"
+                  aria-label={t.ranks.title}
                 >
                   <Trophy className="h-4 w-4 stroke-[1.8]" />
                 </button>
@@ -213,7 +210,7 @@ export function MobileProfileModal({
                   onClose();
                 }}
                 className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 border border-white/30 text-white shadow-sm backdrop-blur-md active:scale-90 transition-transform hover:bg-white/30"
-                aria-label="Tutup"
+                aria-label={t.common.close}
               >
                 <X className="h-4 w-4 stroke-[2]" />
               </button>
@@ -265,7 +262,7 @@ export function MobileProfileModal({
                 ) : (
                   <div className="flex items-center gap-2">
                     <h3 className="truncate text-[17px] font-semibold text-[#0D3528] tracking-wide">
-                      {profile.name || user?.name || "Tamu Rimba"}
+                      {profile.name || user?.name || t.common.guestName}
                     </h3>
                     <button
                       type="button"
@@ -275,7 +272,7 @@ export function MobileProfileModal({
                       <Edit2 className="w-3.5 h-3.5 stroke-[1.8]" />
                     </button>
                     <span className="ml-auto shrink-0 rounded-full bg-[#E4F4ED] border border-[#BCE5D3] px-2.5 py-0.5 text-[11px] font-medium text-[#14664D]">
-                      Lvl {currentLevel}
+                      {t.common.level} {currentLevel}
                     </span>
                   </div>
                 )}
@@ -289,7 +286,7 @@ export function MobileProfileModal({
             <div className="pt-2 border-t border-[#0D3528]/8 space-y-2">
               <div className="flex justify-between items-center text-[11.5px] font-normal">
                 <span className="text-[#4C7567]">
-                  Menuju Lvl {currentLevel + 1}
+                  {t.profile.toNextLevel.replace("{next}", String(currentLevel + 1))}
                 </span>
                 <span className="text-[#0D3528] font-medium">
                   {xpInCurrentLevel} / {xpNeededForNextLevel} XP (
@@ -315,7 +312,7 @@ export function MobileProfileModal({
           <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/95 p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-[14.5px] font-semibold text-[#0D3528] tracking-wide">
-                {world.name || "Suaka Rimba"}
+                {world.name || (language === "en" ? "Rimba Island" : "Pulau Rimba")}
               </span>
             </div>
 
@@ -329,41 +326,41 @@ export function MobileProfileModal({
                   </span>
                 </div>
                 <div className="text-[11.5px] font-normal text-[#4C7567] mt-0.5">
-                  Petak Terbuka
+                  {t.profile.tilesUnlocked}
                 </div>
               </div>
               <div className="text-center pl-3">
                 <div className="text-[21px] font-medium text-[#0D3528] tracking-normal">
                   {treesCount}{" "}
                   <span className="text-[12px] text-[#4C7567] font-normal">
-                    Pohon
+                    {t.profile.treesPlanted}
                   </span>
                 </div>
                 <div className="text-[11.5px] font-normal text-[#4C7567] mt-0.5">
-                  {stumpsCount} Tunggul
+                  {t.profile.witheredCount.replace("{count}", String(stumpsCount))}
                 </div>
               </div>
             </div>
 
-            {/* Status Embun Pelindung */}
+            {/* Status Pelindung Streak */}
             <div className="pt-2 border-t border-[#0D3528]/8 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="p-1 rounded-lg bg-cyan-500/10 text-cyan-700">
                   <Droplets className="w-3.5 h-3.5 stroke-[1.8]" />
                 </div>
                 <span className="text-[12.5px] font-normal text-[#0D3528]">
-                  Embun Pelindung
+                  {t.profile.streakFreeze}
                 </span>
               </div>
               <span className="text-[11px] font-medium text-cyan-800 bg-cyan-50 border border-cyan-200/70 px-2.5 py-0.5 rounded-full">
-                {saveData.streak_shields || 0} Siap
+                {t.profile.readyCount.replace("{count}", String(saveData.streak_shields || 0))}
               </span>
             </div>
 
             {/* Selector Palet Rumput */}
             <div className="pt-2 border-t border-[#0D3528]/8 flex items-center justify-between">
               <span className="text-[12.5px] font-normal text-[#4C7567]">
-                Warna Rumput
+                {t.profile.grassColor}
               </span>
               <div className="flex bg-[#0D3528]/7 p-0.5 rounded-full border border-white/60">
                 <button
@@ -378,7 +375,7 @@ export function MobileProfileModal({
                       : "text-[#4C7567] hover:text-[#0D3528]"
                   }`}
                 >
-                  Alami
+                  {t.profile.grassNatural}
                 </button>
                 <button
                   type="button"
@@ -392,20 +389,22 @@ export function MobileProfileModal({
                       : "text-[#4C7567] hover:text-[#0D3528]"
                   }`}
                 >
-                  Zamrud
+                  {t.profile.grassEmerald}
                 </button>
               </div>
             </div>
           </div>
 
-          {/* 3. HERBARIUM POHON (List Bersih & Transparan) */}
+          {/* 3. KOLEKSI POHON (List Bersih & Transparan) */}
           <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/95 p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-[14.5px] font-semibold text-[#0D3528] tracking-wide">
-                Herbarium
+                {t.profile.treeCollection}
               </span>
               <span className="text-[11px] font-medium text-[#187557] bg-[#E4F4ED] border border-[#BCE5D3] px-2.5 py-0.5 rounded-full">
-                {unlockedTreesCount} / {TREE_SPECIES_CONFIG.length} Terbuka
+                {t.profile.unlockedRatio
+                  .replace("{unlocked}", String(unlockedTreesCount))
+                  .replace("{total}", String(TREE_SPECIES_CONFIG.length))}
               </span>
             </div>
 
@@ -432,7 +431,7 @@ export function MobileProfileModal({
                         )}
                       </div>
                       <span className="text-[13px] font-normal truncate">
-                        {tree.name}
+                        {translateSpecies(tree.id, tree.name)}
                       </span>
                     </div>
 
@@ -443,7 +442,7 @@ export function MobileProfileModal({
                           : "bg-black/5 text-[#4C7567]/60"
                       }`}
                     >
-                      Lvl {tree.levelRequired}
+                      {t.common.level} {tree.levelRequired}
                     </span>
                   </div>
                 );
@@ -457,7 +456,7 @@ export function MobileProfileModal({
               <div className="flex items-center gap-1.5">
                 <Award className="w-4 h-4 text-emerald-600 stroke-[1.8]" />
                 <span className="text-[14.5px] font-semibold text-[#0D3528] tracking-wide">
-                  Pencapaian
+                  {t.profile.achievements}
                 </span>
               </div>
               <button
@@ -468,7 +467,7 @@ export function MobileProfileModal({
                 }}
                 className="flex items-center gap-0.5 text-[11.5px] font-medium text-[#187557] hover:text-[#0D3528] transition-colors"
               >
-                <span>Semua</span>
+                <span>{t.profile.viewAll}</span>
                 <ChevronRight className="w-3.5 h-3.5 stroke-[1.8]" />
               </button>
             </div>
@@ -479,7 +478,7 @@ export function MobileProfileModal({
                   {streakInfo.icon || "🌱"}
                 </div>
                 <div className="text-[11.5px] font-medium text-[#0D3528] truncate mt-1">
-                  {streakInfo.title || "Konsistensi"}
+                  {streakInfo.title || "Streak"}
                 </div>
               </div>
               <div className="px-1">
@@ -491,7 +490,7 @@ export function MobileProfileModal({
               <div className="px-1">
                 <div className="text-xl leading-tight">🌲</div>
                 <div className="text-[11.5px] font-medium text-[#0D3528] truncate mt-1">
-                  {unlockedTreesCount} Spesies
+                  {t.profile.speciesCount.replace("{count}", String(unlockedTreesCount))}
                 </div>
               </div>
             </div>
@@ -503,7 +502,7 @@ export function MobileProfileModal({
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-[#187557] stroke-[1.8]" />
                 <span className="text-[12.5px] font-medium text-[#0D3528] truncate max-w-[200px]">
-                  {user?.email || "Penyimpanan Lokal"}
+                  {user?.email || t.common.localSave}
                 </span>
               </div>
               <button
@@ -517,7 +516,7 @@ export function MobileProfileModal({
                 className="flex items-center gap-1.5 text-[11px] font-medium text-rose-600 hover:text-rose-700 bg-rose-50 border border-rose-200/60 px-2.5 py-1 rounded-full active:scale-95 transition-transform"
               >
                 <LogOut className="w-3 h-3 stroke-[1.8]" />
-                <span>Keluar</span>
+                <span>{t.profile.logout}</span>
               </button>
             </div>
 
@@ -528,7 +527,7 @@ export function MobileProfileModal({
                 className="py-2.5 rounded-2xl bg-white/85 hover:bg-white border border-white text-[12px] font-medium text-[#0D3528] active:scale-95 transition-all flex items-center justify-center gap-1.5 shadow-xs"
               >
                 <Download className="w-3.5 h-3.5 text-[#187557] stroke-[1.8]" />
-                <span>Cadangkan</span>
+                <span>{t.profile.backupBtn}</span>
               </button>
               <button
                 type="button"
@@ -539,7 +538,7 @@ export function MobileProfileModal({
                 className="py-2.5 rounded-2xl bg-white/85 hover:bg-white border border-white text-[12px] font-medium text-[#0D3528] active:scale-95 transition-all flex items-center justify-center gap-1.5 shadow-xs"
               >
                 <Upload className="w-3.5 h-3.5 text-[#187557] stroke-[1.8]" />
-                <span>Pulihkan</span>
+                <span>{t.profile.restoreBtn}</span>
               </button>
             </div>
           </div>

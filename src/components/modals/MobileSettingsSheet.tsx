@@ -25,6 +25,7 @@ import { RestoreDataModal } from "@/components/modals/RestoreDataModal";
 import { SnapshotsHistoryModal } from "@/components/modals/SnapshotsHistoryModal";
 import { RangerAvatar } from "@/components/ui/RangerAvatar";
 import { uploadGameSaveToCloud } from "@/lib/supabase/cloudSync";
+import { useTranslation } from "@/lib/i18n/translations";
 import {
   Music,
   Volume2,
@@ -42,6 +43,7 @@ import {
   ShieldAlert,
   Cloud,
   RefreshCw,
+  Globe,
   X,
 } from "lucide-react";
 
@@ -59,6 +61,7 @@ export function MobileSettingsSheet({
   const { user } = useAuthStore();
   const saveData = useGameStore((state) => state.saveData);
   const prefs = usePreferencesStore();
+  const { t, lang, setLanguage } = useTranslation();
 
   const profile = saveData?.profile || { xp: 0, goldCached: 0 };
   const currentLevel = Math.floor((profile?.xp || 0) / 100) + 1;
@@ -83,7 +86,9 @@ export function MobileSettingsSheet({
       soundManager.playPop();
       hapticLight();
       setSyncMessage(
-        "Akun masih mode tamu. Masuk untuk mengaktifkan cloud sync.",
+        lang === "en"
+          ? "Currently in Guest Mode. Sign in to enable Cloud Sync."
+          : "Akun masih mode tamu. Masuk untuk mengaktifkan cloud sync.",
       );
       return;
     }
@@ -96,11 +101,19 @@ export function MobileSettingsSheet({
     if (success) {
       soundManager.playComplete();
       hapticSuccess();
-      setSyncMessage("Progres suaka tersinkronkan ke Supabase Cloud!");
+      setSyncMessage(
+        lang === "en"
+          ? "Island progress synced to Cloud!"
+          : "Progres pulau tersinkronkan ke Cloud!",
+      );
     } else {
       soundManager.playError();
       hapticWarning();
-      setSyncMessage("Gagal sinkronisasi. Periksa koneksi internet.");
+      setSyncMessage(
+        lang === "en"
+          ? "Sync failed. Please check your internet connection."
+          : "Gagal sinkronisasi. Periksa koneksi internet.",
+      );
     }
   };
 
@@ -134,7 +147,7 @@ export function MobileSettingsSheet({
 
       createIslandSnapshot(
         saveData,
-        `Snapshot Sebelum Reset (${new Date().toLocaleDateString("id-ID")})`,
+        `Snapshot Before Reset (${new Date().toLocaleDateString(lang === "en" ? "en-US" : "id-ID")})`,
       );
 
       const initial = createInitialSaveData();
@@ -156,7 +169,10 @@ export function MobileSettingsSheet({
   };
 
   const handleExecuteDeleteAccount = () => {
-    if (deleteAccountInput.trim().toUpperCase() === "HAPUS") {
+    const validConfirm =
+      deleteAccountInput.trim().toUpperCase() === "HAPUS" ||
+      deleteAccountInput.trim().toUpperCase() === "DELETE";
+    if (validConfirm) {
       soundManager.playError();
       hapticWarning();
       useAuthStore.getState().deleteAccountAndData();
@@ -218,15 +234,15 @@ export function MobileSettingsSheet({
                 className="flex items-center gap-1.5 text-[15px] font-semibold text-white transition-colors cursor-pointer active:scale-95 py-1 drop-shadow-xs"
               >
                 <ChevronLeft className="w-5 h-5 stroke-[2]" />
-                <span>Pengaturan</span>
+                <span>{t.settings.title}</span>
               </button>
             ) : (
               <div className="flex items-center gap-2.5">
                 <h2 className="text-[23px] font-semibold tracking-normal text-white drop-shadow-xs">
-                  Pengaturan
+                  {t.settings.title}
                 </h2>
                 <span className="rounded-full bg-white/20 border border-white/25 px-3 py-0.5 text-[11.5px] font-medium text-emerald-50 backdrop-blur-md">
-                  Preferensi Suaka
+                  {t.settings.subtitle}
                 </span>
               </div>
             )}
@@ -238,7 +254,7 @@ export function MobileSettingsSheet({
                 onClose();
               }}
               className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 border border-white/30 text-white shadow-sm backdrop-blur-md active:scale-90 transition-transform hover:bg-white/30 cursor-pointer"
-              aria-label="Tutup"
+              aria-label={t.common.close}
             >
               <X className="h-4 w-4 stroke-[2]" />
             </button>
@@ -247,11 +263,56 @@ export function MobileSettingsSheet({
           {currentView === "main" ? (
             <div className="space-y-4">
               {/* ====================================================
+                  0. BAHASA / LANGUAGE SWITCHER
+                  ==================================================== */}
+              <div className="space-y-1.5">
+                <p className="px-1 text-[12px] font-medium uppercase tracking-[0.12em] text-white/90 drop-shadow-xs flex items-center gap-1.5">
+                  <Globe className="w-3.5 h-3.5" />
+                  <span>{t.settings.languageSection}</span>
+                </p>
+
+                <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-2 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl grid grid-cols-2 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      soundManager.playPop();
+                      hapticLight();
+                      setLanguage("id");
+                    }}
+                    className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-2xl text-[13px] font-semibold transition-all cursor-pointer ${
+                      lang === "id"
+                        ? "bg-[#187557] text-white shadow-xs"
+                        : "text-[#0D3528] hover:bg-[#0D3528]/5"
+                    }`}
+                  >
+                    <span>🇮🇩</span>
+                    <span>Bahasa Indonesia</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      soundManager.playPop();
+                      hapticLight();
+                      setLanguage("en");
+                    }}
+                    className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-2xl text-[13px] font-semibold transition-all cursor-pointer ${
+                      lang === "en"
+                        ? "bg-[#187557] text-white shadow-xs"
+                        : "text-[#0D3528] hover:bg-[#0D3528]/5"
+                    }`}
+                  >
+                    <span>🇬🇧</span>
+                    <span>English</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* ====================================================
                   1. PROFIL & AKUN
                   ==================================================== */}
               <div className="space-y-1.5">
                 <p className="px-1 text-[12px] font-medium uppercase tracking-[0.12em] text-white/90 drop-shadow-xs">
-                  Profil & Akun
+                  {t.settings.accountSection}
                 </p>
 
                 <button
@@ -270,14 +331,14 @@ export function MobileSettingsSheet({
                     <div className="min-w-0 text-left">
                       <div className="flex items-center gap-2">
                         <span className="truncate text-[15.5px] font-semibold tracking-wide text-[#0D3528]">
-                          {user?.name || profile?.name || "Tamu Rimba"}
+                          {user?.name || profile?.name || t.common.guestName}
                         </span>
                         <span className="shrink-0 rounded-full border border-[#BCE5D3] bg-[#E4F4ED] px-2.5 py-0.5 text-[10.5px] font-medium text-[#14664D]">
-                          Lvl {currentLevel}
+                          {t.common.level} {currentLevel}
                         </span>
                       </div>
                       <p className="truncate text-[12px] text-[#4C7567] font-normal mt-0.5">
-                        {user?.email || "Penyimpanan Lokal (Offline-First)"}
+                        {user?.email || t.common.localSave}
                       </p>
                     </div>
                   </div>
@@ -291,7 +352,7 @@ export function MobileSettingsSheet({
                   ==================================================== */}
               <div className="space-y-1.5">
                 <p className="px-1 text-[12px] font-medium uppercase tracking-[0.12em] text-white/90 drop-shadow-xs">
-                  Suara & Getaran
+                  {t.settings.soundSection}
                 </p>
 
                 <div className="grid grid-cols-2 gap-3 w-full">
@@ -334,7 +395,7 @@ export function MobileSettingsSheet({
 
                     <div className="my-2.5 text-left min-w-0">
                       <p className="text-[13.5px] font-semibold text-[#0D3528] truncate">
-                        Musik Latar
+                        {t.settings.bgMusic}
                       </p>
                       <button
                         type="button"
@@ -379,7 +440,7 @@ export function MobileSettingsSheet({
                     <div className="flex flex-col justify-between rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-3.5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl min-w-0">
                       <div className="flex items-center justify-between">
                         <p className="text-[13px] font-semibold text-[#0D3528] truncate">
-                          Efek Suara
+                          {t.settings.soundFx}
                         </p>
                         <button
                           type="button"
@@ -407,7 +468,7 @@ export function MobileSettingsSheet({
                         </button>
                       </div>
                       <p className="pt-1 text-[11px] leading-tight text-[#4C7567] font-normal">
-                        Suara lonceng & pop fokus
+                        {t.settings.soundFxDesc}
                       </p>
                     </div>
 
@@ -417,7 +478,7 @@ export function MobileSettingsSheet({
                         <div className="flex items-center gap-1.5 min-w-0 pr-1">
                           <Smartphone className="h-3.5 w-3.5 shrink-0 text-[#187557] stroke-[1.8]" />
                           <p className="text-[13px] font-semibold text-[#0D3528] truncate">
-                            Getaran
+                            {t.settings.haptics}
                           </p>
                         </div>
                         <button
@@ -445,7 +506,7 @@ export function MobileSettingsSheet({
                         </button>
                       </div>
                       <p className="pt-1 text-[11px] leading-tight text-[#4C7567] font-normal">
-                        Umpan balik haptic sentuhan
+                        {t.settings.hapticsDesc}
                       </p>
                     </div>
                   </div>
@@ -458,13 +519,13 @@ export function MobileSettingsSheet({
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between px-1">
                   <p className="text-[12px] font-medium uppercase tracking-[0.12em] text-white/90 drop-shadow-xs">
-                    Kualitas Grafis & Baterai
+                    {t.settings.graphicsSection}
                   </p>
                   <span className="text-[11px] font-medium text-[#14664D] bg-[#E4F4ED] px-2.5 py-0.5 rounded-full border border-[#BCE5D3]">
                     {prefs.graphicsQuality === "eco"
                       ? "Eco 🍃"
                       : prefs.graphicsQuality === "balanced"
-                        ? "Seimbang ⚖️"
+                        ? `${t.settings.balancedLabel} ⚖️`
                         : "Ultra 🌲"}
                   </span>
                 </div>
@@ -476,19 +537,19 @@ export function MobileSettingsSheet({
                         id: "eco",
                         label: "Eco",
                         icon: "🍃",
-                        detail: "Hemat Daya",
+                        detail: t.settings.ecoDesc,
                       },
                       {
                         id: "balanced",
-                        label: "Seimbang",
+                        label: t.settings.balancedLabel,
                         icon: "⚖️",
-                        detail: "Standar 60fps",
+                        detail: t.settings.balancedDesc,
                       },
                       {
                         id: "ultra",
                         label: "Ultra",
                         icon: "🌲",
-                        detail: "Visual Penuh",
+                        detail: t.settings.ultraDesc,
                       },
                     ].map((preset) => {
                       const isActive = prefs.graphicsQuality === preset.id;
@@ -518,12 +579,10 @@ export function MobileSettingsSheet({
                     })}
                   </div>
                   <p className="text-[11.5px] leading-relaxed text-[#4C7567] px-1 text-center font-normal">
-                    {prefs.graphicsQuality === "eco" &&
-                      "3.000 rumput • Bayangan nonaktif • Sangat hemat baterai."}
+                    {prefs.graphicsQuality === "eco" && t.settings.ecoDetail}
                     {prefs.graphicsQuality === "balanced" &&
-                      "6.000 rumput • Bayangan lembut • Keseimbangan performa & visual."}
-                    {prefs.graphicsQuality === "ultra" &&
-                      "9.000 rumput • Bayangan tajam presisi • Pengalaman diorama penuh."}
+                      t.settings.balancedDetail}
+                    {prefs.graphicsQuality === "ultra" && t.settings.ultraDetail}
                   </p>
                 </div>
               </div>
@@ -533,7 +592,7 @@ export function MobileSettingsSheet({
                   ==================================================== */}
               <div className="space-y-1.5">
                 <p className="px-1 text-[12px] font-medium uppercase tracking-[0.12em] text-white/90 drop-shadow-xs">
-                  Pengingat & Data
+                  {t.settings.reminderDataSection}
                 </p>
 
                 <div className="grid grid-cols-2 gap-3 w-full">
@@ -569,10 +628,10 @@ export function MobileSettingsSheet({
 
                       <div className="mt-2.5 text-left">
                         <p className="text-[13.5px] font-semibold text-[#0D3528]">
-                          Pengingat Harian
+                          {t.settings.dailyReminder}
                         </p>
                         <p className="text-[11.5px] leading-snug text-[#4C7567] font-normal mt-0.5">
-                          Lindungi streak fokus
+                          {t.settings.dailyReminderDesc}
                         </p>
                       </div>
                     </div>
@@ -580,7 +639,7 @@ export function MobileSettingsSheet({
                     <label className="relative mt-3 flex items-center justify-between rounded-full border border-white/90 bg-white/80 px-3 py-1 text-[11.5px] font-medium text-[#0D3528] shadow-2xs cursor-pointer hover:border-[#187557]/40 transition-colors">
                       <span className="flex items-center gap-1 text-[11px] text-[#4C7567] font-normal">
                         <Clock className="h-3 w-3 shrink-0 stroke-[1.8]" />
-                        Waktu
+                        {t.settings.timeLabel}
                       </span>
                       <span className="font-semibold tabular-nums text-[#0D3528]">
                         {prefs.dailyReminderTime || "20:00"} &rsaquo;
@@ -612,10 +671,10 @@ export function MobileSettingsSheet({
 
                     <div className="mt-3">
                       <p className="text-[13.5px] font-semibold text-[#0D3528]">
-                        Cadangan & Pemulihan
+                        {t.settings.backupRestore}
                       </p>
                       <p className="mt-1 text-[11.5px] leading-snug text-[#4C7567] font-normal">
-                        Unduh JSON, riwayat snapshot, & pulihkan
+                        {t.settings.backupRestoreDesc}
                       </p>
                     </div>
                   </button>
@@ -628,8 +687,7 @@ export function MobileSettingsSheet({
                 ==================================================== */
             <div className="space-y-3.5 animate-in fade-in slide-in-from-right-3 duration-200">
               <div className="p-4 rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 text-[12px] text-[#4C7567] leading-relaxed shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl font-normal">
-                Seluruh progres pulau, spesies pohon, dan riwayat sesi fokus
-                tersimpan secara mandiri di perangkat Anda (Offline-First).
+                {t.settings.storageInfo}
               </div>
 
               {/* Supabase Cloud Sync Card */}
@@ -645,8 +703,8 @@ export function MobileSettingsSheet({
                       </h4>
                       <p className="text-[11.5px] text-[#4C7567] font-normal">
                         {user && !user.isGuest
-                          ? "Penyimpanan awan terhubung"
-                          : "Mode Tamu (Hanya Tersimpan Lokal)"}
+                          ? t.settings.cloudConnected
+                          : t.settings.guestLocalOnly}
                       </p>
                     </div>
                   </div>
@@ -658,7 +716,7 @@ export function MobileSettingsSheet({
                         : "bg-amber-50 border-amber-200/70 text-amber-800"
                     }`}
                   >
-                    {user && !user.isGuest ? "Online" : "Lokal"}
+                    {user && !user.isGuest ? "Online" : "Local"}
                   </span>
                 </div>
 
@@ -683,10 +741,10 @@ export function MobileSettingsSheet({
                   />
                   <span>
                     {isSyncingCloud
-                      ? "Menyinkronkan ke Cloud..."
+                      ? t.settings.syncing
                       : user && !user.isGuest
-                        ? "Sinkronkan Sekarang"
-                        : "Hubungkan Akun"}
+                        ? t.settings.syncNow
+                        : t.settings.connectAccount}
                   </span>
                 </button>
               </div>
@@ -702,15 +760,15 @@ export function MobileSettingsSheet({
                     <Download className="h-4 w-4 text-[#187557] shrink-0 stroke-[1.8]" />
                     <div>
                       <p className="text-[13.5px] font-semibold text-[#0D3528]">
-                        Unduh Cadangan JSON
+                        {t.settings.exportJsonTitle}
                       </p>
                       <p className="text-[11.5px] text-[#4C7567] font-normal">
-                        Simpan file salinan suaka ke perangkat
+                        {t.settings.exportJsonDesc}
                       </p>
                     </div>
                   </div>
                   <span className="text-[11px] font-medium px-3 py-1 rounded-full bg-[#E4F4ED] border border-[#BCE5D3] text-[#14664D]">
-                    Unduh
+                    {t.settings.downloadBtn}
                   </span>
                 </button>
 
@@ -726,10 +784,10 @@ export function MobileSettingsSheet({
                     <History className="h-4 w-4 text-[#187557] shrink-0 stroke-[1.8]" />
                     <div>
                       <p className="text-[13.5px] font-semibold text-[#0D3528]">
-                        Riwayat Snapshot Pulau
+                        {t.settings.snapshotsTitle}
                       </p>
                       <p className="text-[11.5px] text-[#4C7567] font-normal">
-                        Titik pemulihan tata letak suaka
+                        {t.settings.snapshotsDesc}
                       </p>
                     </div>
                   </div>
@@ -748,10 +806,10 @@ export function MobileSettingsSheet({
                     <RotateCcw className="h-4 w-4 text-[#187557] shrink-0 stroke-[1.8]" />
                     <div>
                       <p className="text-[13.5px] font-semibold text-[#0D3528]">
-                        Pulihkan Data dari File
+                        {t.settings.restoreFileTitle}
                       </p>
                       <p className="text-[11.5px] text-[#4C7567] font-normal">
-                        Muat ulang dari file cadangan JSON
+                        {t.settings.restoreFileDesc}
                       </p>
                     </div>
                   </div>
@@ -762,7 +820,7 @@ export function MobileSettingsSheet({
               {/* Zona Bahaya */}
               <div className="pt-2 space-y-2.5">
                 <p className="px-1 text-[11px] font-medium uppercase tracking-[0.14em] text-rose-100 drop-shadow-xs">
-                  Zona Bahaya & Kepatuhan
+                  {t.settings.dangerZone}
                 </p>
 
                 {/* Reset Island Layout */}
@@ -778,10 +836,10 @@ export function MobileSettingsSheet({
                     <Trash2 className="h-4 w-4 text-emerald-700 shrink-0 stroke-[1.8]" />
                     <div>
                       <p className="text-[13.5px] font-semibold text-emerald-900">
-                        Atur Ulang Tata Letak Pulau
+                        {t.settings.resetIslandTitle}
                       </p>
                       <p className="text-[11.5px] text-emerald-800/80 font-normal">
-                        Bersihkan pulau & mulai layout baru (riwayat tersimpan)
+                        {t.settings.resetIslandDesc}
                       </p>
                     </div>
                   </div>
@@ -803,15 +861,15 @@ export function MobileSettingsSheet({
                     <ShieldAlert className="h-4 w-4 text-white shrink-0 stroke-[1.8]" />
                     <div>
                       <p className="text-[13.5px] font-semibold text-white">
-                        Hapus Akun & Seluruh Data
+                        {t.settings.deleteAccountTitle}
                       </p>
                       <p className="text-[11.5px] text-white/85 font-normal">
-                        Hapus permanen akun, sesi, & suaka (Apple 5.1.1(v))
+                        {t.settings.deleteAccountDesc}
                       </p>
                     </div>
                   </div>
                   <span className="text-[10.5px] font-semibold px-2.5 py-0.5 rounded-full bg-rose-200 text-red">
-                    Hapus
+                    {t.settings.deleteBtn}
                   </span>
                 </button>
               </div>

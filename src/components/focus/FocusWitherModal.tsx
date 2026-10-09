@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { TreePine, AlertTriangle, Wind, Compass, Sparkles, RefreshCw, X } from "lucide-react";
+import { TreePine, AlertTriangle, Wind, Compass, RefreshCw, X } from "lucide-react";
 import { soundManager } from "@/lib/audio/sounds";
 import { hapticLight, hapticMedium } from "@/lib/mobile/nativeBridge";
 import { FocusSession } from "@/types/game";
+import { useTranslation } from "@/lib/i18n/translations";
 
 interface FocusWitherModalProps {
   isOpen: boolean;
@@ -13,22 +14,18 @@ interface FocusWitherModalProps {
   onRestartFocus?: () => void;
 }
 
-const WITHER_REFLECTIONS = [
-  "Setiap daun yang gugur adalah pupuk bagi keteguhan hati di masa depan.",
-  "Tunggul lapuk di pulaumu bukanlah aib, melainkan monumen pengingat agar batin lebih hadir.",
-  "Perhatian yang terpecah adalah hal manusiawi. Yang terpenting adalah keberanian untuk memulai kembali.",
-  "Tarik napas perlahan. Biarkan kegagalan ini berlalu dan rawat bibit berikutnya dengan penuh ketenangan.",
-];
-
 export function FocusWitherModal({
   isOpen,
   onClose,
   session,
   onRestartFocus,
 }: FocusWitherModalProps) {
+  const { t } = useTranslation();
+
   const quote = useMemo(() => {
-    return WITHER_REFLECTIONS[Math.floor(Math.random() * WITHER_REFLECTIONS.length)];
-  }, [isOpen]);
+    const list = t.wither.quotes;
+    return list[Math.floor(Math.random() * list.length)];
+  }, [isOpen, t.wither.quotes]);
 
   if (!isOpen) return null;
 
@@ -63,12 +60,12 @@ export function FocusWitherModal({
           type="button"
           onClick={handleDismiss}
           className="absolute top-4 right-4 w-7 h-7 rounded-full bg-white/10 hover:bg-white/15 active:scale-90 flex items-center justify-center text-stone-400 hover:text-white transition-all cursor-pointer"
-          aria-label="Tutup"
+          aria-label={t.common.close}
         >
           <X className="w-3.5 h-3.5 stroke-[2]" />
         </button>
 
-        {/* Lingkaran Visual Tunggul Kering & Angin */}
+        {/* Lingkaran Visual Pohon Layu */}
         <div className="relative mx-auto w-18 h-18 rounded-3xl bg-stone-900/80 border border-stone-700/60 flex items-center justify-center text-stone-400 shadow-inner group">
           <TreePine className="w-9 h-9 stroke-[1.6] text-stone-500 opacity-80" />
           <span className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-rose-600/90 text-white flex items-center justify-center text-[10px] font-bold border-2 border-[#1C2022] shadow-sm">
@@ -79,35 +76,44 @@ export function FocusWitherModal({
           </span>
         </div>
 
-        {/* Judul & Pesan Batin */}
+        {/* Judul & Pesan */}
         <div className="space-y-1.5">
           <h3 className="text-[20px] font-bold text-stone-100 tracking-tight">
-            Bibit Telah Layu
+            {t.wither.title}
           </h3>
           <p className="text-[12.5px] text-stone-400 leading-relaxed px-2">
-            Perhatianmu terputus di tengah jalan. Pohon mengering menjadi{" "}
-            <strong className="text-amber-400/90 font-medium">tunggul lapuk</strong> di pulaumu.
+            {t.wither.subtitlePre}
+            <strong className="text-amber-400/90 font-medium">
+              {t.wither.subtitleHighlight}
+            </strong>
+            {t.wither.subtitlePost}
           </p>
         </div>
 
         {/* Ringkasan Kegagalan & Status Lahan */}
         <div className="p-3.5 rounded-2xl bg-white/[0.04] border border-white/[0.08] text-left space-y-2">
           <div className="flex justify-between items-center text-[11.5px]">
-            <span className="text-stone-400 font-normal">Waktu yang terlewati:</span>
+            <span className="text-stone-400 font-normal">
+              {t.wither.timeElapsed}
+            </span>
             <span className="font-semibold text-stone-200 tabular-nums">
-              {elapsedMin} dari {durationMin} menit
+              {t.wither.timeElapsedVal
+                .replace("{elapsed}", String(elapsedMin))
+                .replace("{total}", String(durationMin))}
             </span>
           </div>
 
           <div className="flex justify-between items-center text-[11.5px] pt-1 border-t border-white/[0.06]">
-            <span className="text-stone-400 font-normal">Konsekuensi Lahan:</span>
+            <span className="text-stone-400 font-normal">
+              {t.wither.islandImpact}
+            </span>
             <span className="font-semibold text-rose-400 flex items-center gap-1">
-              <span>🍂</span> 1 Petak Tertutup Abu
+              <span>🍂</span> {t.wither.islandImpactVal}
             </span>
           </div>
 
           <div className="flex justify-between items-center text-[11px] pt-0.5 text-stone-500">
-            <span>Biaya Restorasi Tanah:</span>
+            <span>{t.wither.restoreCost}</span>
             <span className="text-amber-400 font-medium">50 Soul</span>
           </div>
         </div>
@@ -127,7 +133,7 @@ export function FocusWitherModal({
             className="py-2.5 px-3 rounded-full text-[12px] font-medium bg-white/10 hover:bg-white/15 text-stone-200 active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer border border-white/10"
           >
             <Compass className="w-3.5 h-3.5" />
-            <span>Lihat Suaka</span>
+            <span>{t.wither.viewIsland}</span>
           </button>
 
           <button
@@ -136,7 +142,7 @@ export function FocusWitherModal({
             className="py-2.5 px-3 rounded-full text-[12px] font-semibold bg-emerald-700 hover:bg-emerald-600 text-white active:scale-95 transition-all shadow-md shadow-emerald-950/40 flex items-center justify-center gap-1.5 cursor-pointer"
           >
             <RefreshCw className="w-3.5 h-3.5" />
-            <span>Tanam Lagi</span>
+            <span>{t.wither.tryAgain}</span>
           </button>
         </div>
       </div>

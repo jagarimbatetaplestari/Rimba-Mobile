@@ -5,7 +5,7 @@ import { useGameStore } from "@/lib/game/useGameStore";
 import { calculateAnalytics, getStreakMilestone } from "@/lib/game/analytics";
 import { soundManager } from "@/lib/audio/sounds";
 import { hapticLight, hapticSuccess } from "@/lib/mobile/nativeBridge";
-import { X, Download, Copy, Flame, Check } from "lucide-react";
+import { X, Download, Copy, Flame, Check, Share2 } from "lucide-react";
 
 interface ShareSnapshotModalProps {
   isOpen: boolean;
@@ -238,6 +238,45 @@ export function ShareSnapshotModal({
     }
   };
 
+  const handleShare = async () => {
+    setIsGenerating(true);
+    soundManager.playPop();
+    hapticLight();
+    const blob = await generateCompositeImage();
+    setIsGenerating(false);
+
+    if (!blob) {
+      notify("Gagal membuat gambar kartu.", "error");
+      return;
+    }
+
+    const file = new File([blob], `rimba-suaka-${Date.now()}.png`, {
+      type: "image/png",
+    });
+
+    if (
+      typeof navigator !== "undefined" &&
+      navigator.canShare &&
+      navigator.canShare({ files: [file] })
+    ) {
+      try {
+        await navigator.share({
+          files: [file],
+          title: "Suaka Fokus Rimba",
+          text: `🌱 Hutan ketenanganku terus bertumbuh di Rimba. ${analytics.currentStreak} hari fokus beruntun! #RimbaApp`,
+        });
+        hapticSuccess();
+        return;
+      } catch (err: any) {
+        if (err.name !== "AbortError") {
+          handleDownload();
+        }
+        return;
+      }
+    }
+    handleDownload();
+  };
+
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -388,30 +427,42 @@ export function ShareSnapshotModal({
           </div>
 
           {/* Action Buttons */}
-          <div className="grid grid-cols-2 gap-2.5 pt-0.5">
+          <div className="space-y-2 pt-0.5">
             <button
               type="button"
-              onClick={handleCopy}
+              onClick={handleShare}
               disabled={isGenerating}
-              className="py-2.5 px-3 rounded-full border border-[#0D3528]/15 bg-white hover:bg-[#E4F4ED]/50 text-[12px] font-medium text-[#0D3528] shadow-2xs active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              className="w-full py-2.5 px-3 rounded-full bg-gradient-to-r from-[#187557] to-[#2BB688] hover:opacity-95 text-white text-[12.5px] font-semibold shadow-xs active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
-              {isCopied ? (
-                <Check className="w-3.5 h-3.5 text-[#187557] stroke-[2]" />
-              ) : (
-                <Copy className="w-3.5 h-3.5 stroke-[1.8]" />
-              )}
-              <span>{isCopied ? "Tersalin!" : "Salin"}</span>
+              <Share2 className="w-4 h-4 stroke-[2]" />
+              <span>{isGenerating ? "Menyiapkan Cerita..." : "Bagikan ke Cerita (Story / WA)"}</span>
             </button>
 
-            <button
-              type="button"
-              onClick={handleDownload}
-              disabled={isGenerating}
-              className="py-2.5 px-3 rounded-full bg-[#187557] hover:bg-[#126046] text-white text-[12px] font-medium shadow-xs active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-            >
-              <Download className="w-3.5 h-3.5 stroke-[1.8]" />
-              <span>{isGenerating ? "Menyimpan..." : "Unduh Kartu"}</span>
-            </button>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={handleCopy}
+                disabled={isGenerating}
+                className="py-2 px-3 rounded-full border border-[#0D3528]/15 bg-white hover:bg-[#E4F4ED]/50 text-[11.5px] font-medium text-[#0D3528] shadow-2xs active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                {isCopied ? (
+                  <Check className="w-3.5 h-3.5 text-[#187557] stroke-[2]" />
+                ) : (
+                  <Copy className="w-3.5 h-3.5 stroke-[1.8]" />
+                )}
+                <span>{isCopied ? "Tersalin!" : "Salin"}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleDownload}
+                disabled={isGenerating}
+                className="py-2 px-3 rounded-full border border-[#0D3528]/15 bg-white hover:bg-[#E4F4ED]/50 text-[11.5px] font-medium text-[#0D3528] shadow-2xs active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5 stroke-[1.8]" />
+                <span>Unduh Gambar</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>

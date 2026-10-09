@@ -28,6 +28,7 @@ import {
 import { MobileStatisticsModal } from "@/components/modals/MobileStatisticsModal";
 import { MobileLeaderboardModal } from "@/components/modals/MobileLeaderboardModal";
 import { MobileSettingsSheet } from "@/components/modals/MobileSettingsSheet";
+import { CampfireRoomModal } from "@/components/modals/CampfireRoomModal";
 import { syncMobileStatusBar } from "@/lib/mobile/nativeBridge";
 import { setupBackgroundGuard } from "@/lib/mobile/backgroundTimerGuard";
 import { getDailyQuestStatus } from "@/lib/game/quests";
@@ -65,6 +66,7 @@ export default function RimbaDioramaApp() {
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isCampfireOpen, setIsCampfireOpen] = useState(false);
   const [isZenDimmed, setIsZenDimmed] = useState(false);
 
   // Smooth Crossfade Loading Overlay state
@@ -295,6 +297,11 @@ export default function RimbaDioramaApp() {
       };
       window.addEventListener("rimba:open_stats", handleOpenStats);
 
+      const handleOpenCampfire = () => {
+        setIsCampfireOpen(true);
+      };
+      window.addEventListener("rimba:open_campfire", handleOpenCampfire);
+
       return () => {
         window.removeEventListener(
           "rimba:open_onboarding",
@@ -308,6 +315,7 @@ export default function RimbaDioramaApp() {
         );
         window.removeEventListener("rimba:open_journal", handleOpenJournal);
         window.removeEventListener("rimba:open_stats", handleOpenStats);
+        window.removeEventListener("rimba:open_campfire", handleOpenCampfire);
       };
     }
   }, []);
@@ -660,6 +668,7 @@ export default function RimbaDioramaApp() {
             onOpenSoundscapes={() => setIsSoundscapeOpen(true)}
             onOpenSettings={() => setIsSettingsOpen(true)}
             onOpenOnboarding={() => setIsOnboardingOpen(true)}
+            onOpenCampfire={() => setIsCampfireOpen(true)}
             claimableCount={claimableCount}
           />
         </div>
@@ -727,6 +736,10 @@ export default function RimbaDioramaApp() {
           setIsSettingsOpen(false);
           setIsProfileOpen(true);
         }}
+      />
+      <CampfireRoomModal
+        isOpen={isCampfireOpen}
+        onClose={() => setIsCampfireOpen(false)}
       />
       <MobileOnboardingModal
         isOpen={isOnboardingOpen}

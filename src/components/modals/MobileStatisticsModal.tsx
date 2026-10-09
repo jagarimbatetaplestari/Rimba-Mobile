@@ -31,7 +31,9 @@ import {
   Moon,
   Activity,
   Zap,
+  Share2,
 } from "lucide-react";
+import { ShareSnapshotModal } from "@/components/modals/ShareSnapshotModal";
 
 export interface MobileStatisticsModalProps {
   isOpen: boolean;
@@ -71,6 +73,7 @@ export function MobileStatisticsModal({
     label: string;
   } | null>(null);
   const [selectedHour, setSelectedHour] = useState<number | null>(null);
+  const [isShareOpen, setIsShareOpen] = useState<boolean>(false);
 
   // Escape key listener
   useEffect(() => {
@@ -239,18 +242,34 @@ export function MobileStatisticsModal({
               </span>
             </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                soundManager.playPop();
-                hapticLight();
-                onClose();
-              }}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 border border-white/30 text-white shadow-sm backdrop-blur-md active:scale-90 transition-transform hover:bg-white/30 cursor-pointer"
-              aria-label="Tutup statistik"
-            >
-              <X className="h-4 w-4 stroke-[2]" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  soundManager.playPop();
+                  hapticLight();
+                  setIsShareOpen(true);
+                }}
+                className="flex items-center gap-1.5 h-9 px-3 rounded-full bg-white/20 border border-white/30 text-white shadow-sm backdrop-blur-md active:scale-90 transition-transform hover:bg-white/30 cursor-pointer text-[12px] font-medium"
+                title="Bagikan Cermin Suaka (9:16)"
+              >
+                <Share2 className="h-3.5 w-3.5 stroke-[2.2]" />
+                <span>Bagikan</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  soundManager.playPop();
+                  hapticLight();
+                  onClose();
+                }}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 border border-white/30 text-white shadow-sm backdrop-blur-md active:scale-90 transition-transform hover:bg-white/30 cursor-pointer"
+                aria-label="Tutup statistik"
+              >
+                <X className="h-4 w-4 stroke-[2]" />
+              </button>
+            </div>
           </div>
 
           {/* ========================================================= */}
@@ -1006,8 +1025,47 @@ export function MobileStatisticsModal({
               </div>
             </div>
           )}
+
+          {/* ========================================================= */}
+          {/* 7. CERMIN SUAKA (SHARE CARD FLEX BANNER)                  */}
+          {/* ========================================================= */}
+          <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-4.5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-200/80 text-[#187557] flex items-center justify-center shrink-0 shadow-xs">
+                <Sparkles className="w-5 h-5 stroke-[1.8]" />
+              </div>
+              <div className="min-w-0">
+                <h4 className="text-[13.5px] font-semibold text-[#0D3528] tracking-tight">
+                  Cermin Suaka (Kisah 9:16)
+                </h4>
+                <p className="text-[11px] text-[#4C7567] font-normal truncate">
+                  Ekspor kartu estetik pulau & ritme fokusmu
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                soundManager.playPop();
+                hapticLight();
+                setIsShareOpen(true);
+              }}
+              className="py-2 px-3.5 rounded-full bg-[#187557] hover:bg-[#126046] text-white text-[11.5px] font-medium shadow-xs active:scale-95 transition-all shrink-0 cursor-pointer flex items-center gap-1.5 whitespace-nowrap"
+            >
+              <Share2 className="w-3.5 h-3.5 stroke-[2]" />
+              <span>Buat Kartu</span>
+            </button>
+          </div>
         </div>
       </div>
+
+      {isShareOpen && (
+        <ShareSnapshotModal
+          isOpen={isShareOpen}
+          onClose={() => setIsShareOpen(false)}
+        />
+      )}
     </>
   );
 }

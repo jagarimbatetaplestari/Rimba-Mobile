@@ -22,6 +22,7 @@ import {
   CloudSun,
   Sprout,
   Snowflake,
+  Flame,
   X,
 } from "lucide-react";
 import { hapticLight } from "@/lib/mobile/nativeBridge";
@@ -43,6 +44,7 @@ export interface MobileHeaderHUDProps {
   onOpenWorkshop?: () => void;
   onOpenSettings?: () => void;
   onOpenOnboarding?: () => void;
+  onOpenCampfire?: () => void;
   claimableCount?: number;
   isZenDimmed?: boolean;
 }
@@ -61,6 +63,7 @@ export function MobileHeaderHUD({
   onOpenWorkshop,
   onOpenSettings,
   onOpenOnboarding,
+  onOpenCampfire,
   claimableCount = 0,
   isZenDimmed = false,
 }: MobileHeaderHUDProps) {
@@ -363,7 +366,18 @@ export function MobileHeaderHUD({
                   <Trophy className="w-4 h-4 stroke-[2.2]" />
                 </button>
 
-                {/* 6. Bagikan Suaka */}
+                {/* 6. Bilik Hening (Campfire Focus Room) */}
+                <button
+                  type="button"
+                  onClick={() => handleAction(onOpenCampfire)}
+                  className={pillarButton}
+                  title="Bilik Hening (Api Unggun Bersama)"
+                  aria-label="Bilik Hening"
+                >
+                  <Flame className="w-4 h-4 stroke-[2.2] text-amber-500 fill-amber-500/30" />
+                </button>
+
+                {/* 7. Bagikan Suaka */}
                 <button
                   type="button"
                   onClick={() => handleAction(onOpenShare)}

@@ -1095,6 +1095,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       saveData: updatedData,
       activeSession: null,
       isZenMode: false,
+      weather: 'rain',
     });
 
     get().notify(

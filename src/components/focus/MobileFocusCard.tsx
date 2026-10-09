@@ -29,6 +29,7 @@ import {
   cancelPendingFocusNotifications,
 } from "@/lib/mobile/notificationManager";
 import { FocusHarvestModal } from "@/components/focus/FocusHarvestModal";
+import { AbandonConfirmModal } from "@/components/focus/AbandonConfirmModal";
 import {
   soundscapeManager,
   SOUNDSCAPES_LIST,
@@ -137,7 +138,7 @@ export function MobileFocusCard({
   const isStrictMode = focusSetup?.strictMode ?? false;
   const taskNote = focusSetup?.taskNote ?? "";
 
-  const [confirmingAbandon, setConfirmingAbandon] = useState<boolean>(false);
+  const [showAbandonModal, setShowAbandonModal] = useState<boolean>(false);
 
   // Modals: Tag Manager, Tree Species Picker, Ambient Soundscape, Custom Duration Scrubber
   const [showTagModal, setShowTagModal] = useState<boolean>(false);
@@ -216,7 +217,7 @@ export function MobileFocusCard({
 
   useEffect(() => {
     if (!activeSession) {
-      setConfirmingAbandon(false);
+      setShowAbandonModal(false);
       hasChimedRef.current = null;
       if (typeof document !== "undefined") {
         document.title = "Rimba — Fokus & Tumbuhkan Pulaumu";
@@ -228,13 +229,6 @@ export function MobileFocusCard({
     }, 500);
     return () => clearInterval(interval);
   }, [activeSession]);
-
-  // Auto-reset 2-step abandon confirmation after 4 seconds
-  useEffect(() => {
-    if (!confirmingAbandon) return;
-    const t = setTimeout(() => setConfirmingAbandon(false), 4000);
-    return () => clearTimeout(t);
-  }, [confirmingAbandon]);
 
   // Play gentle completion chime & update tab title when countdown reaches 00:00
   useEffect(() => {
@@ -338,19 +332,20 @@ export function MobileFocusCard({
     if (isWithinGrace) {
       soundManager.playPop();
       hapticLight();
-      setConfirmingAbandon(false);
+      setShowAbandonModal(false);
       cancelPendingFocusNotifications();
       abandonFocus();
       return;
     }
 
-    if (!confirmingAbandon) {
-      soundManager.playPop();
-      hapticWarning();
-      setConfirmingAbandon(true);
-      return;
-    }
-    setConfirmingAbandon(false);
+    // Open philosophical confirmation sheet
+    soundManager.playPop();
+    hapticWarning();
+    setShowAbandonModal(true);
+  };
+
+  const handleConfirmAbandonFromModal = () => {
+    setShowAbandonModal(false);
     hapticWarning();
     cancelPendingFocusNotifications();
     abandonFocus();
@@ -1175,9 +1170,7 @@ export function MobileFocusCard({
                 className={`h-9 px-3.5 rounded-full font-semibold text-xs active:scale-95 transition-all flex items-center justify-center cursor-pointer border backdrop-blur-md ${
                   isWithinGracePeriod
                     ? "bg-amber-400/25 text-amber-200 border-amber-300/40 shadow-xs"
-                    : confirmingAbandon
-                      ? "bg-rose-500/80 text-white border-rose-300 shadow-md animate-pulse font-bold"
-                      : "bg-white/14 hover:bg-white/22 text-white border-white/25 shadow-xs"
+                    : "bg-white/14 hover:bg-white/22 text-white border-white/25 shadow-xs"
                 }`}
                 title={
                   isWithinGracePeriod
@@ -1191,7 +1184,7 @@ export function MobileFocusCard({
                     <span>Batal ({graceSecondsLeft}s)</span>
                   </>
                 ) : (
-                  <span>{confirmingAbandon ? "Yakin?" : "Batal"}</span>
+                  <span>Batal</span>
                 )}
               </button>
             )}
@@ -1205,6 +1198,16 @@ export function MobileFocusCard({
           onClose={() => setShowHarvestModal(false)}
           session={activeSession}
           onConfirmHarvest={handleConfirmHarvest}
+        />
+      )}
+
+      {showAbandonModal && (
+        <AbandonConfirmModal
+          isOpen={showAbandonModal}
+          onClose={() => setShowAbandonModal(false)}
+          onConfirmAbandon={handleConfirmAbandonFromModal}
+          session={activeSession}
+          secondsRemaining={Math.floor(remainingMs / 1000)}
         />
       )}
       {renderSoundscapePopover()}

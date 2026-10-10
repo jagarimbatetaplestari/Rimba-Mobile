@@ -8,7 +8,6 @@ import {
 } from '@/lib/game/worldRules';
 import { GAME_CONFIG } from '@/lib/game/config';
 import { RisingLandBlock } from './RisingLandBlock';
-import { buildRiverTileMap } from '@/lib/game/riverSystem';
 
 // Preload Kenney Platformer Kit modular block models
 useGLTF.preload('/models/block-grass-low.glb');
@@ -66,61 +65,7 @@ function ModularBlockInstances({
   );
 }
 
-/**
- * Seamless unified lawn turf overlay:
- * Bridges all tile boundaries and completely seals corner bevel cavities ("padet dan menyatu"),
- * creating a dense, solid, unified ground surface across the sanctuary island!
- */
-function SeamlessTurfOverlay({
-  positions,
-  activeBiome,
-}: {
-  positions: [number, number, number][];
-  activeBiome: 'meadow' | 'snow';
-}) {
-  const instRef = useRef<THREE.InstancedMesh>(null);
-  const dummy = useMemo(() => new THREE.Object3D(), []);
-  const geo = useMemo(() => new THREE.PlaneGeometry(1.002, 1.002), []);
-  const isSnow = activeBiome === 'snow';
 
-  const mat = useMemo(() => {
-    return new THREE.MeshStandardMaterial({
-      color: isSnow ? '#F8F8FB' : '#5AC487', // Exact Kenney top color matching colormap.png
-      roughness: 0.88,
-      metalness: 0.0,
-    });
-  }, [isSnow]);
-
-  useEffect(() => {
-    if (!instRef.current || positions.length === 0) return;
-    for (let i = 0; i < positions.length; i++) {
-      const pos = positions[i];
-      dummy.position.set(pos[0], pos[1], pos[2]);
-      dummy.rotation.set(-Math.PI / 2, 0, 0);
-      dummy.scale.set(1.0, 1.0, 1.0);
-      dummy.updateMatrix();
-      instRef.current.setMatrixAt(i, dummy.matrix);
-    }
-    instRef.current.instanceMatrix.needsUpdate = true;
-  }, [positions, dummy]);
-
-  useEffect(() => {
-    return () => {
-      geo.dispose();
-      mat.dispose();
-    };
-  }, [geo, mat]);
-
-  if (positions.length === 0) return null;
-
-  return (
-    <instancedMesh
-      ref={instRef}
-      args={[geo, mat, positions.length]}
-      receiveShadow
-    />
-  );
-}
 
 
 
@@ -182,17 +127,11 @@ export function Island() {
   const tileSize = GAME_CONFIG.grid.tileSize;
   const offset = GAME_CONFIG.grid.offset;
 
-  // Map tiles that contain a river stream or bridge
-  const riverTileMap = useMemo(() => {
-    return buildRiverTileMap(worldObjects, staticUnlockedSet);
-  }, [worldObjects, staticUnlockedSet]);
-
   // Smart modular block classification: categorize tiles into interior, edge, and corner
-  const { interiorTiles, edgeTiles, cornerTiles, turfPositions } = useMemo(() => {
+  const { interiorTiles, edgeTiles, cornerTiles } = useMemo(() => {
     const interiors: InstanceData[] = [];
     const edges: InstanceData[] = [];
     const corners: InstanceData[] = [];
-    const turfs: [number, number, number][] = [];
 
     staticUnlockedSet.forEach((key) => {
       const [gx, gy] = key.split(',').map(Number);
@@ -200,11 +139,6 @@ export function Island() {
 
       const cx = (gx + offset) * tileSize;
       const cz = (gy + offset) * tileSize;
-
-      // Unlocked land tiles that are not river get the seamless turf overlay to seal all bevel gaps
-      if (!riverTileMap.has(key)) {
-        turfs.push([cx, 0.001, cz]);
-      }
 
       // Detect exposed exterior edges facing the ocean void
       const hasN = staticUnlockedSet.has(`${gx},${gy - 1}`);
@@ -270,9 +204,8 @@ export function Island() {
       interiorTiles: interiors,
       edgeTiles: edges,
       cornerTiles: corners,
-      turfPositions: turfs,
     };
-  }, [staticUnlockedSet, offset, tileSize, riverTileMap]);
+  }, [staticUnlockedSet, offset, tileSize]);
 
   // Model variants for current active biome
   const isSnow = activeBiome === 'snow';
@@ -291,10 +224,7 @@ export function Island() {
       {/* 3. Corner Overhang Blocks */}
       <ModularBlockInstances modelUrl={cornerModel} instances={cornerTiles} />
 
-      {/* 4. Seamless Unified Lawn Turf Overlay (seals all corner bevel holes & crevices) */}
-      <SeamlessTurfOverlay positions={turfPositions} activeBiome={activeBiome} />
-
-      {/* 5. Dynamic Rising Land Blocks with spring physics & water splash */}
+      {/* 4. Dynamic Rising Land Blocks with spring physics & water splash */}
       {Array.from(risingTiles).map((key) => (
         <RisingLandBlock
           key={`rising_${key}`}

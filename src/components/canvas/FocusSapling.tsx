@@ -88,13 +88,7 @@ function CompanionAvatarModel({ modelPath }: { modelPath: string }) {
   return <primitive object={cloned} scale={0.16} />;
 }
 
-function CampfirePresence3D({
-  companions = [],
-  targetTile,
-}: {
-  companions?: string[];
-  targetTile?: { grid_x: number; grid_y: number } | null;
-}) {
+function CampfirePresence3D({ companions = [] }: { companions?: string[] }) {
   const { scene: pitScene } = useGLTF('/models/kenney_survival_kit_campfire-pit.glb');
   const flameRef = useRef<THREE.Mesh>(null);
   const lightRef = useRef<THREE.PointLight>(null);
@@ -104,80 +98,43 @@ function CampfirePresence3D({
     if (flameRef.current) {
       const flicker = 1 + Math.sin(t * 14) * 0.12 + Math.cos(t * 22) * 0.08;
       flameRef.current.scale.set(
-        0.16 * flicker,
-        (0.24 + Math.sin(t * 10) * 0.04) * flicker,
-        0.16 * flicker
+        0.18 * flicker,
+        (0.28 + Math.sin(t * 10) * 0.04) * flicker,
+        0.18 * flicker
       );
     }
     if (lightRef.current) {
-      lightRef.current.intensity = 1.2 + Math.sin(t * 12) * 0.25;
+      lightRef.current.intensity = 1.4 + Math.sin(t * 12) * 0.3;
     }
   });
 
   const clonedPit = useMemo(() => pitScene.clone(true), [pitScene]);
 
-  // Dynamically position campfire towards the island center (4.5, 4.5)
-  // Ensures campfire and animal companions NEVER spawn over the cliff / outside the land!
-  const { campOffset, companionSlots } = useMemo(() => {
-    const gx = targetTile?.grid_x ?? 4.5;
-    const gy = targetTile?.grid_y ?? 4.5;
-    const toCenterX = 4.5 - gx;
-    const toCenterZ = 4.5 - gy;
-    const len = Math.hypot(toCenterX, toCenterZ) || 1;
-    const nx = toCenterX / len;
-    const nz = toCenterZ / len;
-
-    // Place campfire 0.26 units towards center of island from the sapling tree trunk
-    const cX = nx * 0.26;
-    const cZ = nz * 0.26;
-    const baseAngle = Math.atan2(nz, nx);
-
-    const dist = 0.22;
-    const slots = [
-      {
-        pos: [cX + Math.cos(baseAngle - Math.PI * 0.45) * dist, 0, cZ + Math.sin(baseAngle - Math.PI * 0.45) * dist],
-        rot: -(baseAngle - Math.PI * 0.45) - Math.PI / 2,
-        model: '/models/fauna_fox.glb',
-      },
-      {
-        pos: [cX + Math.cos(baseAngle) * dist, 0, cZ + Math.sin(baseAngle) * dist],
-        rot: -baseAngle - Math.PI / 2,
-        model: '/models/fauna_koala.glb',
-      },
-      {
-        pos: [cX + Math.cos(baseAngle + Math.PI * 0.45) * dist, 0, cZ + Math.sin(baseAngle + Math.PI * 0.45) * dist],
-        rot: -(baseAngle + Math.PI * 0.45) - Math.PI / 2,
-        model: '/models/animal-deer.glb',
-      },
-    ];
-
-    return {
-      campOffset: [cX, 0, cZ] as [number, number, number],
-      companionSlots: slots,
-    };
-  }, [targetTile]);
+  const companionSlots = [
+    { pos: [0.30, 0, 0.05], rot: -Math.PI / 2, model: '/models/fauna_fox.glb' },
+    { pos: [-0.26, 0, 0.20], rot: Math.PI / 3, model: '/models/fauna_koala.glb' },
+    { pos: [-0.22, 0, -0.24], rot: Math.PI * 0.7, model: '/models/animal-deer.glb' },
+  ];
 
   return (
-    <group>
-      {/* Campfire Pit Base nestled snugly on the grass in front of the tree */}
-      <group position={campOffset}>
-        <primitive object={clonedPit} scale={0.52} />
+    <group position={[0, 0, 0]}>
+      {/* Campfire Pit Base */}
+      <primitive object={clonedPit} scale={0.65} />
 
-        {/* Dynamic Flickering Fire Core */}
-        <mesh ref={flameRef} position={[0, 0.12, 0]}>
-          <coneGeometry args={[0.13, 0.24, 8]} />
-          <meshBasicMaterial color="#FFA000" />
-        </mesh>
-        <pointLight
-          ref={lightRef}
-          position={[0, 0.22, 0]}
-          color="#FF8C00"
-          distance={2.2}
-          decay={2}
-        />
-      </group>
+      {/* Dynamic Flickering Fire Core */}
+      <mesh ref={flameRef} position={[0, 0.14, 0]}>
+        <coneGeometry args={[0.16, 0.3, 8]} />
+        <meshBasicMaterial color="#FFA000" />
+      </mesh>
+      <pointLight
+        ref={lightRef}
+        position={[0, 0.25, 0]}
+        color="#FF8C00"
+        distance={2.6}
+        decay={2}
+      />
 
-      {/* Animal Companions sitting around fire on solid sanctuary ground */}
+      {/* Animal Companions sitting around fire */}
       {companions.slice(0, 3).map((name, idx) => {
         const slot = companionSlots[idx];
         if (!slot) return null;
@@ -225,15 +182,48 @@ export function FocusSapling() {
     lockedTileRef.current = null;
   }
 
-  // Compute exact world position where the completed focus tree will spawn
-  const saplingWorldPos = useMemo<[number, number, number]>(() => {
-    const targetTile =
+  const targetTile = useMemo(() => {
+    return (
       activeSession?.target_tile ||
       lockedTileRef.current ||
-      findEmptyTileNearCenter(worldObjects, unlockedSet);
+      findEmptyTileNearCenter(worldObjects, unlockedSet)
+    );
+  }, [activeSession?.target_tile, worldObjects, unlockedSet]);
+
+  // Compute exact world position where the completed focus tree will spawn
+  const saplingWorldPos = useMemo<[number, number, number]>(() => {
     if (!targetTile) return [0, 0.05, 0];
     return gridToWorld(targetTile.grid_x, targetTile.grid_y, 0.05);
-  }, [activeSession?.target_tile, worldObjects, unlockedSet]);
+  }, [targetTile]);
+
+  // Compute campfire position strictly on an unlocked land tile (never floating in the sea)
+  const campfireWorldPos = useMemo<[number, number, number] | null>(() => {
+    if (!activeSession?.campfire_room_code || !targetTile) return null;
+
+    // Check the 4 cardinal adjacent tiles to find an unlocked land tile:
+    const candidates = [
+      { grid_x: targetTile.grid_x, grid_y: targetTile.grid_y - 1 }, // North
+      { grid_x: targetTile.grid_x, grid_y: targetTile.grid_y + 1 }, // South
+      { grid_x: targetTile.grid_x - 1, grid_y: targetTile.grid_y }, // West
+      { grid_x: targetTile.grid_x + 1, grid_y: targetTile.grid_y }, // East
+    ].filter((tile) => unlockedSet.has(`${tile.grid_x},${tile.grid_y}`));
+
+    if (candidates.length > 0) {
+      // Pick adjacent tile closest to island center (0,0) - guarantees moving inwards, away from cliffs!
+      candidates.sort((a, b) => {
+        const distA = a.grid_x * a.grid_x + a.grid_y * a.grid_y;
+        const distB = b.grid_x * b.grid_x + b.grid_y * b.grid_y;
+        return distA - distB;
+      });
+      const bestTile = candidates[0];
+      return gridToWorld(bestTile.grid_x, bestTile.grid_y, 0.05);
+    }
+
+    // Fallback: If no adjacent tile is unlocked (e.g. 1x1 island), offset slightly towards island center
+    const dirX = targetTile.grid_x === 0 ? 0.2 : -Math.sign(targetTile.grid_x) * 0.22;
+    const dirZ = targetTile.grid_y === 0 ? 0.2 : -Math.sign(targetTile.grid_y) * 0.22;
+    return [saplingWorldPos[0] + dirX, 0.05, saplingWorldPos[2] + dirZ] as [number, number, number];
+  }, [activeSession?.campfire_room_code, targetTile, unlockedSet, saplingWorldPos]);
 
   const species = (activeSession?.species || 'oak') as TreeSpecies;
   const speciesConfig =
@@ -308,75 +298,76 @@ export function FocusSapling() {
   });
 
   return (
-    <group
-      position={saplingWorldPos}
-      onClick={(e) => {
-        e.stopPropagation();
-        if (!activeSession) return;
-        const now = Date.now();
-        const end = new Date(activeSession.expected_end_at).getTime();
-        const isReady = activeSession.is_stopwatch
-          ? now - new Date(activeSession.started_at).getTime() >= 300000
-          : now >= end - 1000;
-        if (isReady && typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('rimba:open_harvest'));
-        }
-      }}
-    >
-      {/* Grove Sacred Pedestal Ring (Hanya muncul saat sesi fokus aktif) */}
-      {activeSession?.status === 'active' && (
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]}>
-          <ringGeometry args={[0.7, 0.85, 32]} />
-          <meshStandardMaterial
-            color="#A8D49B"
-            roughness={0.9}
-            metalness={0.0}
-            transparent
-            opacity={0.65}
-          />
-        </mesh>
-      )}
-
-      {/* Active Campfire Room Presence if focusing with companions */}
-      {activeSession?.status === 'active' && Boolean(activeSession?.campfire_room_code) && (
-        <CampfirePresence3D
-          companions={activeSession.companions}
-          targetTile={activeSession?.target_tile || lockedTileRef.current}
-        />
-      )}
-
-      {/* Focus Tree Group with 3 Dynamic Stages */}
-      <group ref={groupRef} visible={false}>
-        {currentStage === 1 && (
-          <ModelMesh
-            modelPath="/models/plant_bushSmall.glb"
-            leafColor="#98D85B"
-          />
-        )}
-        {currentStage === 2 && (
-          <ModelMesh
-            modelPath="/models/tree_small.glb"
-            leafColor={speciesConfig.leafColor}
-          />
-        )}
-        {currentStage === 3 && (
-          <ModelMesh
-            modelPath={matureModelPath}
-            leafColor={speciesConfig.leafColor}
-          />
+    <>
+      <group
+        position={saplingWorldPos}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (!activeSession) return;
+          const now = Date.now();
+          const end = new Date(activeSession.expected_end_at).getTime();
+          const isReady = activeSession.is_stopwatch
+            ? now - new Date(activeSession.started_at).getTime() >= 300000
+            : now >= end - 1000;
+          if (isReady && typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('rimba:open_harvest'));
+          }
+        }}
+      >
+        {/* Grove Sacred Pedestal Ring (Hanya muncul saat sesi fokus aktif) */}
+        {activeSession?.status === 'active' && (
+          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]}>
+            <ringGeometry args={[0.7, 0.85, 32]} />
+            <meshStandardMaterial
+              color="#A8D49B"
+              roughness={0.9}
+              metalness={0.0}
+              transparent
+              opacity={0.65}
+            />
+          </mesh>
         )}
 
-        {/* Soft Golden Focus Aura Ring */}
-        <mesh position={[0, 0.4, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[0.3, 0.55, 24]} />
-          <meshBasicMaterial
-            color="#FCD34D"
-            transparent
-            opacity={0.35}
-            depthWrite={false}
-          />
-        </mesh>
+        {/* Focus Tree Group with 3 Dynamic Stages */}
+        <group ref={groupRef} visible={false}>
+          {currentStage === 1 && (
+            <ModelMesh
+              modelPath="/models/plant_bushSmall.glb"
+              leafColor="#98D85B"
+            />
+          )}
+          {currentStage === 2 && (
+            <ModelMesh
+              modelPath="/models/tree_small.glb"
+              leafColor={speciesConfig.leafColor}
+            />
+          )}
+          {currentStage === 3 && (
+            <ModelMesh
+              modelPath={matureModelPath}
+              leafColor={speciesConfig.leafColor}
+            />
+          )}
+
+          {/* Soft Golden Focus Aura Ring */}
+          <mesh position={[0, 0.4, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <ringGeometry args={[0.3, 0.55, 24]} />
+            <meshBasicMaterial
+              color="#FCD34D"
+              transparent
+              opacity={0.35}
+              depthWrite={false}
+            />
+          </mesh>
+        </group>
       </group>
-    </group>
+
+      {/* Active Campfire Room Presence placed on guaranteed unlocked land tile */}
+      {activeSession?.status === 'active' && Boolean(activeSession?.campfire_room_code) && campfireWorldPos && (
+        <group position={campfireWorldPos}>
+          <CampfirePresence3D companions={activeSession.companions} />
+        </group>
+      )}
+    </>
   );
 }

@@ -8,6 +8,7 @@ import {
 } from '@/lib/game/worldRules';
 import { GAME_CONFIG } from '@/lib/game/config';
 import { RisingLandBlock } from './RisingLandBlock';
+import { buildRiverTileMap } from '@/lib/game/riverSystem';
 
 // Preload Kenney Platformer Kit modular block models
 useGLTF.preload('/models/block-grass-low.glb');
@@ -68,6 +69,126 @@ function ModularBlockInstances({
 
 
 
+/**
+ * Seamless unified lawn turf overlay on interior tiles:
+ * Covers flat interior land with a smooth, solid turf layer.
+ * Strictly applied only to interior tiles with zero exposed ocean cliffs,
+ * ensuring no square planes ever overhang the rounded outer cliffs.
+ */
+function SeamlessTurfOverlay({
+  positions,
+  activeBiome,
+}: {
+  positions: [number, number, number][];
+  activeBiome: 'meadow' | 'snow';
+}) {
+  const instRef = useRef<THREE.InstancedMesh>(null);
+  const dummy = useMemo(() => new THREE.Object3D(), []);
+  const geo = useMemo(() => new THREE.PlaneGeometry(1.002, 1.002), []);
+  const isSnow = activeBiome === 'snow';
+
+  const mat = useMemo(() => {
+    return new THREE.MeshStandardMaterial({
+      color: isSnow ? '#F8F8FB' : '#5AC487', // Exact Kenney top grass color matching colormap.png
+      roughness: 0.88,
+      metalness: 0.0,
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits: -1,
+    });
+  }, [isSnow]);
+
+  useEffect(() => {
+    if (!instRef.current || positions.length === 0) return;
+    for (let i = 0; i < positions.length; i++) {
+      const pos = positions[i];
+      dummy.position.set(pos[0], pos[1], pos[2]);
+      dummy.rotation.set(-Math.PI / 2, 0, 0);
+      dummy.scale.set(1.0, 1.0, 1.0);
+      dummy.updateMatrix();
+      instRef.current.setMatrixAt(i, dummy.matrix);
+    }
+    instRef.current.instanceMatrix.needsUpdate = true;
+  }, [positions, dummy]);
+
+  useEffect(() => {
+    return () => {
+      geo.dispose();
+      mat.dispose();
+    };
+  }, [geo, mat]);
+
+  if (positions.length === 0) return null;
+
+  return (
+    <instancedMesh
+      ref={instRef}
+      args={[geo, mat, positions.length]}
+      receiveShadow
+    />
+  );
+}
+
+/**
+ * 4-Way Corner Junction Seal Overlay:
+ * Completely seals the 4-pointed star chamfer cavities that occur where 4 modular blocks meet.
+ * ONLY placed at junctions where ALL 4 surrounding quadrants are unlocked land tiles.
+ * Because all 4 quadrants are land, this seal is mathematically guaranteed to stay >0.20m away
+ * from any ocean cliff, eliminating all cavities without ever spilling into the sea!
+ */
+function JunctionSealOverlay({
+  positions,
+  activeBiome,
+}: {
+  positions: [number, number, number][];
+  activeBiome: 'meadow' | 'snow';
+}) {
+  const instRef = useRef<THREE.InstancedMesh>(null);
+  const dummy = useMemo(() => new THREE.Object3D(), []);
+  const geo = useMemo(() => new THREE.CircleGeometry(0.30, 24), []);
+  const isSnow = activeBiome === 'snow';
+
+  const mat = useMemo(() => {
+    return new THREE.MeshStandardMaterial({
+      color: isSnow ? '#F8F8FB' : '#5AC487',
+      roughness: 0.88,
+      metalness: 0.0,
+      polygonOffset: true,
+      polygonOffsetFactor: -1.5,
+      polygonOffsetUnits: -1.5,
+    });
+  }, [isSnow]);
+
+  useEffect(() => {
+    if (!instRef.current || positions.length === 0) return;
+    for (let i = 0; i < positions.length; i++) {
+      const pos = positions[i];
+      dummy.position.set(pos[0], pos[1], pos[2]);
+      dummy.rotation.set(-Math.PI / 2, 0, 0);
+      dummy.scale.set(1.0, 1.0, 1.0);
+      dummy.updateMatrix();
+      instRef.current.setMatrixAt(i, dummy.matrix);
+    }
+    instRef.current.instanceMatrix.needsUpdate = true;
+  }, [positions, dummy]);
+
+  useEffect(() => {
+    return () => {
+      geo.dispose();
+      mat.dispose();
+    };
+  }, [geo, mat]);
+
+  if (positions.length === 0) return null;
+
+  return (
+    <instancedMesh
+      ref={instRef}
+      args={[geo, mat, positions.length]}
+      receiveShadow
+    />
+  );
+}
 
 /**
  * Dynamic Modular Diorama Island:
@@ -127,11 +248,27 @@ export function Island() {
   const tileSize = GAME_CONFIG.grid.tileSize;
   const offset = GAME_CONFIG.grid.offset;
 
+  // Map tiles that contain a river stream or bridge
+  const riverTileMap = useMemo(() => {
+    return buildRiverTileMap(worldObjects, staticUnlockedSet);
+  }, [worldObjects, staticUnlockedSet]);
+
   // Smart modular block classification: categorize tiles into interior, edge, and corner
-  const { interiorTiles, edgeTiles, cornerTiles } = useMemo(() => {
+  const {
+    interiorTiles,
+    edgeTiles,
+    cornerTiles,
+    turfPositions,
+    junctionSealPositions,
+  } = useMemo(() => {
     const interiors: InstanceData[] = [];
     const edges: InstanceData[] = [];
     const corners: InstanceData[] = [];
+    const turfs: [number, number, number][] = [];
+    const junctionMap = new Map<
+      string,
+      { pos: [number, number, number]; count: number; jx: number; jy: number }
+    >();
 
     staticUnlockedSet.forEach((key) => {
       const [gx, gy] = key.split(',').map(Number);
@@ -139,6 +276,30 @@ export function Island() {
 
       const cx = (gx + offset) * tileSize;
       const cz = (gy + offset) * tileSize;
+
+      // Collect 4 corner vertices for each block
+      const tileCorners = [
+        [gx + 0.5, gy + 0.5],
+        [gx - 0.5, gy + 0.5],
+        [gx - 0.5, gy - 0.5],
+        [gx + 0.5, gy - 0.5],
+      ];
+      tileCorners.forEach(([jx, jy]) => {
+        const jKey = `${jx},${jy}`;
+        const existing = junctionMap.get(jKey);
+        if (existing) {
+          existing.count += 1;
+        } else {
+          const worldX = (jx + offset) * tileSize;
+          const worldZ = (jy + offset) * tileSize;
+          junctionMap.set(jKey, {
+            pos: [worldX, 0.0015, worldZ],
+            count: 1,
+            jx,
+            jy,
+          });
+        }
+      });
 
       // Detect exposed exterior edges facing the ocean void
       const hasN = staticUnlockedSet.has(`${gx},${gy - 1}`);
@@ -150,7 +311,17 @@ export function Island() {
       const missingS = !hasS;
       const missingW = !hasW;
       const missingE = !hasE;
-      const missingCount = (missingN ? 1 : 0) + (missingS ? 1 : 0) + (missingW ? 1 : 0) + (missingE ? 1 : 0);
+      const missingCount =
+        (missingN ? 1 : 0) +
+        (missingS ? 1 : 0) +
+        (missingW ? 1 : 0) +
+        (missingE ? 1 : 0);
+
+      // Only interior tiles (surrounded by 4 land neighbors) get the seamless turf overlay plane.
+      // They never touch any ocean cliff, guaranteeing no square planes overhang the rounded cliffs.
+      if (!riverTileMap.has(key) && missingCount === 0) {
+        turfs.push([cx, 0.001, cz]);
+      }
 
       const blockPos: [number, number, number] = [cx, -0.5, cz];
 
@@ -200,12 +371,34 @@ export function Island() {
       }
     });
 
+    const seals: [number, number, number][] = [];
+    junctionMap.forEach((entry) => {
+      // ONLY seal when ALL 4 surrounding quadrants are unlocked land tiles!
+      // This guarantees that the junction is 100% surrounded by land and >0.20m away from any ocean cliff!
+      if (entry.count === 4) {
+        const q1 = `${entry.jx - 0.5},${entry.jy - 0.5}`;
+        const q2 = `${entry.jx + 0.5},${entry.jy - 0.5}`;
+        const q3 = `${entry.jx - 0.5},${entry.jy + 0.5}`;
+        const q4 = `${entry.jx + 0.5},${entry.jy + 0.5}`;
+        const hasRiver =
+          riverTileMap.has(q1) ||
+          riverTileMap.has(q2) ||
+          riverTileMap.has(q3) ||
+          riverTileMap.has(q4);
+        if (!hasRiver) {
+          seals.push(entry.pos);
+        }
+      }
+    });
+
     return {
       interiorTiles: interiors,
       edgeTiles: edges,
       cornerTiles: corners,
+      turfPositions: turfs,
+      junctionSealPositions: seals,
     };
-  }, [staticUnlockedSet, offset, tileSize]);
+  }, [staticUnlockedSet, offset, tileSize, riverTileMap]);
 
   // Model variants for current active biome
   const isSnow = activeBiome === 'snow';
@@ -224,7 +417,13 @@ export function Island() {
       {/* 3. Corner Overhang Blocks */}
       <ModularBlockInstances modelUrl={cornerModel} instances={cornerTiles} />
 
-      {/* 4. Dynamic Rising Land Blocks with spring physics & water splash */}
+      {/* 4. Seamless Unified Lawn Turf Overlay (strictly on interior tiles, zero cliff overhang) */}
+      <SeamlessTurfOverlay positions={turfPositions} activeBiome={activeBiome} />
+
+      {/* 5. 4-Way Corner Junction Seal Overlay (completely seals star cavities between 4 blocks) */}
+      <JunctionSealOverlay positions={junctionSealPositions} activeBiome={activeBiome} />
+
+      {/* 6. Dynamic Rising Land Blocks with spring physics & water splash */}
       {Array.from(risingTiles).map((key) => (
         <RisingLandBlock
           key={`rising_${key}`}

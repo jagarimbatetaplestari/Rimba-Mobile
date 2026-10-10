@@ -234,7 +234,7 @@ export function NatureWorkshopSheet() {
         <div
           className="fixed left-1/2 -translate-x-1/2 z-40 pointer-events-auto flex flex-col items-center gap-2 w-[92%] max-w-[380px] animate-in fade-in slide-in-from-bottom-3 duration-200"
           style={{
-            bottom: "max(calc(env(safe-area-inset-bottom, 0px) + 16px), 24px)",
+            bottom: "max(calc(env(safe-area-inset-bottom, 0px) + 84px), 96px)",
           }}
         >
           <div className="w-full p-2 px-3.5 rounded-full border border-white/85 bg-white/80 backdrop-blur-2xl shadow-[0_16px_36px_rgba(20,53,37,0.12)] flex items-center justify-between gap-3 text-[#143525]">
@@ -277,7 +277,7 @@ export function NatureWorkshopSheet() {
         <div
           className="fixed left-1/2 -translate-x-1/2 z-40 pointer-events-auto flex flex-col items-center gap-2 w-[92%] max-w-[380px] animate-in fade-in slide-in-from-bottom-3 duration-200"
           style={{
-            bottom: "max(calc(env(safe-area-inset-bottom, 0px) + 16px), 24px)",
+            bottom: "max(calc(env(safe-area-inset-bottom, 0px) + 84px), 96px)",
           }}
         >
           <div className="w-full p-2 px-3.5 rounded-full border border-white/85 bg-white/80 backdrop-blur-2xl shadow-[0_16px_36px_rgba(20,53,37,0.12)] flex items-center justify-between gap-2 text-[#143525]">

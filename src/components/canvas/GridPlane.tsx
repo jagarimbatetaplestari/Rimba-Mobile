@@ -335,7 +335,7 @@ export function GridPlane() {
 
   const handleExpandTile = (grid_x: number, grid_y: number) => {
     const now = Date.now();
-    if (now - lastExpandTimeRef.current < 450) return;
+    if (now - lastExpandTimeRef.current < 750) return;
     lastExpandTimeRef.current = now;
 
     const isExpandable = canUnlockTile(grid_x, grid_y, unlockedSet);
@@ -431,13 +431,7 @@ export function GridPlane() {
             const isHovered = hoveredTile?.grid_x === tile.grid_x && hoveredTile?.grid_y === tile.grid_y;
             return (
               <group key={`exp_${tile.grid_x}_${tile.grid_y}`} position={worldPos}>
-                <mesh
-                  rotation={[-Math.PI / 2, 0, 0]}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleExpandTile(tile.grid_x, tile.grid_y);
-                  }}
-                >
+                <mesh rotation={[-Math.PI / 2, 0, 0]}>
                   <planeGeometry args={[tileSize * 0.94, tileSize * 0.94]} />
                   <meshBasicMaterial
                     color={isHovered ? '#10B981' : timeOfDay === 'night' ? '#059669' : '#34D399'}

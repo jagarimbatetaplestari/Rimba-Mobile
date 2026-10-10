@@ -20,9 +20,9 @@ interface InstancedGrassProps {
 }
 
 /**
- * Builds a charming, stylized low-poly 3-blade cartoon grass tuft.
- * Uses broader, blunt leaf profiles and upward-domed normals matching Kenney's diorama ground,
- * completely eliminating sharp needle spikes and overgrown fur.
+ * Builds an organic, asymmetric 5-blade slender tuft cluster.
+ * Uses upward-domed normals (Ghibli / Blender Normal-Transfer technique)
+ * so slender blades never show harsh dark backfaces and blend into a seamless meadow.
  */
 function createFluffyTuftGeometry(maxInstances: number): THREE.BufferGeometry {
   const geom = new THREE.BufferGeometry();
@@ -32,37 +32,41 @@ function createFluffyTuftGeometry(maxInstances: number): THREE.BufferGeometry {
   const uvs: number[] = [];
   const indices: number[] = [];
 
-  // 3 cute, stylized cartoon blades with blunt tops (cozy low-poly diorama style)
+  // 5 asymmetric, organically leaning slender blades with different lengths, leans, and curves
   const bladeSpecs = [
-    { ox: 0.0, oz: 0.0, angle: 0.0, height: 0.044, width: 0.014, bend: 0.012, lean: 0.08 },
-    { ox: -0.016, oz: 0.008, angle: -0.65, height: 0.038, width: 0.012, bend: 0.015, lean: 0.16 },
-    { ox: 0.016, oz: -0.008, angle: 0.65, height: 0.038, width: 0.012, bend: 0.015, lean: 0.16 },
+    { ox: -0.004, oz: 0.003, angle: 0.20, height: 0.096, width: 0.0052, bend: 0.026, lean: 0.08 },
+    { ox: 0.032, oz: -0.018, angle: 1.55, height: 0.082, width: 0.0048, bend: 0.032, lean: 0.14 },
+    { ox: -0.028, oz: 0.024, angle: 2.85, height: 0.090, width: 0.0050, bend: 0.024, lean: 0.11 },
+    { ox: -0.019, oz: -0.031, angle: 4.10, height: 0.076, width: 0.0046, bend: 0.029, lean: 0.16 },
+    { ox: 0.024, oz: 0.029, angle: 5.35, height: 0.086, width: 0.0049, bend: 0.027, lean: 0.12 },
   ];
 
   for (let b = 0; b < bladeSpecs.length; b++) {
     const spec = bladeSpecs[b];
     const cosA = Math.cos(spec.angle);
     const sinA = Math.sin(spec.angle);
+
+    // Outward arch direction perpendicular to blade width
     const nx = -sinA;
     const nz = cosA;
 
     const baseHalfW = spec.width;
-    const midHalfW = spec.width * 0.82;
-    const tipHalfW = spec.width * 0.48; // Blunt, stylized cartoon leaf tip (not a needle point!)
+    const midHalfW = spec.width * 0.60;
     const h = spec.height;
     const bendOut = spec.bend;
+    const midLean = h * spec.lean * 0.5;
+    const tipLean = h * spec.lean;
 
     const baseIndex = positions.length / 3;
 
-    // 6 vertices per blade (2 quads):
-    // 0: bottom-left, 1: bottom-right, 2: mid-left, 3: mid-right, 4: top-left, 5: top-right
+    // 5 vertices per slender curved blade:
+    // 0: bottom-left, 1: bottom-right, 2: mid-left, 3: mid-right, 4: fine tapered tip
     const localVerts = [
       [-baseHalfW, 0.0, 0.0, 0.0],
       [baseHalfW, 0.0, 0.0, 0.0],
-      [-midHalfW, h * 0.55, bendOut * 0.45, 0.55],
-      [midHalfW, h * 0.55, bendOut * 0.45, 0.55],
-      [-tipHalfW, h, bendOut, 1.0],
-      [tipHalfW, h, bendOut, 1.0],
+      [-midHalfW, h * 0.52, bendOut * 0.42 + midLean, 0.52],
+      [midHalfW, h * 0.52, bendOut * 0.42 + midLean, 0.52],
+      [0.0, h, bendOut + tipLean, 1.0],
     ];
 
     for (const [lx, ly, lz, vHeight] of localVerts) {
@@ -70,19 +74,25 @@ function createFluffyTuftGeometry(maxInstances: number): THREE.BufferGeometry {
       const wz = spec.oz + lx * sinA + lz * nz;
       positions.push(wx, ly, wz);
 
-      // Upward-domed soft normal for velvety diffuse shading matching ground
-      const dLen = Math.hypot(wx * 1.5, 0.98, wz * 1.5) || 1;
-      normals.push((wx * 1.5) / dLen, 0.98 / dLen, (wz * 1.5) / dLen);
+      // Stylized fluffy normal: dome predominantly upward (Y=0.96) for soft velvet shading
+      const dLen = Math.hypot(wx * 1.8, 0.96, wz * 1.8) || 1;
+      normals.push((wx * 1.8) / dLen, 0.96 / dLen, (wz * 1.8) / dLen);
 
+      // UV.y stores normalized height (0 at root -> 1 at tip) for velvet shader gradient
       uvs.push(0.5, vHeight);
     }
 
-    // 4 triangles per blade (2 quads):
+    // 3 triangles per blade (15 triangles total per 5-blade cluster)
     indices.push(
-      baseIndex + 0, baseIndex + 1, baseIndex + 2,
-      baseIndex + 1, baseIndex + 3, baseIndex + 2,
-      baseIndex + 2, baseIndex + 3, baseIndex + 4,
-      baseIndex + 3, baseIndex + 5, baseIndex + 4
+      baseIndex + 0,
+      baseIndex + 1,
+      baseIndex + 2,
+      baseIndex + 1,
+      baseIndex + 3,
+      baseIndex + 2,
+      baseIndex + 2,
+      baseIndex + 3,
+      baseIndex + 4
     );
   }
 
@@ -301,8 +311,8 @@ export function InstancedGrass({ count: overrideCount }: InstancedGrassProps) {
       return false;
     };
 
-    const targetTotal = Math.min(count, unlockedTiles.length * 28);
-    const maxAttempts = targetTotal * 3;
+    const targetTotal = Math.min(count, unlockedTiles.length * 640);
+    const maxAttempts = targetTotal * 2;
 
     for (let attempt = 0; attempt < maxAttempts && blades.length < targetTotal; attempt++) {
       // Pick a random unlocked tile and sample a 100% continuous random point across its full span
@@ -343,13 +353,13 @@ export function InstancedGrass({ count: overrideCount }: InstancedGrassProps) {
       const clumpFactor = Math.max(0, Math.min(1, (w1 + w2 + 1.1) * 0.45));
 
       // Varied anisotropic scales & organic tilts so no two tufts look alike
-      const scaleX = 0.85 + rnd() * 0.25;
-      const scaleZ = 0.85 + rnd() * 0.25;
-      const scaleY = 0.80 + rnd() * 0.30;
+      const scaleX = 0.72 + clumpFactor * 0.36 + rnd() * 0.34;
+      const scaleZ = 0.72 + clumpFactor * 0.36 + rnd() * 0.34;
+      const scaleY = 0.68 + clumpFactor * 0.54 + rnd() * 0.35;
 
       const rotY = rnd() * Math.PI * 2;
-      const tiltX = (rnd() - 0.5) * 0.22;
-      const tiltZ = (rnd() - 0.5) * 0.22;
+      const tiltX = (rnd() - 0.5) * 0.28;
+      const tiltZ = (rnd() - 0.5) * 0.28;
 
       const elevBonus = Math.max(0, (height - 0.04) * 1.8);
       const tSunlit = Math.min(
@@ -369,7 +379,7 @@ export function InstancedGrass({ count: overrideCount }: InstancedGrassProps) {
       });
 
       // Sprinkle tiny pastel wildflowers organically across lush meadow drifts (strictly outside river)
-      if (flowers.length < 24 && clumpFactor > 0.62 && rnd() < 0.06) {
+      if (flowers.length < 280 && clumpFactor > 0.55 && rnd() < 0.018) {
         const fx = x + (rnd() - 0.5) * 0.04;
         const fz = z + (rnd() - 0.5) * 0.04;
         if (!isRiverZone(fx, fz, 0.44)) {
@@ -405,10 +415,10 @@ export function InstancedGrass({ count: overrideCount }: InstancedGrassProps) {
     const frostMid = new THREE.Color('#E2E8F0');
     const frostTip = new THREE.Color('#FFFFFF');
 
-    // Meadow Biome: Exactly harmonized with Kenney's #5AC487 ground terrain
-    const lushEmerald = new THREE.Color(isEmerald ? '#2EA86E' : '#4AA872');
-    const sunlitMeadow = new THREE.Color(isEmerald ? '#4ED48E' : '#5AC487');
-    const goldenCrest = new THREE.Color(isEmerald ? '#86EAB5' : '#72DC9A');
+    // Meadow Biome: Lush emerald and sunlit gold tones
+    const lushEmerald = new THREE.Color(isEmerald ? '#2EA86E' : '#6EAE46');
+    const sunlitMeadow = new THREE.Color(isEmerald ? '#4ED48E' : '#9ED45A');
+    const goldenCrest = new THREE.Color(isEmerald ? '#86EAB5' : '#BCE668');
     const tempCol = new THREE.Color();
 
     for (let i = 0; i < bladeData.length; i++) {

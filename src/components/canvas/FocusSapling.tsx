@@ -88,7 +88,13 @@ function CompanionAvatarModel({ modelPath }: { modelPath: string }) {
   return <primitive object={cloned} scale={0.16} />;
 }
 
-function CampfirePresence3D({ companions = [] }: { companions?: string[] }) {
+function CampfirePresence3D({
+  companions = [],
+  targetTile,
+}: {
+  companions?: string[];
+  targetTile?: { grid_x: number; grid_y: number } | null;
+}) {
   const { scene: pitScene } = useGLTF('/models/kenney_survival_kit_campfire-pit.glb');
   const flameRef = useRef<THREE.Mesh>(null);
   const lightRef = useRef<THREE.PointLight>(null);
@@ -98,43 +104,80 @@ function CampfirePresence3D({ companions = [] }: { companions?: string[] }) {
     if (flameRef.current) {
       const flicker = 1 + Math.sin(t * 14) * 0.12 + Math.cos(t * 22) * 0.08;
       flameRef.current.scale.set(
-        0.18 * flicker,
-        (0.28 + Math.sin(t * 10) * 0.04) * flicker,
-        0.18 * flicker
+        0.16 * flicker,
+        (0.24 + Math.sin(t * 10) * 0.04) * flicker,
+        0.16 * flicker
       );
     }
     if (lightRef.current) {
-      lightRef.current.intensity = 1.4 + Math.sin(t * 12) * 0.3;
+      lightRef.current.intensity = 1.2 + Math.sin(t * 12) * 0.25;
     }
   });
 
   const clonedPit = useMemo(() => pitScene.clone(true), [pitScene]);
 
-  const companionSlots = [
-    { pos: [0.55, 0, 0], rot: -Math.PI / 2, model: '/models/fauna_fox.glb' },
-    { pos: [-0.48, 0, 0.32], rot: Math.PI / 3, model: '/models/fauna_koala.glb' },
-    { pos: [-0.38, 0, -0.42], rot: Math.PI * 0.7, model: '/models/animal-deer.glb' },
-  ];
+  // Dynamically position campfire towards the island center (4.5, 4.5)
+  // Ensures campfire and animal companions NEVER spawn over the cliff / outside the land!
+  const { campOffset, companionSlots } = useMemo(() => {
+    const gx = targetTile?.grid_x ?? 4.5;
+    const gy = targetTile?.grid_y ?? 4.5;
+    const toCenterX = 4.5 - gx;
+    const toCenterZ = 4.5 - gy;
+    const len = Math.hypot(toCenterX, toCenterZ) || 1;
+    const nx = toCenterX / len;
+    const nz = toCenterZ / len;
+
+    // Place campfire 0.26 units towards center of island from the sapling tree trunk
+    const cX = nx * 0.26;
+    const cZ = nz * 0.26;
+    const baseAngle = Math.atan2(nz, nx);
+
+    const dist = 0.22;
+    const slots = [
+      {
+        pos: [cX + Math.cos(baseAngle - Math.PI * 0.45) * dist, 0, cZ + Math.sin(baseAngle - Math.PI * 0.45) * dist],
+        rot: -(baseAngle - Math.PI * 0.45) - Math.PI / 2,
+        model: '/models/fauna_fox.glb',
+      },
+      {
+        pos: [cX + Math.cos(baseAngle) * dist, 0, cZ + Math.sin(baseAngle) * dist],
+        rot: -baseAngle - Math.PI / 2,
+        model: '/models/fauna_koala.glb',
+      },
+      {
+        pos: [cX + Math.cos(baseAngle + Math.PI * 0.45) * dist, 0, cZ + Math.sin(baseAngle + Math.PI * 0.45) * dist],
+        rot: -(baseAngle + Math.PI * 0.45) - Math.PI / 2,
+        model: '/models/animal-deer.glb',
+      },
+    ];
+
+    return {
+      campOffset: [cX, 0, cZ] as [number, number, number],
+      companionSlots: slots,
+    };
+  }, [targetTile]);
 
   return (
-    <group position={[0.82, 0, 0.15]}>
-      {/* Campfire Pit Base */}
-      <primitive object={clonedPit} scale={0.65} />
+    <group>
+      {/* Campfire Pit Base nestled snugly on the grass in front of the tree */}
+      <group position={campOffset}>
+        <primitive object={clonedPit} scale={0.52} />
 
-      {/* Dynamic Flickering Fire Core */}
-      <mesh ref={flameRef} position={[0, 0.14, 0]}>
-        <coneGeometry args={[0.16, 0.3, 8]} />
-        <meshBasicMaterial color="#FFA000" />
-      </mesh>
-      <pointLight
-        ref={lightRef}
-        position={[0, 0.25, 0]}
-        color="#FF8C00"
-        distance={2.6}
-        decay={2}
-      />
+        {/* Dynamic Flickering Fire Core */}
+        <mesh ref={flameRef} position={[0, 0.12, 0]}>
+          <coneGeometry args={[0.13, 0.24, 8]} />
+          <meshBasicMaterial color="#FFA000" />
+        </mesh>
+        <pointLight
+          ref={lightRef}
+          position={[0, 0.22, 0]}
+          color="#FF8C00"
+          distance={2.2}
+          decay={2}
+        />
+      </group>
 
-      {/* Animal Companions sitting around fire */}
+      {/* Animal Companions sitting around fire on solid sanctuary ground */}
       {companions.slice(0, 3).map((name, idx) => {
         const slot = companionSlots[idx];
         if (!slot) return null;
@@ -296,7 +339,10 @@ export function FocusSapling() {
 
       {/* Active Campfire Room Presence if focusing with companions */}
       {activeSession?.status === 'active' && Boolean(activeSession?.campfire_room_code) && (
-        <CampfirePresence3D companions={activeSession.companions} />
+        <CampfirePresence3D
+          companions={activeSession.companions}
+          targetTile={activeSession?.target_tile || lockedTileRef.current}
+        />
       )}
 
       {/* Focus Tree Group with 3 Dynamic Stages */}

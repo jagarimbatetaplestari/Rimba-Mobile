@@ -409,6 +409,7 @@ interface MeadowBunnyProps {
   furColor?: string;
   scale?: number;
   phaseOffset?: number;
+  localOffset?: [number, number, number];
   roamingTiles: [number, number, number][];
   groundPositionsRef: React.MutableRefObject<Map<string, THREE.Vector3>>;
   isRiverZone: (wx: number, wz: number, radius?: number) => boolean;
@@ -421,6 +422,7 @@ function MeadowBunny({
   furColor = '#FAF5FF',
   scale = 0.46,
   phaseOffset = 0,
+  localOffset = [0, 0, 0],
   roamingTiles,
   groundPositionsRef,
   isRiverZone,
@@ -431,8 +433,10 @@ function MeadowBunny({
   const leftEarRef = useRef<THREE.Mesh>(null);
   const rightEarRef = useRef<THREE.Mesh>(null);
 
+  const offX = localOffset[0];
+  const offZ = localOffset[2];
   const anchor = roamingTiles[0] || [0, 0, 0];
-  const currentPos = useRef<THREE.Vector3>(new THREE.Vector3(anchor[0], anchor[1], anchor[2]));
+  const currentPos = useRef<THREE.Vector3>(new THREE.Vector3(anchor[0] + offX, anchor[1], anchor[2] + offZ));
   const currentRotY = useRef<number>(phaseOffset);
   const currentRotX = useRef<number>(0);
   const currentRotZ = useRef<number>(0);
@@ -458,8 +462,8 @@ function MeadowBunny({
     const pA = roamingTiles[currentIdx];
     const pB = roamingTiles[nextIdx];
 
-    let targetX = pA[0];
-    let targetZ = pA[2];
+    let targetX = pA[0] + offX;
+    let targetZ = pA[2] + offZ;
     let targetRotY = currentRotY.current;
     let targetRotX = 0;
     let targetRotZ = 0;
@@ -529,8 +533,8 @@ function MeadowBunny({
       }
 
       const totalHopFraction = (hopIndex + subDisplacement) / totalHops;
-      targetX = pA[0] + dx * Math.min(1, Math.max(0, totalHopFraction));
-      targetZ = pA[2] + dz * Math.min(1, Math.max(0, totalHopFraction));
+      targetX = pA[0] + offX + dx * Math.min(1, Math.max(0, totalHopFraction));
+      targetZ = pA[2] + offZ + dz * Math.min(1, Math.max(0, totalHopFraction));
       targetRotY = walkAngle;
 
       // Parabolic jump arc with squash & stretch dynamics
@@ -555,8 +559,8 @@ function MeadowBunny({
       }
     }
 
-    // Mutual ground animal collision avoidance
-    const MIN_DIST = 0.72;
+    // Mutual ground animal collision avoidance (gentle separation without ping-pong runaway)
+    const MIN_DIST = 0.55;
     let avoidX = 0;
     let avoidZ = 0;
     groundPositionsRef.current.forEach((otherPos, otherId) => {
@@ -564,24 +568,41 @@ function MeadowBunny({
       const ddx = targetX - otherPos.x;
       const ddz = targetZ - otherPos.z;
       const dist = Math.hypot(ddx, ddz);
-      if (dist < MIN_DIST && dist > 0.001) {
-        const push = (MIN_DIST - dist) * 0.75;
-        const candX = targetX + (ddx / dist) * push;
-        const candZ = targetZ + (ddz / dist) * push;
+      if (dist < MIN_DIST) {
+        const safeDist = Math.max(dist, 0.08);
+        const push = Math.min(0.08, (MIN_DIST - safeDist) * 0.35);
+        const candX = targetX + (ddx / safeDist) * push;
+        const candZ = targetZ + (ddz / safeDist) * push;
         if (!isRiverZone(candX, candZ, 0.40)) {
-          avoidX += (ddx / dist) * push;
-          avoidZ += (ddz / dist) * push;
+          avoidX += (ddx / safeDist) * push;
+          avoidZ += (ddz / safeDist) * push;
         }
       }
     });
 
+    // Cap total avoidance push vector to max 0.12 units
+    const avoidDist = Math.hypot(avoidX, avoidZ);
+    if (avoidDist > 0.12) {
+      avoidX = (avoidX / avoidDist) * 0.12;
+      avoidZ = (avoidZ / avoidDist) * 0.12;
+    }
+
     const finalTargetX = targetX + avoidX;
     const finalTargetZ = targetZ + avoidZ;
 
-    // Smooth movement damping
-    const posDamp = Math.min(1, dt * 5.8);
-    currentPos.current.x += (finalTargetX - currentPos.current.x) * posDamp;
-    currentPos.current.z += (finalTargetZ - currentPos.current.z) * posDamp;
+    // Strict maximum speed clamp (max 1.2 units/s) prevents erratic runaway flinging
+    const posDamp = Math.min(1, dt * 4.5);
+    const desiredStepX = (finalTargetX - currentPos.current.x) * posDamp;
+    const desiredStepZ = (finalTargetZ - currentPos.current.z) * posDamp;
+    const desiredDist = Math.hypot(desiredStepX, desiredStepZ);
+    const maxStep = 1.2 * dt;
+    if (desiredDist > maxStep && desiredDist > 0.0001) {
+      currentPos.current.x += (desiredStepX / desiredDist) * maxStep;
+      currentPos.current.z += (desiredStepZ / desiredDist) * maxStep;
+    } else {
+      currentPos.current.x += desiredStepX;
+      currentPos.current.z += desiredStepZ;
+    }
 
     const yDamp = Math.min(1, dt * 7.5);
     currentYOffset.current += (targetYOffset - currentYOffset.current) * yDamp;
@@ -1980,6 +2001,7 @@ export function FaunaEcosystem() {
             furColor="#FAF5FF"
             scale={0.24}
             phaseOffset={0}
+            localOffset={[-0.20, 0, -0.16]}
             roamingTiles={bunnyRoamingTiles}
             groundPositionsRef={groundPositionsRef}
             isRiverZone={isRiverZone}
@@ -1991,6 +2013,7 @@ export function FaunaEcosystem() {
             furColor="#FDE68A"
             scale={0.20}
             phaseOffset={4.5}
+            localOffset={[0.22, 0, -0.12]}
             roamingTiles={bunnyRoamingTiles.length > 1 ? [...bunnyRoamingTiles].reverse() : bunnyRoamingTiles}
             groundPositionsRef={groundPositionsRef}
             isRiverZone={isRiverZone}
@@ -2002,6 +2025,7 @@ export function FaunaEcosystem() {
             furColor="#E2E8F0"
             scale={0.17}
             phaseOffset={2.4}
+            localOffset={[0.02, 0, 0.22]}
             roamingTiles={bunnyRoamingTiles}
             groundPositionsRef={groundPositionsRef}
             isRiverZone={isRiverZone}

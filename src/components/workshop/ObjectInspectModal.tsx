@@ -173,7 +173,7 @@ export function ObjectInspectModal() {
 
   return (
     <>
-      <div className="fixed top-20 right-3.5 sm:right-6 z-30 pointer-events-auto max-w-[310px] w-[calc(100vw-28px)] animate-in fade-in zoom-in-95 duration-200 font-urbanist select-none antialiased">
+      <div className="fixed bottom-[max(calc(env(safe-area-inset-bottom,0px)+88px),96px)] left-1/2 -translate-x-1/2 sm:bottom-auto sm:top-24 sm:right-6 sm:left-auto sm:translate-x-0 z-30 pointer-events-auto max-w-[340px] w-[calc(100vw-24px)] animate-in fade-in slide-in-from-bottom-3 sm:zoom-in-95 duration-200 font-urbanist select-none antialiased">
         <div className="p-4 rounded-3xl border border-white/80 bg-gradient-to-b from-white/95 via-white/95 to-white/90 shadow-2xl shadow-[#0E3B2D]/20 backdrop-blur-xl text-[#0D3528] space-y-3">
           {/* Header */}
           <div className="flex items-center justify-between pb-2.5 border-b border-[#0D3528]/8">

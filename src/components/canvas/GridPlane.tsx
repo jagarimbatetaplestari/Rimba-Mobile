@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo, useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { useGLTF } from '@react-three/drei';
 import { GAME_CONFIG } from '@/lib/game/config';
@@ -331,7 +331,13 @@ export function GridPlane() {
     setHoveredTile(null);
   };
 
+  const lastExpandTimeRef = useRef<number>(0);
+
   const handleExpandTile = (grid_x: number, grid_y: number) => {
+    const now = Date.now();
+    if (now - lastExpandTimeRef.current < 450) return;
+    lastExpandTimeRef.current = now;
+
     const isExpandable = canUnlockTile(grid_x, grid_y, unlockedSet);
     if (isExpandable) {
       const ok = unlockLandTile(grid_x, grid_y);
@@ -431,9 +437,6 @@ export function GridPlane() {
                     e.stopPropagation();
                     handleExpandTile(tile.grid_x, tile.grid_y);
                   }}
-                  onPointerDown={(e) => {
-                    e.stopPropagation();
-                  }}
                 >
                   <planeGeometry args={[tileSize * 0.94, tileSize * 0.94]} />
                   <meshBasicMaterial
@@ -457,7 +460,6 @@ export function GridPlane() {
           onPointerMove={handlePointerMove}
           onPointerLeave={handlePointerLeave}
           onClick={handleClick}
-          onPointerDown={handleClick}
         >
           <planeGeometry args={[gridSize * tileSize, gridSize * tileSize]} />
           <meshBasicMaterial transparent opacity={0} depthWrite={false} />

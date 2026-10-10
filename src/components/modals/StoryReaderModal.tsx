@@ -160,7 +160,7 @@ export function StoryReaderModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex flex-col justify-between overflow-hidden bg-black select-none text-white animate-in fade-in duration-300"
+      className="fixed inset-0 z-[120] flex flex-col justify-between overflow-hidden bg-black select-none text-white animate-in fade-in duration-300"
       style={{
         fontFamily:
           "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', var(--font-geist-sans), sans-serif",

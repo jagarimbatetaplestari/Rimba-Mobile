@@ -123,6 +123,117 @@ function SeamlessTurfOverlay({
 }
 
 /**
+ * Solid under-island bedrock & fertile earth foundation:
+ * Seals all under-cliff gaps, preventing any background sky or void from showing through.
+ */
+function BedrockBaseInstances({
+  positions,
+  activeBiome,
+}: {
+  positions: [number, number, number][];
+  activeBiome: 'meadow' | 'snow';
+}) {
+  const instRef = useRef<THREE.InstancedMesh>(null);
+  const dummy = useMemo(() => new THREE.Object3D(), []);
+  const geo = useMemo(() => new THREE.BoxGeometry(1.005, 0.46, 1.005), []);
+  const isSnow = activeBiome === 'snow';
+
+  const mat = useMemo(() => {
+    return new THREE.MeshStandardMaterial({
+      color: isSnow ? '#5A5868' : '#322116', // Dark rich soil foundation
+      roughness: 0.95,
+      metalness: 0.0,
+    });
+  }, [isSnow]);
+
+  useEffect(() => {
+    if (!instRef.current || positions.length === 0) return;
+    for (let i = 0; i < positions.length; i++) {
+      const pos = positions[i];
+      dummy.position.set(pos[0], -0.48, pos[2]);
+      dummy.rotation.set(0, 0, 0);
+      dummy.scale.set(1.0, 1.0, 1.0);
+      dummy.updateMatrix();
+      instRef.current.setMatrixAt(i, dummy.matrix);
+    }
+    instRef.current.instanceMatrix.needsUpdate = true;
+  }, [positions, dummy]);
+
+  useEffect(() => {
+    return () => {
+      geo.dispose();
+      mat.dispose();
+    };
+  }, [geo, mat]);
+
+  if (positions.length === 0) return null;
+
+  return (
+    <instancedMesh
+      ref={instRef}
+      args={[geo, mat, positions.length]}
+      receiveShadow
+    />
+  );
+}
+
+/**
+ * Junction Seal Overlay:
+ * Placed at all grid intersections where 2 or more unlocked land blocks meet.
+ * Completely covers and seals the chamfer diagonal diamond crevices between blocks!
+ */
+function JunctionSealOverlay({
+  positions,
+  activeBiome,
+}: {
+  positions: [number, number, number][];
+  activeBiome: 'meadow' | 'snow';
+}) {
+  const instRef = useRef<THREE.InstancedMesh>(null);
+  const dummy = useMemo(() => new THREE.Object3D(), []);
+  const geo = useMemo(() => new THREE.CircleGeometry(0.20, 16), []);
+  const isSnow = activeBiome === 'snow';
+
+  const mat = useMemo(() => {
+    return new THREE.MeshStandardMaterial({
+      color: isSnow ? '#F8F8FB' : '#5AC487',
+      roughness: 0.88,
+      metalness: 0.0,
+    });
+  }, [isSnow]);
+
+  useEffect(() => {
+    if (!instRef.current || positions.length === 0) return;
+    for (let i = 0; i < positions.length; i++) {
+      const pos = positions[i];
+      dummy.position.set(pos[0], pos[1], pos[2]);
+      dummy.rotation.set(-Math.PI / 2, 0, 0);
+      dummy.scale.set(1.0, 1.0, 1.0);
+      dummy.updateMatrix();
+      instRef.current.setMatrixAt(i, dummy.matrix);
+    }
+    instRef.current.instanceMatrix.needsUpdate = true;
+  }, [positions, dummy]);
+
+  useEffect(() => {
+    return () => {
+      geo.dispose();
+      mat.dispose();
+    };
+  }, [geo, mat]);
+
+  if (positions.length === 0) return null;
+
+  return (
+    <instancedMesh
+      ref={instRef}
+      args={[geo, mat, positions.length]}
+      receiveShadow
+    />
+  );
+}
+
+/**
  * Dynamic Modular Diorama Island:
  * Renders bright, vibrant modular Kenney Platformer Kit land blocks
  * with smart overhang perimeter edge & corner styling, plus Level 20 Snow Biome!
@@ -186,11 +297,20 @@ export function Island() {
   }, [worldObjects, staticUnlockedSet]);
 
   // Smart modular block classification: categorize tiles into interior, edge, and corner
-  const { interiorTiles, edgeTiles, cornerTiles, turfPositions } = useMemo(() => {
+  const {
+    interiorTiles,
+    edgeTiles,
+    cornerTiles,
+    turfPositions,
+    junctionSealPositions,
+    bedrockPositions,
+  } = useMemo(() => {
     const interiors: InstanceData[] = [];
     const edges: InstanceData[] = [];
     const corners: InstanceData[] = [];
     const turfs: [number, number, number][] = [];
+    const bedrocks: [number, number, number][] = [];
+    const junctionMap = new Map<string, { pos: [number, number, number]; count: number }>();
 
     staticUnlockedSet.forEach((key) => {
       const [gx, gy] = key.split(',').map(Number);
@@ -199,8 +319,29 @@ export function Island() {
       const cx = (gx + offset) * tileSize;
       const cz = (gy + offset) * tileSize;
 
+      // Bedrock foundation under every unlocked tile
+      bedrocks.push([cx, -0.48, cz]);
+
+      // Collect 4 corner junctions for sealing chamfer crevices
+      const tileCorners = [
+        [gx + 0.5, gy + 0.5],
+        [gx - 0.5, gy + 0.5],
+        [gx - 0.5, gy - 0.5],
+        [gx + 0.5, gy - 0.5],
+      ];
+      tileCorners.forEach(([jx, jy]) => {
+        const jKey = `${jx},${jy}`;
+        const existing = junctionMap.get(jKey);
+        if (existing) {
+          existing.count += 1;
+        } else {
+          const worldX = (jx + offset) * tileSize;
+          const worldZ = (jy + offset) * tileSize;
+          junctionMap.set(jKey, { pos: [worldX, 0.0015, worldZ], count: 1 });
+        }
+      });
+
       // Detect exposed exterior edges facing the ocean void
-      // (River tiles are valid island tiles, so land adjacent to a river is NOT an ocean cliff!)
       const hasN = staticUnlockedSet.has(`${gx},${gy - 1}`);
       const hasS = staticUnlockedSet.has(`${gx},${gy + 1}`);
       const hasW = staticUnlockedSet.has(`${gx - 1},${gy}`);
@@ -212,30 +353,37 @@ export function Island() {
       const missingE = !hasE;
       const missingCount = (missingN ? 1 : 0) + (missingS ? 1 : 0) + (missingW ? 1 : 0) + (missingE ? 1 : 0);
 
-      // Only interior tiles get the seamless turf overlay plane.
-      // Exterior edge & corner tiles use native modular Kenney geometry so the grass top perfectly follows the chamfered cliff edges without any sharp 90-degree overhangs.
+      // Interior tiles get the seamless turf overlay plane
       if (!riverTileMap.has(key) && missingCount === 0) {
         turfs.push([cx, 0.001, cz]);
       }
 
       const blockPos: [number, number, number] = [cx, -0.5, cz];
 
-      if (missingCount >= 2) {
-        // Exposed corners facing the ocean
-        if (missingS && missingE) {
-          corners.push({ pos: blockPos, rotY: 0 });
-        } else if (missingS && missingW) {
-          corners.push({ pos: blockPos, rotY: Math.PI * 0.5 });
-        } else if (missingN && missingW) {
-          corners.push({ pos: blockPos, rotY: Math.PI });
-        } else if (missingN && missingE) {
-          corners.push({ pos: blockPos, rotY: Math.PI * 1.5 });
-        } else if (missingS) {
-          edges.push({ pos: blockPos, rotY: 0 });
-        } else if (missingN) {
-          edges.push({ pos: blockPos, rotY: Math.PI });
+      if (missingCount >= 3) {
+        // Single protrusion tile or isolated island:
+        // Has 3 or 4 open sides facing the ocean.
+        // Use interiorModel (which has complete 4-sided rounded cliff overhangs).
+        // This avoids sharp tapered corner wedges and exposed flat cuts!
+        interiors.push({ pos: blockPos, rotY: 0, scale: [1.0, 1.0, 1.0] });
+      } else if (missingCount === 2) {
+        // If 2 opposite sides are missing (1-wide bridge or corridor):
+        if ((missingN && missingS) || (missingW && missingE)) {
+          // Opposite open sides: use interiorModel so both sides have grass cliffs!
+          interiors.push({ pos: blockPos, rotY: 0, scale: [1.0, 1.0, 1.0] });
         } else {
-          interiors.push({ pos: blockPos, rotY: 0, scale: [1.025, 1.0, 1.025] });
+          // True 90-degree corner facing the ocean
+          if (missingS && missingE) {
+            corners.push({ pos: blockPos, rotY: 0 });
+          } else if (missingS && missingW) {
+            corners.push({ pos: blockPos, rotY: Math.PI * 0.5 });
+          } else if (missingN && missingW) {
+            corners.push({ pos: blockPos, rotY: Math.PI });
+          } else if (missingN && missingE) {
+            corners.push({ pos: blockPos, rotY: Math.PI * 1.5 });
+          } else {
+            interiors.push({ pos: blockPos, rotY: 0, scale: [1.0, 1.0, 1.0] });
+          }
         }
       } else if (missingCount === 1) {
         // Exposed perimeter edges facing the ocean
@@ -255,11 +403,21 @@ export function Island() {
       }
     });
 
+    const seals: [number, number, number][] = [];
+    junctionMap.forEach((entry) => {
+      // Seal all junctions where at least 2 adjacent unlocked tiles meet
+      if (entry.count >= 2) {
+        seals.push(entry.pos);
+      }
+    });
+
     return {
       interiorTiles: interiors,
       edgeTiles: edges,
       cornerTiles: corners,
       turfPositions: turfs,
+      junctionSealPositions: seals,
+      bedrockPositions: bedrocks,
     };
   }, [staticUnlockedSet, offset, tileSize, riverTileMap]);
 
@@ -271,6 +429,9 @@ export function Island() {
 
   return (
     <group position={[0, 0, 0]}>
+      {/* 0. Solid Bedrock & Fertile Earth Base Slab (seals under-cliff view into ocean) */}
+      <BedrockBaseInstances positions={bedrockPositions} activeBiome={activeBiome} />
+
       {/* 1. Interior Blocks */}
       <ModularBlockInstances modelUrl={interiorModel} instances={interiorTiles} />
 
@@ -280,10 +441,13 @@ export function Island() {
       {/* 3. Corner Overhang Blocks */}
       <ModularBlockInstances modelUrl={cornerModel} instances={cornerTiles} />
 
-      {/* 4. Seamless Unified Lawn Turf Overlay (seals all corner bevel holes & crevices) */}
+      {/* 4. Seamless Unified Lawn Turf Overlay */}
       <SeamlessTurfOverlay positions={turfPositions} activeBiome={activeBiome} />
 
-      {/* 5. Dynamic Rising Land Blocks with spring physics & water splash */}
+      {/* 5. Corner Junction Seals (eliminates chamfer diamond cavities between blocks) */}
+      <JunctionSealOverlay positions={junctionSealPositions} activeBiome={activeBiome} />
+
+      {/* 6. Dynamic Rising Land Blocks with spring physics & water splash */}
       {Array.from(risingTiles).map((key) => (
         <RisingLandBlock
           key={`rising_${key}`}

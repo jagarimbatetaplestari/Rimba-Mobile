@@ -183,14 +183,25 @@ export interface PeriodAnalyticsResult {
   bars: PeriodBarPoint[];
   peakHeadline: string;
   comparisonHeadline: string;
+  periodStart: Date;
+  periodEnd: Date;
+  filteredSessions: FocusSession[];
 }
 
-const DAY_NAMES_SHORT = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
-const DAY_NAMES_FULL = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-const MONTH_NAMES_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
-const MONTH_NAMES_FULL = [
+const DAY_NAMES_SHORT_ID = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+const DAY_NAMES_FULL_ID = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+const MONTH_NAMES_SHORT_ID = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+const MONTH_NAMES_FULL_ID = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
   'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+];
+
+const DAY_NAMES_SHORT_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const DAY_NAMES_FULL_EN = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const MONTH_NAMES_SHORT_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTH_NAMES_FULL_EN = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
 ];
 
 function getSessionDurationMinutes(s: FocusSession): number {
@@ -207,8 +218,15 @@ export function calculatePeriodAnalytics(
   sessions: FocusSession[],
   period: AnalyticsPeriod,
   offset: number = 0,
-  baseDate: Date = new Date()
+  baseDate: Date = new Date(),
+  language: 'id' | 'en' = 'id'
 ): PeriodAnalyticsResult {
+  const isEn = language === 'en';
+  const dayShort = isEn ? DAY_NAMES_SHORT_EN : DAY_NAMES_SHORT_ID;
+  const dayFull = isEn ? DAY_NAMES_FULL_EN : DAY_NAMES_FULL_ID;
+  const monthShort = isEn ? MONTH_NAMES_SHORT_EN : MONTH_NAMES_SHORT_ID;
+  const monthFull = isEn ? MONTH_NAMES_FULL_EN : MONTH_NAMES_FULL_ID;
+
   const start = new Date(baseDate);
   start.setHours(0, 0, 0, 0);
   const end = new Date(start);
@@ -219,7 +237,8 @@ export function calculatePeriodAnalytics(
     end.setTime(start.getTime());
     end.setHours(23, 59, 59, 999);
     const isToday = offset === 0;
-    periodLabel = `${isToday ? 'Hari Ini, ' : ''}${start.getDate()} ${MONTH_NAMES_SHORT[start.getMonth()]} ${start.getFullYear()}`;
+    const prefix = isToday ? (isEn ? 'Today, ' : 'Hari Ini, ') : '';
+    periodLabel = `${prefix}${start.getDate()} ${monthShort[start.getMonth()]} ${start.getFullYear()}`;
   } else if (period === 'week') {
     // Monday-start week
     const dayOfWeek = start.getDay();
@@ -228,7 +247,7 @@ export function calculatePeriodAnalytics(
     end.setTime(start.getTime());
     end.setDate(start.getDate() + 6);
     end.setHours(23, 59, 59, 999);
-    periodLabel = `${start.getDate()} ${MONTH_NAMES_SHORT[start.getMonth()]} – ${end.getDate()} ${MONTH_NAMES_SHORT[end.getMonth()]} ${end.getFullYear()}`;
+    periodLabel = `${start.getDate()} ${monthShort[start.getMonth()]} – ${end.getDate()} ${monthShort[end.getMonth()]} ${end.getFullYear()}`;
   } else if (period === 'month') {
     start.setDate(1);
     start.setMonth(start.getMonth() + offset);
@@ -236,12 +255,12 @@ export function calculatePeriodAnalytics(
     end.setMonth(start.getMonth() + 1);
     end.setDate(0);
     end.setHours(23, 59, 59, 999);
-    periodLabel = `${MONTH_NAMES_FULL[start.getMonth()]} ${start.getFullYear()}`;
+    periodLabel = `${monthFull[start.getMonth()]} ${start.getFullYear()}`;
   } else {
     start.setFullYear(start.getFullYear() + offset, 0, 1);
     end.setFullYear(start.getFullYear(), 11, 31);
     end.setHours(23, 59, 59, 999);
-    periodLabel = `Tahun ${start.getFullYear()}`;
+    periodLabel = isEn ? `Year ${start.getFullYear()}` : `Tahun ${start.getFullYear()}`;
   }
 
   // Previous period bounds for comparison
@@ -254,6 +273,7 @@ export function calculatePeriodAnalytics(
   let completedCount = 0;
   let witheredCount = 0;
   const tagDistribution: Record<string, number> = {};
+  const filteredSessions: FocusSession[] = [];
 
   // Buckets for bar chart & natural-language peak insights
   const hourBuckets = new Array(24).fill(0);
@@ -266,6 +286,7 @@ export function calculatePeriodAnalytics(
     const dur = getSessionDurationMinutes(s);
 
     if (refTime >= start.getTime() && refTime <= end.getTime()) {
+      filteredSessions.push(s);
       if (s.status === 'completed') {
         totalMinutes += dur;
         completedCount += 1;
@@ -290,7 +311,7 @@ export function calculatePeriodAnalytics(
   // Build bars for period
   const bars: PeriodBarPoint[] = [];
   if (period === 'day') {
-    // Group into 6 x 4-hour blocks or 8 x 3-hour blocks for clean mobile readability
+    // Group into 8 x 3-hour blocks for clean mobile readability
     const blocks = [
       { label: '00h', hours: [0, 1, 2] },
       { label: '03h', hours: [3, 4, 5] },
@@ -308,15 +329,15 @@ export function calculatePeriodAnalytics(
       });
     });
   } else if (period === 'week') {
-    const order = [1, 2, 3, 4, 5, 6, 0]; // Sen..Min
+    const order = [1, 2, 3, 4, 5, 6, 0]; // Sen..Min (Mon..Sun)
     order.forEach((dow) => {
       bars.push({
-        label: DAY_NAMES_SHORT[dow],
+        label: dayShort[dow],
         minutes: weekdayBuckets[dow],
       });
     });
   } else if (period === 'month') {
-    // 5 weekly/5-day buckets across the month for clean mobile chart
+    // 5 weekly buckets across the month for clean mobile chart
     const daysInMonth = end.getDate();
     const ranges = [
       { label: '1-6', s: 0, e: 6 },
@@ -331,13 +352,16 @@ export function calculatePeriodAnalytics(
       bars.push({ label: r.label, minutes: sum });
     });
   } else {
-    MONTH_NAMES_SHORT.forEach((mLabel, idx) => {
+    monthShort.forEach((mLabel, idx) => {
       bars.push({ label: mLabel, minutes: monthBuckets[idx] });
     });
   }
 
   // Generate Natural-Language Headlines (#27)
-  let peakHeadline = 'Belum ada catatan fokus pada periode ini — tanam sesi pertamamu!';
+  let peakHeadline = isEn
+    ? 'No focus sessions recorded in this period — nurture your first tree!'
+    : 'Belum ada catatan fokus pada periode ini — tanam sesi pertamamu!';
+
   if (totalMinutes > 0) {
     if (period === 'day') {
       let bestHour = 0;
@@ -345,32 +369,46 @@ export function calculatePeriodAnalytics(
         if (m > hourBuckets[bestHour]) bestHour = h;
       });
       const nextHour = (bestHour + 1) % 24;
-      peakHeadline = `Jam emas fokusmu berada di pukul ${String(bestHour).padStart(2, '0')}:00 – ${String(nextHour).padStart(2, '0')}:00 (${hourBuckets[bestHour]}m).`;
+      peakHeadline = isEn
+        ? `Your peak focus window was ${String(bestHour).padStart(2, '0')}:00 – ${String(nextHour).padStart(2, '0')}:00 (${hourBuckets[bestHour]}m).`
+        : `Jam emas fokusmu berada di pukul ${String(bestHour).padStart(2, '0')}:00 – ${String(nextHour).padStart(2, '0')}:00 (${hourBuckets[bestHour]}m).`;
     } else if (period === 'week' || period === 'month') {
       let bestDow = 0;
       weekdayBuckets.forEach((m, dow) => {
         if (m > weekdayBuckets[bestDow]) bestDow = dow;
       });
-      peakHeadline = `Hari paling produktifmu adalah ${DAY_NAMES_FULL[bestDow]} dengan total ${weekdayBuckets[bestDow]} menit fokus.`;
+      peakHeadline = isEn
+        ? `Your most focused day was ${dayFull[bestDow]} with ${weekdayBuckets[bestDow]} minutes.`
+        : `Hari paling produktifmu adalah ${dayFull[bestDow]} dengan total ${weekdayBuckets[bestDow]} menit fokus.`;
     } else {
       let bestMonth = 0;
       monthBuckets.forEach((m, idx) => {
         if (m > monthBuckets[bestMonth]) bestMonth = idx;
       });
-      peakHeadline = `Bulan terproduktifmu adalah ${MONTH_NAMES_FULL[bestMonth]} (${monthBuckets[bestMonth]} menit fokus).`;
+      peakHeadline = isEn
+        ? `Your most productive month was ${monthFull[bestMonth]} (${monthBuckets[bestMonth]} minutes focused).`
+        : `Bulan terproduktifmu adalah ${monthFull[bestMonth]} (${monthBuckets[bestMonth]} menit fokus).`;
     }
   }
 
   const diff = totalMinutes - previousPeriodMinutes;
   let comparisonHeadline = '';
   if (totalMinutes === 0 && previousPeriodMinutes === 0) {
-    comparisonHeadline = 'Mulai 1 sesi fokus untuk menyalakan grafik produktivitas pulau Rimba.';
+    comparisonHeadline = isEn
+      ? 'Start 1 focus session to illuminate your sanctuary chart.'
+      : 'Mulai 1 sesi fokus untuk menyalakan grafik produktivitas pulau Rimba.';
   } else if (diff > 0) {
-    comparisonHeadline = `Naik +${diff} menit dibanding periode sebelumnya (${previousPeriodMinutes}m). Pertahankan!`;
+    comparisonHeadline = isEn
+      ? `+${diff} minutes compared to previous period (${previousPeriodMinutes}m). Keep it up!`
+      : `Naik +${diff} menit dibanding periode sebelumnya (${previousPeriodMinutes}m). Pertahankan!`;
   } else if (diff < 0) {
-    comparisonHeadline = `Berkurang ${Math.abs(diff)} menit dari periode lalu (${previousPeriodMinutes}m) — ayo kembali fokus!`;
+    comparisonHeadline = isEn
+      ? `-${Math.abs(diff)} minutes from previous period (${previousPeriodMinutes}m) — let's refocus!`
+      : `Berkurang ${Math.abs(diff)} menit dari periode lalu (${previousPeriodMinutes}m) — ayo kembali fokus!`;
   } else {
-    comparisonHeadline = `Stabil di ${totalMinutes} menit, sama persis dengan periode sebelumnya.`;
+    comparisonHeadline = isEn
+      ? `Steady at ${totalMinutes} minutes, matching the previous period.`
+      : `Stabil di ${totalMinutes} menit, sama persis dengan periode sebelumnya.`;
   }
 
   return {
@@ -384,6 +422,9 @@ export function calculatePeriodAnalytics(
     bars,
     peakHeadline,
     comparisonHeadline,
+    periodStart: start,
+    periodEnd: end,
+    filteredSessions,
   };
 }
 
@@ -401,9 +442,13 @@ export interface CircadianRhythmData {
 }
 
 /**
- * Calculates 24-hour circadian focus distribution across all completed sessions.
+ * Calculates 24-hour circadian focus distribution across completed sessions in the given period.
  */
-export function calculateCircadianFocusRhythm(sessions: FocusSession[]): CircadianRhythmData {
+export function calculateCircadianFocusRhythm(
+  sessions: FocusSession[],
+  language: 'id' | 'en' = 'id'
+): CircadianRhythmData {
+  const isEn = language === 'en';
   const hourly = new Array(24).fill(0);
   const completed = sessions.filter((s) => s.status === 'completed' && s.completed_at);
 
@@ -424,11 +469,18 @@ export function calculateCircadianFocusRhythm(sessions: FocusSession[]): Circadi
   });
 
   const nextHour = (peakHour + 1) % 24;
-  let peakWindowLabel = 'Pagi Hari';
-  if (peakHour >= 4 && peakHour < 10) peakWindowLabel = `Fajar Tenang (${String(peakHour).padStart(2, '0')}:00 – ${String(nextHour).padStart(2, '0')}:00)`;
-  else if (peakHour >= 10 && peakHour < 16) peakWindowLabel = `Siang Berdaya (${String(peakHour).padStart(2, '0')}:00 – ${String(nextHour).padStart(2, '0')}:00)`;
-  else if (peakHour >= 16 && peakHour < 20) peakWindowLabel = `Senja Teduh (${String(peakHour).padStart(2, '0')}:00 – ${String(nextHour).padStart(2, '0')}:00)`;
-  else peakWindowLabel = `Malam Kontemplatif (${String(peakHour).padStart(2, '0')}:00 – ${String(nextHour).padStart(2, '0')}:00)`;
+  let peakWindowLabel = isEn ? 'Morning' : 'Pagi Hari';
+  if (isEn) {
+    if (peakHour >= 4 && peakHour < 10) peakWindowLabel = `Calm Dawn (${String(peakHour).padStart(2, '0')}:00 – ${String(nextHour).padStart(2, '0')}:00)`;
+    else if (peakHour >= 10 && peakHour < 16) peakWindowLabel = `Productive Midday (${String(peakHour).padStart(2, '0')}:00 – ${String(nextHour).padStart(2, '0')}:00)`;
+    else if (peakHour >= 16 && peakHour < 20) peakWindowLabel = `Serene Twilight (${String(peakHour).padStart(2, '0')}:00 – ${String(nextHour).padStart(2, '0')}:00)`;
+    else peakWindowLabel = `Contemplative Night (${String(peakHour).padStart(2, '0')}:00 – ${String(nextHour).padStart(2, '0')}:00)`;
+  } else {
+    if (peakHour >= 4 && peakHour < 10) peakWindowLabel = `Fajar Tenang (${String(peakHour).padStart(2, '0')}:00 – ${String(nextHour).padStart(2, '0')}:00)`;
+    else if (peakHour >= 10 && peakHour < 16) peakWindowLabel = `Siang Berdaya (${String(peakHour).padStart(2, '0')}:00 – ${String(nextHour).padStart(2, '0')}:00)`;
+    else if (peakHour >= 16 && peakHour < 20) peakWindowLabel = `Senja Teduh (${String(peakHour).padStart(2, '0')}:00 – ${String(nextHour).padStart(2, '0')}:00)`;
+    else peakWindowLabel = `Malam Kontemplatif (${String(peakHour).padStart(2, '0')}:00 – ${String(nextHour).padStart(2, '0')}:00)`;
+  }
 
   let dawn = 0;
   let day = 0;
@@ -443,11 +495,15 @@ export function calculateCircadianFocusRhythm(sessions: FocusSession[]): Circadi
     else night += val;
   }
 
+  const emptyFallback = isEn
+    ? 'Start a session in this period to map your peak window'
+    : 'Mulai sesi untuk memetakan jam emasmu';
+
   return {
     hourlyMinutes: hourly,
     peakHour,
     peakHourMinutes: maxMinutes,
-    peakWindowLabel: maxMinutes > 0 ? peakWindowLabel : 'Mulai sesi untuk memetakan jam emasmu',
+    peakWindowLabel: maxMinutes > 0 ? peakWindowLabel : emptyFallback,
     quadrantSummaries: { dawn, day, sunset, night },
   };
 }

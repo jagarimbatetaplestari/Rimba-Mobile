@@ -1225,8 +1225,12 @@ export function SanctuaryJournalModal({
                             : "bg-amber-50 text-amber-800 border-amber-200";
 
                     const traditionLabel =
-                      language === "en" && frag.tradition === "Stoik"
-                        ? "Stoic"
+                      language === "en"
+                        ? frag.tradition === "Stoik"
+                          ? "Stoic"
+                          : frag.tradition === "Hukum Alam"
+                            ? "Natural Law"
+                            : frag.tradition
                         : frag.tradition;
 
                     return (

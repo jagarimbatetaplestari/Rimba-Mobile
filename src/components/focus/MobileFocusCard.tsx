@@ -100,6 +100,9 @@ export function MobileFocusCard({
     useGameStore((state) => state.saveData.custom_tags) || EMPTY_CUSTOM_TAGS;
   const world = useGameStore((state) => state.saveData.world);
   const worldObjects = useGameStore((state) => state.saveData.world_objects);
+  const isExpandLandMode = useGameStore((state) => state.isExpandLandMode);
+  const selectedCatalogItem = useGameStore((state) => state.selectedCatalogItem);
+  const relocatingObjectId = useGameStore((state) => state.relocatingObjectId);
 
   const timeOfDay = useGameStore((state) => state.timeOfDay);
   const isNight = timeOfDay === "night";
@@ -1080,6 +1083,17 @@ export function MobileFocusCard({
   // STATE 1: IDLE / CONFIGURING NEW SESSION
   // ==========================================
   if (!activeSession) {
+    if (isExpandLandMode || selectedCatalogItem || relocatingObjectId) {
+      return (
+        <>
+          {renderTagManagerModal()}
+          {renderSpeciesPickerModal()}
+          {renderRulerModal()}
+          {renderSoundscapePopover()}
+        </>
+      );
+    }
+
     return (
       <>
         {renderTagManagerModal()}
@@ -1180,153 +1194,170 @@ export function MobileFocusCard({
             "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', var(--font-geist-sans), sans-serif",
         }}
       >
-        {/* RUNNING FOCUS CAPSULE (APPLE LIQUID GLASS) */}
+        {/* RUNNING FOCUS COCKPIT (APPLE LIQUID GLASS - 2 ROWS) */}
         <div
           style={glassCapsuleStyle}
-          className="relative w-full h-[64px] px-5 rounded-full flex items-center justify-between gap-2.5 transition-all overflow-hidden"
+          className="relative w-full p-3.5 px-4.5 rounded-[30px] flex flex-col gap-2.5 transition-all overflow-hidden"
         >
           {/* Specular Highlight Top Sheen */}
-          <div className="absolute inset-x-4 top-0 h-[45%] bg-gradient-to-b from-white/35 to-transparent rounded-t-full pointer-events-none" />
+          <div className="absolute inset-x-4 top-0 h-[35%] bg-gradient-to-b from-white/35 to-transparent rounded-t-[30px] pointer-events-none" />
 
-          {/* SISI KIRI: Timer Utama Besar */}
-          <div className="flex items-center gap-2.5 min-w-0 relative z-10">
+          {/* BARIS 1: TIMER UTAMA & TAG / SPESIES STATUS */}
+          <div className="flex items-center justify-between w-full relative z-10 min-w-0">
+            {/* Sisi Kiri: Timer Besar & Status Jeda */}
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-[28px] font-bold font-mono tracking-tight text-white tabular-nums drop-shadow-[0_1px_3px_rgba(0,0,0,0.35)] flex items-center gap-2">
+                <span>
+                  {formatTime(
+                    activeSession.is_stopwatch ? elapsedMs : remainingMs,
+                  )}
+                </span>
+                {activeSession.is_paused ? (
+                  <span className="text-[10px] font-sans font-bold tracking-wider text-amber-200 bg-amber-400/30 border border-amber-300/45 px-2 py-0.5 rounded-full uppercase shadow-xs">
+                    {language === "en" ? "Paused" : "Jeda"}
+                  </span>
+                ) : (
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#34d399]" />
+                )}
+              </span>
+            </div>
+
+            {/* Sisi Kanan: Tag Pill Selector */}
             <button
               type="button"
               onClick={() => {
                 soundManager.playPop();
                 setShowTagModal(true);
               }}
-              className="flex items-center gap-2 text-left active:scale-95 transition-transform cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 hover:bg-white/25 border border-white/25 text-white active:scale-95 transition-all cursor-pointer backdrop-blur-md shadow-xs max-w-[140px]"
               title={t.cockpit.sessionTag}
             >
-              <span className="text-2xl font-bold font-mono tracking-tight text-white tabular-nums drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)] flex items-center gap-1.5">
-                <span>
-                  {formatTime(
-                    activeSession.is_stopwatch ? elapsedMs : remainingMs,
-                  )}
-                </span>
-                {activeSession.is_paused && (
-                  <span className="text-[10px] font-sans font-semibold tracking-wider text-amber-200 bg-amber-400/25 border border-amber-300/40 px-1.5 py-0.5 rounded-full uppercase">
-                    {language === "en" ? "Paused" : "Jeda"}
-                  </span>
-                )}
+              <Tag className="w-3 h-3 text-emerald-300 shrink-0" />
+              <span className="text-[11px] font-semibold truncate drop-shadow-xs">
+                {translateTag(currentTagInfo.label)}
               </span>
             </button>
           </div>
 
-          {/* VERTICAL DIVIDER PRESISI */}
-          <div className="h-6 w-[1px] bg-white/25 shrink-0 mx-1 relative z-10" />
+          {/* DIVIDER HALUS ANTAR BARIS */}
+          <div className="h-[1px] w-full bg-white/15 relative z-10" />
 
-          {/* SISI TENGAH: Kontrol Audio, Mode Zen & Pause */}
-          <div className="flex items-center gap-1.5 shrink-0 relative z-10">
-            {/* Ambient Sound Button */}
-            <button
-              type="button"
-              onClick={() => {
-                soundManager.playPop();
-                setShowSoundscapePopover(true);
-              }}
-              className={`w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90 cursor-pointer border backdrop-blur-md ${
-                activeSoundscape !== "off"
-                  ? "bg-white/35 text-white border-white/60 shadow-xs"
-                  : "bg-white/12 hover:bg-white/20 text-white border-white/25"
-              }`}
-              title={t.cockpit.ambientTitle}
-              aria-label={t.cockpit.ambientTitle}
-            >
-              <Headphones className="w-4 h-4 stroke-[2.2] drop-shadow-xs" />
-            </button>
-
-            {/* Pause / Resume Button */}
-            {!isTimeReached && (
+          {/* BARIS 2: ACTION CONTROLS & HARVEST / CANCEL BUTTON */}
+          <div className="flex items-center justify-between w-full relative z-10 gap-2">
+            {/* Button Group Kiri: Audio, Pause/Play, Zen Mode */}
+            <div className="flex items-center gap-2 shrink-0">
+              {/* Ambient Sound Button */}
               <button
                 type="button"
                 onClick={() => {
                   soundManager.playPop();
-                  if (activeSession.is_paused) {
-                    resumeFocus();
-                  } else {
-                    pauseFocus();
-                  }
+                  setShowSoundscapePopover(true);
                 }}
-                className={`w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90 cursor-pointer border backdrop-blur-md ${
-                  activeSession.is_paused
-                    ? "bg-amber-400/35 text-amber-200 border-amber-300/60 shadow-xs"
+                className={`w-10 h-10 rounded-full flex items-center justify-center transition-all active:scale-90 cursor-pointer border backdrop-blur-md relative ${
+                  activeSoundscape !== "off"
+                    ? "bg-white/35 text-white border-white/60 shadow-xs"
                     : "bg-white/12 hover:bg-white/20 text-white border-white/25"
                 }`}
-                title={
-                  activeSession.is_paused
-                    ? (language === "en" ? "Resume Focus" : "Lanjutkan Fokus")
-                    : (language === "en" ? "Pause Session" : "Jeda Sesi")
-                }
-                aria-label={
-                  activeSession.is_paused ? "Resume Focus" : "Pause Session"
-                }
+                title={t.cockpit.ambientTitle}
+                aria-label={t.cockpit.ambientTitle}
               >
-                {activeSession.is_paused ? (
-                  <Play className="w-3.5 h-3.5 fill-current translate-x-0.5" />
-                ) : (
-                  <Pause className="w-3.5 h-3.5 fill-current" />
+                <Headphones className="w-4 h-4 stroke-[2.2] drop-shadow-xs" />
+                {activeSoundscape !== "off" && (
+                  <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-300 animate-ping" />
                 )}
               </button>
-            )}
 
-            {/* Zen Mode Button */}
-            {onEnterZen && (
-              <button
-                type="button"
-                onClick={() => {
-                  soundManager.playPop();
-                  onEnterZen();
-                }}
-                className="w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90 cursor-pointer border bg-white/12 hover:bg-white/20 text-white border-white/25 backdrop-blur-md"
-                title="Zen Mode"
-                aria-label="Zen Mode"
-              >
-                <Maximize2 className="w-3.5 h-3.5 stroke-[2.2] drop-shadow-xs" />
-              </button>
-            )}
-          </div>
+              {/* Pause / Resume Button */}
+              {!isTimeReached && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    soundManager.playPop();
+                    if (activeSession.is_paused) {
+                      resumeFocus();
+                    } else {
+                      pauseFocus();
+                    }
+                  }}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all active:scale-90 cursor-pointer border backdrop-blur-md ${
+                    activeSession.is_paused
+                      ? "bg-amber-400/35 text-amber-200 border-amber-300/60 shadow-xs"
+                      : "bg-white/12 hover:bg-white/20 text-white border-white/25"
+                  }`}
+                  title={
+                    activeSession.is_paused
+                      ? (language === "en" ? "Resume Focus" : "Lanjutkan Fokus")
+                      : (language === "en" ? "Pause Session" : "Jeda Sesi")
+                  }
+                  aria-label={
+                    activeSession.is_paused ? "Resume Focus" : "Pause Session"
+                  }
+                >
+                  {activeSession.is_paused ? (
+                    <Play className="w-4 h-4 fill-current translate-x-0.5" />
+                  ) : (
+                    <Pause className="w-4 h-4 fill-current" />
+                  )}
+                </button>
+              )}
 
-          {/* SISI KANAN: Tombol Aksi (Batal / Panen) */}
-          <div className="shrink-0 relative z-10">
-            {isTimeReached ||
-            (activeSession.is_stopwatch && !isWithinGracePeriod) ? (
-              <button
-                type="button"
-                onClick={handleComplete}
-                className="h-9 px-4 rounded-full font-bold text-xs shadow-xs flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer bg-white text-[#0f2e1e] hover:bg-white/95"
-                title={t.cockpit.harvestReady}
-              >
-                <Sparkles className="w-3.5 h-3.5 fill-current" />
-                <span>{t.cockpit.harvestReady}</span>
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => handleAbandon(isWithinGracePeriod)}
-                className={`h-9 px-3.5 rounded-full font-semibold text-xs active:scale-95 transition-all flex items-center justify-center cursor-pointer border backdrop-blur-md ${
-                  isWithinGracePeriod
-                    ? "bg-amber-400/25 text-amber-200 border-amber-300/40 shadow-xs"
-                    : "bg-white/14 hover:bg-white/22 text-white border-white/25 shadow-xs"
-                }`}
-                title={t.cockpit.cancelSession}
-              >
-                {isWithinGracePeriod ? (
-                  <>
-                    <ShieldCheck className="w-3.5 h-3.5 text-amber-200 mr-1" />
-                    <span>
-                      {t.cockpit.cancelGrace.replace(
-                        "{sec}",
-                        String(graceSecondsLeft),
-                      )}
-                    </span>
-                  </>
-                ) : (
-                  <span>{t.cockpit.cancelSession}</span>
-                )}
-              </button>
-            )}
+              {/* Zen Mode Button */}
+              {onEnterZen && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    soundManager.playPop();
+                    onEnterZen();
+                  }}
+                  className="w-10 h-10 rounded-full flex items-center justify-center transition-all active:scale-90 cursor-pointer border bg-white/12 hover:bg-white/20 text-white border-white/25 backdrop-blur-md"
+                  title="Zen Mode"
+                  aria-label="Zen Mode"
+                >
+                  <Maximize2 className="w-4 h-4 stroke-[2.2] drop-shadow-xs" />
+                </button>
+              )}
+            </div>
+
+            {/* Sisi Kanan: Primary Action (Panen / Menyerah) */}
+            <div className="flex items-center min-w-0">
+              {isTimeReached ||
+              (activeSession.is_stopwatch && !isWithinGracePeriod) ? (
+                <button
+                  type="button"
+                  onClick={handleComplete}
+                  className="h-10 px-4 rounded-full font-bold text-xs shadow-md flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer bg-white text-[#0f2e1e] hover:bg-white/95"
+                  title={t.cockpit.harvestReady}
+                >
+                  <Sparkles className="w-3.5 h-3.5 fill-current" />
+                  <span>{t.cockpit.harvestReady}</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => handleAbandon(isWithinGracePeriod)}
+                  className={`h-10 px-3.5 rounded-full font-semibold text-xs active:scale-95 transition-all flex items-center justify-center cursor-pointer border backdrop-blur-md ${
+                    isWithinGracePeriod
+                      ? "bg-amber-400/25 text-amber-200 border-amber-300/40 shadow-xs"
+                      : "bg-white/14 hover:bg-white/22 text-white border-white/25 shadow-xs"
+                  }`}
+                  title={t.cockpit.cancelSession}
+                >
+                  {isWithinGracePeriod ? (
+                    <>
+                      <ShieldCheck className="w-3.5 h-3.5 text-amber-200 mr-1" />
+                      <span>
+                        {t.cockpit.cancelGrace.replace(
+                          "{sec}",
+                          String(graceSecondsLeft),
+                        )}
+                      </span>
+                    </>
+                  ) : (
+                    <span>{t.cockpit.cancelSession}</span>
+                  )}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>

@@ -4,14 +4,16 @@ import React, { useState, useEffect, useRef, Suspense } from "react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/lib/auth/useAuthStore";
+import { useTranslation } from "@/lib/i18n/translations";
 import { soundManager } from "@/lib/audio/sounds";
 import { hapticLight, hapticMedium, hapticSuccess, hapticWarning } from "@/lib/mobile/nativeBridge";
-import { Mail, Lock, Eye, EyeOff, User, ArrowLeft, RefreshCw, CheckCircle2, ShieldCheck } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ArrowLeft, RefreshCw, CheckCircle2, ShieldCheck } from "lucide-react";
 
 function WelcomeAuthPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialMode = searchParams?.get("mode") === "signin" ? false : true;
+  const { t } = useTranslation();
 
   const {
     user,
@@ -24,7 +26,6 @@ function WelcomeAuthPageContent() {
   } = useAuthStore();
 
   const [isSignUp, setIsSignUp] = useState(initialMode);
-  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -76,13 +77,13 @@ function WelcomeAuthPageContent() {
     const cleanPassword = password.trim();
 
     if (!cleanEmail || !cleanPassword) {
-      setErrorMsg("Mohon masukkan email dan kata sandi.");
+      setErrorMsg(t.auth.emptyFields);
       hapticWarning();
       return;
     }
 
     if (cleanPassword.length < 6) {
-      setErrorMsg("Kata sandi minimal 6 karakter.");
+      setErrorMsg(t.auth.shortPassword);
       hapticWarning();
       return;
     }
@@ -91,14 +92,15 @@ function WelcomeAuthPageContent() {
       hapticMedium();
 
       if (isSignUp) {
-        // Alur Registrasi
-        const result = await registerWithEmail(name || "Penjaga Rimba", cleanEmail, cleanPassword);
+        // Alur Registrasi: Nama default diambil dari email prefix, diisi saat onboarding
+        const fallbackName = cleanEmail.split("@")[0] || "Penjaga Rimba";
+        const result = await registerWithEmail(fallbackName, cleanEmail, cleanPassword);
         if (result.success) {
           if (result.requiresOtp) {
             soundManager.playPop();
             setIsOtpStep(true);
             setResendCooldown(60);
-            setSuccessMsg(`Kode OTP 6-digit telah dikirimkan ke ${cleanEmail}.`);
+            setSuccessMsg(t.auth.otpSent.replace("{email}", cleanEmail));
           } else {
             // Langsung login tanpa OTP jika dinonaktifkan di backend
             soundManager.playComplete();
@@ -111,7 +113,7 @@ function WelcomeAuthPageContent() {
         } else {
           soundManager.playError();
           hapticWarning();
-          setErrorMsg(result.error || "Gagal mendaftar akun. Periksa kembali informasi Anda.");
+          setErrorMsg(result.error || t.auth.registerFailed);
         }
       } else {
         // Alur Masuk (Sign In)
@@ -130,16 +132,16 @@ function WelcomeAuthPageContent() {
             // Email belum dikonfirmasi
             setIsOtpStep(true);
             setResendCooldown(60);
-            setErrorMsg("Email belum diverifikasi. Kode OTP baru telah dikirim.");
+            setErrorMsg(t.auth.otpDesc);
           } else {
-            setErrorMsg(result.error || "Email atau kata sandi tidak cocok.");
+            setErrorMsg(result.error || t.auth.loginFailed);
           }
         }
       }
     } catch (err: any) {
       soundManager.playError();
       hapticWarning();
-      setErrorMsg(err?.message || "Terjadi kendala saat menghubungkan ke suaka.");
+      setErrorMsg(err?.message || t.auth.networkError);
     }
   };
 
@@ -298,17 +300,17 @@ function WelcomeAuthPageContent() {
         <div className="mb-2 relative">
           <h1 className="font-serif italic text-[32px] sm:text-[36px] font-normal tracking-tight text-white leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] drop-shadow-[0_8px_20px_rgba(0,0,0,0.8)]">
             {isOtpStep
-              ? "Verifikasi Email."
+              ? t.auth.otpTitle
               : isSignUp
-              ? "Where stillness blooms."
-              : "Welcome back."}
+              ? t.auth.taglineSignUp
+              : t.auth.taglineSignIn}
           </h1>
           <p className="mb-1 text-xs sm:text-[13px] text-white/90 font-light tracking-wide max-w-[270px] mx-auto leading-relaxed drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]">
             {isOtpStep
-              ? `Masukkan 6-digit kode OTP yang dikirimkan ke email Anda.`
+              ? t.auth.otpDesc
               : isSignUp
-              ? "In quiet moments, a living forest takes root."
-              : "Return to your quiet island and tend your grove."}
+              ? t.auth.subSignUp
+              : t.auth.subSignIn}
           </p>
         </div>
 
@@ -363,11 +365,11 @@ function WelcomeAuthPageContent() {
               {isVerifyingOtp ? (
                 <span className="flex items-center gap-2">
                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                  <span>Memverifikasi Kode...</span>
+                  <span>{t.auth.connecting}</span>
                 </span>
               ) : (
                 <span className="tracking-wide font-medium">
-                  Konfirmasi & Mulai Menjaga Suaka
+                  {t.auth.otpTitle}
                 </span>
               )}
             </button>
@@ -386,7 +388,7 @@ function WelcomeAuthPageContent() {
                 className="flex items-center gap-1 hover:text-white transition-colors cursor-pointer"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Ubah Email</span>
+                <span>{t.auth.changeEmail}</span>
               </button>
 
               <button
@@ -396,11 +398,11 @@ function WelcomeAuthPageContent() {
                 className="hover:text-white transition-colors cursor-pointer disabled:opacity-50"
               >
                 {resendCooldown > 0 ? (
-                  <span>Kirim ulang ({resendCooldown}s)</span>
+                  <span>{t.auth.resendWait.replace("{sec}", String(resendCooldown))}</span>
                 ) : isResending ? (
-                  <span>Mengirim...</span>
+                  <span>{t.auth.sending}</span>
                 ) : (
-                  <span className="underline underline-offset-4">Kirim Ulang Kode</span>
+                  <span className="underline underline-offset-4">{t.auth.resendCode}</span>
                 )}
               </button>
             </div>
@@ -410,21 +412,6 @@ function WelcomeAuthPageContent() {
           /* STATE B: EMAIL & PASSWORD INPUT                           */
           /* ========================================================= */
           <form onSubmit={handleSubmit} className="w-full space-y-2">
-            {/* Nama Ranger (Hanya saat Sign Up) */}
-            {isSignUp && (
-              <div className="relative flex items-center px-4 py-3.5 rounded-2xl bg-black/25 hover:bg-black/30 focus-within:bg-black/35 backdrop-blur-md border border-white/[0.12] focus-within:border-white/35 shadow-[0_8px_24px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.2)] transition-all animate-in fade-in">
-                <User className="w-4 h-4 text-white/70 stroke-[1.8] flex-shrink-0 drop-shadow-sm" />
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Nama Ranger (misal: Rian)"
-                  maxLength={24}
-                  className="w-full bg-transparent pl-3 pr-2 text-xs font-normal text-white placeholder-white/50 focus:outline-none drop-shadow-sm"
-                />
-              </div>
-            )}
-
             {/* Email Capsule */}
             <div className="relative flex items-center px-4 py-3.5 rounded-2xl bg-black/25 hover:bg-black/30 focus-within:bg-black/35 backdrop-blur-md border border-white/[0.12] focus-within:border-white/35 shadow-[0_8px_24px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.2)] transition-all">
               <Mail className="w-4 h-4 text-white/70 stroke-[1.8] flex-shrink-0 drop-shadow-sm" />
@@ -432,7 +419,7 @@ function WelcomeAuthPageContent() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Alamat Email"
+                placeholder={t.auth.emailPlaceholder}
                 className="w-full bg-transparent pl-3 pr-2 text-xs font-normal text-white placeholder-white/50 focus:outline-none drop-shadow-sm"
                 required
               />
@@ -445,7 +432,7 @@ function WelcomeAuthPageContent() {
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Kata Sandi (min. 6 karakter)"
+                placeholder={t.auth.passwordPlaceholder}
                 className="w-full bg-transparent pl-3 pr-8 text-xs font-normal text-white placeholder-white/50 focus:outline-none drop-shadow-sm"
                 required
               />
@@ -477,11 +464,11 @@ function WelcomeAuthPageContent() {
               {isLoading ? (
                 <span className="flex items-center gap-2 animate-pulse font-light">
                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                  <span>Menyambungkan suaka...</span>
+                  <span>{t.auth.connecting}</span>
                 </span>
               ) : (
                 <span className="tracking-wide font-medium drop-shadow-sm">
-                  {isSignUp ? "Daftar Akun Suaka" : "Masuk ke Rimba"}
+                  {isSignUp ? t.auth.submitSignUp : t.auth.submitSignIn}
                 </span>
               )}
             </button>
@@ -503,16 +490,16 @@ function WelcomeAuthPageContent() {
             >
               {isSignUp ? (
                 <>
-                  Sudah punya akun?{" "}
+                  {t.auth.hasAccount}{" "}
                   <span className="font-medium text-white underline underline-offset-4">
-                    Masuk
+                    {t.auth.signInLink}
                   </span>
                 </>
               ) : (
                 <>
-                  Belum punya akun?{" "}
+                  {t.auth.noAccount}{" "}
                   <span className="font-medium text-white underline underline-offset-4">
-                    Daftar
+                    {t.auth.signUpLink}
                   </span>
                 </>
               )}
@@ -523,7 +510,7 @@ function WelcomeAuthPageContent() {
               onClick={handleGuest}
               className="hover:text-white transition-colors cursor-pointer"
             >
-              Mode Tamu (Offline)
+              {t.auth.guestMode}
             </button>
           </div>
         )}
@@ -531,7 +518,7 @@ function WelcomeAuthPageContent() {
 
       {/* 4. Single-Line Micro Footnote */}
       <p className="relative z-10 text-[10px] text-white/45 font-light tracking-wide text-center drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
-        Dilindungi oleh Rimba · Kedaulatan Data Suaka Offline-First
+        {t.auth.footnote}
       </p>
     </div>
   );

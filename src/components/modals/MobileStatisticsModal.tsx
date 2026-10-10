@@ -95,8 +95,8 @@ export function MobileStatisticsModal({
 
   // Period Statistics
   const periodStats = useMemo(
-    () => calculatePeriodAnalytics(sessions, period, periodOffset),
-    [sessions, period, periodOffset],
+    () => calculatePeriodAnalytics(sessions, period, periodOffset, new Date(), language),
+    [sessions, period, periodOffset, language],
   );
 
   const maxBarMinutes = useMemo(() => {
@@ -104,13 +104,16 @@ export function MobileStatisticsModal({
     return max;
   }, [periodStats.bars]);
 
-  // Tag Distribution Breakdown
+  // Tag Distribution Breakdown for selected period
   const tagBreakdown = useMemo(() => {
-    const total = Object.values(analytics.tagDistribution).reduce(
+    const dist = Object.keys(periodStats.tagDistribution).length > 0
+      ? periodStats.tagDistribution
+      : analytics.tagDistribution;
+    const total = Object.values(dist).reduce(
       (a, b) => a + b,
       0,
     );
-    return Object.entries(analytics.tagDistribution)
+    return Object.entries(dist)
       .map(([label, minutes]) => ({
         id: label,
         label,
@@ -119,7 +122,7 @@ export function MobileStatisticsModal({
         color: DEFAULT_TAG_COLORS[label] || "#187557",
       }))
       .sort((a, b) => b.minutes - a.minutes);
-  }, [analytics.tagDistribution]);
+  }, [periodStats.tagDistribution, analytics.tagDistribution]);
 
   // Trees and Stumps on the sanctuary island
   const { treesCount, stumpsCount } = useMemo(() => {
@@ -182,10 +185,10 @@ export function MobileStatisticsModal({
     return weeks;
   }, [analytics.activityMap, language]);
 
-  // Circadian Rhythm (24h) and Flow Mastery calculations
+  // Circadian Rhythm (24h) calculated specifically for the selected period's sessions!
   const circadianData = useMemo(
-    () => calculateCircadianFocusRhythm(sessions),
-    [sessions],
+    () => calculateCircadianFocusRhythm(periodStats.filteredSessions, language),
+    [periodStats.filteredSessions, language],
   );
   const flowMastery = useMemo(
     () => calculateFlowMastery(sessions, stumpsCount),
@@ -232,7 +235,7 @@ export function MobileStatisticsModal({
         role="dialog"
         aria-modal="true"
       >
-        <div className="w-full max-w-md mx-auto px-5 safe-modal-content space-y-4">
+        <div className="w-full max-w-md mx-auto px-5 pt-[max(calc(env(safe-area-inset-top,0px)+16px),24px)] pb-[max(calc(env(safe-area-inset-bottom,0px)+24px),32px)] space-y-4">
           {/* HEADER NAV */}
           <div className="flex items-center justify-between py-1">
             <div className="flex items-center gap-2.5">

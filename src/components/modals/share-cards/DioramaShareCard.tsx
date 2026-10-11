@@ -102,8 +102,10 @@ export function drawForestTagDonutChart(
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillStyle = "#64748B";
-  ctx.font = '600 14px "Urbanist", sans-serif';
-  ctx.fillText("Fokus", cx, cy);
+  ctx.font = '700 13px "Urbanist", sans-serif';
+  ctx.fillText("Tag", cx, cy - 8);
+  ctx.font = '600 11px "Urbanist", sans-serif';
+  ctx.fillText("Distribution", cx, cy + 8);
   ctx.restore();
 
   // Daftar Legenda
@@ -151,6 +153,8 @@ export async function drawDioramaCardCanvas(
     height,
     aspectRatio,
     forestDateText,
+    treesCount = 0,
+    stumpsCount = 0,
     totalHoursNum,
     snapshotUrl,
     tagStats,
@@ -163,7 +167,7 @@ export async function drawDioramaCardCanvas(
   ctx.fillRect(0, 0, width, height);
 
   // 1. Header Kiri Atas
-  const topY = isSquare ? 60 : isPortrait ? 76 : 88;
+  const topY = isSquare ? 58 : isPortrait ? 74 : 86;
   const padX = isSquare ? 42 : 54;
 
   ctx.textAlign = "left";
@@ -173,32 +177,37 @@ export async function drawDioramaCardCanvas(
 
   ctx.fillStyle = "#64748B";
   ctx.font = `600 ${isSquare ? 14 : isPortrait ? 16 : 17}px "Urbanist", sans-serif`;
-  ctx.fillText("Total Waktu Fokus", padX, topY + (isSquare ? 22 : 26));
+  ctx.fillText("Total Waktu Fokus", padX, topY + (isSquare ? 24 : 28));
 
   // 2. Header Kanan Atas
   const rightX = width - padX;
 
-  ctx.textAlign = "right";
-  ctx.fillStyle = "#64748B";
-  ctx.font = `600 ${isSquare ? 12 : isPortrait ? 14 : 15}px "Urbanist", sans-serif`;
-  ctx.fillText("RIMBA", rightX, topY - 4);
+  if (treesCount > 0 || stumpsCount > 0) {
+    ctx.textAlign = "right";
+    ctx.fillStyle = "#64748B";
+    ctx.font = `600 ${isSquare ? 14 : isPortrait ? 16 : 17}px "Urbanist", sans-serif`;
+    let countStr = `🌱 ${treesCount}`;
+    if (stumpsCount > 0) countStr += `   🪵 ${stumpsCount}`;
+    ctx.fillText(countStr, rightX, topY - 2);
+  }
 
+  ctx.textAlign = "right";
   ctx.fillStyle = "#0F172A";
-  ctx.font = `600 ${isSquare ? 32 : isPortrait ? 38 : 42}px "Urbanist", sans-serif`;
+  ctx.font = `800 ${isSquare ? 32 : isPortrait ? 38 : 42}px "Urbanist", sans-serif`;
   ctx.fillText(`${totalHoursNum} jam`, rightX, topY + (isSquare ? 26 : 30));
 
   // 3. Kontainer Tag Bawah
   const cardW = width - padX * 2;
   const cardH = isSquare ? height * 0.28 : height * 0.25;
   const cardX = padX;
-  const cardY = height - cardH - (isSquare ? 30 : isPortrait ? 40 : 48);
+  const cardY = height - cardH - (isSquare ? 40 : isPortrait ? 52 : 62);
 
   ctx.save();
   ctx.fillStyle = "#FFFFFF";
-  ctx.shadowColor = "rgba(15, 23, 42, 0.04)";
-  ctx.shadowBlur = 14;
-  ctx.shadowOffsetY = 4;
-  drawRoundedRect(ctx, cardX, cardY, cardW, cardH, 20);
+  ctx.shadowColor = "rgba(15, 23, 42, 0.05)";
+  ctx.shadowBlur = 16;
+  ctx.shadowOffsetY = 6;
+  drawRoundedRect(ctx, cardX, cardY, cardW, cardH, 22);
   ctx.fill();
 
   ctx.shadowColor = "transparent";
@@ -209,17 +218,23 @@ export async function drawDioramaCardCanvas(
 
   drawForestTagDonutChart(
     ctx,
-    cardX + 10,
-    cardY + 6,
-    cardW - 20,
-    cardH - 12,
+    cardX + 12,
+    cardY + 8,
+    cardW - 24,
+    cardH - 16,
     tagStats,
   );
 
-  // 4. Pulau 3D: Proporsional & Aman Tanpa Terpotong
+  // 4. Watermark Bersih Rimba di Bawah Kartu
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#94A3B8";
+  ctx.font = `700 ${isSquare ? 13 : isPortrait ? 15 : 16}px "Urbanist", sans-serif`;
+  ctx.fillText("RIMBA", width / 2, height - (isSquare ? 15 : isPortrait ? 20 : 25));
+
+  // 5. Pulau 3D: Proporsional & Besar Tanpa Terpotong
   if (snapshotUrl) {
     const areaTop = topY + (isSquare ? 50 : 64);
-    const areaBottom = cardY - 10;
+    const areaBottom = cardY - 14;
     const availableH = areaBottom - areaTop;
     const islandSize = Math.min(cardW * 0.95, availableH * 1.15);
     const islandX = (width - islandSize) / 2;
@@ -230,9 +245,9 @@ export async function drawDioramaCardCanvas(
       img.crossOrigin = "anonymous";
       img.onload = () => {
         ctx.save();
-        ctx.shadowColor = "rgba(15, 23, 42, 0.12)";
-        ctx.shadowBlur = 20;
-        ctx.shadowOffsetY = 10;
+        ctx.shadowColor = "rgba(15, 23, 42, 0.14)";
+        ctx.shadowBlur = 24;
+        ctx.shadowOffsetY = 12;
         ctx.drawImage(img, islandX, islandY, islandSize, islandSize);
         ctx.restore();
         resolve();
@@ -246,6 +261,8 @@ export async function drawDioramaCardCanvas(
 export function DioramaShareCard({
   aspectRatio,
   forestDateText,
+  treesCount = 0,
+  stumpsCount = 0,
   totalHoursNum,
   snapshotUrl,
   tagStats,
@@ -253,14 +270,14 @@ export function DioramaShareCard({
 }: DioramaCardProps) {
   const containerAspectClass =
     aspectRatio === "story"
-      ? "aspect-[9/14] max-h-[460px]"
+      ? "aspect-[9/15] max-h-[500px]"
       : aspectRatio === "portrait"
-        ? "aspect-[4/5] max-h-[450px]"
-        : "aspect-square max-h-[420px]";
+        ? "aspect-[4/5] max-h-[460px]"
+        : "aspect-square max-h-[430px]";
 
   return (
     <div
-      className={`relative w-full max-w-[340px] mx-auto rounded-[30px] p-3.5 sm:p-4 text-left flex flex-col justify-between transition-all duration-300 shadow-lg bg-[#F6F7F9] font-urbanist select-none ${containerAspectClass}`}
+      className={`relative w-full max-w-[340px] mx-auto rounded-[32px] p-3.5 sm:p-4 text-left flex flex-col justify-between transition-all duration-300 shadow-xl bg-[#F6F7F9] font-urbanist select-none ${containerAspectClass}`}
     >
       {/* 1. Header Kiri & Kanan Atas */}
       <div className="flex items-start justify-between relative z-20 shrink-0">
@@ -274,32 +291,42 @@ export function DioramaShareCard({
           </p>
         </div>
 
-        {/* Kanan Atas */}
-        <div className="text-right">
-          <p className="text-[9.5px] sm:text-[10.5px] font-semibold tracking-[0.2em] text-[#64748B] uppercase leading-none">
-            RIMBA
-          </p>
-          <div className="flex items-baseline justify-end gap-1 mt-1">
-            <span className="text-[20px] sm:text-[24px] font-semibold text-[#0F172A] leading-none">
+        {/* Kanan Atas (Tree Counts & Focus Hours) */}
+        <div className="text-right flex flex-col items-end">
+          {(treesCount > 0 || stumpsCount > 0) && (
+            <div className="flex items-center gap-2 text-[10px] sm:text-[11px] font-semibold text-[#64748B] leading-none mb-1">
+              <span className="flex items-center gap-0.5">
+                🌱 <strong className="text-[#0F172A] font-bold">{treesCount}</strong>
+              </span>
+              {stumpsCount > 0 && (
+                <span className="flex items-center gap-0.5">
+                  🪵 <strong className="text-[#64748B] font-bold">{stumpsCount}</strong>
+                </span>
+              )}
+            </div>
+          )}
+          <div className="flex items-baseline justify-end gap-1">
+            <span className="text-[22px] sm:text-[26px] font-black text-[#0F172A] leading-none">
               {totalHoursNum}
             </span>
-            <span className="text-[10px] sm:text-[11px] font-semibold text-[#64748B]">
+            <span className="text-[10.5px] sm:text-[11.5px] font-semibold text-[#64748B]">
               jam
             </span>
           </div>
         </div>
       </div>
 
-      {/* 2. Panggung Pulau 3D */}
-      <div className="relative z-10 flex-1 w-full flex items-center justify-center min-h-0 py-1 pointer-events-none">
+      {/* 2. Panggung Pulau 3D: Besar, Proporsional & Melayang Indah */}
+      <div className="relative z-10 flex-1 w-full flex items-center justify-center min-h-0 py-1 sm:py-2 pointer-events-none">
         {snapshotUrl ? (
           <img
             src={snapshotUrl}
             alt="3D Diorama Island"
-            className="max-w-[95%] max-h-full object-contain filter drop-shadow-[0_12px_16px_rgba(15,23,42,0.12)]"
+            className="max-w-[95%] max-h-full object-contain filter drop-shadow-[0_16px_28px_rgba(15,23,42,0.14)]"
           />
         ) : (
-          <div className="flex items-center justify-center py-6">
+          <div className="flex flex-col items-center justify-center py-6 gap-2">
+            <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
             <span className="text-[10.5px] text-slate-400 font-medium animate-pulse">
               {takingSnapshotText}
             </span>
@@ -308,7 +335,7 @@ export function DioramaShareCard({
       </div>
 
       {/* 3. Kartu Distribusi Tag Bawah */}
-      <div className="relative z-20 w-full rounded-[20px] bg-white border border-slate-200/80 p-2.5 sm:p-3 shadow-2xs flex items-center gap-3 shrink-0">
+      <div className="relative z-20 w-full rounded-[22px] bg-white border border-slate-200/90 p-2.5 sm:p-3 shadow-2xs flex items-center gap-3 shrink-0">
         {/* SVG Donut Chart */}
         <svg
           viewBox="0 0 160 160"
@@ -368,7 +395,7 @@ export function DioramaShareCard({
                           dominantBaseline="central"
                           fill="#FFFFFF"
                           fontSize="7"
-                          fontWeight="600"
+                          fontWeight="700"
                         >
                           {item.pct}%
                         </text>
@@ -378,14 +405,25 @@ export function DioramaShareCard({
                 })}
                 <text
                   x={cx}
-                  y={cy}
+                  y={cy - 4}
                   textAnchor="middle"
                   dominantBaseline="central"
                   fill="#64748B"
                   fontSize="7.5"
+                  fontWeight="700"
+                >
+                  Tag
+                </text>
+                <text
+                  x={cx}
+                  y={cy + 6}
+                  textAnchor="middle"
+                  dominantBaseline="central"
+                  fill="#64748B"
+                  fontSize="6.5"
                   fontWeight="600"
                 >
-                  Fokus
+                  Distribution
                 </text>
               </>
             );
@@ -408,15 +446,22 @@ export function DioramaShareCard({
                   {item.name}
                 </span>
               </div>
-              <div className="flex items-center gap-1.5 shrink-0 pl-1">
+              <div className="flex items-center gap-1.5 shrink-0 pl-1 font-mono">
                 <span className="text-[#64748B] font-medium">{item.pct}%</span>
-                <span className="font-semibold text-[#1E293B]">
+                <span className="font-bold text-[#1E293B]">
                   {item.hours} jam
                 </span>
               </div>
             </div>
           ))}
         </div>
+      </div>
+
+      {/* 4. Clean Watermark (STRICTLY "Rimba", NO tree icon) */}
+      <div className="text-center pt-1 shrink-0">
+        <span className="text-[10px] text-[#94A3B8] font-bold tracking-[0.25em] uppercase">
+          Rimba
+        </span>
       </div>
     </div>
   );

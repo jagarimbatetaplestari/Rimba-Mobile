@@ -170,20 +170,113 @@ export function ShareSnapshotModal({ isOpen, onClose }: ShareSnapshotModalProps)
     return Math.max(2, Math.round(totalHoursNum * 0.45));
   }, [totalHoursNum]);
 
-  // Capture Canvas WebGL snapshot
+function cropIslandFromCanvas(canvasEl: HTMLCanvasElement): string {
+  try {
+    const w = canvasEl.width;
+    const h = canvasEl.height;
+    if (w === 0 || h === 0) return canvasEl.toDataURL("image/png");
+
+    const temp = document.createElement("canvas");
+    temp.width = w;
+    temp.height = h;
+    const tempCtx = temp.getContext("2d");
+    if (!tempCtx) return canvasEl.toDataURL("image/png");
+
+    tempCtx.drawImage(canvasEl, 0, 0);
+    const imgData = tempCtx.getImageData(0, 0, w, h);
+    const data = imgData.data;
+
+    let minX = w,
+      maxX = 0,
+      minY = h,
+      maxY = 0;
+    let found = false;
+
+    // Scan every 4th pixel for speed
+    const step = 4;
+    for (let y = 0; y < h; y += step) {
+      for (let x = 0; x < w; x += step) {
+        const idx = (y * w + x) * 4;
+        const alpha = data[idx + 3];
+        // Island pixels have opacity > 25
+        if (alpha > 25) {
+          found = true;
+          if (x < minX) minX = x;
+          if (x > maxX) maxX = x;
+          if (y < minY) minY = y;
+          if (y > maxY) maxY = y;
+        }
+      }
+    }
+
+    if (found && maxX > minX && maxY > minY) {
+      const islandW = maxX - minX;
+      const islandH = maxY - minY;
+      // Add comfortable 5% margin around the island
+      const pad = Math.round(Math.max(islandW, islandH) * 0.05);
+      const cropX = Math.max(0, minX - pad);
+      const cropY = Math.max(0, minY - pad);
+      const cropW = Math.min(w - cropX, islandW + pad * 2);
+      const cropH = Math.min(h - cropY, islandH + pad * 2);
+
+      const out = document.createElement("canvas");
+      out.width = cropW;
+      out.height = cropH;
+      const outCtx = out.getContext("2d");
+      if (outCtx) {
+        outCtx.drawImage(temp, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+        return out.toDataURL("image/png");
+      }
+    }
+  } catch (err) {
+    console.warn("Auto-crop bounding box failed, falling back to center crop:", err);
+  }
+
+  // Fallback: Center crop
+  try {
+    const w = canvasEl.width;
+    const h = canvasEl.height;
+    const size = Math.round(Math.min(w * 0.95, h * 0.65));
+    const cx = w / 2;
+    const cy = h * 0.46;
+    const cropX = Math.max(0, cx - size / 2);
+    const cropY = Math.max(0, cy - size / 2);
+
+    const out = document.createElement("canvas");
+    out.width = size;
+    out.height = size;
+    const outCtx = out.getContext("2d");
+    if (outCtx) {
+      outCtx.drawImage(canvasEl, cropX, cropY, size, size, 0, 0, size, size);
+      return out.toDataURL("image/png");
+    }
+  } catch {
+    // ignore
+  }
+
+  return canvasEl.toDataURL("image/png");
+}
+
+  // Capture Canvas WebGL snapshot with default isometric framing & tight bounding box
   useEffect(() => {
     if (!isOpen) return;
+
+    // 1. Immediately snap camera to standard default isometric perspective
+    window.dispatchEvent(new CustomEvent("camera_action", { detail: "snap_reset" }));
+
+    // 2. Allow render frame to complete, then capture and tight-crop the island
     const timer = setTimeout(() => {
       const canvasEl = document.querySelector("canvas");
       if (canvasEl) {
         try {
-          const dataUrl = canvasEl.toDataURL("image/png");
+          const dataUrl = cropIslandFromCanvas(canvasEl);
           setSnapshotUrl(dataUrl);
         } catch {
           console.warn("Canvas export tainted or unavailable");
         }
       }
-    }, 150);
+    }, 180);
+
     return () => clearTimeout(timer);
   }, [isOpen]);
 

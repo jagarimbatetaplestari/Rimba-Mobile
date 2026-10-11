@@ -86,7 +86,12 @@ function CameraEventListener() {
         typeof window !== 'undefined' ? window.innerWidth < window.innerHeight : true;
       const adaptiveCfg = getAdaptiveCameraConfig(unlockedCount, isPortrait);
 
-      if (action === 'reset') {
+      if (action === 'snap_reset') {
+        camera.position.copy(adaptiveCfg.position);
+        controls.target.set(0, 0, 0);
+        controls.update();
+        animTargetRef.current = null;
+      } else if (action === 'reset') {
         animTargetRef.current = {
           camPos: adaptiveCfg.position.clone(),
           targetPos: new THREE.Vector3(0, 0, 0),

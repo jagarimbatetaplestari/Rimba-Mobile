@@ -29,6 +29,9 @@ const config: Config = {
         glass: "0 8px 32px 0 rgba(0, 0, 0, 0.12), inset 0 0 0 1px rgba(255, 255, 255, 0.2)",
         "glass-elevated": "0 16px 40px 0 rgba(0, 0, 0, 0.2), inset 0 0 0 1px rgba(255, 255, 255, 0.3)",
       },
+      fontFamily: {
+        urbanist: ["'Urbanist'", "-apple-system", "BlinkMacSystemFont", "sans-serif"],
+      },
     },
   },
   plugins: [],

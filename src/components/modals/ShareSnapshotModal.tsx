@@ -133,6 +133,24 @@ function drawForestBarChart(
   }
 }
 
+const SPECIES_NAMES: Record<string, string> = {
+  nordic_pine: "Nordic Pine",
+  pine: "Nordic Pine",
+  oak: "Ancient Oak",
+  round_oak: "Round Oak",
+  birch: "Golden Birch",
+  elm: "Meadow Elm",
+  autumn: "Autumn Maple",
+  banana: "Banana Palm",
+  savannah: "Savannah Acacia",
+  cypress: "Emerald Cypress",
+  palm: "Coconut Palm",
+  coconut: "Coconut Palm",
+  tiered_pine: "Tiered Pine",
+  baobab: "Grand Baobab",
+  ancient: "Ancient Tree",
+};
+
 export function ShareSnapshotModal({
   isOpen,
   onClose,
@@ -144,13 +162,37 @@ export function ShareSnapshotModal({
   const notify = useGameStore((state) => state.notify);
 
   const [snapshotUrl, setSnapshotUrl] = useState<string | null>(null);
-  const [cardTheme, setCardTheme] = useState<"diorama" | "story">("diorama");
+  const [cardTheme, setCardTheme] = useState<"forest" | "diorama" | "story">("forest");
   const [aspectRatio, setAspectRatio] = useState<"story" | "portrait" | "square">("story");
   const [periodScope, setPeriodScope] = useState<"month" | "week" | "all">("month");
   const [isCopied, setIsCopied] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
 
   const analytics = useMemo(() => calculateAnalytics(sessions), [sessions]);
+
+  // Favorite / Most planted tree species
+  const favoriteTreeSpecies = useMemo(() => {
+    const counts: Record<string, number> = {};
+    worldObjects.forEach((o) => {
+      if (o.object_type === "tree" && o.status === "active" && o.species) {
+        counts[o.species] = (counts[o.species] || 0) + 1;
+      }
+    });
+    sessions.forEach((s) => {
+      if (s.status === "completed" && s.species) {
+        counts[s.species] = (counts[s.species] || 0) + 1;
+      }
+    });
+    let topSpecies = "nordic_pine";
+    let maxCount = 0;
+    for (const [sp, cnt] of Object.entries(counts)) {
+      if (cnt > maxCount) {
+        maxCount = cnt;
+        topSpecies = sp;
+      }
+    }
+    return SPECIES_NAMES[topSpecies] || "Nordic Pine";
+  }, [worldObjects, sessions]);
 
   // Trees and Stumps count
   const { treesCount, stumpsCount, faunaCount } = useMemo(() => {
@@ -298,9 +340,181 @@ export function ShareSnapshotModal({
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
 
-    if (cardTheme === "diorama") {
+    if (cardTheme === "forest") {
       // =====================================================================
-      // STYLE 1: 3D DIORAMA LAND CAPTURE (Exact Forest App Style)
+      // STYLE 1: FOREST EMERALD REVIEW (Forest App Year in Review)
+      // =====================================================================
+      const grad = ctx.createLinearGradient(0, 0, 0, height);
+      grad.addColorStop(0, "#87D09C");
+      grad.addColorStop(1, "#25734A");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, width, height);
+
+      // Top Header
+      const topY = aspectRatio === "story" ? 140 : aspectRatio === "portrait" ? 110 : 95;
+      const titleSize = aspectRatio === "story" ? 64 : aspectRatio === "portrait" ? 54 : 44;
+      const subSize = aspectRatio === "story" ? 25 : aspectRatio === "portrait" ? 22 : 18;
+
+      ctx.textAlign = "left";
+      ctx.fillStyle = "#144231";
+      ctx.font = `800 ${titleSize}px "Urbanist", -apple-system, sans-serif`;
+      ctx.fillText("2026", 72, topY);
+
+      ctx.fillStyle = "rgba(20, 66, 49, 0.9)";
+      ctx.font = `600 ${subSize}px "Urbanist", sans-serif`;
+      ctx.fillText("Rimba Sanctuary Year in Review", 72, topY + (aspectRatio === "square" ? 32 : 40));
+
+      ctx.textAlign = "right";
+      ctx.fillStyle = "rgba(20, 66, 49, 0.85)";
+      ctx.font = `600 ${aspectRatio === "story" ? 24 : aspectRatio === "portrait" ? 20 : 17}px "Urbanist", sans-serif`;
+      ctx.fillText(language === "en" ? "Favorite Tree" : "Pohon Terfavorit", width - 72, topY);
+
+      ctx.fillStyle = "#103B2C";
+      ctx.font = `800 ${aspectRatio === "story" ? 32 : aspectRatio === "portrait" ? 26 : 22}px "Urbanist", sans-serif`;
+      ctx.fillText(favoriteTreeSpecies, width - 72, topY + (aspectRatio === "square" ? 32 : 40));
+
+      // Center Hero Artwork (/sharecard.webp)
+      const imgX = 72;
+      const imgW = width - 144;
+      const imgH = aspectRatio === "story" ? 760 : aspectRatio === "portrait" ? 490 : 360;
+      const imgY = aspectRatio === "story" ? 230 : aspectRatio === "portrait" ? 180 : 150;
+      const radius = aspectRatio === "story" ? 40 : aspectRatio === "portrait" ? 32 : 26;
+
+      await new Promise<void>((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          ctx.save();
+          ctx.shadowColor = "rgba(13, 53, 40, 0.35)";
+          ctx.shadowBlur = 30;
+          ctx.shadowOffsetY = 15;
+          ctx.fillStyle = "#25734A";
+          drawRoundedRect(ctx, imgX, imgY, imgW, imgH, radius);
+          ctx.fill();
+          ctx.restore();
+
+          ctx.save();
+          drawRoundedRect(ctx, imgX, imgY, imgW, imgH, radius);
+          ctx.clip();
+
+          const imgAspect = img.width / img.height;
+          const targetAspect = imgW / imgH;
+          let sx = 0, sy = 0, sw = img.width, sh = img.height;
+          if (imgAspect > targetAspect) {
+            sw = img.height * targetAspect;
+            sx = (img.width - sw) / 2;
+          } else {
+            sh = img.width / targetAspect;
+            sy = (img.height - sh) / 2;
+          }
+          ctx.drawImage(img, sx, sy, sw, sh, imgX, imgY, imgW, imgH);
+          ctx.restore();
+
+          ctx.save();
+          ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
+          ctx.lineWidth = 3;
+          drawRoundedRect(ctx, imgX, imgY, imgW, imgH, radius);
+          ctx.stroke();
+          ctx.restore();
+
+          resolve();
+        };
+        img.onerror = () => resolve();
+        img.src = "/sharecard.webp";
+      });
+
+      // Mid Focus Metrics
+      const midY = imgY + imgH + (aspectRatio === "story" ? 65 : aspectRatio === "portrait" ? 40 : 28);
+      const midLabelSize = aspectRatio === "story" ? 24 : aspectRatio === "portrait" ? 20 : 16;
+      const midHoursSize = aspectRatio === "story" ? 84 : aspectRatio === "portrait" ? 64 : 48;
+      const midSubSize = aspectRatio === "story" ? 24 : aspectRatio === "portrait" ? 19 : 15;
+      const midGap1 = aspectRatio === "story" ? 78 : aspectRatio === "portrait" ? 60 : 46;
+      const midGap2 = aspectRatio === "story" ? 138 : aspectRatio === "portrait" ? 106 : 80;
+
+      ctx.textAlign = "center";
+      ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+      ctx.font = `700 ${midLabelSize}px "Urbanist", sans-serif`;
+      ctx.fillText("TOTAL FOCUS TIME", width / 2, midY);
+
+      ctx.fillStyle = "#D2FF74";
+      ctx.font = `900 ${midHoursSize}px "Urbanist", sans-serif`;
+      const hoursText = totalHoursNum >= 1 ? `${totalHoursNum} hours` : `${periodStats.totalMinutes} mins`;
+      ctx.fillText(hoursText, width / 2, midY + midGap1);
+
+      ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+      ctx.font = `500 ${midSubSize}px "Urbanist", sans-serif`;
+      const compText = language === "en"
+        ? `Your total focus was ${regionalBonusHours} hours more than average of others in your region! Amazing!`
+        : `Total fokusmu ${regionalBonusHours} jam lebih banyak dari rata-rata penjaga suaka lainnya! Luar biasa!`;
+      ctx.fillText(compText, width / 2, midY + midGap2);
+
+      // Bottom 2-Column Info Card
+      const cardW = 936;
+      const cardH = aspectRatio === "story" ? 250 : aspectRatio === "portrait" ? 200 : 155;
+      const cardX = (width - cardW) / 2;
+      const cardY = midY + midGap2 + (aspectRatio === "story" ? 55 : aspectRatio === "portrait" ? 35 : 22);
+
+      ctx.save();
+      ctx.fillStyle = "rgba(14, 59, 45, 0.4)";
+      drawRoundedRect(ctx, cardX, cardY, cardW, cardH, 28);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.restore();
+
+      const colMidX = cardX + cardW / 2;
+      ctx.beginPath();
+      ctx.moveTo(colMidX, cardY + 22);
+      ctx.lineTo(colMidX, cardY + cardH - 22);
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      const col1X = cardX + 44;
+      const textStartY = cardY + (aspectRatio === "story" ? 64 : aspectRatio === "portrait" ? 50 : 38);
+      const boxTitleSize = aspectRatio === "story" ? 28 : aspectRatio === "portrait" ? 23 : 19;
+      const boxValSize = aspectRatio === "story" ? 26 : aspectRatio === "portrait" ? 21 : 17;
+      const boxDescSize = aspectRatio === "story" ? 20 : aspectRatio === "portrait" ? 16 : 13;
+
+      ctx.textAlign = "left";
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = `800 ${boxTitleSize}px "Urbanist", sans-serif`;
+      ctx.fillText("Focus Type", col1X, textStartY);
+
+      ctx.fillStyle = "#D2FF74";
+      ctx.font = `700 ${boxValSize}px "Urbanist", sans-serif`;
+      ctx.fillText("Evergreen Guardian", col1X, textStartY + (aspectRatio === "story" ? 42 : 32));
+
+      ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
+      ctx.font = `500 ${boxDescSize}px "Urbanist", sans-serif`;
+      const descText = language === "en"
+        ? "Focused throughout the day, steady like the pines."
+        : "Fokus konsisten sepanjang hari bagai pinus abadi.";
+      ctx.fillText(descText, col1X, textStartY + (aspectRatio === "story" ? 82 : 60));
+
+      const col2X = colMidX + 44;
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = `800 ${boxTitleSize}px "Urbanist", sans-serif`;
+      ctx.fillText(language === "en" ? "Top Day" : "Hari Terfokus", col2X, textStartY);
+
+      ctx.fillStyle = "#D2FF74";
+      ctx.font = `800 ${boxValSize + 4}px "Urbanist", sans-serif`;
+      ctx.fillText(mostFocusedDay, col2X, textStartY + (aspectRatio === "story" ? 42 : 32));
+
+      ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
+      ctx.font = `500 ${boxDescSize}px "Urbanist", sans-serif`;
+      const peakLabel = `Jam Emas: ${circadianData.peakWindowLabel || "10:00 – 12:00"}`;
+      ctx.fillText(peakLabel, col2X, textStartY + (aspectRatio === "story" ? 82 : 60));
+
+      // Footer: STRICTLY "Rimba" (NO tree icon!)
+      ctx.textAlign = "center";
+      ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+      ctx.font = '700 24px "Urbanist", sans-serif';
+      ctx.fillText("Rimba", width / 2, height - (aspectRatio === "story" ? 45 : 30));
+
+    } else if (cardTheme === "diorama") {
+      // =====================================================================
+      // STYLE 2: 3D DIORAMA LAND CAPTURE (Exact Forest App Style)
       // =====================================================================
       ctx.fillStyle = "#F8FAFC";
       ctx.fillRect(0, 0, width, height);
@@ -357,15 +571,15 @@ export function ShareSnapshotModal({
 
       drawForestBarChart(ctx, cardX, cardY, cardW, cardH, dailyFocusDistribution, aspectRatio);
 
-      // Minimalist Brand Footer (Icon + "Rimba")
+      // Minimalist Brand Footer (STRICTLY "Rimba" - NO tree icon!)
       ctx.textAlign = "center";
       ctx.fillStyle = "#94A3B8";
-      ctx.font = '600 24px "Urbanist", sans-serif';
-      ctx.fillText("🌱  Rimba", width / 2, height - 36);
+      ctx.font = '700 22px "Urbanist", sans-serif';
+      ctx.fillText("Rimba", width / 2, height - 36);
 
     } else {
       // =====================================================================
-      // STYLE 2: STORY ARTWORK CARD (White Background, Clean Poster & Typography)
+      // STYLE 3: STORY ARTWORK CARD (White Background, Clean Poster & Typography)
       // =====================================================================
       ctx.fillStyle = "#FFFFFF";
       ctx.fillRect(0, 0, width, height);
@@ -447,11 +661,11 @@ export function ShareSnapshotModal({
       ctx.textAlign = "right";
       ctx.fillText(`Jam Emas: ${circadianData.peakWindowLabel || "10:00 – 12:00"}`, width - 80, lowerY + 160);
 
-      // Minimalist Brand Footer (Icon + "Rimba")
+      // Minimalist Brand Footer (STRICTLY "Rimba" - NO tree icon!)
       ctx.textAlign = "center";
       ctx.fillStyle = "#94A3B8";
-      ctx.font = '600 24px "Urbanist", sans-serif';
-      ctx.fillText("🌱  Rimba", width / 2, height - 36);
+      ctx.font = '700 22px "Urbanist", sans-serif';
+      ctx.fillText("Rimba", width / 2, height - 36);
     }
 
     return new Promise((resolve) => {
@@ -528,7 +742,9 @@ export function ShareSnapshotModal({
     soundManager.playPop();
     hapticLight();
     const summaryText =
-      cardTheme === "diorama"
+      cardTheme === "forest"
+        ? `🌲 Rimba Sanctuary Year in Review · 2026\n⏱️ ${totalHoursNum} Jam Fokus (+${regionalBonusHours}h vs Rata-rata)\n🌿 Pohon Terfavorit: ${favoriteTreeSpecies} · Hari Terfokus: ${mostFocusedDay}\nrimba.app`
+        : cardTheme === "diorama"
         ? `🌿 Rimba Diorama · ${forestDateText}\n⏱️ ${totalHoursNum} Jam Fokus · 🌲 ${treesCount} Flora · 🥀 ${stumpsCount} Layu\n🔥 ${analytics.currentStreak} Hari Beruntun · rimba.app`
         : `✨ Rimba Focus Story · ${highestUnlockedStory.title}\n⏱️ ${totalHoursNum} Jam Fokus (+${regionalBonusHours}h vs Rata-rata)\n🌲 ${treesCount} Pohon · 🔥 ${analytics.currentStreak} Hari Beruntun · rimba.app`;
 
@@ -568,7 +784,11 @@ export function ShareSnapshotModal({
               {t.shareModal.title}
             </h2>
             <span className="text-[11.5px] font-medium text-[#4C7567]">
-              {cardTheme === "diorama" ? "Forest Style" : "Story Wrapped"}
+              {cardTheme === "forest"
+                ? "Forest Review"
+                : cardTheme === "diorama"
+                ? "3D Diorama"
+                : "Story Lore"}
             </span>
           </div>
 
@@ -585,8 +805,24 @@ export function ShareSnapshotModal({
           </button>
         </div>
 
-        {/* 1. Card Style Selector (Diorama vs Story) */}
-        <div className="rounded-full p-1 border border-[#0D3528]/8 bg-[#0D3528]/5 grid grid-cols-2 gap-1">
+        {/* 1. Card Style Selector (3 Tabs: Forest Review vs Diorama vs Story) */}
+        <div className="rounded-2xl p-1 border border-[#0D3528]/8 bg-[#0D3528]/5 grid grid-cols-3 gap-1">
+          <button
+            type="button"
+            onClick={() => {
+              soundManager.playPop();
+              hapticLight();
+              setCardTheme("forest");
+            }}
+            className={`py-1.5 px-1.5 rounded-xl text-[11px] transition-all cursor-pointer text-center font-medium ${
+              cardTheme === "forest"
+                ? "bg-[#187557] text-white shadow-xs font-semibold"
+                : "text-[#4C7567] hover:text-[#0D3528]"
+            }`}
+          >
+            🌿 Forest
+          </button>
+
           <button
             type="button"
             onClick={() => {
@@ -594,13 +830,13 @@ export function ShareSnapshotModal({
               hapticLight();
               setCardTheme("diorama");
             }}
-            className={`py-1.5 px-3 rounded-full text-[11.5px] transition-all cursor-pointer ${
+            className={`py-1.5 px-1.5 rounded-xl text-[11px] transition-all cursor-pointer text-center font-medium ${
               cardTheme === "diorama"
                 ? "bg-white text-[#0D3528] shadow-xs font-semibold"
-                : "text-[#4C7567] hover:text-[#0D3528] font-medium"
+                : "text-[#4C7567] hover:text-[#0D3528]"
             }`}
           >
-            🌿 3D Land Capture
+            🏔️ Diorama
           </button>
 
           <button
@@ -610,13 +846,13 @@ export function ShareSnapshotModal({
               hapticLight();
               setCardTheme("story");
             }}
-            className={`py-1.5 px-3 rounded-full text-[11.5px] transition-all cursor-pointer ${
+            className={`py-1.5 px-1.5 rounded-xl text-[11px] transition-all cursor-pointer text-center font-medium ${
               cardTheme === "story"
                 ? "bg-[#187557] text-white shadow-xs font-semibold"
-                : "text-[#4C7567] hover:text-[#0D3528] font-medium"
+                : "text-[#4C7567] hover:text-[#0D3528]"
             }`}
           >
-            ✨ Story Artwork
+            ✨ Story
           </button>
         </div>
 
@@ -701,8 +937,95 @@ export function ShareSnapshotModal({
         </div>
 
         {/* 3. Live Card Preview */}
-        {cardTheme === "diorama" ? (
-          /* DIORAMA PREVIEW CARD (Exact Forest App Style) */
+        {cardTheme === "forest" ? (
+          /* STYLE 1: FOREST EMERALD REVIEW */
+          <div
+            className={`relative w-full rounded-3xl overflow-hidden p-3.5 text-left flex flex-col justify-between transition-all duration-300 shadow-md bg-gradient-to-b from-[#87D09C] to-[#25734A] text-white ${
+              aspectRatio === "story"
+                ? "aspect-[9/15]"
+                : aspectRatio === "portrait"
+                ? "aspect-[4/5]"
+                : "aspect-square"
+            }`}
+          >
+            {/* Top Header */}
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-[24px] font-extrabold text-[#144231] tracking-tight leading-none">
+                  2026
+                </p>
+                <p className="text-[10px] text-[#144231]/90 font-semibold mt-0.5">
+                  Rimba Sanctuary Year in Review
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-[9px] font-medium text-[#144231]/80">
+                  {language === "en" ? "Favorite Tree" : "Pohon Terfavorit"}
+                </p>
+                <p className="text-[12px] font-extrabold text-[#103B2C] leading-tight">
+                  {favoriteTreeSpecies}
+                </p>
+              </div>
+            </div>
+
+            {/* Center Hero Artwork Frame (sharecard.webp) */}
+            <div className="relative w-full aspect-[16/10] my-auto rounded-2xl overflow-hidden shadow-lg border border-white/40">
+              <img
+                src="/sharecard.webp"
+                alt="Rimba Forest"
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = "/story/story_chapter_1.webp";
+                }}
+              />
+            </div>
+
+            {/* Mid Focus Metrics */}
+            <div className="text-center my-1">
+              <p className="text-[9px] font-bold text-white/90 uppercase tracking-widest">
+                Total Focus Time
+              </p>
+              <p className="text-[26px] font-black text-[#D2FF74] leading-tight drop-shadow-xs my-0.5">
+                {totalHoursNum >= 1 ? `${totalHoursNum} hours` : `${periodStats.totalMinutes} mins`}
+              </p>
+              <p className="text-[8.5px] text-white/95 leading-tight max-w-[280px] mx-auto font-medium">
+                {language === "en"
+                  ? `Your total focus was ${regionalBonusHours} hours more than average in your region! Amazing!`
+                  : `Total fokusmu ${regionalBonusHours} jam lebih banyak dari rata-rata penjaga suaka lainnya! Luar biasa!`}
+              </p>
+            </div>
+
+            {/* Bottom Two-Column Info Card */}
+            <div className="bg-[#0E3B2D]/40 rounded-xl p-2.5 border border-white/20 grid grid-cols-2 gap-2 text-left">
+              <div>
+                <p className="text-[9px] font-bold text-white">Focus Type</p>
+                <p className="text-[9.5px] font-bold text-[#D2FF74] mt-0.5">Evergreen Guardian</p>
+                <p className="text-[7.5px] text-white/85 leading-snug line-clamp-2 mt-0.5">
+                  {language === "en"
+                    ? "Focused throughout the day, steady like the pines."
+                    : "Fokus konsisten sepanjang hari bagai pinus abadi."}
+                </p>
+              </div>
+              <div>
+                <p className="text-[9px] font-bold text-white">
+                  {language === "en" ? "Top Day" : "Hari Terfokus"}
+                </p>
+                <p className="text-[11px] font-extrabold text-[#D2FF74] mt-0.5">{mostFocusedDay}</p>
+                <p className="text-[7.5px] text-white/85 leading-snug mt-0.5">
+                  Jam Emas: {circadianData.peakWindowLabel || "10:00 – 12:00"}
+                </p>
+              </div>
+            </div>
+
+            {/* Clean Watermark (STRICTLY "Rimba", NO tree icon) */}
+            <div className="text-center pt-0.5">
+              <span className="text-[9.5px] text-white/80 font-bold tracking-[0.2em] uppercase">
+                Rimba
+              </span>
+            </div>
+          </div>
+        ) : cardTheme === "diorama" ? (
+          /* STYLE 2: DIORAMA PREVIEW CARD (Exact Forest App Style) */
           <div
             className={`relative w-full rounded-3xl overflow-hidden border border-slate-200/90 p-3.5 text-left flex flex-col justify-between transition-all duration-300 shadow-md bg-[#F8FAFC] ${
               aspectRatio === "story"
@@ -776,15 +1099,15 @@ export function ShareSnapshotModal({
               </div>
             </div>
 
-            {/* Minimal Footer */}
+            {/* Clean Watermark (STRICTLY "Rimba", NO tree icon) */}
             <div className="text-center pt-0.5">
-              <span className="text-[9px] text-[#94A3B8] font-semibold">
-                🌱 Rimba
+              <span className="text-[9.5px] text-[#94A3B8] font-bold tracking-[0.2em] uppercase">
+                Rimba
               </span>
             </div>
           </div>
         ) : (
-          /* STORY ARTWORK CARD (White Background, Clean Poster & Typography) */
+          /* STYLE 3: STORY ARTWORK CARD (White Background, Clean Poster & Typography) */
           <div
             className={`relative w-full rounded-3xl overflow-hidden border border-slate-200/90 p-3.5 text-left flex flex-col justify-between transition-all duration-300 shadow-md bg-white ${
               aspectRatio === "story"
@@ -836,10 +1159,10 @@ export function ShareSnapshotModal({
               </div>
             </div>
 
-            {/* Minimal Footer */}
+            {/* Clean Watermark (STRICTLY "Rimba", NO tree icon) */}
             <div className="text-center pt-0.5">
-              <span className="text-[9px] text-[#94A3B8] font-semibold">
-                🌱 Rimba
+              <span className="text-[9.5px] text-[#94A3B8] font-bold tracking-[0.2em] uppercase">
+                Rimba
               </span>
             </div>
           </div>

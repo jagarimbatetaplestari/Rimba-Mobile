@@ -331,9 +331,13 @@ function cropIslandFromCanvas(canvasEl: HTMLCanvasElement): string {
         forestDateText,
         treesCount,
         stumpsCount,
+        completedSessionsCount: periodStats.completedCount || treesCount,
+        mostFocusedDay,
+        peakWindowLabel: circadianData.peakWindowLabel,
         totalHoursNum,
         snapshotUrl,
         tagStats,
+        language,
       });
     } else {
       await drawStoryCardCanvas(ctx, {
@@ -636,10 +640,14 @@ function cropIslandFromCanvas(canvasEl: HTMLCanvasElement): string {
             forestDateText={forestDateText}
             treesCount={treesCount}
             stumpsCount={stumpsCount}
+            completedSessionsCount={periodStats.completedCount || treesCount}
+            mostFocusedDay={mostFocusedDay}
+            peakWindowLabel={circadianData.peakWindowLabel}
             totalHoursNum={totalHoursNum}
             snapshotUrl={snapshotUrl}
             tagStats={tagStats}
             takingSnapshotText={t.shareModal.takingSnapshot}
+            language={language}
           />
         ) : (
           <StoryShareCard

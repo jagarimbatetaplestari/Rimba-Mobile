@@ -8,10 +8,14 @@ export interface DioramaCardProps {
   forestDateText: string;
   treesCount?: number;
   stumpsCount?: number;
+  completedSessionsCount?: number;
+  mostFocusedDay?: string;
+  peakWindowLabel?: string;
   totalHoursNum: number;
   snapshotUrl: string | null;
   tagStats: TagStatItem[];
   takingSnapshotText?: string;
+  language?: "id" | "en";
 }
 
 export interface DioramaCanvasOptions {
@@ -21,9 +25,13 @@ export interface DioramaCanvasOptions {
   forestDateText: string;
   treesCount?: number;
   stumpsCount?: number;
+  completedSessionsCount?: number;
+  mostFocusedDay?: string;
+  peakWindowLabel?: string;
   totalHoursNum: number;
   snapshotUrl: string | null;
   tagStats: TagStatItem[];
+  language?: "id" | "en";
 }
 
 const ACCENT_COLORS = [
@@ -154,47 +162,76 @@ export async function drawDioramaCardCanvas(
     aspectRatio,
     forestDateText,
     treesCount = 0,
-    stumpsCount = 0,
+    completedSessionsCount,
+    mostFocusedDay,
     totalHoursNum,
     snapshotUrl,
     tagStats,
+    language = "id",
   } = opts;
 
   const isSquare = aspectRatio === "square";
   const isPortrait = aspectRatio === "portrait";
+  const isEn = language === "en";
+
+  const habitatBadge = isEn ? "SANCTUARY HABITAT" : "DIORAMA HABITAT";
+  const sessionCount = completedSessionsCount ?? treesCount ?? 0;
+  const sessionMetric = isEn
+    ? `${treesCount} Flourishing Trees · ${sessionCount} Sessions`
+    : `${treesCount} Pohon Lestari · ${sessionCount} Sesi Sukses`;
+
+  const focusBadge = isEn ? "TOTAL FOCUS TIME" : "TOTAL WAKTU FOKUS";
+  const hoursUnit = isEn ? "HRS" : "JAM";
+  const peakLabel = isEn ? "Peak Day" : "Hari Puncak";
+  const rhythmMetric = `${peakLabel}: ${mostFocusedDay || (isEn ? "Thu" : "Kamis")}`;
 
   ctx.fillStyle = "#F6F7F9";
   ctx.fillRect(0, 0, width, height);
 
-  // 1. Header Kiri Atas
+  // 1. Header Kiri Atas (Stylish, Informatif, Tanpa Emoji/Ikon)
   const topY = isSquare ? 58 : isPortrait ? 74 : 86;
   const padX = isSquare ? 42 : 54;
 
   ctx.textAlign = "left";
-  ctx.fillStyle = "#1E293B";
-  ctx.font = `600 ${isSquare ? 22 : isPortrait ? 26 : 28}px "Urbanist", sans-serif`;
-  ctx.fillText(forestDateText, padX, topY);
+  // Micro-badge Teal
+  ctx.fillStyle = "#0D9488";
+  ctx.font = `800 ${isSquare ? 11 : isPortrait ? 13 : 14}px "Urbanist", sans-serif`;
+  ctx.fillText(habitatBadge, padX, topY - (isSquare ? 16 : 18));
 
+  // Period Date Bold Ink
+  ctx.fillStyle = "#0F172A";
+  ctx.font = `900 ${isSquare ? 23 : isPortrait ? 27 : 29}px "Urbanist", sans-serif`;
+  ctx.fillText(forestDateText, padX, topY + (isSquare ? 12 : 14));
+
+  // Sub-metric Slate
   ctx.fillStyle = "#64748B";
-  ctx.font = `600 ${isSquare ? 14 : isPortrait ? 16 : 17}px "Urbanist", sans-serif`;
-  ctx.fillText("Total Waktu Fokus", padX, topY + (isSquare ? 24 : 28));
+  ctx.font = `600 ${isSquare ? 13 : isPortrait ? 15 : 16}px "Urbanist", sans-serif`;
+  ctx.fillText(sessionMetric, padX, topY + (isSquare ? 36 : 42));
 
-  // 2. Header Kanan Atas
+  // 2. Header Kanan Atas (Stylish, Informatif, Tanpa Emoji/Ikon)
   const rightX = width - padX;
 
-  if (treesCount > 0 || stumpsCount > 0) {
-    ctx.textAlign = "right";
-    ctx.fillStyle = "#64748B";
-    ctx.font = `600 ${isSquare ? 14 : isPortrait ? 16 : 17}px "Urbanist", sans-serif`;
-    let countStr = `🌱 ${treesCount}`;
-    if (stumpsCount > 0) countStr += `   🪵 ${stumpsCount}`;
-    ctx.fillText(countStr, rightX, topY - 2);
-  }
-
   ctx.textAlign = "right";
+  // Micro-badge Slate
+  ctx.fillStyle = "#64748B";
+  ctx.font = `800 ${isSquare ? 11 : isPortrait ? 12 : 13}px "Urbanist", sans-serif`;
+  ctx.fillText(focusBadge, rightX, topY - (isSquare ? 16 : 18));
+
+  // Big Focus Hours Ink Bold
   ctx.fillStyle = "#0F172A";
-  ctx.font = `800 ${isSquare ? 32 : isPortrait ? 38 : 42}px "Urbanist", sans-serif`;
-  ctx.fillText(`${totalHoursNum} jam`, rightX, topY + (isSquare ? 26 : 30));
+  ctx.font = `900 ${isSquare ? 32 : isPortrait ? 38 : 42}px "Urbanist", sans-serif`;
+  const hoursStr = `${totalHoursNum}`;
+  ctx.fillText(hoursStr, rightX - (isSquare ? 36 : 42), topY + (isSquare ? 14 : 16));
+
+  // Unit JAM / HRS
+  ctx.fillStyle = "#64748B";
+  ctx.font = `800 ${isSquare ? 13 : isPortrait ? 15 : 16}px "Urbanist", sans-serif`;
+  ctx.fillText(hoursUnit, rightX, topY + (isSquare ? 14 : 16));
+
+  // Sub-metric Peak Rhythm Teal
+  ctx.fillStyle = "#0D9488";
+  ctx.font = `700 ${isSquare ? 13 : isPortrait ? 15 : 16}px "Urbanist", sans-serif`;
+  ctx.fillText(rhythmMetric, rightX, topY + (isSquare ? 36 : 42));
 
   // 3. Kontainer Tag Bawah
   const cardW = width - padX * 2;
@@ -233,7 +270,7 @@ export async function drawDioramaCardCanvas(
 
   // 5. Pulau 3D: Proporsional & Besar Tanpa Terpotong
   if (snapshotUrl) {
-    const areaTop = topY + (isSquare ? 50 : 64);
+    const areaTop = topY + (isSquare ? 52 : 66);
     const areaBottom = cardY - 14;
     const availableH = areaBottom - areaTop;
     const islandSize = Math.min(cardW * 0.95, availableH * 1.15);
@@ -263,11 +300,27 @@ export function DioramaShareCard({
   forestDateText,
   treesCount = 0,
   stumpsCount = 0,
+  completedSessionsCount,
+  mostFocusedDay,
+  peakWindowLabel,
   totalHoursNum,
   snapshotUrl,
   tagStats,
   takingSnapshotText = "Membuat tangkapan pulau...",
+  language = "id",
 }: DioramaCardProps) {
+  const isEn = language === "en";
+  const habitatBadge = isEn ? "SANCTUARY HABITAT" : "DIORAMA HABITAT";
+  const sessionCount = completedSessionsCount ?? treesCount ?? 0;
+  const sessionMetric = isEn
+    ? `${treesCount} Flourishing Trees · ${sessionCount} Sessions`
+    : `${treesCount} Pohon Lestari · ${sessionCount} Sesi Sukses`;
+
+  const focusBadge = isEn ? "TOTAL FOCUS TIME" : "TOTAL WAKTU FOKUS";
+  const hoursUnit = isEn ? "HRS" : "JAM";
+  const peakLabel = isEn ? "Peak Day" : "Hari Puncak";
+  const rhythmMetric = `${peakLabel}: ${mostFocusedDay || (isEn ? "Thu" : "Kamis")}`;
+
   const containerAspectClass =
     aspectRatio === "story"
       ? "aspect-[9/15] max-h-[500px]"
@@ -279,40 +332,37 @@ export function DioramaShareCard({
     <div
       className={`relative w-full max-w-[340px] mx-auto rounded-[32px] p-3.5 sm:p-4 text-left flex flex-col justify-between transition-all duration-300 shadow-xl bg-[#F6F7F9] font-urbanist select-none ${containerAspectClass}`}
     >
-      {/* 1. Header Kiri & Kanan Atas */}
+      {/* 1. Header Kiri & Kanan Atas (Informatif, Stylish, Tanpa Emoji/Ikon) */}
       <div className="flex items-start justify-between relative z-20 shrink-0">
         {/* Kiri Atas */}
-        <div>
-          <p className="text-[13px] sm:text-[14px] font-semibold text-[#1E293B] tracking-tight leading-tight">
+        <div className="flex flex-col items-start text-left">
+          <span className="text-[8px] sm:text-[9px] font-extrabold uppercase tracking-[0.22em] text-[#0D9488] leading-none">
+            {habitatBadge}
+          </span>
+          <p className="text-[15px] sm:text-[17px] font-black text-[#0F172A] tracking-tight leading-tight mt-1">
             {forestDateText}
           </p>
-          <p className="text-[9.5px] sm:text-[10.5px] font-semibold text-[#64748B] leading-tight mt-1">
-            Total Waktu Fokus
+          <p className="text-[9.5px] sm:text-[10px] font-semibold text-[#64748B] leading-tight mt-1">
+            {sessionMetric}
           </p>
         </div>
 
-        {/* Kanan Atas (Tree Counts & Focus Hours) */}
-        <div className="text-right flex flex-col items-end">
-          {(treesCount > 0 || stumpsCount > 0) && (
-            <div className="flex items-center gap-2 text-[10px] sm:text-[11px] font-semibold text-[#64748B] leading-none mb-1">
-              <span className="flex items-center gap-0.5">
-                🌱 <strong className="text-[#0F172A] font-bold">{treesCount}</strong>
-              </span>
-              {stumpsCount > 0 && (
-                <span className="flex items-center gap-0.5">
-                  🪵 <strong className="text-[#64748B] font-bold">{stumpsCount}</strong>
-                </span>
-              )}
-            </div>
-          )}
-          <div className="flex items-baseline justify-end gap-1">
-            <span className="text-[22px] sm:text-[26px] font-black text-[#0F172A] leading-none">
+        {/* Kanan Atas */}
+        <div className="flex flex-col items-end text-right">
+          <span className="text-[8px] sm:text-[9px] font-extrabold uppercase tracking-[0.2em] text-[#64748B] leading-none">
+            {focusBadge}
+          </span>
+          <div className="flex items-baseline justify-end gap-1 mt-0.5 leading-none">
+            <span className="text-[22px] sm:text-[26px] font-black text-[#0F172A] leading-none tracking-tight">
               {totalHoursNum}
             </span>
-            <span className="text-[10.5px] sm:text-[11.5px] font-semibold text-[#64748B]">
-              jam
+            <span className="text-[10px] sm:text-[11px] font-extrabold text-[#64748B] uppercase tracking-wider">
+              {hoursUnit}
             </span>
           </div>
+          <p className="text-[9.5px] sm:text-[10px] font-bold text-[#0D9488] leading-tight mt-1">
+            {rhythmMetric}
+          </p>
         </div>
       </div>
 
@@ -394,8 +444,8 @@ export function DioramaShareCard({
                           textAnchor="middle"
                           dominantBaseline="central"
                           fill="#FFFFFF"
-                          fontSize="7"
-                          fontWeight="700"
+                          fontSize="8"
+                          fontWeight="800"
                         >
                           {item.pct}%
                         </text>
@@ -408,20 +458,20 @@ export function DioramaShareCard({
                   y={cy - 4}
                   textAnchor="middle"
                   dominantBaseline="central"
-                  fill="#64748B"
-                  fontSize="7.5"
-                  fontWeight="700"
+                  fill="#334155"
+                  fontSize="9.5"
+                  fontWeight="800"
                 >
                   Tag
                 </text>
                 <text
                   x={cx}
-                  y={cy + 6}
+                  y={cy + 7}
                   textAnchor="middle"
                   dominantBaseline="central"
                   fill="#64748B"
-                  fontSize="6.5"
-                  fontWeight="600"
+                  fontSize="8"
+                  fontWeight="700"
                 >
                   Distribution
                 </text>
@@ -431,7 +481,7 @@ export function DioramaShareCard({
         </svg>
 
         {/* Legenda Kategori */}
-        <div className="flex-1 min-w-0 flex flex-col justify-center gap-1">
+        <div className="flex-1 min-w-0 flex flex-col justify-center gap-1.5">
           {tagStats.slice(0, 4).map((item, idx) => (
             <div
               key={idx}

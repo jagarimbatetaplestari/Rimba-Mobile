@@ -43,94 +43,141 @@ function drawRoundedRect(
   ctx.closePath();
 }
 
-function drawForestBarChart(
+export interface TagStatItem {
+  name: string;
+  minutes: number;
+  pct: number;
+  hours: number;
+  color: string;
+}
+
+const TAG_COLORS: Record<string, string> = {
+  Belajar: "#E06553", // Coral / Red (maths)
+  Kerja: "#98B946",   // Olive / Green (pdhpe)
+  Koding: "#9284D7",  // Purple / Violet (music)
+  Membaca: "#57B894", // Teal / Jade (ees)
+  Kreatif: "#F3D053", // Warm Yellow (english)
+  Mindfulness: "#D9889B", // Rose / Pink (vis art)
+  maths: "#E06553",
+  pdhpe: "#98B946",
+  music: "#9284D7",
+  ees: "#57B894",
+  english: "#F3D053",
+  "vis art": "#D9889B",
+};
+
+const DEFAULT_TAG_PALETTE = [
+  "#E06553",
+  "#98B946",
+  "#9284D7",
+  "#57B894",
+  "#F3D053",
+  "#D9889B",
+  "#3B82F6",
+  "#F97316",
+];
+
+function drawForestTagDonutChart(
   ctx: CanvasRenderingContext2D,
-  cardX: number,
-  cardY: number,
-  cardW: number,
-  cardH: number,
-  data: { dateLabel: string; day: number; minutes: number }[],
-  aspectRatio: "story" | "portrait" | "square",
+  boxX: number,
+  boxY: number,
+  boxW: number,
+  boxH: number,
+  tags: TagStatItem[],
 ) {
-  // Container Box
+  if (tags.length === 0) return;
+
+  // Donut geometry
+  const cx = boxX + boxW * 0.28;
+  const cy = boxY + boxH * 0.5;
+  const outerR = Math.min(boxW * 0.22, boxH * 0.44);
+  const innerR = outerR * 0.52;
+
+  let currentAngle = -Math.PI / 2;
+  const totalMins = Math.max(1, tags.reduce((a, b) => a + b.minutes, 0));
+
+  tags.forEach((item) => {
+    const sliceAngle = (item.minutes / totalMins) * (Math.PI * 2);
+    const endAngle = currentAngle + sliceAngle;
+
+    // Draw Slice
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, outerR, currentAngle, endAngle);
+    ctx.arc(cx, cy, innerR, endAngle, currentAngle, true);
+    ctx.closePath();
+    ctx.fillStyle = item.color;
+    ctx.fill();
+    ctx.strokeStyle = "#FFFFFF";
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    // Percentage inside slice if large enough
+    if (item.pct >= 8 && outerR > 40) {
+      const midAngle = currentAngle + sliceAngle / 2;
+      const textR = (outerR + innerR) / 2;
+      const tx = cx + Math.cos(midAngle) * textR;
+      const ty = cy + Math.sin(midAngle) * textR;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = '700 18px "Urbanist", sans-serif';
+      ctx.fillText(`${item.pct}%`, tx, ty);
+    }
+    ctx.restore();
+
+    currentAngle = endAngle;
+  });
+
+  // Center Hole
   ctx.save();
+  ctx.beginPath();
+  ctx.arc(cx, cy, innerR, 0, Math.PI * 2);
   ctx.fillStyle = "#FFFFFF";
-  drawRoundedRect(ctx, cardX, cardY, cardW, cardH, 36);
   ctx.fill();
-  ctx.strokeStyle = "#E2E8F0";
-  ctx.lineWidth = 2;
-  ctx.stroke();
+
+  // Center Text: Tag \n Distribution
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = "#7A8594";
+  ctx.font = '600 19px "Urbanist", sans-serif';
+  ctx.fillText("Tag", cx, cy - 11);
+  ctx.fillText("Distribution", cx, cy + 13);
   ctx.restore();
 
-  // Top Labels
-  ctx.textAlign = "left";
-  ctx.fillStyle = "#94A3B8";
-  ctx.font = '500 22px "Urbanist", -apple-system, sans-serif';
-  ctx.fillText("minute", cardX + 36, cardY + 46);
+  // Legend List on Right (Matching reference layout: dot, name, percentage, hours)
+  const listX = boxX + boxW * 0.54;
+  const availableH = boxH * 0.82;
+  const rowH = availableH / Math.max(1, Math.min(6, tags.length));
+  const startY = boxY + (boxH - availableH) / 2 + rowH * 0.5;
 
-  ctx.textAlign = "right";
-  ctx.font = '600 24px "Urbanist", -apple-system, sans-serif';
-  ctx.fillText("Focused Time Distribution", cardX + cardW - 36, cardY + 46);
+  tags.slice(0, 6).forEach((item, idx) => {
+    const y = startY + idx * rowH;
 
-  // Chart bounds
-  const chartLeft = cardX + 88;
-  const chartRight = cardX + cardW - 36;
-  const chartTop = cardY + 86;
-  const chartBottom = cardY + cardH - (aspectRatio === "square" ? 44 : 54);
-  const chartHeight = chartBottom - chartTop;
-  const chartWidth = chartRight - chartLeft;
-
-  // Max value calculation
-  const rawMax = Math.max(60, ...data.map((d) => d.minutes));
-  const step = rawMax > 280 ? 70 : rawMax > 140 ? 50 : rawMax > 60 ? 30 : 15;
-  const yTicksCount = 5;
-  const gridMax = Math.ceil(rawMax / (step * (yTicksCount - 1))) * step * (yTicksCount - 1) || 120;
-
-  // Horizontal Gridlines & Y-Axis Labels
-  ctx.textAlign = "right";
-  ctx.font = '500 19px "Urbanist", sans-serif';
-  ctx.fillStyle = "#94A3B8";
-
-  for (let i = 0; i < yTicksCount; i++) {
-    const val = Math.round((gridMax / (yTicksCount - 1)) * i);
-    const yPos = chartBottom - (i / (yTicksCount - 1)) * chartHeight;
-
-    ctx.fillText(`${val}`, chartLeft - 16, yPos + 6);
-
+    // Dot
     ctx.beginPath();
-    ctx.moveTo(chartLeft, yPos);
-    ctx.lineTo(chartRight, yPos);
-    ctx.strokeStyle = "#F1F5F9";
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-  }
+    ctx.arc(listX, y, 7.5, 0, Math.PI * 2);
+    ctx.fillStyle = item.color;
+    ctx.fill();
 
-  // Draw Bars
-  const nBars = data.length;
-  if (nBars > 0) {
-    const slotWidth = chartWidth / nBars;
-    const barWidth = Math.max(6, Math.min(20, slotWidth * 0.65));
+    // Tag name
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "#555E6D";
+    ctx.font = '600 21px "Urbanist", sans-serif';
+    ctx.fillText(item.name.toLowerCase(), listX + 20, y);
 
-    data.forEach((item, idx) => {
-      const barH = (item.minutes / gridMax) * chartHeight;
-      const x = chartLeft + idx * slotWidth + (slotWidth - barWidth) / 2;
-      const y = chartBottom - barH;
+    // Percentage
+    ctx.textAlign = "right";
+    ctx.fillStyle = "#7A8594";
+    ctx.font = '500 20px "Urbanist", sans-serif';
+    ctx.fillText(`${item.pct}%`, boxX + boxW * 0.77, y);
 
-      if (item.minutes > 0) {
-        ctx.fillStyle = "#63A393"; // Forest rimba sage
-        drawRoundedRect(ctx, x, y, barWidth, barH, 4);
-        ctx.fill();
-      }
-
-      // X-Axis Date Labels (first, last, and every ~7 days)
-      if (idx === 0 || idx % 7 === 0 || idx === nBars - 1) {
-        ctx.textAlign = "center";
-        ctx.fillStyle = "#94A3B8";
-        ctx.font = '500 18px "Urbanist", sans-serif';
-        ctx.fillText(item.dateLabel, x + barWidth / 2, chartBottom + 30);
-      }
-    });
-  }
+    // Hours
+    ctx.fillStyle = "#555E6D";
+    ctx.font = '600 21px "Urbanist", sans-serif';
+    ctx.fillText(`${item.hours} H`, boxX + boxW - 32, y);
+  });
 }
 
 const SPECIES_NAMES: Record<string, string> = {
@@ -162,7 +209,7 @@ export function ShareSnapshotModal({
   const notify = useGameStore((state) => state.notify);
 
   const [snapshotUrl, setSnapshotUrl] = useState<string | null>(null);
-  const [cardTheme, setCardTheme] = useState<"forest" | "diorama" | "story">("forest");
+  const [cardTheme, setCardTheme] = useState<"sanctuary" | "diorama" | "story">("sanctuary");
   const [aspectRatio, setAspectRatio] = useState<"story" | "portrait" | "square">("story");
   const [periodScope, setPeriodScope] = useState<"month" | "week" | "all">("month");
   const [isCopied, setIsCopied] = useState(false);
@@ -213,6 +260,30 @@ export function ShareSnapshotModal({
     const p = periodScope === "month" ? "month" : periodScope === "week" ? "week" : "year";
     return calculatePeriodAnalytics(sessions, p, 0, new Date(), language);
   }, [sessions, periodScope, language]);
+
+  // Tag Distribution Stats for Forest App Donut Chart (matching uploaded reference)
+  const tagStats = useMemo<TagStatItem[]>(() => {
+    const dist = periodStats.tagDistribution || analytics.tagDistribution || {};
+    const totalMins = Object.values(dist).reduce((a, b) => a + b, 0);
+    const entries = Object.entries(dist);
+
+    if (entries.length === 0 || totalMins === 0) {
+      return [
+        { name: "Belajar", minutes: 120, pct: 40, hours: 2.0, color: "#E05343" },
+        { name: "Kerja", minutes: 90, pct: 30, hours: 1.5, color: "#8CB83E" },
+        { name: "Koding", minutes: 60, pct: 20, hours: 1.0, color: "#8766CC" },
+        { name: "Mindfulness", minutes: 30, pct: 10, hours: 0.5, color: "#4EA698" },
+      ];
+    }
+
+    const sorted = [...entries].sort((a, b) => b[1] - a[1]);
+    return sorted.slice(0, 6).map(([name, mins], idx) => {
+      const pct = Math.max(1, Math.round((mins / totalMins) * 100));
+      const hrs = Math.round((mins / 60) * 10) / 10;
+      const color = TAG_COLORS[name] || DEFAULT_TAG_PALETTE[idx % DEFAULT_TAG_PALETTE.length];
+      return { name, minutes: mins, pct, hours: hrs, color };
+    });
+  }, [periodStats.tagDistribution, analytics.tagDistribution]);
 
   // Highest Unlocked Story Chapter Art (Clean illustration without baked text)
   const highestUnlockedStory = useMemo(() => {
@@ -340,173 +411,161 @@ export function ShareSnapshotModal({
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
 
-    if (cardTheme === "forest") {
+    if (cardTheme === "sanctuary") {
       // =====================================================================
-      // STYLE 1: FOREST EMERALD REVIEW (Forest App Year in Review)
+      // STYLE 1: SANCTUARY REVIEW (Cinematic Nature Poster)
+      // Full-bleed photo cropped from very bottom, all fonts pure white #FFFFFF
       // =====================================================================
-      const grad = ctx.createLinearGradient(0, 0, 0, height);
-      grad.addColorStop(0, "#87D09C");
-      grad.addColorStop(1, "#25734A");
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, width, height);
 
-      // Top Header
-      const topY = aspectRatio === "story" ? 140 : aspectRatio === "portrait" ? 110 : 95;
-      const titleSize = aspectRatio === "story" ? 64 : aspectRatio === "portrait" ? 54 : 44;
-      const subSize = aspectRatio === "story" ? 25 : aspectRatio === "portrait" ? 22 : 18;
-
-      ctx.textAlign = "left";
-      ctx.fillStyle = "#144231";
-      ctx.font = `800 ${titleSize}px "Urbanist", -apple-system, sans-serif`;
-      ctx.fillText("2026", 72, topY);
-
-      ctx.fillStyle = "rgba(20, 66, 49, 0.9)";
-      ctx.font = `600 ${subSize}px "Urbanist", sans-serif`;
-      ctx.fillText("Rimba Sanctuary Year in Review", 72, topY + (aspectRatio === "square" ? 32 : 40));
-
-      ctx.textAlign = "right";
-      ctx.fillStyle = "rgba(20, 66, 49, 0.85)";
-      ctx.font = `600 ${aspectRatio === "story" ? 24 : aspectRatio === "portrait" ? 20 : 17}px "Urbanist", sans-serif`;
-      ctx.fillText(language === "en" ? "Favorite Tree" : "Pohon Terfavorit", width - 72, topY);
-
-      ctx.fillStyle = "#103B2C";
-      ctx.font = `800 ${aspectRatio === "story" ? 32 : aspectRatio === "portrait" ? 26 : 22}px "Urbanist", sans-serif`;
-      ctx.fillText(favoriteTreeSpecies, width - 72, topY + (aspectRatio === "square" ? 32 : 40));
-
-      // Center Hero Artwork (/sharecard.webp)
-      const imgX = 72;
-      const imgW = width - 144;
-      const imgH = aspectRatio === "story" ? 760 : aspectRatio === "portrait" ? 490 : 360;
-      const imgY = aspectRatio === "story" ? 230 : aspectRatio === "portrait" ? 180 : 150;
-      const radius = aspectRatio === "story" ? 40 : aspectRatio === "portrait" ? 32 : 26;
-
+      // 1. Full-Bleed Background Photo (sharecard.webp) - CROP FROM VERY BOTTOM
       await new Promise<void>((resolve) => {
         const img = new Image();
         img.onload = () => {
-          ctx.save();
-          ctx.shadowColor = "rgba(13, 53, 40, 0.35)";
-          ctx.shadowBlur = 30;
-          ctx.shadowOffsetY = 15;
-          ctx.fillStyle = "#25734A";
-          drawRoundedRect(ctx, imgX, imgY, imgW, imgH, radius);
-          ctx.fill();
-          ctx.restore();
-
-          ctx.save();
-          drawRoundedRect(ctx, imgX, imgY, imgW, imgH, radius);
-          ctx.clip();
-
           const imgAspect = img.width / img.height;
-          const targetAspect = imgW / imgH;
+          const targetAspect = width / height;
           let sx = 0, sy = 0, sw = img.width, sh = img.height;
           if (imgAspect > targetAspect) {
             sw = img.height * targetAspect;
             sx = (img.width - sw) / 2;
+            sy = 0;
           } else {
             sh = img.width / targetAspect;
-            sy = (img.height - sh) / 2;
+            sx = 0;
+            // USER DIRECTIVE: Crop from the very bottom, NOT center!
+            sy = Math.max(0, img.height - sh);
           }
-          ctx.drawImage(img, sx, sy, sw, sh, imgX, imgY, imgW, imgH);
-          ctx.restore();
-
-          ctx.save();
-          ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
-          ctx.lineWidth = 3;
-          drawRoundedRect(ctx, imgX, imgY, imgW, imgH, radius);
-          ctx.stroke();
-          ctx.restore();
-
+          ctx.drawImage(img, sx, sy, sw, sh, 0, 0, width, height);
           resolve();
         };
         img.onerror = () => resolve();
         img.src = "/sharecard.webp";
       });
 
-      // Mid Focus Metrics
-      const midY = imgY + imgH + (aspectRatio === "story" ? 65 : aspectRatio === "portrait" ? 40 : 28);
-      const midLabelSize = aspectRatio === "story" ? 24 : aspectRatio === "portrait" ? 20 : 16;
-      const midHoursSize = aspectRatio === "story" ? 84 : aspectRatio === "portrait" ? 64 : 48;
-      const midSubSize = aspectRatio === "story" ? 24 : aspectRatio === "portrait" ? 19 : 15;
-      const midGap1 = aspectRatio === "story" ? 78 : aspectRatio === "portrait" ? 60 : 46;
-      const midGap2 = aspectRatio === "story" ? 138 : aspectRatio === "portrait" ? 106 : 80;
+      // 2. Top Header Fade (for white text contrast against bright sky)
+      const topY = aspectRatio === "story" ? 140 : aspectRatio === "portrait" ? 110 : 90;
+      const topFadeH = topY + 120;
+      const topFade = ctx.createLinearGradient(0, 0, 0, topFadeH);
+      topFade.addColorStop(0, "rgba(0, 0, 0, 0.55)");
+      topFade.addColorStop(1, "rgba(0, 0, 0, 0)");
+      ctx.fillStyle = topFade;
+      ctx.fillRect(0, 0, width, topFadeH);
 
-      ctx.textAlign = "center";
-      ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
-      ctx.font = `700 ${midLabelSize}px "Urbanist", sans-serif`;
-      ctx.fillText("TOTAL FOCUS TIME", width / 2, midY);
+      // Top Header Text (ALL WHITE #FFFFFF)
+      const titleSize = aspectRatio === "story" ? 68 : aspectRatio === "portrait" ? 56 : 46;
+      const subSize = aspectRatio === "story" ? 26 : aspectRatio === "portrait" ? 22 : 19;
+      const topGap = aspectRatio === "square" ? 30 : 42;
 
-      ctx.fillStyle = "#D2FF74";
-      ctx.font = `900 ${midHoursSize}px "Urbanist", sans-serif`;
-      const hoursText = totalHoursNum >= 1 ? `${totalHoursNum} hours` : `${periodStats.totalMinutes} mins`;
-      ctx.fillText(hoursText, width / 2, midY + midGap1);
+      ctx.textAlign = "left";
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = `800 ${titleSize}px "Urbanist", -apple-system, sans-serif`;
+      ctx.fillText("2026", 72, topY);
 
       ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
-      ctx.font = `500 ${midSubSize}px "Urbanist", sans-serif`;
+      ctx.font = `700 ${subSize}px "Urbanist", sans-serif`;
+      ctx.fillText("Rimba Sanctuary", 72, topY + topGap);
+      ctx.font = `600 ${subSize - 3}px "Urbanist", sans-serif`;
+      ctx.fillText("Year in Review", 72, topY + topGap + (aspectRatio === "square" ? 24 : 30));
+
+      ctx.textAlign = "right";
+      ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
+      ctx.font = `700 ${aspectRatio === "story" ? 24 : aspectRatio === "portrait" ? 20 : 17}px "Urbanist", sans-serif`;
+      ctx.fillText(language === "en" ? "FAVORITE TREE" : "POHON TERFAVORIT", width - 72, topY);
+
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = `800 ${aspectRatio === "story" ? 34 : aspectRatio === "portrait" ? 28 : 23}px "Urbanist", sans-serif`;
+      ctx.fillText(favoriteTreeSpecies, width - 72, topY + topGap);
+
+      // 3. Bottom Grass Section: Soft Dark Emerald Gradient Fade
+      const gradH = aspectRatio === "story" ? 760 : aspectRatio === "portrait" ? 580 : 460;
+      const gradY = height - gradH;
+      const fadeGrad = ctx.createLinearGradient(0, gradY, 0, height);
+      fadeGrad.addColorStop(0, "rgba(8, 24, 18, 0)");
+      fadeGrad.addColorStop(0.32, "rgba(8, 24, 18, 0.65)");
+      fadeGrad.addColorStop(0.7, "rgba(8, 24, 18, 0.92)");
+      fadeGrad.addColorStop(1, "rgba(6, 18, 14, 0.98)");
+      ctx.fillStyle = fadeGrad;
+      ctx.fillRect(0, gradY, width, gradH);
+
+      // Focus Metrics (ALL WHITE)
+      const focusLabelY = gradY + (aspectRatio === "story" ? 110 : aspectRatio === "portrait" ? 85 : 70);
+      const focusHoursY = focusLabelY + (aspectRatio === "story" ? 90 : aspectRatio === "portrait" ? 70 : 56);
+      const compY = focusHoursY + (aspectRatio === "story" ? 64 : aspectRatio === "portrait" ? 50 : 40);
+
+      ctx.textAlign = "center";
+      ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
+      ctx.font = `700 ${aspectRatio === "story" ? 24 : aspectRatio === "portrait" ? 20 : 16}px "Urbanist", sans-serif`;
+      ctx.fillText("TOTAL FOCUS TIME", width / 2, focusLabelY);
+
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = `900 ${aspectRatio === "story" ? 92 : aspectRatio === "portrait" ? 72 : 56}px "Urbanist", sans-serif`;
+      const hoursText = totalHoursNum >= 1 ? `${totalHoursNum} hours` : `${periodStats.totalMinutes} mins`;
+      ctx.fillText(hoursText, width / 2, focusHoursY);
+
+      ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+      ctx.font = `500 ${aspectRatio === "story" ? 24 : aspectRatio === "portrait" ? 19 : 15}px "Urbanist", sans-serif`;
       const compText = language === "en"
         ? `Your total focus was ${regionalBonusHours} hours more than average of others in your region! Amazing!`
         : `Total fokusmu ${regionalBonusHours} jam lebih banyak dari rata-rata penjaga suaka lainnya! Luar biasa!`;
-      ctx.fillText(compText, width / 2, midY + midGap2);
+      ctx.fillText(compText, width / 2, compY);
 
-      // Bottom 2-Column Info Card
-      const cardW = 936;
-      const cardH = aspectRatio === "story" ? 250 : aspectRatio === "portrait" ? 200 : 155;
-      const cardX = (width - cardW) / 2;
-      const cardY = midY + midGap2 + (aspectRatio === "story" ? 55 : aspectRatio === "portrait" ? 35 : 22);
-
-      ctx.save();
-      ctx.fillStyle = "rgba(14, 59, 45, 0.4)";
-      drawRoundedRect(ctx, cardX, cardY, cardW, cardH, 28);
-      ctx.fill();
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      ctx.restore();
-
-      const colMidX = cardX + cardW / 2;
+      // 4. Two-Column Info Row (ALL WHITE)
+      const rowDividerY = compY + (aspectRatio === "story" ? 55 : aspectRatio === "portrait" ? 42 : 32);
       ctx.beginPath();
-      ctx.moveTo(colMidX, cardY + 22);
-      ctx.lineTo(colMidX, cardY + cardH - 22);
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
+      ctx.moveTo(80, rowDividerY);
+      ctx.lineTo(width - 80, rowDividerY);
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
       ctx.lineWidth = 1.5;
       ctx.stroke();
 
-      const col1X = cardX + 44;
-      const textStartY = cardY + (aspectRatio === "story" ? 64 : aspectRatio === "portrait" ? 50 : 38);
-      const boxTitleSize = aspectRatio === "story" ? 28 : aspectRatio === "portrait" ? 23 : 19;
-      const boxValSize = aspectRatio === "story" ? 26 : aspectRatio === "portrait" ? 21 : 17;
+      // Vertical mid divider
+      const colMidX = width / 2;
+      const rowHeight = aspectRatio === "story" ? 150 : aspectRatio === "portrait" ? 120 : 95;
+      ctx.beginPath();
+      ctx.moveTo(colMidX, rowDividerY + 16);
+      ctx.lineTo(colMidX, rowDividerY + rowHeight);
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      const textStartY = rowDividerY + (aspectRatio === "story" ? 50 : aspectRatio === "portrait" ? 40 : 32);
+      const boxTitleSize = aspectRatio === "story" ? 26 : aspectRatio === "portrait" ? 22 : 18;
+      const boxValSize = aspectRatio === "story" ? 26 : aspectRatio === "portrait" ? 22 : 17;
       const boxDescSize = aspectRatio === "story" ? 20 : aspectRatio === "portrait" ? 16 : 13;
 
+      // Col 1: Focus Type
+      const col1X = 84;
       ctx.textAlign = "left";
       ctx.fillStyle = "#FFFFFF";
       ctx.font = `800 ${boxTitleSize}px "Urbanist", sans-serif`;
       ctx.fillText("Focus Type", col1X, textStartY);
 
-      ctx.fillStyle = "#D2FF74";
+      ctx.fillStyle = "#FFFFFF";
       ctx.font = `700 ${boxValSize}px "Urbanist", sans-serif`;
-      ctx.fillText("Evergreen Guardian", col1X, textStartY + (aspectRatio === "story" ? 42 : 32));
+      ctx.fillText("Evergreen Guardian", col1X, textStartY + (aspectRatio === "story" ? 40 : 30));
 
       ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
       ctx.font = `500 ${boxDescSize}px "Urbanist", sans-serif`;
       const descText = language === "en"
         ? "Focused throughout the day, steady like the pines."
         : "Fokus konsisten sepanjang hari bagai pinus abadi.";
-      ctx.fillText(descText, col1X, textStartY + (aspectRatio === "story" ? 82 : 60));
+      ctx.fillText(descText, col1X, textStartY + (aspectRatio === "story" ? 78 : 58));
 
-      const col2X = colMidX + 44;
+      // Col 2: Hari Terfokus
+      const col2X = colMidX + 36;
       ctx.fillStyle = "#FFFFFF";
       ctx.font = `800 ${boxTitleSize}px "Urbanist", sans-serif`;
       ctx.fillText(language === "en" ? "Top Day" : "Hari Terfokus", col2X, textStartY);
 
-      ctx.fillStyle = "#D2FF74";
+      ctx.fillStyle = "#FFFFFF";
       ctx.font = `800 ${boxValSize + 4}px "Urbanist", sans-serif`;
-      ctx.fillText(mostFocusedDay, col2X, textStartY + (aspectRatio === "story" ? 42 : 32));
+      ctx.fillText(mostFocusedDay, col2X, textStartY + (aspectRatio === "story" ? 40 : 30));
 
       ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
       ctx.font = `500 ${boxDescSize}px "Urbanist", sans-serif`;
       const peakLabel = `Jam Emas: ${circadianData.peakWindowLabel || "10:00 – 12:00"}`;
-      ctx.fillText(peakLabel, col2X, textStartY + (aspectRatio === "story" ? 82 : 60));
+      ctx.fillText(peakLabel, col2X, textStartY + (aspectRatio === "story" ? 78 : 58));
 
-      // Footer: STRICTLY "Rimba" (NO tree icon!)
+      // 5. Footer Watermark: STRICTLY "Rimba" (NO tree icon!)
       ctx.textAlign = "center";
       ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
       ctx.font = '700 24px "Urbanist", sans-serif';
@@ -515,39 +574,59 @@ export function ShareSnapshotModal({
     } else if (cardTheme === "diorama") {
       // =====================================================================
       // STYLE 2: 3D DIORAMA LAND CAPTURE (Exact Forest App Style)
+      // Matching media_1791717073253_f2eb2eeb.jpg
       // =====================================================================
-      ctx.fillStyle = "#F8FAFC";
+      ctx.fillStyle = "#F0F1F3";
       ctx.fillRect(0, 0, width, height);
 
-      // Top Left: Date Range & Total Focused Time
+      // Top Left: Date Range & "Total \n Focused \n Time"
+      const topY = aspectRatio === "story" ? 120 : aspectRatio === "portrait" ? 95 : 80;
       ctx.textAlign = "left";
-      ctx.fillStyle = "#0F172A";
-      ctx.font = '700 44px "Urbanist", -apple-system, sans-serif';
-      const topY = aspectRatio === "story" ? 130 : aspectRatio === "portrait" ? 105 : 90;
+      ctx.fillStyle = "#6B7280";
+      ctx.font = `600 ${aspectRatio === "story" ? 38 : aspectRatio === "portrait" ? 32 : 28}px "Urbanist", -apple-system, sans-serif`;
       ctx.fillText(forestDateText, 72, topY);
 
-      ctx.fillStyle = "#64748B";
-      ctx.font = '500 24px "Urbanist", sans-serif';
-      ctx.fillText("Total Focused Time", 72, topY + 44);
+      ctx.fillStyle = "#7A8594";
+      ctx.font = `500 ${aspectRatio === "story" ? 22 : aspectRatio === "portrait" ? 18 : 16}px "Urbanist", sans-serif`;
+      const subLineGap = aspectRatio === "story" ? 28 : aspectRatio === "portrait" ? 23 : 20;
+      ctx.fillText("Total", 72, topY + subLineGap + 12);
+      ctx.fillText("Focused", 72, topY + subLineGap * 2 + 12);
+      ctx.fillText("Time", 72, topY + subLineGap * 3 + 12);
 
-      // Top Right: Counters & Big Hours
+      // Top Right: Flora & Withered Count, Big Hours, "hours"
       ctx.textAlign = "right";
-      ctx.fillStyle = "#64748B";
-      ctx.font = '600 26px "Urbanist", sans-serif';
-      ctx.fillText(`🌲 ${treesCount}   🥀 ${stumpsCount}`, width - 72, topY);
+      ctx.fillStyle = "#7A8594";
+      ctx.font = `600 ${aspectRatio === "story" ? 26 : aspectRatio === "portrait" ? 22 : 19}px "Urbanist", sans-serif`;
+      ctx.fillText(`🌱 ${treesCount}   🥀 ${stumpsCount}`, width - 72, topY);
 
-      ctx.fillStyle = "#0F172A";
-      ctx.font = '800 68px "Urbanist", sans-serif';
-      ctx.fillText(`${totalHoursNum}`, width - 72, topY + 68);
+      ctx.fillStyle = "#555E6D";
+      ctx.font = `800 ${aspectRatio === "story" ? 72 : aspectRatio === "portrait" ? 60 : 50}px "Urbanist", sans-serif`;
+      ctx.fillText(`${totalHoursNum}`, width - 72, topY + (aspectRatio === "story" ? 68 : 55));
 
-      ctx.fillStyle = "#64748B";
-      ctx.font = '600 24px "Urbanist", sans-serif';
-      ctx.fillText("hours", width - 72, topY + 104);
+      ctx.fillStyle = "#7A8594";
+      ctx.font = `600 ${aspectRatio === "story" ? 24 : aspectRatio === "portrait" ? 20 : 17}px "Urbanist", sans-serif`;
+      ctx.fillText("hours", width - 72, topY + (aspectRatio === "story" ? 104 : 85));
 
-      // Floating 3D Island (NO border, NO card container, exactly like Forest!)
-      const imgSize = aspectRatio === "story" ? 820 : aspectRatio === "portrait" ? 640 : 490;
+      // Rounded White Card (Container for 3D Island & Tag Donut Chart)
+      const cardW = width - 120;
+      const cardX = 60;
+      const cardY = topY + (aspectRatio === "story" ? 180 : aspectRatio === "portrait" ? 140 : 115);
+      const cardH = height - cardY - (aspectRatio === "story" ? 105 : aspectRatio === "portrait" ? 80 : 65);
+
+      ctx.save();
+      ctx.fillStyle = "#FFFFFF";
+      drawRoundedRect(ctx, cardX, cardY, cardW, cardH, 44);
+      ctx.fill();
+      ctx.strokeStyle = "#D8DCE3";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.restore();
+
+      // Floating 3D Island (Placed inside upper half of white card)
+      const islandH = cardH * (aspectRatio === "story" ? 0.53 : aspectRatio === "portrait" ? 0.51 : 0.49);
+      const imgSize = Math.min(cardW * 0.9, islandH * 1.05);
       const imgX = (width - imgSize) / 2;
-      const imgY = aspectRatio === "story" ? 280 : aspectRatio === "portrait" ? 210 : 170;
+      const imgY = cardY + (islandH - imgSize) / 2 + 10;
 
       if (snapshotUrl) {
         await new Promise<void>((resolve) => {
@@ -563,109 +642,174 @@ export function ShareSnapshotModal({
         });
       }
 
-      // Bottom Card: Focused Time Distribution (Bar Chart)
-      const cardW = 936;
-      const cardH = aspectRatio === "story" ? 560 : aspectRatio === "portrait" ? 430 : 340;
-      const cardX = (width - cardW) / 2;
-      const cardY = imgY + imgSize + (aspectRatio === "story" ? 50 : 30);
-
-      drawForestBarChart(ctx, cardX, cardY, cardW, cardH, dailyFocusDistribution, aspectRatio);
+      // Lower Section of White Card: Tag Distribution Donut Chart + Legend
+      const donutY = cardY + islandH;
+      const donutH = cardH - islandH - 20;
+      drawForestTagDonutChart(ctx, cardX + 16, donutY, cardW - 32, donutH, tagStats);
 
       // Minimalist Brand Footer (STRICTLY "Rimba" - NO tree icon!)
       ctx.textAlign = "center";
-      ctx.fillStyle = "#94A3B8";
-      ctx.font = '700 22px "Urbanist", sans-serif';
-      ctx.fillText("Rimba", width / 2, height - 36);
+      ctx.fillStyle = "#7A8594";
+      ctx.font = '700 24px "Urbanist", sans-serif';
+      ctx.fillText("Rimba", width / 2, height - (aspectRatio === "story" ? 42 : 28));
 
     } else {
       // =====================================================================
-      // STYLE 3: STORY ARTWORK CARD (White Background, Clean Poster & Typography)
+      // STYLE 3: STORY ARTWORK CARD (Style 1: Cinematic Lore Poster)
+      // Full-bleed artwork with dark gradient overlays, ALL fonts strictly white!
       // =====================================================================
-      ctx.fillStyle = "#FFFFFF";
-      ctx.fillRect(0, 0, width, height);
 
-      // Top Hero Story Artwork Card
-      const imgW = width - 120;
-      const imgH = aspectRatio === "story" ? 1040 : aspectRatio === "portrait" ? 740 : 540;
-      const imgX = 60;
-      const imgY = 60;
-
+      // 1. Full-Bleed Chapter Artwork (highestUnlockedStory.image)
       await new Promise<void>((resolve) => {
         const img = new Image();
         img.onload = () => {
-          ctx.save();
-          drawRoundedRect(ctx, imgX, imgY, imgW, imgH, 44);
-          ctx.clip();
-          ctx.drawImage(img, imgX, imgY, imgW, imgH);
-
-          // Deep bottom gradient for typography contrast
-          const ovGrad = ctx.createLinearGradient(0, imgY + imgH * 0.45, 0, imgY + imgH);
-          ovGrad.addColorStop(0, "rgba(0,0,0,0)");
-          ovGrad.addColorStop(1, "rgba(0,0,0,0.92)");
-          ctx.fillStyle = ovGrad;
-          ctx.fillRect(imgX, imgY, imgW, imgH);
-          ctx.restore();
-
-          // Floating Typography on Artwork
-          ctx.textAlign = "center";
-          ctx.fillStyle = "#6EE7B7";
-          ctx.font = '700 28px "Urbanist", sans-serif';
-          ctx.fillText("TOTAL FOCUS TIME", width / 2, imgY + imgH - 170);
-
-          ctx.fillStyle = "#FFFFFF";
-          ctx.font = '800 84px "Urbanist", sans-serif';
-          ctx.fillText(
-            totalHoursNum >= 1 ? `${totalHoursNum} Hours` : `${periodStats.totalMinutes} Minutes`,
-            width / 2,
-            imgY + imgH - 85,
-          );
-
-          ctx.fillStyle = "rgba(255, 255, 255, 0.92)";
-          ctx.font = '500 24px "Urbanist", sans-serif';
-          const compareText =
-            language === "en"
-              ? `Your total focus was ${regionalBonusHours} hours more than average of others in your region! Amazing!`
-              : `Total fokusmu ${regionalBonusHours} jam lebih banyak dari rata-rata penjaga suaka lainnya! Luar biasa!`;
-          ctx.fillText(compareText, width / 2, imgY + imgH - 30);
-
+          const imgAspect = img.width / img.height;
+          const targetAspect = width / height;
+          let sx = 0, sy = 0, sw = img.width, sh = img.height;
+          if (imgAspect > targetAspect) {
+            sw = img.height * targetAspect;
+            sx = (img.width - sw) / 2;
+          } else {
+            sh = img.width / targetAspect;
+            sy = (img.height - sh) / 2;
+          }
+          ctx.drawImage(img, sx, sy, sw, sh, 0, 0, width, height);
           resolve();
         };
+        img.onerror = () => resolve();
         img.src = highestUnlockedStory.image;
       });
 
-      // Lower Section on White Background: Focus Type & Archetype
-      const lowerY = imgY + imgH + (aspectRatio === "story" ? 70 : 45);
+      // 2. Top Dark Gradient Fade (for white text legibility)
+      const topY = aspectRatio === "story" ? 140 : aspectRatio === "portrait" ? 110 : 90;
+      const topFadeH = topY + 120;
+      const topFade = ctx.createLinearGradient(0, 0, 0, topFadeH);
+      topFade.addColorStop(0, "rgba(0, 0, 0, 0.65)");
+      topFade.addColorStop(1, "rgba(0, 0, 0, 0)");
+      ctx.fillStyle = topFade;
+      ctx.fillRect(0, 0, width, topFadeH);
+
+      // Top Left: 2026 / Rimba Chronicle / Year in Review (ALL WHITE)
+      const titleSize = aspectRatio === "story" ? 68 : aspectRatio === "portrait" ? 56 : 46;
+      const subSize = aspectRatio === "story" ? 26 : aspectRatio === "portrait" ? 22 : 19;
+      const topGap = aspectRatio === "square" ? 30 : 42;
+
       ctx.textAlign = "left";
-      ctx.fillStyle = "#0F172A";
-      ctx.font = '800 46px "Urbanist", sans-serif';
-      ctx.fillText("Focus Type", 80, lowerY);
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = `800 ${titleSize}px "Urbanist", -apple-system, sans-serif`;
+      ctx.fillText("2026", 72, topY);
 
-      ctx.fillStyle = "#475569";
-      ctx.font = '500 25px "Urbanist", sans-serif';
-      ctx.fillText(
-        "You are an Evergreen. You have the ability to stay focused throughout",
-        80,
-        lowerY + 52,
-      );
-      ctx.fillText(
-        "the day no matter if it is the sun or moon hanging in the sky!",
-        80,
-        lowerY + 92,
-      );
+      ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+      ctx.font = `700 ${subSize}px "Urbanist", sans-serif`;
+      ctx.fillText("Rimba Chronicle", 72, topY + topGap);
+      ctx.font = `600 ${subSize - 3}px "Urbanist", sans-serif`;
+      ctx.fillText("Year in Review", 72, topY + topGap + (aspectRatio === "square" ? 24 : 30));
 
-      // Highlights Row
-      ctx.fillStyle = "#047857";
-      ctx.font = '700 26px "Urbanist", sans-serif';
-      ctx.fillText(`Hari Terfokus: ${mostFocusedDay}`, 80, lowerY + 160);
-
+      // Top Right: Chapter Number & Title (ALL WHITE)
       ctx.textAlign = "right";
-      ctx.fillText(`Jam Emas: ${circadianData.peakWindowLabel || "10:00 – 12:00"}`, width - 80, lowerY + 160);
+      ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
+      ctx.font = `700 ${aspectRatio === "story" ? 24 : aspectRatio === "portrait" ? 20 : 17}px "Urbanist", sans-serif`;
+      ctx.fillText(`CH. ${highestUnlockedStory.chapterNumber || 1}`, width - 72, topY);
 
-      // Minimalist Brand Footer (STRICTLY "Rimba" - NO tree icon!)
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = `800 ${aspectRatio === "story" ? 34 : aspectRatio === "portrait" ? 28 : 23}px "Urbanist", sans-serif`;
+      ctx.fillText(highestUnlockedStory.title, width - 72, topY + topGap);
+
+      // 3. Bottom Dark Gradient Overlay
+      const gradH = aspectRatio === "story" ? 760 : aspectRatio === "portrait" ? 580 : 460;
+      const gradY = height - gradH;
+      const fadeGrad = ctx.createLinearGradient(0, gradY, 0, height);
+      fadeGrad.addColorStop(0, "rgba(0, 0, 0, 0)");
+      fadeGrad.addColorStop(0.3, "rgba(0, 0, 0, 0.7)");
+      fadeGrad.addColorStop(0.7, "rgba(0, 0, 0, 0.92)");
+      fadeGrad.addColorStop(1, "rgba(0, 0, 0, 0.98)");
+      ctx.fillStyle = fadeGrad;
+      ctx.fillRect(0, gradY, width, gradH);
+
+      // Focus Metrics (ALL WHITE)
+      const focusLabelY = gradY + (aspectRatio === "story" ? 110 : aspectRatio === "portrait" ? 85 : 70);
+      const focusHoursY = focusLabelY + (aspectRatio === "story" ? 90 : aspectRatio === "portrait" ? 70 : 56);
+      const compY = focusHoursY + (aspectRatio === "story" ? 64 : aspectRatio === "portrait" ? 50 : 40);
+
       ctx.textAlign = "center";
-      ctx.fillStyle = "#94A3B8";
-      ctx.font = '700 22px "Urbanist", sans-serif';
-      ctx.fillText("Rimba", width / 2, height - 36);
+      ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
+      ctx.font = `700 ${aspectRatio === "story" ? 24 : aspectRatio === "portrait" ? 20 : 16}px "Urbanist", sans-serif`;
+      ctx.fillText("TOTAL FOCUS TIME", width / 2, focusLabelY);
+
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = `900 ${aspectRatio === "story" ? 92 : aspectRatio === "portrait" ? 72 : 56}px "Urbanist", sans-serif`;
+      const hoursText = totalHoursNum >= 1 ? `${totalHoursNum} hours` : `${periodStats.totalMinutes} mins`;
+      ctx.fillText(hoursText, width / 2, focusHoursY);
+
+      ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+      ctx.font = `500 ${aspectRatio === "story" ? 24 : aspectRatio === "portrait" ? 19 : 15}px "Urbanist", sans-serif`;
+      const compText = language === "en"
+        ? `Your total focus was ${regionalBonusHours} hours more than average of others in your region! Amazing!`
+        : `Total fokusmu ${regionalBonusHours} jam lebih banyak dari rata-rata penjaga suaka lainnya! Luar biasa!`;
+      ctx.fillText(compText, width / 2, compY);
+
+      // Two-Column Info Row (ALL WHITE)
+      const rowDividerY = compY + (aspectRatio === "story" ? 55 : aspectRatio === "portrait" ? 42 : 32);
+      ctx.beginPath();
+      ctx.moveTo(80, rowDividerY);
+      ctx.lineTo(width - 80, rowDividerY);
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Vertical mid divider
+      const colMidX = width / 2;
+      const rowHeight = aspectRatio === "story" ? 150 : aspectRatio === "portrait" ? 120 : 95;
+      ctx.beginPath();
+      ctx.moveTo(colMidX, rowDividerY + 16);
+      ctx.lineTo(colMidX, rowDividerY + rowHeight);
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      const textStartY = rowDividerY + (aspectRatio === "story" ? 50 : aspectRatio === "portrait" ? 40 : 32);
+      const boxTitleSize = aspectRatio === "story" ? 26 : aspectRatio === "portrait" ? 22 : 18;
+      const boxValSize = aspectRatio === "story" ? 26 : aspectRatio === "portrait" ? 22 : 17;
+      const boxDescSize = aspectRatio === "story" ? 20 : aspectRatio === "portrait" ? 16 : 13;
+
+      // Col 1: Focus Type
+      const col1X = 84;
+      ctx.textAlign = "left";
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = `800 ${boxTitleSize}px "Urbanist", sans-serif`;
+      ctx.fillText("Focus Type", col1X, textStartY);
+
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = `700 ${boxValSize}px "Urbanist", sans-serif`;
+      ctx.fillText("Evergreen Guardian", col1X, textStartY + (aspectRatio === "story" ? 40 : 30));
+
+      ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
+      ctx.font = `500 ${boxDescSize}px "Urbanist", sans-serif`;
+      const descText = language === "en"
+        ? "Focused throughout the day, steady like the pines."
+        : "Fokus konsisten sepanjang hari bagai pinus abadi.";
+      ctx.fillText(descText, col1X, textStartY + (aspectRatio === "story" ? 78 : 58));
+
+      // Col 2: Hari Terfokus
+      const col2X = colMidX + 36;
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = `800 ${boxTitleSize}px "Urbanist", sans-serif`;
+      ctx.fillText(language === "en" ? "Top Day" : "Hari Terfokus", col2X, textStartY);
+
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = `800 ${boxValSize + 4}px "Urbanist", sans-serif`;
+      ctx.fillText(mostFocusedDay, col2X, textStartY + (aspectRatio === "story" ? 40 : 30));
+
+      ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
+      ctx.font = `500 ${boxDescSize}px "Urbanist", sans-serif`;
+      const peakLabel = `Jam Emas: ${circadianData.peakWindowLabel || "10:00 – 12:00"}`;
+      ctx.fillText(peakLabel, col2X, textStartY + (aspectRatio === "story" ? 78 : 58));
+
+      // 4. Footer Watermark: STRICTLY "Rimba" (NO tree icon!)
+      ctx.textAlign = "center";
+      ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+      ctx.font = '700 24px "Urbanist", sans-serif';
+      ctx.fillText("Rimba", width / 2, height - (aspectRatio === "story" ? 45 : 30));
     }
 
     return new Promise((resolve) => {
@@ -742,7 +886,7 @@ export function ShareSnapshotModal({
     soundManager.playPop();
     hapticLight();
     const summaryText =
-      cardTheme === "forest"
+      cardTheme === "sanctuary"
         ? `🌲 Rimba Sanctuary Year in Review · 2026\n⏱️ ${totalHoursNum} Jam Fokus (+${regionalBonusHours}h vs Rata-rata)\n🌿 Pohon Terfavorit: ${favoriteTreeSpecies} · Hari Terfokus: ${mostFocusedDay}\nrimba.app`
         : cardTheme === "diorama"
         ? `🌿 Rimba Diorama · ${forestDateText}\n⏱️ ${totalHoursNum} Jam Fokus · 🌲 ${treesCount} Flora · 🥀 ${stumpsCount} Layu\n🔥 ${analytics.currentStreak} Hari Beruntun · rimba.app`
@@ -784,8 +928,8 @@ export function ShareSnapshotModal({
               {t.shareModal.title}
             </h2>
             <span className="text-[11.5px] font-medium text-[#4C7567]">
-              {cardTheme === "forest"
-                ? "Forest Review"
+              {cardTheme === "sanctuary"
+                ? "Sanctuary Review"
                 : cardTheme === "diorama"
                 ? "3D Diorama"
                 : "Story Lore"}
@@ -805,22 +949,22 @@ export function ShareSnapshotModal({
           </button>
         </div>
 
-        {/* 1. Card Style Selector (3 Tabs: Forest Review vs Diorama vs Story) */}
+        {/* 1. Card Style Selector (3 Tabs: Sanctuary Review vs Diorama vs Story) */}
         <div className="rounded-2xl p-1 border border-[#0D3528]/8 bg-[#0D3528]/5 grid grid-cols-3 gap-1">
           <button
             type="button"
             onClick={() => {
               soundManager.playPop();
               hapticLight();
-              setCardTheme("forest");
+              setCardTheme("sanctuary");
             }}
             className={`py-1.5 px-1.5 rounded-xl text-[11px] transition-all cursor-pointer text-center font-medium ${
-              cardTheme === "forest"
+              cardTheme === "sanctuary"
                 ? "bg-[#187557] text-white shadow-xs font-semibold"
                 : "text-[#4C7567] hover:text-[#0D3528]"
             }`}
           >
-            🌿 Forest
+            🌿 Sanctuary
           </button>
 
           <button
@@ -937,10 +1081,10 @@ export function ShareSnapshotModal({
         </div>
 
         {/* 3. Live Card Preview */}
-        {cardTheme === "forest" ? (
-          /* STYLE 1: FOREST EMERALD REVIEW */
+        {cardTheme === "sanctuary" ? (
+          /* STYLE 1: SANCTUARY REVIEW (Cinematic Nature Poster) */
           <div
-            className={`relative w-full rounded-3xl overflow-hidden p-3.5 text-left flex flex-col justify-between transition-all duration-300 shadow-md bg-gradient-to-b from-[#87D09C] to-[#25734A] text-white ${
+            className={`relative w-full rounded-3xl overflow-hidden p-3.5 text-left flex flex-col justify-between transition-all duration-300 shadow-md ${
               aspectRatio === "story"
                 ? "aspect-[9/15]"
                 : aspectRatio === "portrait"
@@ -948,86 +1092,92 @@ export function ShareSnapshotModal({
                 : "aspect-square"
             }`}
           >
-            {/* Top Header */}
-            <div className="flex items-start justify-between">
+            {/* FULL-BLEED BACKGROUND PHOTO (sharecard.webp) - Bottom aligned */}
+            <img
+              src="/sharecard.webp"
+              alt="Rimba Sanctuary Photo"
+              className="absolute inset-0 w-full h-full object-cover object-bottom pointer-events-none"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = "/story/story_chapter_1.webp";
+              }}
+            />
+
+            {/* Top Fade for Contrast */}
+            <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-black/55 via-black/25 to-transparent pointer-events-none" />
+
+            {/* Top Sky Header (ALL WHITE TEXT) */}
+            <div className="relative z-10 flex items-start justify-between">
               <div>
-                <p className="text-[24px] font-extrabold text-[#144231] tracking-tight leading-none">
+                <p className="text-[26px] font-black text-white tracking-tight leading-none drop-shadow-sm">
                   2026
                 </p>
-                <p className="text-[10px] text-[#144231]/90 font-semibold mt-0.5">
-                  Rimba Sanctuary Year in Review
+                <p className="text-[10px] font-bold text-white/90 mt-0.5 leading-tight drop-shadow-2xs">
+                  Rimba Sanctuary<br />Year in Review
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-[9px] font-medium text-[#144231]/80">
+                <p className="text-[9px] font-bold text-white/80 uppercase tracking-wider drop-shadow-2xs">
                   {language === "en" ? "Favorite Tree" : "Pohon Terfavorit"}
                 </p>
-                <p className="text-[12px] font-extrabold text-[#103B2C] leading-tight">
+                <p className="text-[12.5px] font-black text-white leading-tight drop-shadow-sm">
                   {favoriteTreeSpecies}
                 </p>
               </div>
             </div>
 
-            {/* Center Hero Artwork Frame (sharecard.webp) */}
-            <div className="relative w-full aspect-[16/10] my-auto rounded-2xl overflow-hidden shadow-lg border border-white/40">
-              <img
-                src="/sharecard.webp"
-                alt="Rimba Forest"
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/story/story_chapter_1.webp";
-                }}
-              />
-            </div>
+            {/* Center: Open Tree Nature (Completely Unobstructed) */}
+            <div className="my-auto pointer-events-none" />
 
-            {/* Mid Focus Metrics */}
-            <div className="text-center my-1">
-              <p className="text-[9px] font-bold text-white/90 uppercase tracking-widest">
-                Total Focus Time
-              </p>
-              <p className="text-[26px] font-black text-[#D2FF74] leading-tight drop-shadow-xs my-0.5">
-                {totalHoursNum >= 1 ? `${totalHoursNum} hours` : `${periodStats.totalMinutes} mins`}
-              </p>
-              <p className="text-[8.5px] text-white/95 leading-tight max-w-[280px] mx-auto font-medium">
-                {language === "en"
-                  ? `Your total focus was ${regionalBonusHours} hours more than average in your region! Amazing!`
-                  : `Total fokusmu ${regionalBonusHours} jam lebih banyak dari rata-rata penjaga suaka lainnya! Luar biasa!`}
-              </p>
-            </div>
-
-            {/* Bottom Two-Column Info Card */}
-            <div className="bg-[#0E3B2D]/40 rounded-xl p-2.5 border border-white/20 grid grid-cols-2 gap-2 text-left">
-              <div>
-                <p className="text-[9px] font-bold text-white">Focus Type</p>
-                <p className="text-[9.5px] font-bold text-[#D2FF74] mt-0.5">Evergreen Guardian</p>
-                <p className="text-[7.5px] text-white/85 leading-snug line-clamp-2 mt-0.5">
+            {/* Bottom Grass Fading Section (ALL WHITE TEXT) */}
+            <div className="relative z-10 -mx-3.5 -mb-3.5 px-3.5 pb-3 pt-8 bg-gradient-to-t from-[#081812]/95 via-[#0A261D]/75 to-transparent flex flex-col gap-2">
+              <div className="text-center">
+                <span className="text-[9px] font-bold text-white/85 uppercase tracking-widest">
+                  Total Focus Time
+                </span>
+                <div className="text-[30px] font-black text-white leading-tight drop-shadow-sm my-0.5">
+                  {totalHoursNum >= 1 ? `${totalHoursNum} hours` : `${periodStats.totalMinutes} mins`}
+                </div>
+                <p className="text-[9px] text-white/95 leading-snug max-w-[280px] mx-auto font-medium">
                   {language === "en"
-                    ? "Focused throughout the day, steady like the pines."
-                    : "Fokus konsisten sepanjang hari bagai pinus abadi."}
+                    ? `Your total focus was ${regionalBonusHours} hours more than average in your region! Amazing!`
+                    : `Total fokusmu ${regionalBonusHours} jam lebih banyak dari rata-rata penjaga suaka lainnya! Luar biasa!`}
                 </p>
               </div>
-              <div>
-                <p className="text-[9px] font-bold text-white">
-                  {language === "en" ? "Top Day" : "Hari Terfokus"}
-                </p>
-                <p className="text-[11px] font-extrabold text-[#D2FF74] mt-0.5">{mostFocusedDay}</p>
-                <p className="text-[7.5px] text-white/85 leading-snug mt-0.5">
-                  Jam Emas: {circadianData.peakWindowLabel || "10:00 – 12:00"}
-                </p>
-              </div>
-            </div>
 
-            {/* Clean Watermark (STRICTLY "Rimba", NO tree icon) */}
-            <div className="text-center pt-0.5">
-              <span className="text-[9.5px] text-white/80 font-bold tracking-[0.2em] uppercase">
-                Rimba
-              </span>
+              {/* Two-Column Info Row (ALL WHITE) */}
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/20 text-left">
+                <div className="pr-1.5 border-r border-white/20">
+                  <span className="text-[9px] font-bold text-white">Focus Type</span>
+                  <p className="text-[10px] font-extrabold text-white leading-tight mt-0.5">Evergreen Guardian</p>
+                  <p className="text-[7.5px] text-white/85 leading-tight mt-0.5">
+                    {language === "en"
+                      ? "Focused throughout the day, steady like the pines."
+                      : "Fokus stabil sepanjang hari bagai pinus abadi."}
+                  </p>
+                </div>
+                <div className="pl-1.5">
+                  <span className="text-[9px] font-bold text-white">
+                    {language === "en" ? "Top Day" : "Hari Terfokus"}
+                  </span>
+                  <p className="text-[11px] font-extrabold text-white leading-tight mt-0.5">{mostFocusedDay}</p>
+                  <p className="text-[7.5px] text-white/85 leading-tight mt-0.5">
+                    Jam Emas: {circadianData.peakWindowLabel || "10:00 – 12:00"}
+                  </p>
+                </div>
+              </div>
+
+              {/* Clean Watermark (STRICTLY "Rimba", NO tree icon) */}
+              <div className="text-center pt-0.5">
+                <span className="text-[9.5px] text-white/80 font-bold tracking-[0.25em] uppercase">
+                  Rimba
+                </span>
+              </div>
             </div>
           </div>
         ) : cardTheme === "diorama" ? (
           /* STYLE 2: DIORAMA PREVIEW CARD (Exact Forest App Style) */
           <div
-            className={`relative w-full rounded-3xl overflow-hidden border border-slate-200/90 p-3.5 text-left flex flex-col justify-between transition-all duration-300 shadow-md bg-[#F8FAFC] ${
+            className={`relative w-full rounded-3xl overflow-hidden border border-slate-200/90 p-3 text-left flex flex-col justify-between transition-all duration-300 shadow-md bg-[#F0F1F3] ${
               aspectRatio === "story"
                 ? "aspect-[9/15]"
                 : aspectRatio === "portrait"
@@ -1038,78 +1188,158 @@ export function ShareSnapshotModal({
             {/* Top Header */}
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-[13px] font-bold text-[#0F172A] tracking-tight font-mono">
+                <p className="text-[12.5px] font-semibold text-[#64748B] tracking-tight">
                   {forestDateText}
                 </p>
-                <p className="text-[10px] text-[#64748B] font-medium">
-                  Total Focused Time
-                </p>
+                <div className="text-[9px] text-[#7A8594] font-medium leading-[1.15] mt-1">
+                  <p>Total</p>
+                  <p>Focused</p>
+                  <p>Time</p>
+                </div>
               </div>
               <div className="text-right">
-                <p className="text-[10px] font-semibold text-[#64748B]">
-                  🌲 {treesCount} &nbsp; 🥀 {stumpsCount}
+                <p className="text-[9.5px] font-medium text-[#7A8594]">
+                  🌱 {treesCount} &nbsp; 🥀 {stumpsCount}
                 </p>
-                <p className="text-[20px] font-extrabold text-[#0F172A] leading-tight">
-                  {totalHoursNum} <span className="text-[10.5px] font-medium text-[#64748B]">hours</span>
+                <p className="text-[22px] font-extrabold text-[#555E6D] leading-none mt-1">
+                  {totalHoursNum}
                 </p>
+                <p className="text-[9.5px] text-[#7A8594] font-medium">hours</p>
               </div>
             </div>
 
-            {/* Floating 3D Island (NO border, NO card container, pure free float) */}
-            <div className="w-[78%] mx-auto aspect-square my-auto flex items-center justify-center relative">
-              {snapshotUrl ? (
-                <img src={snapshotUrl} alt="3D Island" className="w-full h-full object-contain filter drop-shadow-sm" />
-              ) : (
-                <span className="text-[10px] text-slate-400 font-normal">
-                  {t.shareModal.takingSnapshot}
-                </span>
-              )}
-            </div>
-
-            {/* Bottom Card: Focused Time Distribution (Bar Chart) */}
-            <div className="p-2.5 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col gap-1.5">
-              <div className="flex items-center justify-between text-[8px] text-[#94A3B8]">
-                <span className="font-medium">minute</span>
-                <span className="font-semibold">Focused Time Distribution</span>
+            {/* Rounded White Card Container: Holds 3D Island & Donut Chart */}
+            <div className="relative w-full flex-1 rounded-2xl bg-white border border-[#D8DCE3] p-2 flex flex-col justify-between shadow-2xs my-1 overflow-hidden">
+              {/* Upper: 3D Island WebGL Snapshot */}
+              <div className="w-[62%] mx-auto aspect-square flex items-center justify-center relative my-auto">
+                {snapshotUrl ? (
+                  <img
+                    src={snapshotUrl}
+                    alt="3D Island"
+                    className="w-full h-full object-contain filter drop-shadow-xs"
+                  />
+                ) : (
+                  <span className="text-[10px] text-slate-400 font-normal">
+                    {t.shareModal.takingSnapshot}
+                  </span>
+                )}
               </div>
 
-              {/* Minimal SVG Bar Chart */}
-              <div className="h-14 w-full flex items-end justify-between gap-1 pt-1 border-b border-slate-100 pb-1">
-                {dailyFocusDistribution.slice(-14).map((d, i) => {
-                  const maxM = Math.max(60, ...dailyFocusDistribution.map((m) => m.minutes));
-                  const heightPct = Math.max(8, (d.minutes / maxM) * 100);
-                  return (
-                    <div key={i} className="flex-1 flex flex-col items-center h-full justify-end group">
-                      <div
-                        className="w-full rounded-t-xs transition-all"
-                        style={{
-                          height: `${heightPct}%`,
-                          backgroundColor: d.minutes > 0 ? "#63A393" : "#F1F5F9",
-                        }}
-                      />
+              {/* Lower: Tag Distribution Donut Chart + Legend */}
+              <div className="flex items-center gap-2 pt-1 border-t border-slate-100">
+                {/* SVG Donut Chart */}
+                <svg viewBox="0 0 160 160" className="w-[84px] h-[84px] shrink-0">
+                  {(() => {
+                    let currentAngle = -90;
+                    const totalM = Math.max(1, tagStats.reduce((a, b) => a + b.minutes, 0));
+                    const cx = 80, cy = 80, r = 62, innerR = 34;
+
+                    return (
+                      <>
+                        {tagStats.map((item, idx) => {
+                          const sliceAngle = (item.minutes / totalM) * 360;
+                          const startA = currentAngle;
+                          const endA = currentAngle + sliceAngle;
+                          currentAngle = endA;
+
+                          const toRad = (deg: number) => (deg * Math.PI) / 180;
+                          const x1 = cx + r * Math.cos(toRad(startA));
+                          const y1 = cy + r * Math.sin(toRad(startA));
+                          const x2 = cx + r * Math.cos(toRad(endA));
+                          const y2 = cy + r * Math.sin(toRad(endA));
+                          const ix1 = cx + innerR * Math.cos(toRad(endA));
+                          const iy1 = cy + innerR * Math.sin(toRad(endA));
+                          const ix2 = cx + innerR * Math.cos(toRad(startA));
+                          const iy2 = cy + innerR * Math.sin(toRad(startA));
+                          const largeArc = sliceAngle > 180 ? 1 : 0;
+
+                          const d = `M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} L ${ix1} ${iy1} A ${innerR} ${innerR} 0 ${largeArc} 0 ${ix2} ${iy2} Z`;
+
+                          const midA = startA + sliceAngle / 2;
+                          const textR = (r + innerR) / 2;
+                          const tx = cx + textR * Math.cos(toRad(midA));
+                          const ty = cy + textR * Math.sin(toRad(midA));
+
+                          return (
+                            <g key={idx}>
+                              <path d={d} fill={item.color} stroke="#FFFFFF" strokeWidth="1.5" />
+                              {item.pct >= 10 && (
+                                <text
+                                  x={tx}
+                                  y={ty}
+                                  textAnchor="middle"
+                                  dominantBaseline="central"
+                                  fill="#FFFFFF"
+                                  fontSize="7.5"
+                                  fontWeight="bold"
+                                >
+                                  {item.pct}%
+                                </text>
+                              )}
+                            </g>
+                          );
+                        })}
+                        <text
+                          x={cx}
+                          y={cy - 4}
+                          textAnchor="middle"
+                          dominantBaseline="central"
+                          fill="#7A8594"
+                          fontSize="8"
+                          fontWeight="600"
+                        >
+                          Tag
+                        </text>
+                        <text
+                          x={cx}
+                          y={cy + 6}
+                          textAnchor="middle"
+                          dominantBaseline="central"
+                          fill="#7A8594"
+                          fontSize="7"
+                          fontWeight="600"
+                        >
+                          Distribution
+                        </text>
+                      </>
+                    );
+                  })()}
+                </svg>
+
+                {/* Tag Legend List */}
+                <div className="flex-1 min-w-0 flex flex-col justify-center space-y-1">
+                  {tagStats.slice(0, 5).map((item, idx) => (
+                    <div key={idx} className="flex items-center justify-between text-[7.5px] leading-tight">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span
+                          className="w-1.5 h-1.5 rounded-full shrink-0"
+                          style={{ backgroundColor: item.color }}
+                        />
+                        <span className="font-semibold text-[#555E6D] truncate lowercase">
+                          {item.name}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0 pl-1 font-mono">
+                        <span className="text-[#7A8594]">{item.pct}%</span>
+                        <span className="font-semibold text-[#555E6D]">{item.hours} H</span>
+                      </div>
                     </div>
-                  );
-                })}
-              </div>
-
-              <div className="flex items-center justify-between text-[7px] text-[#94A3B8] font-mono px-0.5">
-                <span>{dailyFocusDistribution[0]?.dateLabel}</span>
-                <span>{dailyFocusDistribution[Math.floor(dailyFocusDistribution.length / 2)]?.dateLabel}</span>
-                <span>{dailyFocusDistribution[dailyFocusDistribution.length - 1]?.dateLabel}</span>
+                  ))}
+                </div>
               </div>
             </div>
 
             {/* Clean Watermark (STRICTLY "Rimba", NO tree icon) */}
             <div className="text-center pt-0.5">
-              <span className="text-[9.5px] text-[#94A3B8] font-bold tracking-[0.2em] uppercase">
+              <span className="text-[9.5px] text-[#7A8594] font-bold tracking-[0.2em] uppercase">
                 Rimba
               </span>
             </div>
           </div>
         ) : (
-          /* STYLE 3: STORY ARTWORK CARD (White Background, Clean Poster & Typography) */
+          /* STYLE 3: STORY ARTWORK CARD (Style 1: Cinematic Lore Poster) */
           <div
-            className={`relative w-full rounded-3xl overflow-hidden border border-slate-200/90 p-3.5 text-left flex flex-col justify-between transition-all duration-300 shadow-md bg-white ${
+            className={`relative w-full rounded-3xl overflow-hidden p-3.5 text-left flex flex-col justify-between transition-all duration-300 shadow-md ${
               aspectRatio === "story"
                 ? "aspect-[9/15]"
                 : aspectRatio === "portrait"
@@ -1117,53 +1347,86 @@ export function ShareSnapshotModal({
                 : "aspect-square"
             }`}
           >
-            {/* Top Rounded Artwork Poster with Floating Focus Hours */}
-            <div className="relative w-full aspect-[9/10] rounded-2xl overflow-hidden shadow-sm border border-slate-100">
-              <img
-                src={highestUnlockedStory.image}
-                alt={highestUnlockedStory.title}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/story/story_chapter_1.webp";
-                }}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-none" />
+            {/* FULL-BLEED CHAPTER ARTWORK */}
+            <img
+              src={highestUnlockedStory.image}
+              alt={highestUnlockedStory.title}
+              className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = "/story/story_chapter_1.webp";
+              }}
+            />
 
-              {/* Floating Typography on Artwork */}
-              <div className="absolute bottom-3 left-3 right-3 text-center">
-                <p className="text-[10px] font-bold text-[#6EE7B7] uppercase tracking-wider">
+            {/* Top Fade for Contrast */}
+            <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-black/65 via-black/30 to-transparent pointer-events-none" />
+
+            {/* Top Header (ALL WHITE TEXT) */}
+            <div className="relative z-10 flex items-start justify-between">
+              <div>
+                <p className="text-[26px] font-black text-white tracking-tight leading-none drop-shadow-sm">
+                  2026
+                </p>
+                <p className="text-[10px] font-bold text-white/90 mt-0.5 leading-tight drop-shadow-2xs">
+                  Rimba Chronicle<br />Year in Review
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-[9px] font-bold text-white/80 uppercase tracking-wider drop-shadow-2xs">
+                  CH. {highestUnlockedStory.chapterNumber || 1}
+                </p>
+                <p className="text-[12.5px] font-black text-white leading-tight drop-shadow-sm">
+                  {highestUnlockedStory.title}
+                </p>
+              </div>
+            </div>
+
+            {/* Center: Open Nature Art */}
+            <div className="my-auto pointer-events-none" />
+
+            {/* Bottom Section with Dark Fade (ALL WHITE TEXT) */}
+            <div className="relative z-10 -mx-3.5 -mb-3.5 px-3.5 pb-3 pt-8 bg-gradient-to-t from-black/95 via-black/75 to-transparent flex flex-col gap-2">
+              <div className="text-center">
+                <span className="text-[9px] font-bold text-white/85 uppercase tracking-widest">
                   Total Focus Time
-                </p>
-                <p className="text-[26px] font-extrabold text-white tracking-tight my-0.5 leading-tight">
-                  {totalHoursNum >= 1 ? `${totalHoursNum} Hours` : `${periodStats.totalMinutes} Minutes`}
-                </p>
-                <p className="text-[8.5px] text-white/90 leading-tight max-w-[240px] mx-auto font-medium">
+                </span>
+                <div className="text-[30px] font-black text-white leading-tight drop-shadow-sm my-0.5">
+                  {totalHoursNum >= 1 ? `${totalHoursNum} hours` : `${periodStats.totalMinutes} mins`}
+                </div>
+                <p className="text-[9px] text-white/95 leading-snug max-w-[280px] mx-auto font-medium">
                   {language === "en"
                     ? `Your total focus was ${regionalBonusHours} hours more than average in your region! Amazing!`
-                    : `Total fokusmu ${regionalBonusHours} jam lebih banyak dari rata-rata penjaga lainnya! Luar biasa!`}
+                    : `Total fokusmu ${regionalBonusHours} jam lebih banyak dari rata-rata penjaga suaka lainnya! Luar biasa!`}
                 </p>
               </div>
-            </div>
 
-            {/* Lower Details on Clean White Background */}
-            <div className="py-1 space-y-1">
-              <h3 className="text-[13px] font-extrabold text-[#0F172A] leading-tight">
-                Focus Type
-              </h3>
-              <p className="text-[9.5px] text-[#475569] leading-snug">
-                You are an Evergreen. You have the ability to stay focused throughout the day no matter if it is the sun or moon hanging in the sky!
-              </p>
-              <div className="flex items-center justify-between pt-1 text-[9px] font-bold text-[#047857]">
-                <span>Hari Terfokus: {mostFocusedDay}</span>
-                <span>Jam Emas: {circadianData.peakWindowLabel || "10:00 – 12:00"}</span>
+              {/* Two-Column Info Row (ALL WHITE) */}
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/20 text-left">
+                <div className="pr-1.5 border-r border-white/20">
+                  <span className="text-[9px] font-bold text-white">Focus Type</span>
+                  <p className="text-[10px] font-extrabold text-white leading-tight mt-0.5">Evergreen Guardian</p>
+                  <p className="text-[7.5px] text-white/85 leading-tight mt-0.5">
+                    {language === "en"
+                      ? "Focused throughout the day, steady like the pines."
+                      : "Fokus konsisten sepanjang hari bagai pinus abadi."}
+                  </p>
+                </div>
+                <div className="pl-1.5">
+                  <span className="text-[9px] font-bold text-white">
+                    {language === "en" ? "Top Day" : "Hari Terfokus"}
+                  </span>
+                  <p className="text-[11px] font-extrabold text-white leading-tight mt-0.5">{mostFocusedDay}</p>
+                  <p className="text-[7.5px] text-white/85 leading-tight mt-0.5">
+                    Jam Emas: {circadianData.peakWindowLabel || "10:00 – 12:00"}
+                  </p>
+                </div>
               </div>
-            </div>
 
-            {/* Clean Watermark (STRICTLY "Rimba", NO tree icon) */}
-            <div className="text-center pt-0.5">
-              <span className="text-[9.5px] text-[#94A3B8] font-bold tracking-[0.2em] uppercase">
-                Rimba
-              </span>
+              {/* Clean Watermark (STRICTLY "Rimba", NO tree icon) */}
+              <div className="text-center pt-0.5">
+                <span className="text-[9.5px] text-white/80 font-bold tracking-[0.25em] uppercase">
+                  Rimba
+                </span>
+              </div>
             </div>
           </div>
         )}

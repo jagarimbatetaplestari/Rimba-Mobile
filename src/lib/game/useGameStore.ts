@@ -388,6 +388,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({
       saveData: updatedData,
       relocatingObjectId: null,
+      hoveredGridTile: null,
     });
 
     get().notify('🌿 Posisi objek berhasil dipindahkan (Gratis)!', 'success');
@@ -1407,14 +1408,12 @@ export const useGameStore = create<GameState>((set, get) => ({
       pioneer_completed_ids: Array.from(pioneerSet),
     };
 
-    // Continuous Placement: Keep item selected as long as the user can afford another copy!
-    const stillAffordable = canAfford(updatedLedger, cost);
-
     saveSaveData(updatedData);
     set({
       saveData: updatedData,
-      selectedTool: stillAffordable ? item.type : null,
-      selectedCatalogItem: stillAffordable ? item : null,
+      selectedTool: null,
+      selectedCatalogItem: null,
+      hoveredGridTile: null,
     });
 
     if (isBridge && isExistingRiver) {
@@ -1424,9 +1423,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       );
     } else {
       get().notify(
-        stillAffordable
-          ? `🌿 ${item.name} ditempatkan! (-${cost} Soul) • Klik petak lain untuk lanjut menaruh atau tekan Esc.`
-          : `🌿 ${item.name} ditempatkan! (-${cost} Soul)`,
+        `🌿 ${item.name} berhasil ditempatkan! (-${cost} Soul)`,
         'success'
       );
     }

@@ -6,6 +6,8 @@ import { BUILD_CATALOG, CatalogItem, GAME_CONFIG } from "@/lib/game/config";
 import {
   getUnlockedTilesSet,
   getLandExpansionZoneInfo,
+  isTileUnlocked,
+  isTileOccupied,
 } from "@/lib/game/worldRules";
 import {
   Waves,
@@ -86,6 +88,119 @@ export function NatureWorkshopSheet() {
   );
   const hasBulldozerThreat = Boolean(world.bulldozer?.active);
   const sealedTilesCount = world.sealed_tiles?.length || 0;
+
+  const placementValidation = useMemo(() => {
+    if (!hoveredGridTile) {
+      return {
+        isValid: false,
+        reason: t.workshop.selectTilePrompt,
+        isBridgeOverRiver: false,
+      };
+    }
+
+    const { grid_x, grid_y } = hoveredGridTile;
+
+    if (!isTileUnlocked(grid_x, grid_y, unlockedSet)) {
+      return {
+        isValid: false,
+        reason: t.workshop.tileLocked,
+        isBridgeOverRiver: false,
+      };
+    }
+
+    const isSealed = (world.sealed_tiles || []).includes(`${grid_x},${grid_y}`);
+    if (isSealed) {
+      return {
+        isValid: false,
+        reason: t.workshop.tileSealed,
+        isBridgeOverRiver: false,
+      };
+    }
+
+    if (relocatingObjectId) {
+      const otherObjects = worldObjects.filter((o) => o.id !== relocatingObjectId);
+      if (isTileOccupied(grid_x, grid_y, otherObjects)) {
+        return {
+          isValid: false,
+          reason: t.workshop.tileOccupied,
+          isBridgeOverRiver: false,
+        };
+      }
+      return { isValid: true, reason: null, isBridgeOverRiver: false };
+    }
+
+    if (selectedCatalogItem) {
+      const existingObj = worldObjects.find(
+        (o) => o.grid_x === grid_x && o.grid_y === grid_y && o.status !== "marked_for_clearing"
+      );
+      const isBridge =
+        selectedCatalogItem.id.toLowerCase().includes("bridge") ||
+        selectedCatalogItem.model.toLowerCase().includes("bridge");
+      const isRiverOnTile = Boolean(
+        existingObj &&
+        ((existingObj.model_variant || "").toLowerCase().includes("river") ||
+         (existingObj.id || "").toLowerCase().includes("river"))
+      );
+
+      const occupied = existingObj ? !(isBridge && isRiverOnTile) : false;
+      if (occupied) {
+        return {
+          isValid: false,
+          reason: t.workshop.tileOccupied,
+          isBridgeOverRiver: false,
+        };
+      }
+
+      if (gold < selectedCatalogItem.cost) {
+        return {
+          isValid: false,
+          reason: t.workshop.insufficientSoul,
+          isBridgeOverRiver: false,
+        };
+      }
+
+      return {
+        isValid: true,
+        reason: null,
+        isBridgeOverRiver: Boolean(isBridge && isRiverOnTile),
+      };
+    }
+
+    return { isValid: false, reason: null, isBridgeOverRiver: false };
+  }, [
+    hoveredGridTile,
+    unlockedSet,
+    world.sealed_tiles,
+    relocatingObjectId,
+    worldObjects,
+    selectedCatalogItem,
+    gold,
+    t.workshop,
+  ]);
+
+  const handleConfirmPlacement = () => {
+    if (!hoveredGridTile || !placementValidation.isValid) return;
+    soundManager.playPop();
+    hapticMedium();
+
+    if (relocatingObjectId) {
+      const ok = confirmRelocation(
+        hoveredGridTile.grid_x,
+        hoveredGridTile.grid_y
+      );
+      if (ok) soundManager.playPlace();
+    } else if (selectedCatalogItem) {
+      const ok = placeCatalogItem(
+        selectedCatalogItem,
+        hoveredGridTile.grid_x,
+        hoveredGridTile.grid_y
+      );
+      if (ok) {
+        soundManager.playPlace();
+        setSelectedCatalogItem(null);
+      }
+    }
+  };
 
   useEffect(() => {
     const handleWorkshop = (e: Event) => {
@@ -261,21 +376,30 @@ export function NatureWorkshopSheet() {
             bottom: "max(calc(env(safe-area-inset-bottom, 0px) + 84px), 96px)",
           }}
         >
-          <div className="w-full p-3 rounded-2xl border border-white/90 bg-white/92 backdrop-blur-2xl shadow-[0_16px_36px_rgba(20,53,37,0.16)] flex flex-col gap-2.5 text-[#143525]">
-            {/* Top Row: Item Details & Action Buttons */}
+          <div className="w-full p-3.5 rounded-2xl border border-white/90 bg-white/95 backdrop-blur-2xl shadow-[0_16px_38px_rgba(20,53,37,0.18)] flex flex-col gap-2.5 text-[#143525]">
+            {/* Top Row: Item Details & Action Buttons (Putar & Batal) */}
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-9 h-9 rounded-xl bg-[#bfdac8]/50 flex items-center justify-center shrink-0 text-lg shadow-2xs border border-white/80">
+                <div className="w-10 h-10 rounded-xl bg-[#bfdac8]/40 flex items-center justify-center shrink-0 text-xl shadow-2xs border border-white/80">
                   {selectedCatalogItem
                     ? getCatalogItemIcon(selectedCatalogItem)
                     : "🔄"}
                 </div>
                 <div className="flex flex-col min-w-0">
-                  <span className="text-xs font-bold truncate tracking-tight text-[#143525]">
-                    {selectedCatalogItem
-                      ? selectedCatalogItem.name
-                      : t.workshop.moveObjTitle}
-                  </span>
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="text-xs font-bold truncate tracking-tight text-[#143525]">
+                      {selectedCatalogItem
+                        ? selectedCatalogItem.name
+                        : t.workshop.moveObjTitle}
+                    </span>
+                    {selectedCatalogItem && (
+                      <span className="text-[10px] font-semibold text-[#187557] bg-[#187557]/10 px-1.5 py-0.5 rounded-full shrink-0">
+                        {selectedCatalogItem.cost > 0
+                          ? `${selectedCatalogItem.cost} Soul`
+                          : t.common.free}
+                      </span>
+                    )}
+                  </div>
                   <span className="text-[10.5px] text-[#456b57] font-medium">
                     {rotationDegrees}° {t.workshop.rotation}
                   </span>
@@ -290,7 +414,7 @@ export function NatureWorkshopSheet() {
                     hapticLight();
                     rotatePlacement();
                   }}
-                  className="h-8 px-2.5 rounded-full bg-white hover:bg-slate-50 text-[#143525] flex items-center gap-1 text-[11px] font-semibold active:scale-95 transition-all border border-[#143525]/10 shadow-2xs cursor-pointer"
+                  className="h-8 px-2.5 rounded-full bg-white hover:bg-slate-50 text-[#143525] flex items-center gap-1 text-[11px] font-semibold active:scale-95 transition-all border border-[#143525]/12 shadow-2xs cursor-pointer"
                   title="Putar Objek"
                 >
                   <RotateCw className="w-3.5 h-3.5 stroke-[2.2]" />
@@ -313,46 +437,62 @@ export function NatureWorkshopSheet() {
               </div>
             </div>
 
-            {/* Bottom Row: Dynamic placement prompt and quick-place button */}
-            <div className="flex items-center justify-between gap-2 pt-1 border-t border-[#143525]/8 text-[11px]">
-              <span className="text-[#456b57] font-medium truncate">
-                {hoveredGridTile
-                  ? language === "en"
-                    ? `Tile (${hoveredGridTile.grid_x}, ${hoveredGridTile.grid_y}) ready to place`
-                    : `Petak (${hoveredGridTile.grid_x}, ${hoveredGridTile.grid_y}) siap dipasang`
-                  : language === "en"
-                  ? "Tap any tile on island to place"
-                  : "Ketuk petak di pulau untuk memasang"}
-              </span>
+            {/* Middle Row: Status / Hint Indicator */}
+            <div className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl bg-[#143525]/4 text-[11px] border border-[#143525]/6">
+              {!hoveredGridTile ? (
+                <span className="text-[#456b57] font-medium flex items-center gap-1.5 truncate">
+                  <span>📍</span>
+                  <span>{t.workshop.selectTilePrompt}</span>
+                </span>
+              ) : placementValidation.isValid ? (
+                <span className="text-[#125D44] font-semibold flex items-center gap-1.5 truncate">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                  <span>
+                    {placementValidation.isBridgeOverRiver
+                      ? `Petak (${hoveredGridTile.grid_x}, ${hoveredGridTile.grid_y}) • ${t.workshop.tileBridgeReady}`
+                      : t.workshop.tileReady
+                          .replace("{x}", String(hoveredGridTile.grid_x))
+                          .replace("{y}", String(hoveredGridTile.grid_y))}
+                  </span>
+                </span>
+              ) : (
+                <span className="text-rose-600 font-semibold flex items-center gap-1.5 truncate">
+                  <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0" />
+                  <span>
+                    Petak ({hoveredGridTile.grid_x}, {hoveredGridTile.grid_y}): {placementValidation.reason}
+                  </span>
+                </span>
+              )}
 
               {hoveredGridTile && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    soundManager.playPop();
-                    hapticMedium();
-                    if (relocatingObjectId) {
-                      const ok = confirmRelocation(
-                        hoveredGridTile.grid_x,
-                        hoveredGridTile.grid_y
-                      );
-                      if (ok) soundManager.playPlace();
-                    } else if (selectedCatalogItem) {
-                      const ok = placeCatalogItem(
-                        selectedCatalogItem,
-                        hoveredGridTile.grid_x,
-                        hoveredGridTile.grid_y
-                      );
-                      if (ok) soundManager.playPlace();
-                    }
-                  }}
-                  className="py-1 px-3 rounded-full bg-[#187557] hover:bg-[#125D44] text-white font-semibold text-[11px] tracking-tight shadow-xs active:scale-95 transition-all flex items-center gap-1 shrink-0 cursor-pointer"
-                >
-                  <Check className="w-3 h-3 stroke-[2.5]" />
-                  <span>{language === "en" ? "Place" : "Tempatkan"}</span>
-                </button>
+                <span className="text-[10px] text-[#456b57] font-mono shrink-0">
+                  [{hoveredGridTile.grid_x},{hoveredGridTile.grid_y}]
+                </span>
               )}
             </div>
+
+            {/* Bottom Row: Explicit Confirmation Button */}
+            <button
+              type="button"
+              disabled={!hoveredGridTile || !placementValidation.isValid}
+              onClick={handleConfirmPlacement}
+              className={`w-full py-2.5 px-4 rounded-xl font-bold text-xs tracking-tight transition-all flex items-center justify-center gap-2 ${
+                hoveredGridTile && placementValidation.isValid
+                  ? "bg-[#187557] hover:bg-[#125D44] text-white active:scale-[0.98] cursor-pointer shadow-md shadow-[#187557]/25"
+                  : "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200/60"
+              }`}
+            >
+              <Check className="w-4 h-4 stroke-[2.6]" />
+              <span>
+                {!hoveredGridTile
+                  ? (language === "en" ? "Select Tile to Confirm" : "Pilih Petak di Pulau")
+                  : !placementValidation.isValid
+                  ? placementValidation.reason
+                  : relocatingObjectId
+                  ? t.workshop.confirmMove
+                  : t.workshop.confirmPlace}
+              </span>
+            </button>
           </div>
         </div>
       )}

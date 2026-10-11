@@ -18,6 +18,7 @@ import { useGameStore } from '@/lib/game/useGameStore';
 import { canAfford } from '@/lib/game/economy';
 import { soundManager } from '@/lib/audio/sounds';
 import { getManifestItem } from '@/lib/game/assetManifest';
+import { hapticLight } from '@/lib/mobile/nativeBridge';
 
 const EMPTY_SEALED_TILES: string[] = [];
 
@@ -335,6 +336,7 @@ export function GridPlane() {
   const handlePointerDown = (e: { nativeEvent: MouseEvent | TouchEvent | PointerEvent; point: THREE.Vector3; stopPropagation: () => void }) => {
     if (!isInteractingWithGrid) return;
     e.stopPropagation();
+    const isTouch = ('touches' in e.nativeEvent) || ((e as unknown as { pointerType?: string }).pointerType === 'touch');
     const clientX = 'clientX' in e.nativeEvent ? e.nativeEvent.clientX : ((e.nativeEvent as unknown as TouchEvent).touches?.[0]?.clientX || 0);
     const clientY = 'clientY' in e.nativeEvent ? e.nativeEvent.clientY : ((e.nativeEvent as unknown as TouchEvent).touches?.[0]?.clientY || 0);
     pointerDownPosRef.current = {
@@ -342,8 +344,10 @@ export function GridPlane() {
       y: clientY,
       time: Date.now(),
     };
-    const grid = worldToGrid(e.point.x, e.point.z);
-    if (grid) setHoveredTile(grid);
+    if (!isTouch) {
+      const grid = worldToGrid(e.point.x, e.point.z);
+      if (grid) setHoveredTile(grid);
+    }
   };
 
   const handlePointerUp = (e: { nativeEvent: MouseEvent | TouchEvent | PointerEvent; point: THREE.Vector3; stopPropagation: () => void }) => {
@@ -363,8 +367,10 @@ export function GridPlane() {
     }
   };
 
-  const handlePointerMove = (e: { point: THREE.Vector3; stopPropagation: () => void }) => {
+  const handlePointerMove = (e: { nativeEvent?: MouseEvent | TouchEvent | PointerEvent; point: THREE.Vector3; stopPropagation: () => void }) => {
     if (!isInteractingWithGrid) return;
+    const isTouch = e.nativeEvent && (('touches' in e.nativeEvent) || ((e as unknown as { pointerType?: string }).pointerType === 'touch'));
+    if (isTouch) return;
     e.stopPropagation();
     const grid = worldToGrid(e.point.x, e.point.z);
     setHoveredTile(grid);
@@ -403,21 +409,15 @@ export function GridPlane() {
       return;
     }
 
-    if (!placementStatus?.isValid) {
-      if (placementStatus?.isSealed) {
-        useGameStore.getState().notify('Petak ini disegel Bulldozer karena inaktif! Fokus 1 sesi atau reklamasi tunggul untuk membuka segel.', 'error');
-      } else if (!isTileUnlocked(target.grid_x, target.grid_y, unlockedSet)) {
-        useGameStore.getState().notify('Petak ini belum dibuka! Klik untuk memperluas lahan Rimba.', 'error');
-      }
+    // 2. Placing Catalog Item or Relocating Object:
+    // User requested: "ketika object ditempatkan, jangan langsung di donekan, melainkan user harus tekan tombol konfirmasi gitu"
+    // Tapping a tile only selects/previews the prospective location and provides tactile feedback.
+    // Placement is explicitly finalized by pressing the confirmation button in NatureWorkshopSheet!
+    if (isBuildActive || isRelocating) {
+      setHoveredTile(target);
+      soundManager.playPop();
+      hapticLight();
       return;
-    }
-
-    if (isRelocating) {
-      const ok = confirmRelocation(target.grid_x, target.grid_y);
-      if (ok) soundManager.playPlace();
-    } else if (selectedCatalogItem) {
-      const ok = placeCatalogItem(selectedCatalogItem, target.grid_x, target.grid_y);
-      if (ok) soundManager.playPlace();
     }
   };
 

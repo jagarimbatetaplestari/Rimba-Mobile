@@ -506,6 +506,13 @@ export function WorldObjects() {
   const selectedObject = useGameStore((state) => state.selectedObject);
   const setSelectedObject = useGameStore((state) => state.setSelectedObject);
   const relocatingObjectId = useGameStore((state) => state.relocatingObjectId);
+  const selectedCatalogItem = useGameStore((state) => state.selectedCatalogItem);
+  const selectedTool = useGameStore((state) => state.selectedTool);
+  const isExpandLandMode = useGameStore((state) => state.isExpandLandMode);
+
+  const isBuildActive = Boolean(selectedCatalogItem || selectedTool);
+  const isRelocating = Boolean(relocatingObjectId);
+  const isInteractingWithGrid = isBuildActive || isRelocating || isExpandLandMode;
 
   const unlockedSignature = useMemo(
     () => getUnlockedTilesSignature(world, worldObjects),
@@ -531,14 +538,6 @@ export function WorldObjects() {
     }, 2000);
     return () => clearTimeout(timer);
   }, []);
-
-  const isBuildActive = Boolean(
-    useGameStore((state) => state.selectedCatalogItem) ||
-    useGameStore((state) => state.selectedTool)
-  );
-  const isRelocating = Boolean(relocatingObjectId);
-  const isExpandLandMode = useGameStore((state) => state.isExpandLandMode);
-  const isInteractingWithGrid = isBuildActive || isRelocating || isExpandLandMode;
 
   return (
     <group>

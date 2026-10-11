@@ -1002,12 +1002,12 @@ export function SanctuaryJournalModal({
 
                       {/* Top Card Badges */}
                       <div className="absolute top-3 inset-x-3 flex items-center justify-between z-10">
-                        <span className="px-2.5 py-1 rounded-full bg-black/45 backdrop-blur-md border border-white/20 text-[10px] font-bold uppercase tracking-wider text-white/95">
+                        <span className="px-2.5 py-1 rounded-full bg-black/80 border border-white/15 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm">
                           {t.journal.chapterPrefix} {chapter.chapterNumber}
                         </span>
 
                         {isClaimed ? (
-                          <span className="w-7 h-7 rounded-full bg-emerald-500/80 backdrop-blur-md text-white flex items-center justify-center border border-white/30 shadow-xs">
+                          <span className="w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center border border-white/20 shadow-sm">
                             <Check className="w-3.5 h-3.5 stroke-[2.5]" />
                           </span>
                         ) : isUnlocked ? (
@@ -1017,49 +1017,49 @@ export function SanctuaryJournalModal({
                               e.stopPropagation();
                               handleClaimChapter(chapter.id);
                             }}
-                            className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 text-[10px] font-bold text-white shadow-xs animate-pulse hover:brightness-110 active:scale-90 transition-transform"
+                            className="px-2.5 py-0.5 rounded-full bg-[#187557] hover:bg-[#126046] text-[10px] font-bold text-white shadow-sm animate-pulse active:scale-90 transition-transform cursor-pointer"
                             title="Klaim Hadiah"
                           >
                             +{chapter.reward.gold} Soul
                           </button>
                         ) : (
-                          <span className="w-7 h-7 rounded-full bg-black/50 backdrop-blur-md text-white/70 flex items-center justify-center border border-white/20">
+                          <span className="w-7 h-7 rounded-full bg-black/80 text-white/70 flex items-center justify-center border border-white/15">
                             <Lock className="w-3.5 h-3.5 stroke-[2]" />
                           </span>
                         )}
                       </div>
 
-                      {/* Middle Frosted Glass Lock Notice (Jika Terkunci) */}
+                      {/* Middle Lock Notice (Jika Terkunci, No Glass) */}
                       {!isUnlocked && (
-                        <div className="absolute inset-x-3 top-1/2 -translate-y-1/2 p-3 rounded-2xl bg-black/60 backdrop-blur-md border border-white/20 text-center flex flex-col items-center gap-1.5 z-10">
+                        <div className="absolute inset-x-3 top-1/2 -translate-y-1/2 p-3 rounded-2xl bg-black/85 border border-white/15 text-center flex flex-col items-center gap-1.5 z-10 shadow-lg">
                           <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-amber-300">
                             <Lock className="w-4 h-4 stroke-[2]" />
                           </div>
-                          <p className="text-[11px] font-semibold text-white/90 leading-tight">
+                          <p className="text-[11px] font-semibold text-white/95 leading-tight">
                             {trChapter.unlockDescription}
                           </p>
-                          <span className="text-[9.5px] font-medium text-amber-200 bg-amber-400/20 px-2 py-0.5 rounded-md border border-amber-300/30">
+                          <span className="text-[9.5px] font-medium text-amber-200 bg-amber-500/20 px-2 py-0.5 rounded-md border border-amber-400/30">
                             {progressText}
                           </span>
                         </div>
                       )}
 
-                      {/* Bottom Card Content */}
+                      {/* Bottom Card Content (Direct on Natural Dark Gradient, No Glass) */}
                       <div className="absolute bottom-3 inset-x-3 flex flex-col gap-1.5 z-10 text-left">
-                        <span className="text-[10px] font-semibold text-emerald-300 uppercase tracking-wide truncate">
+                        <span className="text-[10px] font-semibold text-emerald-300 uppercase tracking-wide truncate drop-shadow-sm">
                           {trChapter.subtitle}
                         </span>
-                        <h4 className="text-[15px] font-bold text-white tracking-tight leading-snug drop-shadow-sm line-clamp-2">
+                        <h4 className="text-[15px] font-bold text-white tracking-tight leading-snug drop-shadow-md line-clamp-2">
                           {trChapter.title}
                         </h4>
 
                         {isUnlocked ? (
-                          <div className="mt-1 flex items-center gap-1.5 text-[11px] font-medium text-white/90 bg-white/15 hover:bg-white/25 backdrop-blur-md py-1.5 px-3 rounded-full border border-white/25 justify-center transition-all">
-                            <BookOpen className="w-3.5 h-3.5 text-emerald-300" />
+                          <div className="mt-1 flex items-center gap-1.5 text-[11px] font-semibold text-[#0D3528] bg-white hover:bg-emerald-50 py-1.5 px-3 rounded-full justify-center transition-all shadow-md">
+                            <BookOpen className="w-3.5 h-3.5 text-[#187557]" />
                             <span>{t.journal.tapToRead}</span>
                           </div>
                         ) : (
-                          <p className="text-[10px] text-white/60 line-clamp-1 italic mt-0.5">
+                          <p className="text-[10px] text-white/70 line-clamp-1 italic mt-0.5 drop-shadow-sm">
                             &ldquo;{trChapter.quote}&rdquo;
                           </p>
                         )}

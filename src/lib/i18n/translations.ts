@@ -261,7 +261,7 @@ export const translations = {
       editNoteDesc: "Apa yang berhasil kamu kerjakan atau pelajari di sesi ini?",
       editNotePlaceholder: "Tulis catatan singkat...",
       saveNoteBtn: "Simpan Catatan",
-      storyHeader: "Kisah Suaka Rimba (6 Bab)",
+      storyHeader: "Kisah Suaka Rimba (9 Bab)",
       storySub: "Geser kartu cerita untuk menjelajahi bab perjalanan suakamu.",
       tapToRead: "Ketuk untuk Membaca",
       lockedToast: "Selesaikan syarat bab ini terlebih dahulu untuk membuka ceritanya.",
@@ -907,7 +907,7 @@ export const translations = {
       editNoteDesc: "What did you work on or accomplish during this session?",
       editNotePlaceholder: "Write a quick note...",
       saveNoteBtn: "Save Note",
-      storyHeader: "Rimba Sanctuary Lore (6 Chapters)",
+      storyHeader: "Rimba Sanctuary Lore (9 Chapters)",
       storySub: "Swipe through the story cards to explore your sanctuary journey.",
       tapToRead: "Tap to Read",
       lockedToast: "Complete this chapter's requirement first to unlock the story.",
@@ -1441,26 +1441,50 @@ export const CHAPTER_TRANSLATIONS_EN: Record<
       "Intertwining branches form a lush green canopy. Sunlight filters through the leaves in beams of quiet hope, sheltering the soil from the world's rush.",
     quote: "A nurtured mind brings solace amid the world's noise.",
   },
-  chap_4_fauna: {
-    title: "Kinship with Wildlife",
-    subtitle: "Harmony Between Spirit and Earth",
-    unlockDescription: "Reach Level 7 & Greet Wildlife",
+  chap_4_kinship: {
+    title: "Canopy of Kinship",
+    subtitle: "Tender Bonds in Ancient Branches",
+    unlockDescription: "Reach Level 6 & Grow 8 Trees",
     narration:
-      "Wild forest creatures draw near not by force, but feeling the deep peace of your sanctuary. True harmony is born from a tranquil, gentle heart.",
-    quote: "Gentleness carries a peace that even wild creatures can feel.",
+      "High within the ancient canopy, life is cradled with infinite tenderness. When we slow down, we create space to protect what is vulnerable and precious.",
+    quote: "True warmth flourishes not from haste, but from patient cultivation of fellowship.",
   },
-  chap_5_time: {
-    title: "Valley of the Timekeeper",
-    subtitle: "Quiet Resilience of Seven Moons",
-    unlockDescription: "Reach Level 10 & 7-Day Streak",
+  chap_5_hearth: {
+    title: "Lakeside Hearth",
+    subtitle: "Rediscovering Presence Under Twilight",
+    unlockDescription: "Reach Level 8 & Build Sanctuary Structure",
     narration:
-      "Consistency is not about sprinting, but returning with presence day after day. Your sanctuary's roots now hold the earth firm, unshaken by wild winds.",
-    quote: "Time cannot be chased, but it can be held with complete presence.",
+      "Beneath the crescent moon, human guardians sit beside gentle embers. True conservation begins when ambition surrenders to quiet presence.",
+    quote: "In the stillness of twilight, a small flame is enough to illuminate the entire sanctuary within.",
   },
-  chap_6_nirvana: {
+  chap_6_shadow: {
+    title: "The Encroaching Shadow",
+    subtitle: "When Noise Fractures the Sacred Quiet",
+    unlockDescription: "Reach Level 10 & 60 Min Total Focus",
+    narration:
+      "Industrial urgency arrives with rumbling blades, pressing at the forest boundary. Silent eyes watch, holding firm to what is wild and irreplaceable.",
+    quote: "Quiet resilience is not fighting with fury, but standing unshakably firm.",
+  },
+  chap_7_stand: {
+    title: "The United Stand",
+    subtitle: "Courage Born of Collective Resolve",
+    unlockDescription: "Reach Level 12 & Greet Wildlife",
+    narration:
+      "Wild spirits gather as an unbroken wall of living grace. Not with fury, but with steadfast presence, they guard the sanctuary against fragmentation.",
+    quote: "United in stillness, no storm can fracture the living sanctuary.",
+  },
+  chap_8_valley: {
+    title: "The Moonlit Valley",
+    subtitle: "Silver Light Flooding Cascading Falls",
+    unlockDescription: "Reach Level 14 & 5-Day Streak",
+    narration:
+      "Night falls upon the restored valley as silver moonlight washes over rushing falls. Consistency is returning, day after day, to your quiet center.",
+    quote: "Time cannot be chased, but it can be embraced with complete presence.",
+  },
+  chap_9_nirvana: {
     title: "Floating Nirvana",
     subtitle: "The Pinnacle of Living Stillness",
-    unlockDescription: "Reach Level 15 & Unlock 20+ Tiles",
+    unlockDescription: "Reach Level 16 & Unlock 20+ Tiles",
     narration:
       "From a solitary plot of silent soil, a timeless emerald haven arose. Here, every breath is sanctuary, and every mindful moment a lasting legacy of peace.",
     quote: "The truest sanctuary is not found in the world outside, but cultivated within yourself.",

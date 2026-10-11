@@ -229,10 +229,10 @@ export function StoryReaderModal({
           })}
         </div>
 
-        {/* Top Control Bar */}
+        {/* Top Control Bar (Clean solid badges, no glass) */}
         <div className="flex items-center justify-between">
           {/* Chapter Pill Badge */}
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/40 backdrop-blur-xl border border-white/20 shadow-lg">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/80 border border-white/15 shadow-md">
             <span className="text-emerald-300">
               {renderIcon(currentChapter.icon)}
             </span>
@@ -250,7 +250,7 @@ export function StoryReaderModal({
               hapticLight();
               onClose();
             }}
-            className="w-9 h-9 rounded-full flex items-center justify-center bg-black/40 hover:bg-black/60 active:scale-90 transition-all border border-white/25 text-white shadow-lg cursor-pointer backdrop-blur-xl"
+            className="w-9 h-9 rounded-full flex items-center justify-center bg-black/80 hover:bg-black active:scale-90 transition-all border border-white/15 text-white shadow-md cursor-pointer"
             aria-label={t.journal.closeStory}
           >
             <X className="w-4 h-4 stroke-[2.2]" />
@@ -276,7 +276,7 @@ export function StoryReaderModal({
         />
       </div>
 
-      {/* FLOATING SIDE CHEVRON BUTTONS (Accessible & Intuitive) */}
+      {/* FLOATING SIDE CHEVRON BUTTONS (Clean solid buttons, no glass) */}
       <div className="absolute inset-y-0 left-2 z-20 flex items-center pointer-events-none">
         {currentIndex > 0 && (
           <button
@@ -285,7 +285,7 @@ export function StoryReaderModal({
               e.stopPropagation();
               handlePrev();
             }}
-            className="pointer-events-auto w-10 h-10 rounded-full flex items-center justify-center bg-black/35 hover:bg-black/55 active:scale-90 transition-all border border-white/20 text-white backdrop-blur-lg shadow-xl cursor-pointer"
+            className="pointer-events-auto w-10 h-10 rounded-full flex items-center justify-center bg-black/75 hover:bg-black active:scale-90 transition-all border border-white/15 text-white shadow-md cursor-pointer"
             aria-label={t.journal.prevChapter}
           >
             <ChevronLeft className="w-5 h-5 stroke-[2.2]" />
@@ -301,10 +301,10 @@ export function StoryReaderModal({
               e.stopPropagation();
               handleNext();
             }}
-            className={`pointer-events-auto w-10 h-10 rounded-full flex items-center justify-center transition-all border backdrop-blur-lg shadow-xl cursor-pointer ${
+            className={`pointer-events-auto w-10 h-10 rounded-full flex items-center justify-center transition-all border shadow-md cursor-pointer ${
               unlockedMap[currentIndex + 1]
-                ? "bg-black/35 hover:bg-black/55 active:scale-90 border-white/20 text-white"
-                : "bg-black/25 border-white/10 text-white/40 cursor-not-allowed"
+                ? "bg-black/75 hover:bg-black active:scale-90 border-white/15 text-white"
+                : "bg-black/40 border-white/10 text-white/40 cursor-not-allowed"
             }`}
             aria-label={t.journal.nextChapter}
           >
@@ -317,28 +317,25 @@ export function StoryReaderModal({
         )}
       </div>
 
-      {/* BOTTOM CONTENT CARD: Apple Liquid Glass Editorial Layout */}
+      {/* BOTTOM CONTENT: Editorial Text Overlaid Directly on Artwork (No Glass Card) */}
       <div className="relative z-20 pb-safe px-5 pb-6 flex flex-col gap-3 max-w-lg mx-auto w-full">
-        <div className="rounded-[28px] p-5 bg-gradient-to-b from-white/18 via-black/40 to-black/75 backdrop-blur-2xl border border-white/30 shadow-[0_16px_40px_rgba(0,0,0,0.5)] flex flex-col gap-3 relative overflow-hidden text-left">
-          {/* Subtle Sheen reflection */}
-          <div className="absolute inset-x-0 top-0 h-12 bg-gradient-to-b from-white/20 to-transparent pointer-events-none rounded-t-[28px]" />
-
+        <div className="flex flex-col gap-2.5 text-left">
           {/* Subtitle & Badge */}
-          <div className="flex items-center justify-between gap-2 relative z-10">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-300">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-300 drop-shadow-sm">
               {trChapter.subtitle}
             </span>
 
             {/* Claim Reward Pill / Claimed Badge */}
             {isClaimed ? (
-              <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/25 border border-emerald-400/40 text-[10.5px] font-medium text-emerald-200 flex items-center gap-1">
+              <span className="px-2.5 py-0.5 rounded-full bg-emerald-600/90 border border-emerald-400/30 text-[10.5px] font-medium text-white flex items-center gap-1 shadow-sm">
                 <Check className="w-3 h-3 stroke-[2.5]" /> {t.journal.claimed}
               </span>
             ) : isUnlocked ? (
               <button
                 type="button"
                 onClick={handleClaim}
-                className="px-3 py-1 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold text-xs shadow-md shadow-emerald-500/30 flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer animate-pulse"
+                className="px-3 py-1 rounded-full bg-[#187557] hover:bg-[#126046] text-white font-bold text-xs shadow-md flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer animate-pulse"
               >
                 <Sparkles className="w-3.5 h-3.5 fill-current" />
                 <span>
@@ -349,26 +346,26 @@ export function StoryReaderModal({
                 </span>
               </button>
             ) : (
-              <span className="text-[10px] text-white/60 bg-white/10 px-2 py-0.5 rounded-md border border-white/15">
+              <span className="text-[10px] text-white/80 bg-black/60 px-2.5 py-0.5 rounded-md border border-white/15">
                 {progressText}
               </span>
             )}
           </div>
 
           {/* Chapter Main Title */}
-          <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight leading-snug drop-shadow-md relative z-10">
+          <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight leading-snug drop-shadow-md">
             {trChapter.title}
           </h2>
 
           {/* Narration Paragraph */}
-          <p className="text-[13px] text-white/90 leading-relaxed font-normal tracking-wide relative z-10">
+          <p className="text-[13px] text-white/95 leading-relaxed font-normal tracking-wide drop-shadow-sm">
             {trChapter.narration}
           </p>
 
-          {/* Quote Card */}
-          <div className="p-3 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-md flex items-start gap-2.5 relative z-10">
-            <Quote className="w-4 h-4 text-emerald-300 shrink-0 mt-0.5 opacity-80" />
-            <p className="text-[12px] text-emerald-100 italic font-medium leading-relaxed">
+          {/* Quote Block (No Glass - Clean Editorial Left Border Accent) */}
+          <div className="border-l-2 border-emerald-400/80 pl-3 py-1 mt-1 flex items-start gap-2">
+            <Quote className="w-3.5 h-3.5 text-emerald-300 shrink-0 mt-0.5 opacity-90" />
+            <p className="text-[12px] text-emerald-100 italic font-medium leading-relaxed drop-shadow-sm">
               &ldquo;{trChapter.quote}&rdquo;
             </p>
           </div>

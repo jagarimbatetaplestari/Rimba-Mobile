@@ -80,42 +80,45 @@ export async function drawSanctuaryCardCanvas(
   ctx.fillStyle = topFade;
   ctx.fillRect(0, 0, width, topFadeH);
 
-  // Top Header Text (ALL WHITE #FFFFFF, Balanced 3 rows on left and right)
-  const titleSize = aspectRatio === "story" ? 64 : aspectRatio === "portrait" ? 52 : 44;
-  const subSize = aspectRatio === "story" ? 25 : aspectRatio === "portrait" ? 21 : 18;
-  const topGap1 = aspectRatio === "square" ? 28 : 38;
-  const topGap2 = aspectRatio === "square" ? 52 : 70;
+  const isEn = language === "en";
 
-  // Left 3 rows: 2026 -> Rimba Sanctuary -> Year in Review
+  // Top Header Text (ALL WHITE & SEMIBOLD, Balanced 3 rows on left and right)
+  const titleSize = aspectRatio === "story" ? 54 : aspectRatio === "portrait" ? 44 : 36;
+  const subSize = aspectRatio === "story" ? 22 : aspectRatio === "portrait" ? 18 : 15;
+  const badgeSize = aspectRatio === "story" ? 16 : aspectRatio === "portrait" ? 14 : 12;
+  const topGap1 = aspectRatio === "square" ? 24 : 32;
+  const topGap2 = aspectRatio === "square" ? 46 : 60;
+
+  // Left 3 rows: 2026 -> Rimba Sanctuary -> Kilas Balik 2026 / Year in Review
   ctx.textAlign = "left";
   ctx.fillStyle = "#FFFFFF";
-  ctx.font = `800 ${titleSize}px "Urbanist", -apple-system, sans-serif`;
+  ctx.font = `600 ${titleSize}px "Urbanist", -apple-system, sans-serif`;
   ctx.fillText("2026", 72, topY);
 
   ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
-  ctx.font = `700 ${subSize}px "Urbanist", sans-serif`;
+  ctx.font = `600 ${subSize}px "Urbanist", sans-serif`;
   ctx.fillText("Rimba Sanctuary", 72, topY + topGap1);
 
-  ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
-  ctx.font = `600 ${subSize - 3}px "Urbanist", sans-serif`;
-  ctx.fillText("Year in Review", 72, topY + topGap2);
+  ctx.fillStyle = "rgba(255, 255, 255, 0.60)";
+  ctx.font = `600 ${badgeSize}px "Urbanist", sans-serif`;
+  ctx.fillText(isEn ? "YEAR IN REVIEW" : "KILAS BALIK 2026", 72, topY + topGap2);
 
   // Right 3 rows: Rimba (aligned with 2026) -> Favorite Tree -> Tree name
   ctx.textAlign = "right";
   ctx.fillStyle = "#FFFFFF";
-  ctx.font = `800 ${titleSize - 12}px "Urbanist", sans-serif`;
+  ctx.font = `600 ${titleSize}px "Urbanist", sans-serif`;
   ctx.fillText("Rimba", width - 72, topY);
 
-  ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
-  ctx.font = `700 ${subSize - 4}px "Urbanist", sans-serif`;
+  ctx.fillStyle = "rgba(255, 255, 255, 0.60)";
+  ctx.font = `600 ${badgeSize}px "Urbanist", sans-serif`;
   ctx.fillText(
-    language === "en" ? "FAVORITE TREE" : "POHON TERFAVORIT",
+    isEn ? "FAVORITE TREE" : "POHON TERFAVORIT",
     width - 72,
     topY + topGap1,
   );
 
-  ctx.fillStyle = "#FFFFFF";
-  ctx.font = `800 ${subSize + 5}px "Urbanist", sans-serif`;
+  ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+  ctx.font = `600 ${subSize}px "Urbanist", sans-serif`;
   ctx.fillText(favoriteTreeSpecies, width - 72, topY + topGap2);
 
   // 3. Bottom Grass Section: Soft Dark Emerald Gradient Fade (Strictly BELOW the tree)
@@ -129,7 +132,7 @@ export async function drawSanctuaryCardCanvas(
   ctx.fillStyle = fadeGrad;
   ctx.fillRect(0, gradY, width, gradH);
 
-  // Focus Metrics (ALL WHITE, Positioned strictly BELOW tree trunk on the grass mound)
+  // Focus Metrics (Semibold, Positioned strictly BELOW tree trunk on the grass mound)
   const focusLabelY =
     gradY + (aspectRatio === "story" ? 70 : aspectRatio === "portrait" ? 50 : 40);
   const focusHoursY =
@@ -138,39 +141,41 @@ export async function drawSanctuaryCardCanvas(
     focusHoursY + (aspectRatio === "story" ? 68 : aspectRatio === "portrait" ? 50 : 42);
 
   ctx.textAlign = "center";
-  ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
-  ctx.font = `700 ${
-    aspectRatio === "story" ? 23 : aspectRatio === "portrait" ? 19 : 16
+  ctx.fillStyle = "rgba(255, 255, 255, 0.60)";
+  ctx.font = `600 ${
+    aspectRatio === "story" ? 18 : aspectRatio === "portrait" ? 15 : 13
   }px "Urbanist", sans-serif`;
-  ctx.fillText("TOTAL FOCUS TIME", width / 2, focusLabelY);
+  ctx.fillText(isEn ? "TOTAL FOCUS TIME" : "TOTAL WAKTU FOKUS", width / 2, focusLabelY);
 
   ctx.fillStyle = "#FFFFFF";
-  ctx.font = `900 ${
-    aspectRatio === "story" ? 94 : aspectRatio === "portrait" ? 74 : 58
+  ctx.font = `600 ${
+    aspectRatio === "story" ? 74 : aspectRatio === "portrait" ? 58 : 46
   }px "Urbanist", sans-serif`;
   const hoursText =
-    totalHoursNum >= 1 ? `${totalHoursNum} hours` : `${totalMinutes} mins`;
+    totalHoursNum >= 1
+      ? (isEn ? `${totalHoursNum} hours` : `${totalHoursNum} jam`)
+      : (isEn ? `${totalMinutes} mins` : `${totalMinutes} mnt`);
   ctx.fillText(hoursText, width / 2, focusHoursY);
 
   // Single concise line for comparison
-  ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
-  ctx.font = `600 ${
-    aspectRatio === "story" ? 22 : aspectRatio === "portrait" ? 18 : 15
+  ctx.fillStyle = "rgba(255, 255, 255, 0.75)";
+  ctx.font = `500 ${
+    aspectRatio === "story" ? 19 : aspectRatio === "portrait" ? 16 : 13
   }px "Urbanist", sans-serif`;
   const compText =
-    language === "en"
+    isEn
       ? `+${regionalBonusHours}h above average in your region · Amazing!`
       : `+${regionalBonusHours} jam di atas rata-rata regional · Luar biasa!`;
   ctx.fillText(compText, width / 2, compY);
 
-  // 4. Two-Column Info Row (ALL WHITE)
+  // 4. Two-Column Info Row - Faded subtle dividers
   const rowDividerY =
     compY + (aspectRatio === "story" ? 55 : aspectRatio === "portrait" ? 42 : 34);
   ctx.beginPath();
   ctx.moveTo(80, rowDividerY);
   ctx.lineTo(width - 80, rowDividerY);
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
-  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.10)";
+  ctx.lineWidth = 1;
   ctx.stroke();
 
   // Vertical mid divider
@@ -180,67 +185,69 @@ export async function drawSanctuaryCardCanvas(
   ctx.beginPath();
   ctx.moveTo(colMidX, rowDividerY + 16);
   ctx.lineTo(colMidX, rowDividerY + rowHeight);
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
-  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.10)";
+  ctx.lineWidth = 1;
   ctx.stroke();
 
   const textStartY =
     rowDividerY + (aspectRatio === "story" ? 50 : aspectRatio === "portrait" ? 40 : 32);
-  const boxTitleSize =
-    aspectRatio === "story" ? 24 : aspectRatio === "portrait" ? 20 : 17;
+  const boxBadgeSize =
+    aspectRatio === "story" ? 17 : aspectRatio === "portrait" ? 14 : 12;
   const boxValSize =
-    aspectRatio === "story" ? 24 : aspectRatio === "portrait" ? 20 : 16;
+    aspectRatio === "story" ? 22 : aspectRatio === "portrait" ? 18 : 15;
   const boxDescSize =
-    aspectRatio === "story" ? 19 : aspectRatio === "portrait" ? 15 : 13;
+    aspectRatio === "story" ? 17 : aspectRatio === "portrait" ? 14 : 12;
 
   // Col 1: Focus Type
   const col1X = 84;
   ctx.textAlign = "left";
-  ctx.fillStyle = "#FFFFFF";
-  ctx.font = `800 ${boxTitleSize}px "Urbanist", sans-serif`;
-  ctx.fillText("Focus Type", col1X, textStartY);
+  ctx.fillStyle = "rgba(255, 255, 255, 0.60)";
+  ctx.font = `600 ${boxBadgeSize}px "Urbanist", sans-serif`;
+  ctx.fillText(isEn ? "FOCUS TYPE" : "TIPE FOKUS", col1X, textStartY);
 
   ctx.fillStyle = "#FFFFFF";
-  ctx.font = `700 ${boxValSize}px "Urbanist", sans-serif`;
+  ctx.font = `600 ${boxValSize}px "Urbanist", sans-serif`;
   ctx.fillText(
-    "Evergreen Guardian",
+    isEn ? "Evergreen Guardian" : "Penjaga Abadi",
     col1X,
-    textStartY + (aspectRatio === "story" ? 42 : 32),
+    textStartY + (aspectRatio === "story" ? 36 : 28),
   );
 
-  ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
-  ctx.font = `500 ${boxDescSize}px "Urbanist", sans-serif`;
+  ctx.fillStyle = "rgba(255, 255, 255, 0.60)";
+  ctx.font = `400 ${boxDescSize}px "Urbanist", sans-serif`;
   const descText =
-    language === "en"
+    isEn
       ? "Focused throughout the day, steady like the pines."
       : "Fokus konsisten sepanjang hari bagai pinus abadi.";
   ctx.fillText(
     descText,
     col1X,
-    textStartY + (aspectRatio === "story" ? 82 : 62),
+    textStartY + (aspectRatio === "story" ? 72 : 56),
   );
 
   // Col 2: Hari Terfokus
   const col2X = colMidX + 36;
-  ctx.fillStyle = "#FFFFFF";
-  ctx.font = `800 ${boxTitleSize}px "Urbanist", sans-serif`;
-  ctx.fillText(language === "en" ? "Top Day" : "Hari Terfokus", col2X, textStartY);
+  ctx.fillStyle = "rgba(255, 255, 255, 0.60)";
+  ctx.font = `600 ${boxBadgeSize}px "Urbanist", sans-serif`;
+  ctx.fillText(isEn ? "TOP DAY" : "HARI TERFOKUS", col2X, textStartY);
 
   ctx.fillStyle = "#FFFFFF";
-  ctx.font = `800 ${boxValSize + 4}px "Urbanist", sans-serif`;
+  ctx.font = `600 ${boxValSize}px "Urbanist", sans-serif`;
   ctx.fillText(
     mostFocusedDay,
     col2X,
-    textStartY + (aspectRatio === "story" ? 42 : 32),
+    textStartY + (aspectRatio === "story" ? 36 : 28),
   );
 
-  ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
-  ctx.font = `500 ${boxDescSize}px "Urbanist", sans-serif`;
-  const peakLabel = `Jam Emas: ${peakWindowLabel || "10:00 – 12:00"}`;
+  ctx.fillStyle = "rgba(255, 255, 255, 0.60)";
+  ctx.font = `400 ${boxDescSize}px "Urbanist", sans-serif`;
+  const peakLabel = isEn
+    ? `Peak Hours: ${peakWindowLabel || "10:00 – 12:00"}`
+    : `Jam Emas: ${peakWindowLabel || "10:00 – 12:00"}`;
   ctx.fillText(
     peakLabel,
     col2X,
-    textStartY + (aspectRatio === "story" ? 82 : 62),
+    textStartY + (aspectRatio === "story" ? 72 : 56),
   );
 }
 
@@ -254,6 +261,8 @@ export function SanctuaryShareCard({
   mostFocusedDay,
   peakWindowLabel,
 }: SanctuaryCardProps) {
+  const isEn = language === "en";
+
   return (
     <div
       className={`relative w-full rounded-3xl overflow-hidden p-3.5 text-left flex flex-col justify-between transition-all duration-300 shadow-md ${
@@ -277,27 +286,27 @@ export function SanctuaryShareCard({
       {/* Top Fade for Contrast */}
       <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-black/55 via-black/25 to-transparent pointer-events-none" />
 
-      {/* Top Sky Header (ALL WHITE TEXT, Balanced 3 rows on left and right) */}
+      {/* Top Sky Header (Balanced 3 rows on left and right, Semibold Urbanist, Clear Hierarchy) */}
       <div className="relative z-10 flex items-start justify-between font-urbanist">
-        <div>
-          <p className="text-[25px] font-black text-white tracking-tight leading-none drop-shadow-sm">
+        <div className="flex flex-col items-start">
+          <p className="text-[22px] font-semibold text-white tracking-tight leading-none drop-shadow-sm">
             2026
           </p>
-          <p className="text-[10px] font-bold text-white/90 mt-0.5 leading-tight drop-shadow-2xs">
+          <p className="text-[11px] font-semibold text-white/95 mt-1 leading-tight drop-shadow-2xs">
             Rimba Sanctuary
           </p>
-          <p className="text-[9px] font-semibold text-white/80 leading-tight drop-shadow-2xs">
-            Year in Review
+          <p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-white/60 mt-0.5 leading-tight drop-shadow-2xs">
+            {isEn ? "Year in Review" : "Kilas Balik 2026"}
           </p>
         </div>
-        <div className="text-right">
-          <p className="text-[20px] font-black text-white tracking-tight leading-none drop-shadow-sm">
+        <div className="flex flex-col items-end text-right">
+          <p className="text-[22px] font-semibold text-white tracking-tight leading-none drop-shadow-sm">
             Rimba
           </p>
-          <p className="text-[8.5px] font-bold text-white/80 uppercase tracking-wider mt-0.5 leading-tight drop-shadow-2xs">
-            {language === "en" ? "Favorite Tree" : "Pohon Terfavorit"}
+          <p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-white/60 mt-1 leading-tight drop-shadow-2xs">
+            {isEn ? "Favorite Tree" : "Pohon Terfavorit"}
           </p>
-          <p className="text-[11.5px] font-black text-white leading-tight drop-shadow-sm">
+          <p className="text-[11px] font-semibold text-white/95 mt-0.5 leading-tight drop-shadow-sm truncate max-w-[150px]">
             {favoriteTreeSpecies}
           </p>
         </div>
@@ -309,41 +318,47 @@ export function SanctuaryShareCard({
       {/* Bottom Grass Section: Strictly BELOW the tree on the grassy mound */}
       <div className="relative z-10 -mx-3.5 -mb-3.5 px-3.5 pb-3.5 pt-4 bg-gradient-to-t from-[#081812]/95 via-[#0A261D]/80 to-transparent flex flex-col gap-1.5 font-urbanist">
         <div className="text-center">
-          <span className="text-[8.5px] font-bold text-white/85 uppercase tracking-widest block">
-            Total Focus Time
+          <span className="text-[8px] font-semibold text-white/60 uppercase tracking-[0.2em] block">
+            {isEn ? "Total Focus Time" : "Total Waktu Fokus"}
           </span>
-          <div className="text-[28px] font-black text-white leading-none drop-shadow-sm my-0.5">
-            {totalHoursNum >= 1 ? `${totalHoursNum} hours` : `${totalMinutes} mins`}
+          <div className="text-[26px] font-semibold text-white leading-none drop-shadow-sm my-0.5">
+            {totalHoursNum >= 1
+              ? (isEn ? `${totalHoursNum} hours` : `${totalHoursNum} jam`)
+              : (isEn ? `${totalMinutes} mins` : `${totalMinutes} mnt`)}
           </div>
-          <p className="text-[8.5px] text-white/95 leading-normal max-w-[340px] mx-auto font-medium truncate">
-            {language === "en"
+          <p className="text-[8.5px] text-white/75 leading-normal max-w-[340px] mx-auto font-normal truncate">
+            {isEn
               ? `+${regionalBonusHours}h above average in your region · Amazing!`
               : `+${regionalBonusHours} jam di atas rata-rata regional · Luar biasa!`}
           </p>
         </div>
 
-        {/* Two-Column Info Row */}
-        <div className="grid grid-cols-2 gap-2 pt-1.5 border-t border-white/20 text-left">
-          <div className="pr-1.5 border-r border-white/20">
-            <span className="text-[8.5px] font-bold text-white">Focus Type</span>
-            <p className="text-[9.5px] font-extrabold text-white leading-tight mt-0.5">
-              Evergreen Guardian
+        {/* Two-Column Info Row - Faded hairline dividers */}
+        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/10 text-left">
+          <div className="pr-1.5 border-r border-white/10">
+            <span className="text-[8px] font-semibold uppercase tracking-[0.16em] text-white/60">
+              {isEn ? "Focus Type" : "Tipe Fokus"}
+            </span>
+            <p className="text-[10.5px] font-semibold text-white leading-tight mt-0.5">
+              {isEn ? "Evergreen Guardian" : "Penjaga Abadi"}
             </p>
-            <p className="text-[7.5px] text-white/85 leading-tight mt-0.5">
-              {language === "en"
+            <p className="text-[7.5px] font-normal text-white/60 leading-tight mt-0.5">
+              {isEn
                 ? "Focused throughout the day, steady like the pines."
-                : "Fokus stabil sepanjang hari bagai pinus abadi."}
+                : "Fokus konsisten sepanjang hari bagai pinus abadi."}
             </p>
           </div>
           <div className="pl-1.5">
-            <span className="text-[8.5px] font-bold text-white">
-              {language === "en" ? "Top Day" : "Hari Terfokus"}
+            <span className="text-[8px] font-semibold uppercase tracking-[0.16em] text-white/60">
+              {isEn ? "Top Day" : "Hari Terfokus"}
             </span>
-            <p className="text-[10.5px] font-extrabold text-white leading-tight mt-0.5">
+            <p className="text-[10.5px] font-semibold text-white leading-tight mt-0.5">
               {mostFocusedDay}
             </p>
-            <p className="text-[7.5px] text-white/85 leading-tight mt-0.5">
-              Jam Emas: {peakWindowLabel || "10:00 – 12:00"}
+            <p className="text-[7.5px] font-normal text-white/60 leading-tight mt-0.5">
+              {isEn
+                ? `Peak Hours: ${peakWindowLabel || "10:00 – 12:00"}`
+                : `Jam Emas: ${peakWindowLabel || "10:00 – 12:00"}`}
             </p>
           </div>
         </div>

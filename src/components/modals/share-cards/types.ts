@@ -24,34 +24,63 @@ export const TAG_COLORS: Record<string, string> = {
   "vis art": "#D9889B",
 };
 
-export const DEFAULT_TAG_PALETTE = [
-  "#E06553",
-  "#98B946",
-  "#9284D7",
-  "#57B894",
-  "#F3D053",
-  "#D9889B",
-  "#3B82F6",
-  "#F97316",
+export const BLUE_GREEN_PALETTE = [
+  "#0D9488", // Deep Emerald Teal
+  "#0284C7", // Ocean Blue
+  "#10B981", // Vibrant Emerald Green
+  "#2563EB", // Royal Blue
+  "#059669", // Deep Forest Green
+  "#06B6D4", // Aquamarine Cyan
+  "#3B82F6", // Sky Blue
+  "#16A34A", // Lush Green
 ];
 
-export const SPECIES_NAMES: Record<string, string> = {
-  nordic_pine: "Nordic Pine",
-  pine: "Nordic Pine",
-  oak: "Ancient Oak",
-  round_oak: "Round Oak",
-  birch: "Golden Birch",
-  elm: "Meadow Elm",
-  autumn: "Autumn Maple",
-  banana: "Banana Palm",
-  savannah: "Savannah Acacia",
-  cypress: "Emerald Cypress",
-  palm: "Coconut Palm",
-  coconut: "Coconut Palm",
-  tiered_pine: "Tiered Pine",
-  baobab: "Grand Baobab",
-  ancient: "Ancient Tree",
+export const DEFAULT_TAG_PALETTE = BLUE_GREEN_PALETTE;
+
+export const SPECIES_NAMES_ID: Record<string, string> = {
+  nordic_pine: "Cemara Kabut Utara",
+  pine: "Pinus Gunung",
+  oak: "Beringin Kuno",
+  round_oak: "Beringin Rimbun",
+  birch: "Birch Emas",
+  elm: "Elm Rindang",
+  autumn: "Maple Emas Gugur",
+  banana: "Pisang Tropis",
+  savannah: "Akasia Emas",
+  cypress: "Cemara Ramping",
+  palm: "Palem Tropis Pesisir",
+  coconut: "Kelapa Gading Pesisir",
+  tiered_pine: "Pinus Bertingkat Kerajaan",
+  baobab: "Baobab Raksasa",
+  ancient: "Pohon Roh Kuno",
 };
+
+export const SPECIES_NAMES_EN: Record<string, string> = {
+  nordic_pine: "Nordic Spruce",
+  pine: "Mountain Pine",
+  oak: "Ancient Oak",
+  round_oak: "Banyan Oak",
+  birch: "Golden Birch",
+  elm: "Canopy Elm",
+  autumn: "Autumn Gold Oak",
+  banana: "Tropical Banana",
+  savannah: "Golden Acacia",
+  cypress: "Tall Cypress",
+  palm: "Coastal Palm",
+  coconut: "Island Coconut",
+  tiered_pine: "Royal Tiered Pine",
+  baobab: "Giant Baobab",
+  ancient: "Ancient Spirit Tree",
+};
+
+export function getSpeciesName(key: string, lang: string = "id"): string {
+  if (lang === "en") {
+    return SPECIES_NAMES_EN[key] || "Nordic Spruce";
+  }
+  return SPECIES_NAMES_ID[key] || "Cemara Kabut Utara";
+}
+
+export const SPECIES_NAMES = SPECIES_NAMES_EN;
 
 export function drawRoundedRect(
   ctx: CanvasRenderingContext2D,

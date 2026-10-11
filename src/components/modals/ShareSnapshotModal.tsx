@@ -18,6 +18,8 @@ import {
   TagStatItem,
   TAG_COLORS,
   DEFAULT_TAG_PALETTE,
+  BLUE_GREEN_PALETTE,
+  getSpeciesName,
   SPECIES_NAMES,
   SanctuaryShareCard,
   drawSanctuaryCardCanvas,
@@ -69,8 +71,8 @@ export function ShareSnapshotModal({ isOpen, onClose }: ShareSnapshotModalProps)
         topSpecies = sp;
       }
     }
-    return SPECIES_NAMES[topSpecies] || "Nordic Pine";
-  }, [worldObjects, sessions]);
+    return getSpeciesName(topSpecies, language);
+  }, [worldObjects, sessions, language]);
 
   // Trees and Stumps count
   const { treesCount, stumpsCount } = useMemo(() => {
@@ -92,29 +94,37 @@ export function ShareSnapshotModal({ isOpen, onClose }: ShareSnapshotModalProps)
     return calculatePeriodAnalytics(sessions, p, 0, new Date(), language);
   }, [sessions, periodScope, language]);
 
-  // Tag Distribution Stats for Forest App Donut Chart
+  // Tag Distribution Stats for Forest App Donut Chart (Strictly Blue & Green Palette)
   const tagStats = useMemo<TagStatItem[]>(() => {
     const dist = periodStats.tagDistribution || analytics.tagDistribution || {};
     const totalMins = Object.values(dist).reduce((a, b) => a + b, 0);
     const entries = Object.entries(dist);
+    const isEn = language === "en";
 
     if (entries.length === 0 || totalMins === 0) {
-      return [
-        { name: "Belajar", minutes: 120, pct: 40, hours: 2.0, color: "#E06553" },
-        { name: "Kerja", minutes: 90, pct: 30, hours: 1.5, color: "#98B946" },
-        { name: "Koding", minutes: 60, pct: 20, hours: 1.0, color: "#9284D7" },
-        { name: "Mindfulness", minutes: 30, pct: 10, hours: 0.5, color: "#57B894" },
-      ];
+      return isEn
+        ? [
+            { name: "Study", minutes: 120, pct: 40, hours: 2.0, color: BLUE_GREEN_PALETTE[0] },
+            { name: "Work", minutes: 90, pct: 30, hours: 1.5, color: BLUE_GREEN_PALETTE[1] },
+            { name: "Coding", minutes: 60, pct: 20, hours: 1.0, color: BLUE_GREEN_PALETTE[2] },
+            { name: "Mindfulness", minutes: 30, pct: 10, hours: 0.5, color: BLUE_GREEN_PALETTE[3] },
+          ]
+        : [
+            { name: "Belajar", minutes: 120, pct: 40, hours: 2.0, color: BLUE_GREEN_PALETTE[0] },
+            { name: "Kerja", minutes: 90, pct: 30, hours: 1.5, color: BLUE_GREEN_PALETTE[1] },
+            { name: "Koding", minutes: 60, pct: 20, hours: 1.0, color: BLUE_GREEN_PALETTE[2] },
+            { name: "Mindfulness", minutes: 30, pct: 10, hours: 0.5, color: BLUE_GREEN_PALETTE[3] },
+          ];
     }
 
     const sorted = [...entries].sort((a, b) => b[1] - a[1]);
     return sorted.slice(0, 6).map(([name, mins], idx) => {
       const pct = Math.max(1, Math.round((mins / totalMins) * 100));
       const hrs = Math.round((mins / 60) * 10) / 10;
-      const color = TAG_COLORS[name] || DEFAULT_TAG_PALETTE[idx % DEFAULT_TAG_PALETTE.length];
+      const color = BLUE_GREEN_PALETTE[idx % BLUE_GREEN_PALETTE.length];
       return { name, minutes: mins, pct, hours: hrs, color };
     });
-  }, [periodStats.tagDistribution, analytics.tagDistribution]);
+  }, [periodStats.tagDistribution, analytics.tagDistribution, language]);
 
   // Highest Unlocked Story Chapter Art
   const highestUnlockedStory = useMemo(() => {
@@ -427,11 +437,18 @@ function cropIslandFromCanvas(canvasEl: HTMLCanvasElement): string {
   const handleCopy = async () => {
     soundManager.playPop();
     hapticLight();
+    const isEn = language === "en";
     const summaryText =
       cardTheme === "sanctuary"
-        ? `🌲 Rimba Sanctuary Year in Review · 2026\n⏱️ ${totalHoursNum} Jam Fokus (+${regionalBonusHours}h vs Rata-rata)\n🌿 Pohon Terfavorit: ${favoriteTreeSpecies} · Hari Terfokus: ${mostFocusedDay}\nrimba.app`
+        ? isEn
+          ? `🌲 Rimba Sanctuary Year in Review · 2026\n⏱️ ${totalHoursNum} Focus Hours (+${regionalBonusHours}h vs Region Avg)\n🌿 Favorite Tree: ${favoriteTreeSpecies} · Top Day: ${mostFocusedDay}\nrimba.app`
+          : `🌲 Rimba Sanctuary Kilas Balik · 2026\n⏱️ ${totalHoursNum} Jam Fokus (+${regionalBonusHours}h vs Rata-rata)\n🌿 Pohon Terfavorit: ${favoriteTreeSpecies} · Hari Terfokus: ${mostFocusedDay}\nrimba.app`
         : cardTheme === "diorama"
-        ? `🌿 Rimba Diorama · ${forestDateText}\n⏱️ ${totalHoursNum} Jam Fokus · 🌲 ${treesCount} Flora · 🥀 ${stumpsCount} Layu\n🔥 ${analytics.currentStreak} Hari Beruntun · rimba.app`
+        ? isEn
+          ? `🌿 Rimba Diorama · ${forestDateText}\n⏱️ ${totalHoursNum} Focus Hours · 🌲 ${treesCount} Flora · 🥀 ${stumpsCount} Withered\n🔥 ${analytics.currentStreak}-Day Streak · rimba.app`
+          : `🌿 Rimba Diorama · ${forestDateText}\n⏱️ ${totalHoursNum} Jam Fokus · 🌲 ${treesCount} Flora · 🥀 ${stumpsCount} Layu\n🔥 ${analytics.currentStreak} Hari Beruntun · rimba.app`
+        : isEn
+        ? `✨ Rimba Focus Story · ${highestUnlockedStory.title}\n⏱️ ${totalHoursNum} Focus Hours (+${regionalBonusHours}h vs Region Avg)\n🌲 ${treesCount} Trees · 🔥 ${analytics.currentStreak}-Day Streak · rimba.app`
         : `✨ Rimba Focus Story · ${highestUnlockedStory.title}\n⏱️ ${totalHoursNum} Jam Fokus (+${regionalBonusHours}h vs Rata-rata)\n🌲 ${treesCount} Pohon · 🔥 ${analytics.currentStreak} Hari Beruntun · rimba.app`;
 
     try {

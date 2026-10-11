@@ -1,7 +1,8 @@
 "use client";
 
 import React from "react";
-import { ShareAspectRatio, TagStatItem, drawRoundedRect } from "./types";
+import { ShareAspectRatio, TagStatItem, drawRoundedRect, BLUE_GREEN_PALETTE } from "./types";
+import { translateTagLabel } from "@/lib/i18n/translations";
 
 export interface DioramaCardProps {
   aspectRatio: ShareAspectRatio;
@@ -34,17 +35,8 @@ export interface DioramaCanvasOptions {
   language?: "id" | "en";
 }
 
-const ACCENT_COLORS = [
-  "#059669", // Emerald
-  "#0284C7", // Sky Blue
-  "#D97706", // Amber
-  "#6366F1", // Indigo
-  "#0D9488", // Teal
-  "#64748B", // Slate
-];
-
-function getSafeColor(index: number, originalColor?: string): string {
-  return originalColor || ACCENT_COLORS[index % ACCENT_COLORS.length];
+function getSafeColor(index: number, _originalColor?: string): string {
+  return BLUE_GREEN_PALETTE[index % BLUE_GREEN_PALETTE.length];
 }
 
 export function drawForestTagDonutChart(
@@ -54,9 +46,11 @@ export function drawForestTagDonutChart(
   boxW: number,
   boxH: number,
   tags: TagStatItem[],
+  language: "id" | "en" = "id",
 ) {
   if (tags.length === 0) return;
 
+  const isEn = language === "en";
   const cx = boxX + boxW * 0.22;
   const cy = boxY + boxH * 0.5;
   const outerR = Math.min(boxW * 0.17, boxH * 0.4);
@@ -111,9 +105,9 @@ export function drawForestTagDonutChart(
   ctx.textBaseline = "middle";
   ctx.fillStyle = "#64748B";
   ctx.font = '700 13px "Urbanist", sans-serif';
-  ctx.fillText("Tag", cx, cy - 8);
+  ctx.fillText(isEn ? "Tag" : "Kategori", cx, cy - 8);
   ctx.font = '600 11px "Urbanist", sans-serif';
-  ctx.fillText("Distribution", cx, cy + 8);
+  ctx.fillText(isEn ? "Distribution" : "Distribusi", cx, cy + 8);
   ctx.restore();
 
   // Daftar Legenda
@@ -132,12 +126,13 @@ export function drawForestTagDonutChart(
     ctx.fillStyle = color;
     ctx.fill();
 
-    // Nama tag
+    // Nama tag (dilokalkan)
     ctx.textAlign = "left";
     ctx.textBaseline = "middle";
     ctx.fillStyle = "#334155";
     ctx.font = '600 16px "Urbanist", sans-serif';
-    ctx.fillText(item.name.toLowerCase(), listX + 15, y);
+    const localizedName = translateTagLabel(item.name, language).toLowerCase();
+    ctx.fillText(localizedName, listX + 15, y);
 
     // Persentase
     ctx.textAlign = "right";
@@ -145,10 +140,11 @@ export function drawForestTagDonutChart(
     ctx.font = '500 15px "Urbanist", sans-serif';
     ctx.fillText(`${item.pct}%`, boxX + boxW * 0.74, y);
 
-    // Durasi jam
+    // Durasi jam / hrs
     ctx.fillStyle = "#1E293B";
     ctx.font = '600 16px "Urbanist", sans-serif';
-    ctx.fillText(`${item.hours} jam`, boxX + boxW - 14, y);
+    const hoursUnit = isEn ? "hrs" : "jam";
+    ctx.fillText(`${item.hours} ${hoursUnit}`, boxX + boxW - 14, y);
   });
 }
 
@@ -260,6 +256,7 @@ export async function drawDioramaCardCanvas(
     cardW - 24,
     cardH - 16,
     tagStats,
+    language,
   );
 
   // 4. Watermark Bersih Rimba di Bawah Kartu
@@ -462,7 +459,7 @@ export function DioramaShareCard({
                   fontSize="9.5"
                   fontWeight="800"
                 >
-                  Tag
+                  {isEn ? "Tag" : "Kategori"}
                 </text>
                 <text
                   x={cx}
@@ -473,7 +470,7 @@ export function DioramaShareCard({
                   fontSize="8"
                   fontWeight="700"
                 >
-                  Distribution
+                  {isEn ? "Distribution" : "Distribusi"}
                 </text>
               </>
             );
@@ -493,13 +490,13 @@ export function DioramaShareCard({
                   style={{ backgroundColor: getSafeColor(idx, item.color) }}
                 />
                 <span className="font-semibold text-[#334155] truncate lowercase">
-                  {item.name}
+                  {translateTagLabel(item.name, language)}
                 </span>
               </div>
               <div className="flex items-center gap-1.5 shrink-0 pl-1 font-mono">
                 <span className="text-[#64748B] font-medium">{item.pct}%</span>
                 <span className="font-bold text-[#1E293B]">
-                  {item.hours} jam
+                  {item.hours} {isEn ? "hrs" : "jam"}
                 </span>
               </div>
             </div>

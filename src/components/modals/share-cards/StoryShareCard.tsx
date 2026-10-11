@@ -78,6 +78,8 @@ export async function drawStoryCardCanvas(
   ctx.fillStyle = topFade;
   ctx.fillRect(0, 0, width, topFadeH);
 
+  const isEn = language === "en";
+
   // Top Left: 2026 / Rimba Chronicle / Year in Review (ALL WHITE)
   const titleSize = aspectRatio === "story" ? 68 : aspectRatio === "portrait" ? 56 : 46;
   const subSize = aspectRatio === "story" ? 26 : aspectRatio === "portrait" ? 22 : 19;
@@ -92,7 +94,7 @@ export async function drawStoryCardCanvas(
   ctx.font = `700 ${subSize}px "Urbanist", sans-serif`;
   ctx.fillText("Rimba Chronicle", 72, topY + topGap);
   ctx.font = `600 ${subSize - 3}px "Urbanist", sans-serif`;
-  ctx.fillText("Year in Review", 72, topY + topGap + (aspectRatio === "square" ? 24 : 30));
+  ctx.fillText(isEn ? "Year in Review" : "Kilas Balik 2026", 72, topY + topGap + (aspectRatio === "square" ? 24 : 30));
 
   // Top Right: Chapter Number & Title (ALL WHITE)
   ctx.textAlign = "right";
@@ -132,14 +134,16 @@ export async function drawStoryCardCanvas(
   ctx.font = `700 ${
     aspectRatio === "story" ? 24 : aspectRatio === "portrait" ? 20 : 16
   }px "Urbanist", sans-serif`;
-  ctx.fillText("TOTAL FOCUS TIME", width / 2, focusLabelY);
+  ctx.fillText(isEn ? "TOTAL FOCUS TIME" : "TOTAL WAKTU FOKUS", width / 2, focusLabelY);
 
   ctx.fillStyle = "#FFFFFF";
   ctx.font = `900 ${
     aspectRatio === "story" ? 92 : aspectRatio === "portrait" ? 72 : 56
   }px "Urbanist", sans-serif`;
   const hoursText =
-    totalHoursNum >= 1 ? `${totalHoursNum} hours` : `${totalMinutes} mins`;
+    totalHoursNum >= 1
+      ? (isEn ? `${totalHoursNum} hours` : `${totalHoursNum} jam`)
+      : (isEn ? `${totalMinutes} mins` : `${totalMinutes} mnt`);
   ctx.fillText(hoursText, width / 2, focusHoursY);
 
   ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
@@ -147,19 +151,19 @@ export async function drawStoryCardCanvas(
     aspectRatio === "story" ? 24 : aspectRatio === "portrait" ? 19 : 15
   }px "Urbanist", sans-serif`;
   const compText =
-    language === "en"
-      ? `Your total focus was ${regionalBonusHours} hours more than average of others in your region! Amazing!`
-      : `Total fokusmu ${regionalBonusHours} jam lebih banyak dari rata-rata penjaga suaka lainnya! Luar biasa!`;
+    isEn
+      ? `+${regionalBonusHours}h above average in your region · Amazing!`
+      : `+${regionalBonusHours} jam di atas rata-rata regional · Luar biasa!`;
   ctx.fillText(compText, width / 2, compY);
 
-  // Two-Column Info Row (ALL WHITE)
+  // Two-Column Info Row - Faded hairline dividers
   const rowDividerY =
     compY + (aspectRatio === "story" ? 55 : aspectRatio === "portrait" ? 42 : 32);
   ctx.beginPath();
   ctx.moveTo(80, rowDividerY);
   ctx.lineTo(width - 80, rowDividerY);
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
-  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.10)";
+  ctx.lineWidth = 1;
   ctx.stroke();
 
   // Vertical mid divider
@@ -169,8 +173,8 @@ export async function drawStoryCardCanvas(
   ctx.beginPath();
   ctx.moveTo(colMidX, rowDividerY + 16);
   ctx.lineTo(colMidX, rowDividerY + rowHeight);
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
-  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.10)";
+  ctx.lineWidth = 1;
   ctx.stroke();
 
   const textStartY =
@@ -187,12 +191,12 @@ export async function drawStoryCardCanvas(
   ctx.textAlign = "left";
   ctx.fillStyle = "#FFFFFF";
   ctx.font = `800 ${boxTitleSize}px "Urbanist", sans-serif`;
-  ctx.fillText("Focus Type", col1X, textStartY);
+  ctx.fillText(isEn ? "Focus Type" : "Tipe Fokus", col1X, textStartY);
 
   ctx.fillStyle = "#FFFFFF";
   ctx.font = `700 ${boxValSize}px "Urbanist", sans-serif`;
   ctx.fillText(
-    "Evergreen Guardian",
+    isEn ? "Evergreen Guardian" : "Penjaga Abadi",
     col1X,
     textStartY + (aspectRatio === "story" ? 40 : 30),
   );
@@ -200,7 +204,7 @@ export async function drawStoryCardCanvas(
   ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
   ctx.font = `500 ${boxDescSize}px "Urbanist", sans-serif`;
   const descText =
-    language === "en"
+    isEn
       ? "Focused throughout the day, steady like the pines."
       : "Fokus konsisten sepanjang hari bagai pinus abadi.";
   ctx.fillText(
@@ -213,7 +217,7 @@ export async function drawStoryCardCanvas(
   const col2X = colMidX + 36;
   ctx.fillStyle = "#FFFFFF";
   ctx.font = `800 ${boxTitleSize}px "Urbanist", sans-serif`;
-  ctx.fillText(language === "en" ? "Top Day" : "Hari Terfokus", col2X, textStartY);
+  ctx.fillText(isEn ? "Top Day" : "Hari Terfokus", col2X, textStartY);
 
   ctx.fillStyle = "#FFFFFF";
   ctx.font = `800 ${boxValSize + 4}px "Urbanist", sans-serif`;
@@ -225,7 +229,9 @@ export async function drawStoryCardCanvas(
 
   ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
   ctx.font = `500 ${boxDescSize}px "Urbanist", sans-serif`;
-  const peakLabel = `Jam Emas: ${peakWindowLabel || "10:00 – 12:00"}`;
+  const peakLabel = isEn
+    ? `Peak Hours: ${peakWindowLabel || "10:00 – 12:00"}`
+    : `Jam Emas: ${peakWindowLabel || "10:00 – 12:00"}`;
   ctx.fillText(
     peakLabel,
     col2X,
@@ -249,6 +255,8 @@ export function StoryShareCard({
   mostFocusedDay,
   peakWindowLabel,
 }: StoryCardProps) {
+  const isEn = language === "en";
+
   return (
     <div
       className={`relative w-full rounded-3xl overflow-hidden p-3.5 text-left flex flex-col justify-between transition-all duration-300 shadow-md font-urbanist ${
@@ -279,7 +287,8 @@ export function StoryShareCard({
             2026
           </p>
           <p className="text-[10px] font-bold text-white/90 mt-0.5 leading-tight drop-shadow-2xs">
-            Rimba Chronicle<br />Year in Review
+            Rimba Chronicle<br />
+            {isEn ? "Year in Review" : "Kilas Balik 2026"}
           </p>
         </div>
         <div className="text-right">
@@ -299,45 +308,51 @@ export function StoryShareCard({
       <div className="relative z-10 -mx-3.5 -mb-3.5 px-3.5 pb-3 pt-8 bg-gradient-to-t from-black/95 via-black/75 to-transparent flex flex-col gap-2">
         <div className="text-center">
           <span className="text-[9px] font-bold text-white/85 uppercase tracking-widest">
-            Total Focus Time
+            {isEn ? "Total Focus Time" : "Total Waktu Fokus"}
           </span>
           <div className="text-[30px] font-black text-white leading-tight drop-shadow-sm my-0.5">
-            {totalHoursNum >= 1 ? `${totalHoursNum} hours` : `${totalMinutes} mins`}
+            {totalHoursNum >= 1
+              ? (isEn ? `${totalHoursNum} hours` : `${totalHoursNum} jam`)
+              : (isEn ? `${totalMinutes} mins` : `${totalMinutes} mnt`)}
           </div>
           <p className="text-[9px] text-white/95 leading-snug max-w-[280px] mx-auto font-medium">
-            {language === "en"
-              ? `Your total focus was ${regionalBonusHours} hours more than average in your region! Amazing!`
-              : `Total fokusmu ${regionalBonusHours} jam lebih banyak dari rata-rata penjaga suaka lainnya! Luar biasa!`}
+            {isEn
+              ? `+${regionalBonusHours}h above average in your region · Amazing!`
+              : `+${regionalBonusHours} jam di atas rata-rata regional · Luar biasa!`}
           </p>
         </div>
 
-        {/* Two-Column Info Row (ALL WHITE) */}
-        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/20 text-left">
-          <div className="pr-1.5 border-r border-white/20">
-            <span className="text-[9px] font-bold text-white">Focus Type</span>
+        {/* Two-Column Info Row (ALL WHITE, subtle faded dividers) */}
+        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/10 text-left">
+          <div className="pr-1.5 border-r border-white/10">
+            <span className="text-[9px] font-bold text-white">
+              {isEn ? "Focus Type" : "Tipe Fokus"}
+            </span>
             <p className="text-[10px] font-extrabold text-white leading-tight mt-0.5">
-              Evergreen Guardian
+              {isEn ? "Evergreen Guardian" : "Penjaga Abadi"}
             </p>
             <p className="text-[7.5px] text-white/85 leading-tight mt-0.5">
-              {language === "en"
+              {isEn
                 ? "Focused throughout the day, steady like the pines."
                 : "Fokus konsisten sepanjang hari bagai pinus abadi."}
             </p>
           </div>
           <div className="pl-1.5">
             <span className="text-[9px] font-bold text-white">
-              {language === "en" ? "Top Day" : "Hari Terfokus"}
+              {isEn ? "Top Day" : "Hari Terfokus"}
             </span>
             <p className="text-[11px] font-extrabold text-white leading-tight mt-0.5">
               {mostFocusedDay}
             </p>
             <p className="text-[7.5px] text-white/85 leading-tight mt-0.5">
-              Jam Emas: {peakWindowLabel || "10:00 – 12:00"}
+              {isEn
+                ? `Peak Hours: ${peakWindowLabel || "10:00 – 12:00"}`
+                : `Jam Emas: ${peakWindowLabel || "10:00 – 12:00"}`}
             </p>
           </div>
         </div>
 
-        {/* Clean Watermark (STRICTLY "Rimba", NO tree icon) */}
+        {/* Clean Watermark (STRICTLY "Rimba", NO tree icon!) */}
         <div className="text-center pt-0.5">
           <span className="text-[9.5px] text-white/80 font-bold tracking-[0.25em] uppercase">
             Rimba

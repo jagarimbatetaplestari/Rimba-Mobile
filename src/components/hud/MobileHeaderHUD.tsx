@@ -45,6 +45,7 @@ export interface MobileHeaderHUDProps {
   onOpenWorkshop?: () => void;
   onOpenSettings?: () => void;
   onOpenOnboarding?: () => void;
+  onOpenGuide?: () => void;
   onOpenCampfire?: () => void;
   claimableCount?: number;
   isZenDimmed?: boolean;
@@ -64,6 +65,7 @@ export function MobileHeaderHUD({
   onOpenWorkshop,
   onOpenSettings,
   onOpenOnboarding,
+  onOpenGuide,
   onOpenCampfire,
   claimableCount = 0,
   isZenDimmed = false,
@@ -548,10 +550,10 @@ export function MobileHeaderHUD({
                   <span>{lang.toUpperCase()}</span>
                 </button>
 
-                {/* 6. Panduan & Onboarding */}
+                {/* 6. Panduan Permainan (How to Play) */}
                 <button
                   type="button"
-                  onClick={() => handleAction(onOpenOnboarding)}
+                  onClick={() => handleAction(onOpenGuide || onOpenOnboarding)}
                   className={pillarButton}
                   title={t.hud.menuGuide}
                   aria-label={t.hud.menuGuide}

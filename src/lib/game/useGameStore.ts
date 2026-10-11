@@ -1342,9 +1342,22 @@ export const useGameStore = create<GameState>((set, get) => ({
       return false;
     }
 
-    if (isTileOccupied(grid_x, grid_y, saveData.world_objects)) {
-      get().notify('Petak tersebut sudah terisi objek lain!', 'error');
-      return false;
+    const existingObj = saveData.world_objects.find(
+      (o) => o.grid_x === grid_x && o.grid_y === grid_y && o.status !== 'marked_for_clearing'
+    );
+    const isBridge = item.id.toLowerCase().includes('bridge') || item.model.toLowerCase().includes('bridge');
+    const isExistingRiver = Boolean(
+      existingObj &&
+      (((existingObj.model_variant || '').toLowerCase().includes('river')) || (existingObj.id || '').toLowerCase().includes('river'))
+    );
+
+    if (existingObj) {
+      if (isBridge && isExistingRiver) {
+        // Bridge seamlessly spans across the river channel!
+      } else {
+        get().notify('Petak tersebut sudah terisi objek lain!', 'error');
+        return false;
+      }
     }
 
     const cost = item.cost;
@@ -1382,9 +1395,14 @@ export const useGameStore = create<GameState>((set, get) => ({
     }
 
     const updatedLedger = [...saveData.currency_ledger, ledgerEntry];
+    const filteredObjects =
+      existingObj && isBridge && isExistingRiver
+        ? saveData.world_objects.filter((o) => o.id !== existingObj.id)
+        : saveData.world_objects;
+
     const updatedData: RimbaSaveData = {
       ...saveData,
-      world_objects: [...saveData.world_objects, newObj],
+      world_objects: [...filteredObjects, newObj],
       currency_ledger: updatedLedger,
       pioneer_completed_ids: Array.from(pioneerSet),
     };
@@ -1399,12 +1417,19 @@ export const useGameStore = create<GameState>((set, get) => ({
       selectedCatalogItem: stillAffordable ? item : null,
     });
 
-    get().notify(
-      stillAffordable
-        ? `🌿 ${item.name} ditempatkan! (-${cost} Soul) • Klik petak lain untuk lanjut menaruh atau tekan Esc.`
-        : `🌿 ${item.name} ditempatkan! (-${cost} Soul)`,
-      'success'
-    );
+    if (isBridge && isExistingRiver) {
+      get().notify(
+        `🌉 Jembatan Rimba terpasang di atas aliran sungai! (-${cost} Soul)`,
+        'success'
+      );
+    } else {
+      get().notify(
+        stillAffordable
+          ? `🌿 ${item.name} ditempatkan! (-${cost} Soul) • Klik petak lain untuk lanjut menaruh atau tekan Esc.`
+          : `🌿 ${item.name} ditempatkan! (-${cost} Soul)`,
+        'success'
+      );
+    }
     return true;
   },
 

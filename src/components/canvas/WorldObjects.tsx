@@ -193,9 +193,10 @@ interface ObjectItemProps {
   isSelected: boolean;
   onSelect: (obj: WorldObject) => void;
   riverAdjacency?: RiverAdjacency;
+  interactive?: boolean;
 }
 
-function ObjectItem({ object, isSelected, onSelect, riverAdjacency }: ObjectItemProps) {
+function ObjectItem({ object, isSelected, onSelect, riverAdjacency, interactive = true }: ObjectItemProps) {
   // Resolve model path from asset manifest
   const manifestItem = useMemo(
     () => getManifestItem(object.model_variant),
@@ -424,10 +425,12 @@ function ObjectItem({ object, isSelected, onSelect, riverAdjacency }: ObjectItem
       rotation={isRiver ? [0, 0, 0] : [0, object.rotation, 0]}
       scale={[currentScale, currentScale, currentScale]}
       onClick={(e) => {
+        if (!interactive) return;
         e.stopPropagation();
         onSelect(object);
       }}
       onPointerOver={(e) => {
+        if (!interactive) return;
         e.stopPropagation();
         document.body.style.cursor = 'pointer';
       }}
@@ -529,6 +532,14 @@ export function WorldObjects() {
     return () => clearTimeout(timer);
   }, []);
 
+  const isBuildActive = Boolean(
+    useGameStore((state) => state.selectedCatalogItem) ||
+    useGameStore((state) => state.selectedTool)
+  );
+  const isRelocating = Boolean(relocatingObjectId);
+  const isExpandLandMode = useGameStore((state) => state.isExpandLandMode);
+  const isInteractingWithGrid = isBuildActive || isRelocating || isExpandLandMode;
+
   return (
     <group>
       {worldObjects.map((obj) => {
@@ -540,6 +551,7 @@ export function WorldObjects() {
               isSelected={selectedObject?.id === obj.id}
               onSelect={setSelectedObject}
               riverAdjacency={riverTileMap.get(`${obj.grid_x},${obj.grid_y}`)}
+              interactive={!isInteractingWithGrid}
             />
           </React.Suspense>
         );

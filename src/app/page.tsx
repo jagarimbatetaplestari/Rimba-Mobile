@@ -22,6 +22,7 @@ import { SoundscapeModal } from "@/components/modals/SoundscapeModal";
 import { DevDebugDrawer } from "@/components/feedback/DevDebugDrawer";
 import { ZenFocusOverlay } from "@/components/focus/ZenFocusOverlay";
 import { MobileOnboardingModal } from "@/components/modals/MobileOnboardingModal";
+import { GameplayGuideModal } from "@/components/modals/GameplayGuideModal";
 import {
   MobileProfileModal,
   ProfileTab,
@@ -73,6 +74,7 @@ export default function RimbaDioramaApp() {
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isCampfireOpen, setIsCampfireOpen] = useState(false);
+  const [isGameplayGuideOpen, setIsGameplayGuideOpen] = useState(false);
   const [isZenDimmed, setIsZenDimmed] = useState(false);
 
   // Wait for persisted auth store hydration, then redirect unauthenticated users to /login first
@@ -397,6 +399,7 @@ export default function RimbaDioramaApp() {
     isLeaderboardOpen ||
     isSettingsOpen ||
     isCampfireOpen ||
+    isGameplayGuideOpen ||
     isOnboardingOpen;
 
   // Prevent flashing main island or onboarding before redirecting unauthenticated user to /login
@@ -744,6 +747,7 @@ export default function RimbaDioramaApp() {
             onOpenSoundscapes={() => setIsSoundscapeOpen(true)}
             onOpenSettings={() => setIsSettingsOpen(true)}
             onOpenOnboarding={() => setIsOnboardingOpen(true)}
+            onOpenGuide={() => setIsGameplayGuideOpen(true)}
             onOpenCampfire={() => setIsCampfireOpen(true)}
             claimableCount={claimableCount}
           />
@@ -816,6 +820,10 @@ export default function RimbaDioramaApp() {
       <CampfireRoomModal
         isOpen={isCampfireOpen}
         onClose={() => setIsCampfireOpen(false)}
+      />
+      <GameplayGuideModal
+        isOpen={isGameplayGuideOpen}
+        onClose={() => setIsGameplayGuideOpen(false)}
       />
       <MobileOnboardingModal
         isOpen={isOnboardingOpen}

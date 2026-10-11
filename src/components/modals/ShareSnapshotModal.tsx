@@ -43,7 +43,7 @@ export function ShareSnapshotModal({ isOpen, onClose }: ShareSnapshotModalProps)
 
   const [snapshotUrl, setSnapshotUrl] = useState<string | null>(null);
   const [cardTheme, setCardTheme] = useState<ShareCardTheme>("sanctuary");
-  const [aspectRatio, setAspectRatio] = useState<ShareAspectRatio>("story");
+  const aspectRatio: ShareAspectRatio = "story"; // Locked to 9:16 Story format
   const [periodScope, setPeriodScope] = useState<"month" | "week" | "all">("month");
   const [isCopied, setIsCopied] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -560,58 +560,15 @@ function cropIslandFromCanvas(canvasEl: HTMLCanvasElement): string {
         </div>
 
         {/* 2. Format & Scope Controls Row */}
-        <div className="flex items-center justify-between gap-1.5">
-          {/* 3 Aspect Ratios: 9:16 | 4:5 | 1:1 */}
-          <div className="rounded-full p-0.5 border border-[#0D3528]/8 bg-[#0D3528]/5 flex gap-1">
-            <button
-              type="button"
-              onClick={() => {
-                soundManager.playPop();
-                hapticLight();
-                setAspectRatio("story");
-              }}
-              className={`py-1 px-2.5 rounded-full text-[10.5px] transition-all cursor-pointer ${
-                aspectRatio === "story"
-                  ? "bg-white text-[#0D3528] shadow-2xs font-semibold"
-                  : "text-[#4C7567] font-medium"
-              }`}
-            >
-              9:16
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                soundManager.playPop();
-                hapticLight();
-                setAspectRatio("portrait");
-              }}
-              className={`py-1 px-2.5 rounded-full text-[10.5px] transition-all cursor-pointer ${
-                aspectRatio === "portrait"
-                  ? "bg-white text-[#0D3528] shadow-2xs font-semibold"
-                  : "text-[#4C7567] font-medium"
-              }`}
-            >
-              4:5
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                soundManager.playPop();
-                hapticLight();
-                setAspectRatio("square");
-              }}
-              className={`py-1 px-2.5 rounded-full text-[10.5px] transition-all cursor-pointer ${
-                aspectRatio === "square"
-                  ? "bg-white text-[#0D3528] shadow-2xs font-semibold"
-                  : "text-[#4C7567] font-medium"
-              }`}
-            >
-              1:1
-            </button>
+        <div className="flex items-center justify-between gap-1.5 px-0.5">
+          {/* Format Badge: Story 9:16 */}
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#187557]/10 border border-[#187557]/20 text-[#187557] text-[10.5px] font-semibold">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#187557]" />
+            <span>Story 9:16</span>
           </div>
 
-          {/* Period Scope */}
-          <div className="rounded-full p-0.5 border border-[#0D3528]/8 bg-[#0D3528]/5 flex gap-1">
+          {/* Period Scope Pills */}
+          <div className="rounded-full p-0.5 border border-[#0D3528]/10 bg-[#0D3528]/5 flex gap-0.5">
             {(
               [
                 { id: "month", label: t.shareModal.scopeMonth },
@@ -627,10 +584,10 @@ function cropIslandFromCanvas(canvasEl: HTMLCanvasElement): string {
                   hapticLight();
                   setPeriodScope(s.id);
                 }}
-                className={`py-1 px-2 rounded-full text-[10px] transition-all cursor-pointer ${
+                className={`py-1 px-2.5 rounded-full text-[10.5px] transition-all cursor-pointer ${
                   periodScope === s.id
                     ? "bg-[#187557] text-white shadow-2xs font-semibold"
-                    : "text-[#4C7567] font-medium"
+                    : "text-[#4C7567] hover:text-[#0D3528] font-medium"
                 }`}
               >
                 {s.label}

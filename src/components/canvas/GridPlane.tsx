@@ -256,7 +256,18 @@ export function GridPlane() {
     }
 
     if (isBuildActive) {
-      const occupied = isTileOccupied(hoveredTile.grid_x, hoveredTile.grid_y, worldObjects);
+      const existingObj = worldObjects.find(
+        (o) => o.grid_x === hoveredTile.grid_x && o.grid_y === hoveredTile.grid_y && o.status !== 'marked_for_clearing'
+      );
+      const isBridge = selectedCatalogItem
+        ? selectedCatalogItem.id.toLowerCase().includes('bridge') || selectedCatalogItem.model.toLowerCase().includes('bridge')
+        : false;
+      const isRiverOnTile = Boolean(
+        existingObj &&
+        ((existingObj.model_variant || '').toLowerCase().includes('river') || (existingObj.id || '').toLowerCase().includes('river'))
+      );
+
+      const occupied = existingObj ? !(isBridge && isRiverOnTile) : false;
       const cost = selectedCatalogItem
         ? selectedCatalogItem.cost
         : selectedTool
@@ -318,6 +329,39 @@ export function GridPlane() {
     if (selectedTool === 'rock') return '/models/fabz_rounded_rock.glb';
     return '/models/kenney_nature_kit_path_stone.glb';
   }, [isRelocating, relocatingObject, selectedCatalogItem, selectedTool]);
+
+  const pointerDownPosRef = useRef<{ x: number; y: number; time: number } | null>(null);
+
+  const handlePointerDown = (e: { nativeEvent: MouseEvent | TouchEvent | PointerEvent; point: THREE.Vector3; stopPropagation: () => void }) => {
+    if (!isInteractingWithGrid) return;
+    e.stopPropagation();
+    const clientX = 'clientX' in e.nativeEvent ? e.nativeEvent.clientX : ((e.nativeEvent as unknown as TouchEvent).touches?.[0]?.clientX || 0);
+    const clientY = 'clientY' in e.nativeEvent ? e.nativeEvent.clientY : ((e.nativeEvent as unknown as TouchEvent).touches?.[0]?.clientY || 0);
+    pointerDownPosRef.current = {
+      x: clientX,
+      y: clientY,
+      time: Date.now(),
+    };
+    const grid = worldToGrid(e.point.x, e.point.z);
+    if (grid) setHoveredTile(grid);
+  };
+
+  const handlePointerUp = (e: { nativeEvent: MouseEvent | TouchEvent | PointerEvent; point: THREE.Vector3; stopPropagation: () => void }) => {
+    if (!isInteractingWithGrid) return;
+    e.stopPropagation();
+    if (pointerDownPosRef.current) {
+      const clientX = 'clientX' in e.nativeEvent ? e.nativeEvent.clientX : ((e.nativeEvent as unknown as TouchEvent).changedTouches?.[0]?.clientX || 0);
+      const clientY = 'clientY' in e.nativeEvent ? e.nativeEvent.clientY : ((e.nativeEvent as unknown as TouchEvent).changedTouches?.[0]?.clientY || 0);
+      const dx = clientX - pointerDownPosRef.current.x;
+      const dy = clientY - pointerDownPosRef.current.y;
+      const dist = Math.hypot(dx, dy);
+      const elapsed = Date.now() - pointerDownPosRef.current.time;
+      pointerDownPosRef.current = null;
+      if (dist < 20 && elapsed < 600) {
+        handleClick({ point: e.point, stopPropagation: () => {} });
+      }
+    }
+  };
 
   const handlePointerMove = (e: { point: THREE.Vector3; stopPropagation: () => void }) => {
     if (!isInteractingWithGrid) return;
@@ -451,6 +495,8 @@ export function GridPlane() {
         <mesh
           rotation={[-Math.PI / 2, 0, 0]}
           position={[0, 0.05, 0]}
+          onPointerDown={handlePointerDown}
+          onPointerUp={handlePointerUp}
           onPointerMove={handlePointerMove}
           onPointerLeave={handlePointerLeave}
           onClick={handleClick}

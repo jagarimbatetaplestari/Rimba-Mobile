@@ -273,22 +273,22 @@ export function InstancedGrass({ count: overrideCount }: InstancedGrassProps) {
       };
     });
 
-    // Helper: checks if world coordinate (wx, wz) falls in or near any river channel
-    const isRiverZone = (wx: number, wz: number, radius = 0.50): boolean => {
+    // Helper: checks if world coordinate (wx, wz) falls strictly inside the river water channel
+    const isRiverZone = (wx: number, wz: number, radius = 0.38): boolean => {
       if (riverTileMap.size === 0) return false;
       const g = worldToGrid(wx, wz);
       if (!g) return false;
 
-      // If the coordinate falls on a river tile, strictly forbid grass inside the channel
-      if (riverTileMap.has(`${g.grid_x},${g.grid_y}`)) {
+      // If the coordinate falls on a river tile, strictly forbid grass inside the water channel
+      const currentKey = `${g.grid_x},${g.grid_y}`;
+      if (riverTileMap.has(currentKey)) {
         const [cx, , cz] = gridToWorld(g.grid_x, g.grid_y, 0);
-        const adj = riverTileMap.get(`${g.grid_x},${g.grid_y}`)!;
+        const adj = riverTileMap.get(currentKey)!;
         const dStream = getRiverChannelDistance(wx - cx, wz - cz, adj);
-        if (dStream < 0.52) return true;
+        if (dStream < 0.39) return true;
       }
 
       const candidates = [
-        [g.grid_x, g.grid_y],
         [g.grid_x - 1, g.grid_y],
         [g.grid_x + 1, g.grid_y],
         [g.grid_x, g.grid_y - 1],
@@ -303,7 +303,7 @@ export function InstancedGrass({ count: overrideCount }: InstancedGrassProps) {
         const dx = wx - cx;
         const dz = wz - cz;
 
-        if (Math.abs(dx) <= 0.65 && Math.abs(dz) <= 0.65) {
+        if (Math.abs(dx) <= 0.50 && Math.abs(dz) <= 0.50) {
           const dStream = getRiverChannelDistance(dx, dz, adj);
           if (dStream < radius) return true;
         }
@@ -329,8 +329,8 @@ export function InstancedGrass({ count: overrideCount }: InstancedGrassProps) {
       const x = tb.cx + localX;
       const z = tb.cz + localZ;
 
-      // 1. Strict River exclusion: NEVER spawn grass inside water channels or sand canal slopes
-      if (isRiverZone(x, z, 0.44)) continue;
+      // 1. Strict River exclusion: NEVER spawn grass inside water channels, but allow lush banks
+      if (isRiverZone(x, z, 0.38)) continue;
 
       // 2. Stepping-stone paths exclusion
       let nearPath = false;

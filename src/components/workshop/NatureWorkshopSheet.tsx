@@ -72,6 +72,9 @@ export function NatureWorkshopSheet() {
   const world = useGameStore((state) => state.saveData.world);
   const worldObjects = useGameStore((state) => state.saveData.world_objects);
   const activeSession = useGameStore((state) => state.activeSession);
+  const hoveredGridTile = useGameStore((state) => state.hoveredGridTile);
+  const placeCatalogItem = useGameStore((state) => state.placeCatalogItem);
+  const confirmRelocation = useGameStore((state) => state.confirmRelocation);
 
   const unlockedSet = useMemo(
     () => getUnlockedTilesSet(world, worldObjects),
@@ -146,80 +149,58 @@ export function NatureWorkshopSheet() {
     const id = item.id.toLowerCase();
     const name = item.name.toLowerCase();
 
+    // 1. Water & Rivers
     if (id.includes("stream") || name.includes("aliran") || name.includes("sungai")) return "💧";
     if (id.includes("bend") || name.includes("kelokan")) return "🌊";
-    if (id.includes("pond") || name.includes("danau")) return "🪷";
-    if (id.includes("boulder") || id.includes("muara")) return "🪨";
+    if (id.includes("pond") || name.includes("danau") || name.includes("teratai")) return "🪷";
+    if (id.includes("boulder") || name.includes("muara") || name.includes("batu air")) return "🪨";
 
-    if (id.includes("banana") || name.includes("pisang")) return "🍌";
-    if (
-      id.includes("coconut") ||
-      name.includes("kelapa") ||
-      id.includes("palm")
-    )
-      return "🌴";
-    if (id.includes("baobab") || name.includes("baobab")) return "🌳";
-    if (id.includes("savannah") || name.includes("akasia")) return "🌾";
-    if (
-      id.includes("pine") ||
-      name.includes("pinus") ||
-      name.includes("cemara")
-    )
-      return "🌲";
-    if (id.includes("autumn") || id.includes("fall") || name.includes("birch"))
-      return "🍂";
-    if (
-      id.includes("sakura") ||
-      id.includes("cherry") ||
-      name.includes("sakura")
-    )
-      return "🌸";
-    if (
-      id.includes("elm") ||
-      name.includes("elm") ||
-      id.includes("oak") ||
-      name.includes("jati")
-    )
-      return "🌳";
+    // 2. Paths & Bridges (Bridge strictly 🌉, never Japanese Torii gate ⛩️)
+    if (id.includes("bridge") || name.includes("jembatan")) return "🌉";
+    if (id.includes("stepping") || name.includes("pijakan")) return "👣";
+    if (id.includes("path_wood") || name.includes("papan kayu")) return "🪵";
+    if (id.includes("path_stone") || name.includes("batu lempeng")) return "🪨";
+
+    // 3. Structures
+    if (id.includes("campfire") || id.includes("fire") || name.includes("api")) return "🔥";
+    if (id.includes("tent") || name.includes("tenda") || name.includes("kemah")) return "⛺";
+    if (id.includes("bench") || name.includes("bangku")) return "🪑";
+    if (id.includes("lantern") || id.includes("lamp") || name.includes("lentera")) return "🏮";
+
+    // 4. Flora & Fungi (Distinct botanicals)
+    if (id.includes("flower_red") || id.includes("crimson")) return "🌺";
+    if (id.includes("flower_yellow") || id.includes("buttercup")) return "🌼";
+    if (id.includes("flower_purple") || id.includes("bluebell")) return "🪻";
+    if (id.includes("fruit") || id.includes("berry") || name.includes("beri")) return "🫐";
+    if (id.includes("shroom_amanita")) return "🍄";
+    if (id.includes("shroom_chanterelle")) return "🍄";
+    if (id.includes("mushroom") || name.includes("jamur")) return "🍄";
+    if (id.includes("fern") || name.includes("pakis")) return "🌿";
+    if (id.includes("bush_round") || name.includes("semak belukar")) return "🪴";
+    if (id.includes("bush") || name.includes("semak")) return "🌿";
+    if (id.includes("hedge") || name.includes("pagar")) return "🌳";
+    if (id.includes("autumn") || name.includes("keemasan")) return "🍂";
+    if (id.includes("flowers_tall") || name.includes("semampai")) return "🌷";
+    if (id.includes("flowers") || name.includes("padang")) return "💐";
+
+    // 5. Rocks & Timber
+    if (id.includes("rock_tall") || name.includes("crag")) return "⛰️";
+    if (id.includes("rock_small") || name.includes("pebble")) return "🪨";
+    if (id.includes("stump") || name.includes("tunggul")) return "🪵";
+    if (id.includes("log") || name.includes("rebah") || name.includes("batang")) return "🪵";
+    if (id.includes("branch") || name.includes("ranting")) return "🪵";
+    if (id.includes("trunk") || name.includes("pangkal")) return "🪵";
+    if (id.includes("root") || name.includes("akar")) return "🪵";
+    if (id.includes("crystal") || name.includes("kristal")) return "💎";
+    if (id.includes("rock") || id.includes("stone") || name.includes("batu")) return "🪨";
 
     if (item.category === "Water & Rivers") return "💧";
-
-    if (id.includes("mushroom") || name.includes("jamur")) return "🍄";
-    if (id.includes("flower") || name.includes("bunga") || id.includes("rose"))
-      return "🌺";
-    if (id.includes("fern") || name.includes("pakis")) return "🌿";
-    if (id.includes("bamboo") || name.includes("bambu")) return "🎋";
     if (item.category === "Flora & Fungi") return "🌸";
-
-    if (id.includes("rock") || id.includes("stone") || name.includes("batu"))
-      return "🪨";
-    if (id.includes("crystal") || name.includes("kristal")) return "💎";
-    if (
-      id.includes("log") ||
-      id.includes("wood") ||
-      id.includes("timber") ||
-      name.includes("kayu")
-    )
-      return "🪵";
     if (item.category === "Rocks & Timber") return "🪨";
-
-    if (id.includes("tent") || name.includes("tenda") || name.includes("kemah"))
-      return "⛺";
-    if (id.includes("fire") || id.includes("campfire") || name.includes("api"))
-      return "🔥";
-    if (id.includes("bench") || name.includes("bangku")) return "🪑";
-    if (
-      id.includes("lantern") ||
-      id.includes("lamp") ||
-      name.includes("lentera")
-    )
-      return "🏮";
-    if (id.includes("bridge") || name.includes("jembatan")) return "⛩️";
     if (item.category === "Structures") return "🛖";
+    if (item.category === "Paths") return "🌉";
 
-    if (id.includes("stepping") || name.includes("pijakan")) return "🪨";
-    if (id.includes("wood") || name.includes("kayu")) return "🪵";
-    return "🛤️";
+    return "🌱";
   };
 
   return (
@@ -275,15 +256,15 @@ export function NatureWorkshopSheet() {
       {/* 2. Mode Peletakan / Pindah Objek Floating Capsule */}
       {(selectedCatalogItem || relocatingObjectId) && (
         <div
-          className="fixed left-1/2 -translate-x-1/2 z-40 pointer-events-auto flex flex-col items-center gap-2 w-[92%] max-w-[380px] animate-in fade-in slide-in-from-bottom-3 duration-200"
+          className="fixed left-1/2 -translate-x-1/2 z-40 pointer-events-auto flex flex-col items-center gap-2 w-[92%] max-w-[395px] animate-in fade-in slide-in-from-bottom-3 duration-200"
           style={{
             bottom: "max(calc(env(safe-area-inset-bottom, 0px) + 84px), 96px)",
           }}
         >
-          <div className="w-full p-2 px-3.5 rounded-full border border-white/85 bg-white/80 backdrop-blur-2xl shadow-[0_16px_36px_rgba(20,53,37,0.12)] flex items-center justify-between gap-2 text-[#143525]">
+          <div className="w-full p-2 px-3.5 rounded-full border border-white/85 bg-white/85 backdrop-blur-2xl shadow-[0_16px_36px_rgba(20,53,37,0.16)] flex items-center justify-between gap-2 text-[#143525]">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-full bg-[#bfdac8]/50 flex items-center justify-center shrink-0 text-base">
-                {selectedCatalogItem ? "🌱" : "🔄"}
+              <div className="w-8 h-8 rounded-full bg-[#bfdac8]/60 flex items-center justify-center shrink-0 text-base">
+                {selectedCatalogItem ? getCatalogItemIcon(selectedCatalogItem) : "🔄"}
               </div>
               <div className="flex flex-col min-w-0">
                 <span className="text-xs font-semibold truncate tracking-tight text-[#143525]">
@@ -297,7 +278,35 @@ export function NatureWorkshopSheet() {
               </div>
             </div>
 
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 shrink-0">
+              {/* Tombol Tempatkan (Place) yang mudah diakses di HP */}
+              <button
+                type="button"
+                onClick={() => {
+                  soundManager.playPop();
+                  hapticMedium();
+                  if (hoveredGridTile) {
+                    if (relocatingObjectId) {
+                      const ok = confirmRelocation(hoveredGridTile.grid_x, hoveredGridTile.grid_y);
+                      if (ok) soundManager.playPlace();
+                    } else if (selectedCatalogItem) {
+                      const ok = placeCatalogItem(selectedCatalogItem, hoveredGridTile.grid_x, hoveredGridTile.grid_y);
+                      if (ok) soundManager.playPlace();
+                    }
+                  } else {
+                    useGameStore.getState().notify(
+                      "Ketuk petak di pulau terlebih dahulu untuk menentukan posisi!",
+                      "info"
+                    );
+                  }
+                }}
+                className="py-1.5 px-3 rounded-full bg-[#1e5638] hover:bg-[#16442e] text-white font-semibold text-xs tracking-tight shadow-xs active:scale-95 transition-all flex items-center gap-1 cursor-pointer"
+                title="Tempatkan Objek"
+              >
+                <Check className="w-3.5 h-3.5 stroke-[2.4]" />
+                <span>Tempatkan</span>
+              </button>
+
               <button
                 type="button"
                 onClick={() => {
@@ -306,6 +315,7 @@ export function NatureWorkshopSheet() {
                   rotatePlacement();
                 }}
                 className="w-8 h-8 rounded-full bg-white hover:bg-slate-50 text-[#143525] flex items-center justify-center active:scale-95 transition-all border border-white/90 shadow-2xs cursor-pointer"
+                title="Putar Rotasi"
               >
                 <RotateCw className="w-3.5 h-3.5 stroke-[2.2]" />
               </button>
@@ -318,15 +328,15 @@ export function NatureWorkshopSheet() {
                   if (selectedCatalogItem) setSelectedCatalogItem(null);
                   if (relocatingObjectId) cancelRelocation();
                 }}
-                className="py-1.5 px-3 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/80 font-medium text-xs active:scale-95 transition-all flex items-center gap-1 cursor-pointer"
+                className="w-8 h-8 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/80 flex items-center justify-center active:scale-95 transition-all cursor-pointer shadow-2xs"
+                title="Batal"
               >
                 <X className="w-3.5 h-3.5" />
-                <span>{t.common.cancel}</span>
               </button>
             </div>
           </div>
 
-          <span className="text-[10.5px] font-medium text-[#143525] bg-white/70 border border-white/85 backdrop-blur-md px-3.5 py-1 rounded-full shadow-2xs">
+          <span className="text-[10.5px] font-medium text-[#143525] bg-white/75 border border-white/85 backdrop-blur-md px-3.5 py-1 rounded-full shadow-2xs">
             {t.workshop.placeHint}
           </span>
         </div>

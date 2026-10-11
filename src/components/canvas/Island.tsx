@@ -317,9 +317,9 @@ export function Island() {
         (missingW ? 1 : 0) +
         (missingE ? 1 : 0);
 
-      // Only interior tiles (surrounded by 4 land neighbors) get the seamless turf overlay plane.
-      // They never touch any ocean cliff, guaranteeing no square planes overhang the rounded cliffs.
-      if (!riverTileMap.has(key) && missingCount === 0) {
+      // Interior tiles (surrounded by 4 land neighbors) get the seamless turf overlay plane.
+      // This includes river tiles so the surrounding grassy banks are 100% solid with zero cavities.
+      if (missingCount === 0) {
         turfs.push([cx, 0.001, cz]);
       }
 
@@ -374,20 +374,10 @@ export function Island() {
     const seals: [number, number, number][] = [];
     junctionMap.forEach((entry) => {
       // ONLY seal when ALL 4 surrounding quadrants are unlocked land tiles!
-      // This guarantees that the junction is 100% surrounded by land and >0.20m away from any ocean cliff!
+      // This guarantees that the junction is 100% surrounded by land and >0.20m away from any ocean cliff,
+      // completely eliminating all 4-pointed star cavities between blocks!
       if (entry.count === 4) {
-        const q1 = `${entry.jx - 0.5},${entry.jy - 0.5}`;
-        const q2 = `${entry.jx + 0.5},${entry.jy - 0.5}`;
-        const q3 = `${entry.jx - 0.5},${entry.jy + 0.5}`;
-        const q4 = `${entry.jx + 0.5},${entry.jy + 0.5}`;
-        const hasRiver =
-          riverTileMap.has(q1) ||
-          riverTileMap.has(q2) ||
-          riverTileMap.has(q3) ||
-          riverTileMap.has(q4);
-        if (!hasRiver) {
-          seals.push(entry.pos);
-        }
+        seals.push(entry.pos);
       }
     });
 

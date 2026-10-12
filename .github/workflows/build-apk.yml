@@ -1,0 +1,117 @@
+name: Build Rimba Android APK & AAB
+
+on:
+  push:
+    branches: [ main ]
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: 17
+          cache: 'gradle'
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Node Dependencies
+        run: npm ci
+
+      - name: Export Next.js Static Web Build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://rkljugrrscmqopeuwtpd.supabase.co' }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJrbGp1Z3Jyc2NtcW9wZXV3dHBkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE0NTg2NzcsImV4cCI6MjEwNzAzNDY3N30.5ZGZjrPq8cCMBhX_pIuMOsFjq0H50JhhLHdIlmo5HQ0' }}
+        run: npm run build
+
+      - name: Sync Capacitor Android Project
+        run: npx cap sync android
+
+      - name: Make Gradle Wrapper Executable
+        run: chmod +x android/gradlew
+
+      - name: Build Universal Android Debug APK
+        run: |
+          cd android
+          ./gradlew assembleDebug --stacktrace
+          cd ..
+
+      - name: Build Android App Bundle (AAB for Google Play)
+        run: |
+          cd android
+          ./gradlew bundleRelease --stacktrace
+          cd ..
+
+      - name: Prepare Output Directory
+        run: |
+          mkdir -p build
+          cp android/app/build/outputs/apk/debug/app-debug.apk build/Rimba.apk
+          cp android/app/build/outputs/bundle/release/app-release.aab build/Rimba.aab
+          ls -lh build/
+
+      - name: Upload Debug APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Rimba-Android-Debug-APK
+          path: build/Rimba.apk
+          retention-days: 14
+
+      - name: Upload Release AAB Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Rimba-GooglePlay-AAB
+          path: build/Rimba.aab
+          retention-days: 14
+
+      - name: Determine Release Tag
+        id: release_info
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            TAG="${{ github.ref_name }}"
+            NAME="Rimba Mobile $TAG"
+          else
+            TAG="v0.2.0-build-${{ github.run_number }}"
+            NAME="Rimba Mobile v0.2.0 (Build #${{ github.run_number }})"
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "name=$NAME" >> $GITHUB_OUTPUT
+
+      - name: Publish or Update GitHub Release with Android Assets
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.release_info.outputs.tag }}
+          name: ${{ steps.release_info.outputs.name }}
+          files: |
+            build/Rimba.apk
+            build/Rimba.aab
+          body: |
+            ## 🌲 Rimba Mobile — Digital Garden & Focus World
+            **Android APK (Sideload Langsung) & Google Play Store AAB Bundle**
+
+            ### 📲 Cara Install di Smartphone Android:
+            1. Download file `Rimba.apk` yang terlampir di bawah rilis ini langsung ke HP Android Anda.
+            2. Buka file APK yang sudah diunduh (Izinkan *"Install from unknown sources"* jika diminta sistem Android).
+            3. Aplikasi Rimba akan terpasang sebagai aplikasi native mandiri dengan performa 3D penuh, offline caching, dan haptics native!
+
+            ### 🚀 Google Play Store Bundle:
+            - Gunakan file `Rimba.aab` untuk diunggah ke Google Play Console.

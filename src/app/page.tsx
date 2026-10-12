@@ -45,6 +45,7 @@ import { usePreferencesStore } from "@/lib/settings/usePreferencesStore";
 import { useCampfireStore } from "@/lib/game/campfireStore";
 import { registerServiceWorker } from "@/lib/mobile/serviceWorkerRegistration";
 import { PwaInstallBanner } from "@/components/feedback/PwaInstallBanner";
+import { useAndroidBackButton } from "@/lib/mobile/useAndroidBackButton";
 
 export default function RimbaDioramaApp() {
   const router = useRouter();
@@ -454,6 +455,40 @@ export default function RimbaDioramaApp() {
       hoveredGridTile: null,
     });
   }, []);
+
+  // Native Android hardware & gesture back button handling (Capacitor)
+  useAndroidBackButton({
+    activeModals: useMemo(
+      () => [
+        { isOpen: isOnboardingOpen, close: () => setIsOnboardingOpen(false) },
+        { isOpen: isGameplayGuideOpen, close: () => setIsGameplayGuideOpen(false) },
+        { isOpen: isCampfireOpen, close: () => setIsCampfireOpen(false) },
+        { isOpen: isSettingsOpen, close: () => setIsSettingsOpen(false) },
+        { isOpen: isLeaderboardOpen, close: () => setIsLeaderboardOpen(false) },
+        { isOpen: isStatisticsOpen, close: () => setIsStatisticsOpen(false) },
+        { isOpen: isProfileOpen, close: () => setIsProfileOpen(false) },
+        { isOpen: isDevOpen, close: () => setIsDevOpen(false) },
+        { isOpen: isSoundscapeOpen, close: () => setIsSoundscapeOpen(false) },
+        { isOpen: isShareOpen, close: () => setIsShareOpen(false) },
+        { isOpen: isJournalOpen, close: () => setIsJournalOpen(false) },
+      ],
+      [
+        isOnboardingOpen,
+        isGameplayGuideOpen,
+        isCampfireOpen,
+        isSettingsOpen,
+        isLeaderboardOpen,
+        isStatisticsOpen,
+        isProfileOpen,
+        isDevOpen,
+        isSoundscapeOpen,
+        isShareOpen,
+        isJournalOpen,
+      ]
+    ),
+    isZenMode,
+    exitZenMode: () => setZenMode(false),
+  });
 
   // Hardware/gesture back-button navigation guard for mobile web & PWA
   useEffect(() => {

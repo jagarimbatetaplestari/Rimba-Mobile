@@ -23,6 +23,7 @@ import { createInitialSaveData, saveSaveData } from "@/lib/game/storage";
 import { SoundscapeModal } from "@/components/modals/SoundscapeModal";
 import { RestoreDataModal } from "@/components/modals/RestoreDataModal";
 import { SnapshotsHistoryModal } from "@/components/modals/SnapshotsHistoryModal";
+import { LegalModal } from "@/components/modals/LegalModal";
 import { RangerAvatar } from "@/components/ui/RangerAvatar";
 import { uploadGameSaveToCloud } from "@/lib/supabase/cloudSync";
 import { useTranslation } from "@/lib/i18n/translations";
@@ -40,7 +41,9 @@ import {
   ChevronLeft,
   Database,
   Trash2,
+  Shield,
   ShieldAlert,
+  FileText,
   Cloud,
   RefreshCw,
   Globe,
@@ -76,6 +79,8 @@ export function MobileSettingsSheet({
   const [deleteAccountInput, setDeleteAccountInput] = useState("");
   const [isSyncingCloud, setIsSyncingCloud] = useState(false);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
+  const [showLegalModal, setShowLegalModal] = useState(false);
+  const [legalTab, setLegalTab] = useState<"privacy" | "terms">("privacy");
 
   useEffect(() => {
     if (isOpen) setCurrentView("main");
@@ -680,6 +685,85 @@ export function MobileSettingsSheet({
                   </button>
                 </div>
               </div>
+
+              {/* ====================================================
+                  5. TENTANG & LEGAL (PRIVACY & TERMS)
+                  ==================================================== */}
+              <div className="space-y-1.5 pt-1">
+                <p className="px-1 text-[12px] font-medium uppercase tracking-[0.12em] text-white/90 drop-shadow-xs">
+                  {lang === "en" ? "About & Legal" : "Tentang & Legal"}
+                </p>
+
+                <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-1.5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl divide-y divide-[#0D3528]/8">
+                  {/* Kebijakan Privasi */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      hapticLight();
+                      soundManager.playPop();
+                      setLegalTab("privacy");
+                      setShowLegalModal(true);
+                    }}
+                    className="w-full flex items-center justify-between p-3 text-left hover:bg-black/5 rounded-2xl transition-all cursor-pointer"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-xl bg-[#E4F4ED] border border-[#BCE5D3] flex items-center justify-center text-[#187557]">
+                        <Shield className="w-4 h-4 stroke-[2]" />
+                      </div>
+                      <div>
+                        <p className="text-[13px] font-semibold text-[#0D3528]">
+                          {lang === "en" ? "Privacy Policy" : "Kebijakan Privasi"}
+                        </p>
+                        <p className="text-[11px] text-[#4C7567] font-normal">
+                          {lang === "en"
+                            ? "Local-first sovereignty & data protection"
+                            : "Kedaulatan data lokal & keamanan"}
+                        </p>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-[#4C7567]/70 stroke-[1.8]" />
+                  </button>
+
+                  {/* Syarat & Ketentuan */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      hapticLight();
+                      soundManager.playPop();
+                      setLegalTab("terms");
+                      setShowLegalModal(true);
+                    }}
+                    className="w-full flex items-center justify-between p-3 text-left hover:bg-black/5 rounded-2xl transition-all cursor-pointer"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-xl bg-[#E4F4ED] border border-[#BCE5D3] flex items-center justify-center text-[#187557]">
+                        <FileText className="w-4 h-4 stroke-[2]" />
+                      </div>
+                      <div>
+                        <p className="text-[13px] font-semibold text-[#0D3528]">
+                          {lang === "en" ? "Terms of Service" : "Syarat & Ketentuan"}
+                        </p>
+                        <p className="text-[11px] text-[#4C7567] font-normal">
+                          {lang === "en"
+                            ? "App guidelines & virtual assets"
+                            : "Aturan suaka & aset virtual"}
+                        </p>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-[#4C7567]/70 stroke-[1.8]" />
+                  </button>
+
+                  {/* Versi Aplikasi */}
+                  <div className="flex items-center justify-between px-3 py-2 text-xs">
+                    <span className="text-[#4C7567] font-medium">
+                      Rimba Mobile
+                    </span>
+                    <span className="font-semibold text-[#187557] bg-[#E4F4ED] px-2 py-0.5 rounded-full border border-[#BCE5D3] text-[10.5px]">
+                      v0.2.0 (Stable)
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
           ) : (
             /* ====================================================
@@ -1028,6 +1112,11 @@ export function MobileSettingsSheet({
         <SnapshotsHistoryModal
           isOpen={showSnapshotsModal}
           onClose={() => setShowSnapshotsModal(false)}
+        />
+        <LegalModal
+          isOpen={showLegalModal}
+          initialTab={legalTab}
+          onClose={() => setShowLegalModal(false)}
         />
       </div>
     </>

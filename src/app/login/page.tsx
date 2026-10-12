@@ -8,6 +8,7 @@ import { useTranslation } from "@/lib/i18n/translations";
 import { soundManager } from "@/lib/audio/sounds";
 import { hapticLight, hapticMedium, hapticSuccess, hapticWarning } from "@/lib/mobile/nativeBridge";
 import { Mail, Lock, Eye, EyeOff, ArrowLeft, RefreshCw, CheckCircle2, ShieldCheck } from "lucide-react";
+import { LegalModal } from "@/components/modals/LegalModal";
 
 function WelcomeAuthPageContent() {
   const router = useRouter();
@@ -31,6 +32,7 @@ function WelcomeAuthPageContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+  const [legalModalTab, setLegalModalTab] = useState<"privacy" | "terms" | null>(null);
 
   // OTP Verification state
   const [isOtpStep, setIsOtpStep] = useState(false);
@@ -516,10 +518,41 @@ function WelcomeAuthPageContent() {
         )}
       </div>
 
-      {/* 4. Single-Line Micro Footnote */}
-      <p className="relative z-10 text-[10px] text-white/45 font-light tracking-wide text-center drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
-        {t.auth.footnote}
-      </p>
+      {/* 4. Single-Line Micro Footnote & Legal Terms */}
+      <div className="relative z-10 flex flex-col items-center gap-1.5 text-center drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)] pb-2">
+        <p className="text-[10px] text-white/45 font-light tracking-wide">
+          {t.auth.footnote}
+        </p>
+        <div className="flex items-center gap-2 text-[10px] text-white/60">
+          <button
+            type="button"
+            onClick={() => {
+              hapticLight();
+              setLegalModalTab("terms");
+            }}
+            className="hover:text-emerald-300 transition-colors underline underline-offset-2 cursor-pointer"
+          >
+            Syarat & Ketentuan
+          </button>
+          <span>•</span>
+          <button
+            type="button"
+            onClick={() => {
+              hapticLight();
+              setLegalModalTab("privacy");
+            }}
+            className="hover:text-emerald-300 transition-colors underline underline-offset-2 cursor-pointer"
+          >
+            Kebijakan Privasi
+          </button>
+        </div>
+      </div>
+
+      <LegalModal
+        isOpen={Boolean(legalModalTab)}
+        initialTab={legalModalTab || "privacy"}
+        onClose={() => setLegalModalTab(null)}
+      />
     </div>
   );
 }

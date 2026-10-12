@@ -165,9 +165,9 @@ export function FocusSapling() {
   const currentScaleRef = useRef(0);
   const [currentStage, setCurrentStage] = useState<1 | 2 | 3>(1);
 
-  // Lock sapling target tile for the duration of this specific session
+  // Lock sapling target tile for the duration of this specific session via pure React lifecycle
   // Prevents the sapling from jumping to an adjacent tile when completeFocus adds the tree to worldObjects
-  const lockedTileRef = useRef<{ grid_x: number; grid_y: number } | null>(null);
+  const [lockedTile, setLockedTile] = useState<{ grid_x: number; grid_y: number } | null>(null);
   const lastSessionIdRef = useRef<string | null>(null);
 
   const unlockedSet = useMemo(() => {
@@ -176,22 +176,25 @@ export function FocusSapling() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [unlockedSignature]);
 
-  if (activeSession && activeSession.id !== lastSessionIdRef.current) {
-    lastSessionIdRef.current = activeSession.id;
-    const targetTile = findEmptyTileNearCenter(worldObjects, unlockedSet);
-    lockedTileRef.current = targetTile ? { grid_x: targetTile.grid_x, grid_y: targetTile.grid_y } : null;
-  } else if (!activeSession) {
-    lastSessionIdRef.current = null;
-    lockedTileRef.current = null;
-  }
+  useEffect(() => {
+    if (activeSession) {
+      if (activeSession.id !== lastSessionIdRef.current) {
+        lastSessionIdRef.current = activeSession.id;
+        const target = activeSession.target_tile || findEmptyTileNearCenter(worldObjects, unlockedSet);
+        setLockedTile(target ? { grid_x: target.grid_x, grid_y: target.grid_y } : null);
+      }
+    } else {
+      lastSessionIdRef.current = null;
+      setLockedTile(null);
+    }
+  }, [activeSession, worldObjects, unlockedSet]);
 
   const targetTile = useMemo(() => {
-    return (
-      activeSession?.target_tile ||
-      lockedTileRef.current ||
-      findEmptyTileNearCenter(worldObjects, unlockedSet)
-    );
-  }, [activeSession?.target_tile, worldObjects, unlockedSet]);
+    if (activeSession?.target_tile) return activeSession.target_tile;
+    if (lockedTile) return lockedTile;
+    if (activeSession) return findEmptyTileNearCenter(worldObjects, unlockedSet);
+    return null;
+  }, [activeSession, lockedTile, worldObjects, unlockedSet]);
 
   // Compute exact world position where the completed focus tree will spawn
   const saplingWorldPos = useMemo<[number, number, number]>(() => {

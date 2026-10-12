@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useMemo, useCallback } from "react";
+import React, { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useGameStore } from "@/lib/game/useGameStore";
 import { useAuthStore } from "@/lib/auth/useAuthStore";
@@ -56,7 +56,8 @@ export default function RimbaDioramaApp() {
   const isTimeAuto = useGameStore((state) => state.isTimeAuto);
   const isZenMode = useGameStore((state) => state.isZenMode);
   const setZenMode = useGameStore((state) => state.setZenMode);
-  const saveData = useGameStore((state) => state.saveData);
+  const focusSessions = useGameStore((state) => state.saveData.focus_sessions);
+  const usedShieldDates = useGameStore((state) => state.saveData.used_shield_dates);
 
   // Unified Progression & Journal Modal State
   const [isJournalOpen, setIsJournalOpen] = useState(false);
@@ -256,15 +257,15 @@ export default function RimbaDioramaApp() {
 
     try {
       const todayStr = toLocalDateString(new Date());
-      const hasFocusedToday = (saveData.focus_sessions || []).some((s) => {
+      const hasFocusedToday = (focusSessions || []).some((s) => {
         if (!s.completed_at) return false;
         return toLocalDateString(new Date(s.completed_at)) === todayStr;
       });
 
       const analytics = calculateAnalytics(
-        saveData.focus_sessions || [],
+        focusSessions || [],
         new Date(),
-        saveData.used_shield_dates || [],
+        usedShieldDates || [],
       );
       const currentStreak = Math.max(1, analytics.currentStreak);
       const prefs = usePreferencesStore.getState();
@@ -280,7 +281,7 @@ export default function RimbaDioramaApp() {
     } catch (err) {
       console.warn("[Rimba] Smart streak reminder check error:", err);
     }
-  }, [isInitialized, saveData.focus_sessions, saveData.used_shield_dates]);
+  }, [isInitialized, focusSessions, usedShieldDates]);
 
   const timeOfDay = useGameStore((state) => state.timeOfDay);
   const isDay = timeOfDay === "day";
@@ -380,20 +381,37 @@ export default function RimbaDioramaApp() {
     syncMobileStatusBar(isNight);
   }, [isNight]);
 
-  // Compute claimable quests and achievements for mobile dock badge
-  const claimableCount = useMemo(() => {
-    const quests = getDailyQuestStatus(saveData);
-    const achs = evaluateAchievements(saveData);
+  // Granular subscription for dock badge: only re-evaluates and notifies if total claimable count primitive changes
+  const claimableCount = useGameStore((state) => {
+    const quests = getDailyQuestStatus(state.saveData);
+    const achs = evaluateAchievements(state.saveData);
     return quests.claimableCount + achs.unclaimedCount;
-  }, [saveData]);
+  });
+
+  // Dynamic HTML lang attribute synchronization with user preference
+  const appLanguage = usePreferencesStore((state) => state.language);
+  useEffect(() => {
+    if (typeof document !== "undefined" && appLanguage) {
+      document.documentElement.lang = appLanguage;
+    }
+  }, [appLanguage]);
 
   const handleEnterZen = useCallback(() => {
     setZenMode(true);
   }, [setZenMode]);
 
+  const isWorkshopActive = useGameStore(
+    (state) => Boolean(state.selectedCatalogItem || state.relocatingObjectId),
+  );
+  const isObjectInspectActive = useGameStore(
+    (state) => Boolean(state.selectedObject),
+  );
+
   const isAnyFullPageModalOpen =
     isJournalOpen ||
+    isShareOpen ||
     isSoundscapeOpen ||
+    isDevOpen ||
     isProfileOpen ||
     isStatisticsOpen ||
     isLeaderboardOpen ||
@@ -401,6 +419,75 @@ export default function RimbaDioramaApp() {
     isCampfireOpen ||
     isGameplayGuideOpen ||
     isOnboardingOpen;
+
+  const isAnyModalOrSheetOpen = Boolean(
+    isAnyFullPageModalOpen || isWorkshopActive || isObjectInspectActive,
+  );
+
+  const pushedModalHistoryRef = useRef(false);
+  const isProgrammaticBackRef = useRef(false);
+
+  // Close all open modals & sheets when hardware/gesture Back button is triggered
+  const closeAllActiveModals = useCallback(() => {
+    setIsJournalOpen(false);
+    setIsShareOpen(false);
+    setIsSoundscapeOpen(false);
+    setIsDevOpen(false);
+    setIsProfileOpen(false);
+    setIsStatisticsOpen(false);
+    setIsLeaderboardOpen(false);
+    setIsSettingsOpen(false);
+    setIsCampfireOpen(false);
+    setIsGameplayGuideOpen(false);
+    setIsOnboardingOpen(false);
+    useGameStore.setState({
+      selectedCatalogItem: null,
+      selectedObject: null,
+      relocatingObjectId: null,
+      hoveredGridTile: null,
+    });
+  }, []);
+
+  // Hardware/gesture back-button navigation guard for mobile web & PWA
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handlePopState = () => {
+      if (isProgrammaticBackRef.current) {
+        isProgrammaticBackRef.current = false;
+        pushedModalHistoryRef.current = false;
+        return;
+      }
+
+      if (pushedModalHistoryRef.current) {
+        pushedModalHistoryRef.current = false;
+        closeAllActiveModals();
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [closeAllActiveModals]);
+
+  // Synchronize browser history state when modal opens or closes
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    if (isAnyModalOrSheetOpen) {
+      if (!pushedModalHistoryRef.current) {
+        window.history.pushState({ rimbaModal: true }, "");
+        pushedModalHistoryRef.current = true;
+      }
+    } else {
+      if (pushedModalHistoryRef.current) {
+        isProgrammaticBackRef.current = true;
+        pushedModalHistoryRef.current = false;
+        window.history.back();
+      }
+    }
+  }, [isAnyModalOrSheetOpen]);
 
   // Prevent flashing main island or onboarding before redirecting unauthenticated user to /login
   if (!isAuthHydrated || !authUser) {

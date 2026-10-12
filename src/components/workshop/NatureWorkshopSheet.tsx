@@ -453,10 +453,10 @@ export function NatureWorkshopSheet() {
                     rotatePlacement();
                   }}
                   className="h-8 px-2.5 rounded-full bg-white hover:bg-slate-50 text-[#143525] flex items-center gap-1 text-[11px] font-semibold active:scale-95 transition-all border border-[#143525]/12 shadow-2xs cursor-pointer"
-                  title="Putar Objek"
+                  title={t.workshop.rotateTitle}
                 >
                   <RotateCw className="w-3.5 h-3.5 stroke-[2.2]" />
-                  <span>Putar</span>
+                  <span>{t.workshop.rotateBtn}</span>
                 </button>
 
                 <button
@@ -468,7 +468,7 @@ export function NatureWorkshopSheet() {
                     if (relocatingObjectId) cancelRelocation();
                   }}
                   className="w-8 h-8 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/80 flex items-center justify-center active:scale-95 transition-all cursor-pointer shadow-2xs"
-                  title="Batal"
+                  title={t.workshop.cancelBtn}
                 >
                   <X className="w-3.5 h-3.5 stroke-[2.2]" />
                 </button>
@@ -487,7 +487,7 @@ export function NatureWorkshopSheet() {
                   <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
                   <span>
                     {placementValidation.isBridgeOverRiver
-                      ? `Petak (${hoveredGridTile.grid_x}, ${hoveredGridTile.grid_y}) • ${t.workshop.tileBridgeReady}`
+                      ? `${t.workshop.tilePrefix} (${hoveredGridTile.grid_x}, ${hoveredGridTile.grid_y}) • ${t.workshop.tileBridgeReady}`
                       : t.workshop.tileReady
                           .replace("{x}", String(hoveredGridTile.grid_x))
                           .replace("{y}", String(hoveredGridTile.grid_y))}
@@ -497,7 +497,7 @@ export function NatureWorkshopSheet() {
                 <span className="text-rose-600 font-semibold flex items-center gap-1.5 truncate">
                   <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0" />
                   <span>
-                    Petak ({hoveredGridTile.grid_x}, {hoveredGridTile.grid_y}): {placementValidation.reason}
+                    {t.workshop.tilePrefix} ({hoveredGridTile.grid_x}, {hoveredGridTile.grid_y}): {placementValidation.reason}
                   </span>
                 </span>
               )}

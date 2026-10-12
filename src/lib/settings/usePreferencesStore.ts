@@ -92,7 +92,12 @@ export const usePreferencesStore = create<PreferencesState>()(
     (set) => ({
       ...DEFAULT_PREFERENCES,
 
-      setLanguage: (language) => set({ language }),
+      setLanguage: (language) => {
+        if (typeof document !== 'undefined') {
+          document.documentElement.lang = language;
+        }
+        set({ language });
+      },
       setGraphicsQuality: (graphicsQuality) => set({ graphicsQuality }),
       setSoundFxEnabled: (soundFxEnabled) => set({ soundFxEnabled }),
       setSoundFxVolume: (soundFxVolume) => set({ soundFxVolume }),

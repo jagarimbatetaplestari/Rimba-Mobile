@@ -139,19 +139,50 @@ export function loadSaveData(): RimbaSaveData {
 }
 
 /**
- * Saves game state to localStorage.
+ * Saves game state to localStorage with pure data cloning and QuotaExceededError resilience.
  */
 export function saveSaveData(data: RimbaSaveData): void {
   if (typeof window === 'undefined') return;
 
   try {
-    // Ensure cached gold matches ledger before writing
+    // Ensure cached gold matches ledger before writing without in-place mutation of the input object
     const balances = calculateBalances(data.currency_ledger);
-    data.profile.goldCached = balances.gold;
-    data.profile.xp = balances.xp;
+    const safeData: RimbaSaveData = {
+      ...data,
+      profile: {
+        ...data.profile,
+        goldCached: balances.gold,
+        xp: balances.xp,
+      },
+    };
 
-    localStorage.setItem(GAME_CONFIG.storageKey, JSON.stringify(data));
-  } catch (err) {
+    localStorage.setItem(GAME_CONFIG.storageKey, JSON.stringify(safeData));
+  } catch (err: unknown) {
+    const isQuotaError =
+      err instanceof DOMException &&
+      (err.name === 'QuotaExceededError' || err.code === 22 || err.code === 1014);
+
+    if (isQuotaError) {
+      console.warn('LocalStorage quota exceeded. Pruning older focus sessions (keeping last 100) and retrying...');
+      try {
+        const balances = calculateBalances(data.currency_ledger);
+        const prunedSessions = (data.focus_sessions || []).slice(-100);
+        const prunedData: RimbaSaveData = {
+          ...data,
+          focus_sessions: prunedSessions,
+          profile: {
+            ...data.profile,
+            goldCached: balances.gold,
+            xp: balances.xp,
+          },
+        };
+        localStorage.setItem(GAME_CONFIG.storageKey, JSON.stringify(prunedData));
+        return;
+      } catch (retryErr) {
+        console.error('Failed to save even after pruning sessions:', retryErr);
+      }
+    }
     console.error('Failed to write save data to localStorage:', err);
   }
 }
+

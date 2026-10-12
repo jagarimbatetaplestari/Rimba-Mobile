@@ -12,17 +12,23 @@ import {
 } from '@/lib/game/worldRules';
 import { GAME_CONFIG } from '@/lib/game/config';
 
+const glowTextureCache = new Map<string, THREE.CanvasTexture>();
+
 /**
- * Creates a circular soft radial gradient texture on an offscreen canvas.
- * Prevents WebGL Points from rendering as ugly square pixels.
+ * Creates or retrieves a cached circular soft radial gradient texture on an offscreen canvas.
+ * Prevents WebGL Points from rendering as ugly square pixels and eliminates GPU texture thrashing.
  */
-function createRadialGlowTexture(
+function getRadialGlowTexture(
   colorInner: string,
   colorMid: string,
   colorOuter: string,
   size = 64
 ): THREE.CanvasTexture | null {
   if (typeof document === 'undefined') return null;
+  const key = `${colorInner}|${colorMid}|${colorOuter}|${size}`;
+  const cached = glowTextureCache.get(key);
+  if (cached) return cached;
+
   const canvas = document.createElement('canvas');
   canvas.width = size;
   canvas.height = size;
@@ -41,6 +47,7 @@ function createRadialGlowTexture(
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.needsUpdate = true;
+  glowTextureCache.set(key, texture);
   return texture;
 }
 
@@ -53,19 +60,13 @@ function RainParticles() {
   const pointsRef = useRef<THREE.Points>(null);
 
   const rainTexture = useMemo(() => {
-    return createRadialGlowTexture(
+    return getRadialGlowTexture(
       'rgba(255, 255, 255, 0.95)',
       'rgba(180, 220, 255, 0.65)',
       'rgba(140, 190, 240, 0.1)',
       32
     );
   }, []);
-
-  useEffect(() => {
-    return () => {
-      rainTexture?.dispose();
-    };
-  }, [rainTexture]);
 
   const { positions, velocities } = useMemo(() => {
     const pos = new Float32Array(RAIN_COUNT * 3);
@@ -256,19 +257,13 @@ function Fireflies() {
 
   // Soft circular bioluminescent glow sprite texture
   const fireflyTexture = useMemo(() => {
-    return createRadialGlowTexture(
+    return getRadialGlowTexture(
       'rgba(255, 255, 255, 1)',
       'rgba(235, 255, 160, 0.95)',
       'rgba(165, 245, 95, 0.35)',
       64
     );
   }, []);
-
-  useEffect(() => {
-    return () => {
-      fireflyTexture?.dispose();
-    };
-  }, [fireflyTexture]);
 
   const { initialPositions, speeds, offsets, radii } = useMemo(() => {
     const pos = new Float32Array(count * 3);
@@ -360,19 +355,13 @@ function EmberParticles() {
   const pointsRef = useRef<THREE.Points>(null);
 
   const emberTexture = useMemo(() => {
-    return createRadialGlowTexture(
+    return getRadialGlowTexture(
       'rgba(255, 255, 230, 1)',
       'rgba(255, 180, 60, 0.9)',
       'rgba(240, 95, 20, 0.3)',
       64
     );
   }, []);
-
-  useEffect(() => {
-    return () => {
-      emberTexture?.dispose();
-    };
-  }, [emberTexture]);
 
   const { positions, velocities } = useMemo(() => {
     const pos = new Float32Array(EMBER_COUNT * 3);
@@ -438,19 +427,13 @@ function WindLeaves() {
   const pointsRef = useRef<THREE.Points>(null);
 
   const leafTexture = useMemo(() => {
-    return createRadialGlowTexture(
+    return getRadialGlowTexture(
       'rgba(180, 240, 110, 1)',
       'rgba(130, 210, 75, 0.85)',
       'rgba(90, 170, 50, 0.2)',
       64
     );
   }, []);
-
-  useEffect(() => {
-    return () => {
-      leafTexture?.dispose();
-    };
-  }, [leafTexture]);
 
   const { positions } = useMemo(() => {
     const pos = new Float32Array(LEAF_COUNT * 3);
@@ -514,19 +497,13 @@ function MountainMist() {
   const pointsRef = useRef<THREE.Points>(null);
 
   const mistTexture = useMemo(() => {
-    return createRadialGlowTexture(
+    return getRadialGlowTexture(
       'rgba(240, 248, 245, 0.35)',
       'rgba(215, 235, 230, 0.18)',
       'rgba(195, 220, 215, 0.0)',
       128
     );
   }, []);
-
-  useEffect(() => {
-    return () => {
-      mistTexture?.dispose();
-    };
-  }, [mistTexture]);
 
   const { positions, driftSpeeds, baseAlts } = useMemo(() => {
     const pos = new Float32Array(MIST_COUNT * 3);

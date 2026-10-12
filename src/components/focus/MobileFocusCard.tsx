@@ -80,7 +80,7 @@ export function MobileFocusCard({
   onEnterZen,
   claimableCount = 0,
 }: MobileFocusCardProps = {}) {
-  const { t, language, translateTag, translateSpecies } = useTranslation();
+  const { t, language, translateTag, translateSpecies, translateSoundscape } = useTranslation();
   const activeSession = useGameStore((state) => state.activeSession);
   const startFocus = useGameStore((state) => state.startFocus);
   const updateActiveSessionMeta = useGameStore(
@@ -872,6 +872,7 @@ export function MobileFocusCard({
 
             {SOUNDSCAPES_LIST.map((sc) => {
               const isSelected = activeSoundscape === sc.id;
+              const translated = translateSoundscape(sc);
               return (
                 <button
                   key={sc.id}
@@ -894,7 +895,7 @@ export function MobileFocusCard({
                   }`}
                 >
                   <span className="text-base leading-none">{sc.icon}</span>
-                  <span className="truncate">{sc.name}</span>
+                  <span className="truncate">{translated.name}</span>
                 </button>
               );
             })}

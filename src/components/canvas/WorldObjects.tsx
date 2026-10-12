@@ -215,6 +215,7 @@ function ObjectItem({
   onTileTap,
 }: ObjectItemProps) {
   const pointerDownRef = useRef<{ x: number; y: number; time: number } | null>(null);
+  const lastPointerTapTimeRef = useRef<number>(0);
 
   // Resolve model path from asset manifest
   const manifestItem = useMemo(
@@ -458,6 +459,7 @@ function ObjectItem({
           const elapsed = Date.now() - pointerDownRef.current.time;
           pointerDownRef.current = null;
           if (dist < 28 && elapsed < 650) {
+            lastPointerTapTimeRef.current = Date.now();
             e.stopPropagation();
             onTileTap?.(object.grid_x, object.grid_y);
           }
@@ -466,6 +468,10 @@ function ObjectItem({
       onClick={(e) => {
         if (isPlacementMode) {
           e.stopPropagation();
+          // Suppress duplicate synthetic click that fires immediately after onPointerUp on touch screens
+          if (Date.now() - lastPointerTapTimeRef.current < 450) {
+            return;
+          }
           onTileTap?.(object.grid_x, object.grid_y);
           return;
         }

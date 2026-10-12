@@ -52,6 +52,14 @@ import { requestScreenWakeLock, releaseScreenWakeLock } from '@/lib/mobile/nativ
 import { syncProfileUpdate, scheduleDebouncedCloudSync } from '../supabase/cloudSync';
 import { soundscapeManager } from '@/lib/audio/soundscapes';
 
+/**
+ * Persists game save data to localStorage and schedules debounced cloud synchronization to Supabase.
+ */
+function persistAndSyncSaveData(data: RimbaSaveData): void {
+  saveSaveData(data);
+  scheduleDebouncedCloudSync();
+}
+
 export interface NotificationState {
   id: string;
   message: string;
@@ -266,7 +274,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       pioneer_completed_ids: Array.from(existingPioneer),
     };
 
-    saveSaveData(updatedData);
+    persistAndSyncSaveData(updatedData);
     set({ saveData: updatedData });
 
     if (newCount === 25) {
@@ -304,7 +312,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       return { success: false, gold: 0, xp: 0, message: result.message };
     }
 
-    saveSaveData(result.updatedSaveData);
+    persistAndSyncSaveData(result.updatedSaveData);
     set({ saveData: result.updatedSaveData });
     get().notify(result.message, 'success');
     return { success: true, gold: result.goldEarned, xp: result.xpEarned, message: result.message };
@@ -386,7 +394,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       world_objects: updatedObjects,
     };
 
-    saveSaveData(updatedData);
+    persistAndSyncSaveData(updatedData);
     set({
       saveData: updatedData,
       relocatingObjectId: null,
@@ -432,7 +440,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         currency_ledger: updatedLedger,
       };
 
-      saveSaveData(updatedData);
+      persistAndSyncSaveData(updatedData);
       set({
         saveData: updatedData,
         selectedObject: null,
@@ -453,7 +461,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         world_objects: updatedObjects,
       };
 
-      saveSaveData(updatedData);
+      persistAndSyncSaveData(updatedData);
       set({
         saveData: updatedData,
         selectedObject: null,
@@ -486,7 +494,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       currency_ledger: updatedLedger,
     };
 
-    saveSaveData(updatedData);
+    persistAndSyncSaveData(updatedData);
     set({
       saveData: updatedData,
       selectedObject: null,
@@ -573,7 +581,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       const updatedUsedDates = [...(data.used_shield_dates || []), yesterdayStr];
       data.streak_shields = updatedShields;
       data.used_shield_dates = updatedUsedDates;
-      saveSaveData(data);
+      persistAndSyncSaveData(data);
       get().notify(
         `🛡️ Embun Pelindung aktif! Absen kemarin dimaafkan, streak harianmu tetap utuh! (Sisa perisai: ${updatedShields})`,
         'success'
@@ -842,7 +850,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       focus_sessions: [...saveData.focus_sessions, newSession],
     };
 
-    saveSaveData(updatedData);
+    persistAndSyncSaveData(updatedData);
     requestScreenWakeLock();
     set({
       saveData: updatedData,
@@ -884,7 +892,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       focus_sessions: updatedSessions,
     };
 
-    saveSaveData(updatedData);
+    persistAndSyncSaveData(updatedData);
     set({
       saveData: updatedData,
       activeSession: updatedSession,
@@ -912,7 +920,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       ...saveData,
       custom_tags: [...existing, newTag],
     };
-    saveSaveData(updatedData);
+    persistAndSyncSaveData(updatedData);
     set({ saveData: updatedData });
     get().notify(`🏷️ Tag baru "${clean}" ditambahkan!`, 'success');
     return newTag;
@@ -925,7 +933,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       ...saveData,
       custom_tags: existing.filter((t) => t.id !== tagId),
     };
-    saveSaveData(updatedData);
+    persistAndSyncSaveData(updatedData);
     set({ saveData: updatedData });
     get().notify(`Tag "${tagId}" dihapus.`, 'info');
   },
@@ -936,7 +944,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       ...saveData,
       distraction_source: source,
     };
-    saveSaveData(updatedData);
+    persistAndSyncSaveData(updatedData);
     set({ saveData: updatedData });
   },
 
@@ -955,7 +963,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         name: `Suaka ${cleanName}`,
       },
     };
-    saveSaveData(updatedData);
+    persistAndSyncSaveData(updatedData);
     set({ saveData: updatedData });
     syncProfileUpdate({ name: cleanName });
     scheduleDebouncedCloudSync();
@@ -972,7 +980,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         avatarUrl: cleanAvatar,
       },
     };
-    saveSaveData(updatedData);
+    persistAndSyncSaveData(updatedData);
     set({ saveData: updatedData });
     syncProfileUpdate({ avatarUrl: cleanAvatar });
     scheduleDebouncedCloudSync();
@@ -987,7 +995,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       ...saveData,
       pioneer_completed_ids: Array.from(current),
     };
-    saveSaveData(updatedData);
+    persistAndSyncSaveData(updatedData);
     set({ saveData: updatedData });
   },
 
@@ -1029,7 +1037,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       pioneer_reward_claimed: true,
     };
 
-    saveSaveData(updatedData);
+    persistAndSyncSaveData(updatedData);
     set({ saveData: updatedData });
     get().notify(
       '🎁 SELAMAT! Kamu membuka Hadiah Misterius Perintis: Pohon Leluhur Sakral (Ancient Elder Oak) + 50 Soul + 250 XP!',
@@ -1069,7 +1077,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         ...saveData,
         focus_sessions: filteredSessions,
       };
-      saveSaveData(updatedData);
+      persistAndSyncSaveData(updatedData);
       releaseScreenWakeLock();
       soundscapeManager.stop();
       set({
@@ -1116,7 +1124,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       world_objects: updatedObjects,
     };
 
-    saveSaveData(updatedData);
+    persistAndSyncSaveData(updatedData);
     releaseScreenWakeLock();
     soundscapeManager.stop();
     scheduleDebouncedCloudSync();
@@ -1157,7 +1165,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       focus_sessions: updatedSessions,
     };
 
-    saveSaveData(updatedData);
+    persistAndSyncSaveData(updatedData);
     set({
       saveData: updatedData,
       activeSession: updatedSession,
@@ -1198,7 +1206,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       focus_sessions: updatedSessions,
     };
 
-    saveSaveData(updatedData);
+    persistAndSyncSaveData(updatedData);
     set({
       saveData: updatedData,
       activeSession: updatedSession,
@@ -1296,7 +1304,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       pioneer_completed_ids: Array.from(pioneerSet),
     };
 
-    saveSaveData(updatedData);
+    persistAndSyncSaveData(updatedData);
     releaseScreenWakeLock();
     soundscapeManager.stop();
     scheduleDebouncedCloudSync();
@@ -1413,7 +1421,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       pioneer_completed_ids: Array.from(pioneerSet),
     };
 
-    saveSaveData(updatedData);
+    persistAndSyncSaveData(updatedData);
     set({
       saveData: updatedData,
       selectedTool: null,
@@ -1468,7 +1476,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       pioneer_completed_ids: Array.from(pioneerSet),
     };
 
-    saveSaveData(updatedData);
+    persistAndSyncSaveData(updatedData);
     set({
       saveData: updatedData,
       selectedObject: result.updatedObject,
@@ -1505,7 +1513,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       currency_ledger: [...saveData.currency_ledger, result.ledgerEntry],
     };
 
-    saveSaveData(intermediateData);
+    persistAndSyncSaveData(intermediateData);
     set({
       saveData: intermediateData,
       selectedObject: null,
@@ -1527,7 +1535,7 @@ export const useGameStore = create<GameState>((set, get) => ({
           bulldozer: null,
         },
       };
-      saveSaveData(finalData);
+      persistAndSyncSaveData(finalData);
       set({ saveData: finalData });
     }, 1400);
 
@@ -1576,7 +1584,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         reclamation_events: updatedEvents,
       };
 
-      saveSaveData(updatedData);
+      persistAndSyncSaveData(updatedData);
       set({ saveData: updatedData });
 
       if (result.tier === 1) {
@@ -1615,7 +1623,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       world: updatedWorld,
     };
 
-    saveSaveData(updatedData);
+    persistAndSyncSaveData(updatedData);
     set({ saveData: updatedData });
 
     get().notify(`Simulasi +${hours} jam tidak aktif dijalankan. Memeriksa status hutan...`, 'info');
@@ -1629,7 +1637,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       ...saveData,
       currency_ledger: [...saveData.currency_ledger, entry],
     };
-    saveSaveData(updatedData);
+    persistAndSyncSaveData(updatedData);
     set({ saveData: updatedData });
     get().notify(`Granted +${amount} Soul to sanctuary ledger! ✨`, 'success');
   },
@@ -1780,7 +1788,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       ],
     };
 
-    saveSaveData(thrivingSave);
+    persistAndSyncSaveData(thrivingSave);
     set({
       saveData: thrivingSave,
       activeSession: null,
@@ -1798,7 +1806,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   resetWorld: () => {
     const initial = createInitialSaveData();
-    saveSaveData(initial);
+    persistAndSyncSaveData(initial);
     set({
       saveData: initial,
       activeSession: null,
@@ -1822,7 +1830,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         goldCached: initial.profile.goldCached + 150,
       },
     };
-    saveSaveData(updated);
+    persistAndSyncSaveData(updated);
     set({
       saveData: updated,
       activeSession: null,
@@ -1837,7 +1845,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   importSaveData: (newData: RimbaSaveData) => {
     try {
-      saveSaveData(newData);
+      persistAndSyncSaveData(newData);
       set({
         saveData: newData,
         activeSession: null,
@@ -1872,7 +1880,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       ...saveData,
       todos: [...(saveData.todos || []), newTodo],
     };
-    saveSaveData(updatedData);
+    persistAndSyncSaveData(updatedData);
     set({ saveData: updatedData });
     return newTodo;
   },
@@ -1890,7 +1898,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       ...saveData,
       todos: updatedTodos,
     };
-    saveSaveData(updatedData);
+    persistAndSyncSaveData(updatedData);
     set({ saveData: updatedData });
   },
 
@@ -1901,7 +1909,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       ...saveData,
       todos: existing.filter((t) => t.id !== id),
     };
-    saveSaveData(updatedData);
+    persistAndSyncSaveData(updatedData);
     set({ saveData: updatedData });
   },
 
@@ -1927,7 +1935,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       currency_ledger: updatedLedger,
       claimed_quests: updatedClaimed,
     };
-    saveSaveData(updatedData);
+    persistAndSyncSaveData(updatedData);
     set({ saveData: updatedData });
     get().notify(
       `🎁 Misi diklaim! +${result.rewardGold} Soul & +${result.rewardXp} XP ditambahkan ke jurnalmu.`,
@@ -1958,7 +1966,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       currency_ledger: updatedLedger,
       claimed_quests: updatedClaimed,
     };
-    saveSaveData(updatedData);
+    persistAndSyncSaveData(updatedData);
     set({ saveData: updatedData });
     get().notify(
       `🏆 Peti All-Clear Harian terbuka! +${result.rewardGold} Soul & +${result.rewardXp} XP!`,
@@ -1974,7 +1982,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       get().notify(result.message, 'error');
       return false;
     }
-    saveSaveData(result.updatedSaveData);
+    persistAndSyncSaveData(result.updatedSaveData);
     set({ saveData: result.updatedSaveData });
     get().notify(result.message, 'success');
     return true;
@@ -2000,7 +2008,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       focus_sessions: updatedSessions,
       world_objects: updatedObjects,
     };
-    saveSaveData(updatedData);
+    persistAndSyncSaveData(updatedData);
     set({ saveData: updatedData });
     get().notify('📝 Catatan refleksi berhasil disimpan ke Jurnal!', 'success');
   },
@@ -2029,7 +2037,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       currency_ledger: updatedLedger,
       streak_shields: currentShields + 1,
     };
-    saveSaveData(updatedData);
+    persistAndSyncSaveData(updatedData);
     set({ saveData: updatedData });
     get().notify('🛡️ Embun Pelindung berhasil dibeli! Streak harianmu terlindungi bila libur 1 hari.', 'success');
     return true;
@@ -2069,7 +2077,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       currency_ledger: updatedLedger,
       claimed_story_chapters: Array.from(claimed),
     };
-    saveSaveData(updatedData);
+    persistAndSyncSaveData(updatedData);
     set({ saveData: updatedData });
     get().notify(
       `📜 Bab ${chapter.chapterNumber} terbuka! Berkah suaka: +${chapter.reward.gold} Soul & +${chapter.reward.xp} XP!`,
@@ -2118,7 +2126,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       currency_ledger: updatedLedger,
       claimed_story_chapters: Array.from(claimed),
     };
-    saveSaveData(updatedData);
+    persistAndSyncSaveData(updatedData);
     set({ saveData: updatedData });
     get().notify(
       `✨ Kebijaksanaan '${frag.title}' diserap! Berkah suaka: +${frag.rewardSoul} Soul & +${frag.rewardXp} XP!`,

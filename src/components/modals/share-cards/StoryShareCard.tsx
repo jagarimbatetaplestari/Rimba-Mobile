@@ -28,6 +28,79 @@ export interface StoryCanvasOptions {
   peakWindowLabel: string;
 }
 
+const getI18n = (lang: string) => {
+  const isId = lang === "id";
+  return {
+    totalFocusTime: isId ? "Total Waktu Fokus" : "Total Focus Time",
+    hoursUnit: isId ? "Jam" : "Hours",
+    minsUnit: isId ? "Menit" : "Mins",
+    compMessage: (hours: number) =>
+      isId
+        ? `Total waktu fokusmu ${hours} jam lebih banyak dari rata-rata lainnya di wilayahmu! Luar biasa!`
+        : `Your total focus time was ${hours} hours more than the average of others in your region! Amazing!`,
+    personaLabel: isId ? "Persona Fokus" : "Focus Persona",
+    personaName: isId ? "Penjaga Abadi" : "Evergreen Guardian",
+    personaDesc: isId
+      ? "Fokusmu kokoh dan stabil sepanjang hari bak pohon pinus, baik di bawah terik matahari maupun rembulan."
+      : "You stay focused and grounded throughout the day, steady like the pines whether under the sun or moon.",
+    bestDayLabel: isId ? "Hari Puncak" : "Most Focused Day",
+    bestDaySub: isId ? "Aktivitas tertinggi" : "Peak consistency",
+    goldenWindowLabel: isId ? "Jam Emas" : "Golden Window",
+    goldenWindowSub: isId ? "Aliran produktif" : "Midday Flow",
+  };
+};
+
+function cleanPeakWindow(label: string): string {
+  if (!label) return "12:00 – 13:00";
+  const match = label.match(/\((.*?)\)/);
+  return match ? match[1] : label;
+}
+
+function drawRoundedRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number,
+) {
+  ctx.beginPath();
+  if (typeof ctx.roundRect === "function") {
+    ctx.roundRect(x, y, w, h, r);
+  } else {
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+}
+
+function getWrappedTextLines(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number,
+): string[] {
+  const words = text.split(" ");
+  const lines: string[] = [];
+  let currentLine = "";
+
+  for (let n = 0; n < words.length; n++) {
+    const testLine = currentLine + words[n] + " ";
+    if (ctx.measureText(testLine).width > maxWidth && n > 0) {
+      lines.push(currentLine.trim());
+      currentLine = words[n] + " ";
+    } else {
+      currentLine = testLine;
+    }
+  }
+  if (currentLine.trim().length > 0) {
+    lines.push(currentLine.trim());
+  }
+  return lines;
+}
+
 export async function drawStoryCardCanvas(
   ctx: CanvasRenderingContext2D,
   opts: StoryCanvasOptions,
@@ -45,16 +118,35 @@ export async function drawStoryCardCanvas(
     peakWindowLabel,
   } = opts;
 
-  // 1. Full-Bleed Chapter Artwork (story.image)
+  const t = getI18n(language);
+  const isSquare = aspectRatio === "square";
+  const isPortrait = aspectRatio === "portrait";
+
+  // 1. Dasar kartu putih
+  ctx.fillStyle = "#FFFFFF";
+  ctx.fillRect(0, 0, width, height);
+
+  // 2. Kotak Artwork Atas
+  const pad = width * 0.05;
+  const innerW = width - pad * 2;
+  const imgCardH = isSquare ? height * 0.48 : isPortrait ? height * 0.55 : height * 0.58;
+  const imgCardRadius = width * 0.055;
+
+  ctx.save();
+  drawRoundedRect(ctx, pad, pad, innerW, imgCardH, imgCardRadius);
+  ctx.clip();
+
   await new Promise<void>((resolve) => {
     const img = new Image();
+    img.crossOrigin = "anonymous";
     img.onload = () => {
       const imgAspect = img.width / img.height;
-      const targetAspect = width / height;
+      const targetAspect = innerW / imgCardH;
       let sx = 0,
         sy = 0,
         sw = img.width,
         sh = img.height;
+
       if (imgAspect > targetAspect) {
         sw = img.height * targetAspect;
         sx = (img.width - sw) / 2;
@@ -62,187 +154,141 @@ export async function drawStoryCardCanvas(
         sh = img.width / targetAspect;
         sy = (img.height - sh) / 2;
       }
-      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, width, height);
+      ctx.drawImage(img, sx, sy, sw, sh, pad, pad, innerW, imgCardH);
       resolve();
     };
     img.onerror = () => resolve();
-    img.src = story.image;
+    img.src = story.image || "/story/story_chapter_1.webp";
   });
 
-  // 2. Top Dark Gradient Fade (for white text legibility)
-  const topY = aspectRatio === "story" ? 140 : aspectRatio === "portrait" ? 110 : 90;
-  const topFadeH = topY + 120;
-  const topFade = ctx.createLinearGradient(0, 0, 0, topFadeH);
-  topFade.addColorStop(0, "rgba(0, 0, 0, 0.65)");
-  topFade.addColorStop(1, "rgba(0, 0, 0, 0)");
-  ctx.fillStyle = topFade;
-  ctx.fillRect(0, 0, width, topFadeH);
+  // Gradien gelap di bawah artwork
+  const gradH = imgCardH * 0.55;
+  const gradY = pad + imgCardH - gradH;
+  const bottomGrad = ctx.createLinearGradient(0, gradY, 0, pad + imgCardH);
+  bottomGrad.addColorStop(0, "rgba(5, 17, 24, 0)");
+  bottomGrad.addColorStop(0.3, "rgba(5, 17, 24, 0.45)");
+  bottomGrad.addColorStop(0.7, "rgba(5, 17, 24, 0.85)");
+  bottomGrad.addColorStop(1, "rgba(4, 14, 20, 0.95)");
+  ctx.fillStyle = bottomGrad;
+  ctx.fillRect(pad, gradY, innerW, gradH);
 
-  const isEn = language === "en";
+  // Metrik di dalam artwork
+  ctx.textAlign = "center";
+  const compFontSize = isSquare ? 15 : isPortrait ? 18 : 21;
+  const compLineH = compFontSize * 1.35;
+  ctx.font = `500 ${compFontSize}px "Urbanist", sans-serif`;
+  const compLines = getWrappedTextLines(ctx, t.compMessage(regionalBonusHours), innerW * 0.88);
 
-  // Top Left: 2026 / Rimba Chronicle / Year in Review (ALL WHITE)
-  const titleSize = aspectRatio === "story" ? 68 : aspectRatio === "portrait" ? 56 : 46;
-  const subSize = aspectRatio === "story" ? 26 : aspectRatio === "portrait" ? 22 : 19;
-  const topGap = aspectRatio === "square" ? 30 : 42;
-
-  ctx.textAlign = "left";
-  ctx.fillStyle = "#FFFFFF";
-  ctx.font = `800 ${titleSize}px "Urbanist", -apple-system, sans-serif`;
-  ctx.fillText("2026", 72, topY);
+  const bottomInnerPadding = isSquare ? 20 : isPortrait ? 28 : 34;
+  const compStartY =
+    pad + imgCardH - bottomInnerPadding - (compLines.length - 1) * compLineH;
 
   ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
-  ctx.font = `700 ${subSize}px "Urbanist", sans-serif`;
-  ctx.fillText("Rimba Chronicle", 72, topY + topGap);
-  ctx.font = `600 ${subSize - 3}px "Urbanist", sans-serif`;
-  ctx.fillText(isEn ? "Year in Review" : "Kilas Balik 2026", 72, topY + topGap + (aspectRatio === "square" ? 24 : 30));
+  compLines.forEach((line, idx) => {
+    ctx.fillText(line, width / 2, compStartY + idx * compLineH);
+  });
 
-  // Top Right: Chapter Number & Title (ALL WHITE)
-  ctx.textAlign = "right";
-  ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
-  ctx.font = `700 ${
-    aspectRatio === "story" ? 24 : aspectRatio === "portrait" ? 20 : 17
-  }px "Urbanist", sans-serif`;
-  ctx.fillText(`CH. ${story.chapterNumber || 1}`, width - 72, topY);
-
+  const hoursFontSize = isSquare ? 52 : isPortrait ? 68 : 82;
+  ctx.font = `900 ${hoursFontSize}px "Urbanist", sans-serif`;
   ctx.fillStyle = "#FFFFFF";
-  ctx.font = `800 ${
-    aspectRatio === "story" ? 34 : aspectRatio === "portrait" ? 28 : 23
-  }px "Urbanist", sans-serif`;
-  ctx.fillText(story.title, width - 72, topY + topGap);
-
-  // 3. Bottom Dark Gradient Overlay
-  const gradH = aspectRatio === "story" ? 760 : aspectRatio === "portrait" ? 580 : 460;
-  const gradY = height - gradH;
-  const fadeGrad = ctx.createLinearGradient(0, gradY, 0, height);
-  fadeGrad.addColorStop(0, "rgba(0, 0, 0, 0)");
-  fadeGrad.addColorStop(0.3, "rgba(0, 0, 0, 0.7)");
-  fadeGrad.addColorStop(0.7, "rgba(0, 0, 0, 0.92)");
-  fadeGrad.addColorStop(1, "rgba(0, 0, 0, 0.98)");
-  ctx.fillStyle = fadeGrad;
-  ctx.fillRect(0, gradY, width, gradH);
-
-  // Focus Metrics (ALL WHITE)
-  const focusLabelY =
-    gradY + (aspectRatio === "story" ? 110 : aspectRatio === "portrait" ? 85 : 70);
-  const focusHoursY =
-    focusLabelY + (aspectRatio === "story" ? 90 : aspectRatio === "portrait" ? 70 : 56);
-  const compY =
-    focusHoursY + (aspectRatio === "story" ? 64 : aspectRatio === "portrait" ? 50 : 40);
-
-  ctx.textAlign = "center";
-  ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
-  ctx.font = `700 ${
-    aspectRatio === "story" ? 24 : aspectRatio === "portrait" ? 20 : 16
-  }px "Urbanist", sans-serif`;
-  ctx.fillText(isEn ? "TOTAL FOCUS TIME" : "TOTAL WAKTU FOKUS", width / 2, focusLabelY);
-
-  ctx.fillStyle = "#FFFFFF";
-  ctx.font = `900 ${
-    aspectRatio === "story" ? 92 : aspectRatio === "portrait" ? 72 : 56
-  }px "Urbanist", sans-serif`;
   const hoursText =
     totalHoursNum >= 1
-      ? (isEn ? `${totalHoursNum} hours` : `${totalHoursNum} jam`)
-      : (isEn ? `${totalMinutes} mins` : `${totalMinutes} mnt`);
-  ctx.fillText(hoursText, width / 2, focusHoursY);
+      ? `${totalHoursNum} ${t.hoursUnit}`
+      : `${totalMinutes} ${t.minsUnit}`;
+  const hoursY = compStartY - (isSquare ? 20 : 28);
+  ctx.fillText(hoursText, width / 2, hoursY);
 
+  const labelFontSize = isSquare ? 18 : isPortrait ? 23 : 27;
+  ctx.font = `700 ${labelFontSize}px "Urbanist", sans-serif`;
   ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
-  ctx.font = `500 ${
-    aspectRatio === "story" ? 24 : aspectRatio === "portrait" ? 19 : 15
-  }px "Urbanist", sans-serif`;
-  const compText =
-    isEn
-      ? `+${regionalBonusHours}h above average in your region · Amazing!`
-      : `+${regionalBonusHours} jam di atas rata-rata regional · Luar biasa!`;
-  ctx.fillText(compText, width / 2, compY);
+  ctx.fillText(t.totalFocusTime, width / 2, hoursY - (isSquare ? 48 : 62));
 
-  // Two-Column Info Row - Faded hairline dividers
-  const rowDividerY =
-    compY + (aspectRatio === "story" ? 55 : aspectRatio === "portrait" ? 42 : 32);
-  ctx.beginPath();
-  ctx.moveTo(80, rowDividerY);
-  ctx.lineTo(width - 80, rowDividerY);
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.10)";
-  ctx.lineWidth = 1;
-  ctx.stroke();
+  ctx.restore();
 
-  // Vertical mid divider
-  const colMidX = width / 2;
-  const rowHeight =
-    aspectRatio === "story" ? 150 : aspectRatio === "portrait" ? 120 : 95;
-  ctx.beginPath();
-  ctx.moveTo(colMidX, rowDividerY + 16);
-  ctx.lineTo(colMidX, rowDividerY + rowHeight);
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.10)";
-  ctx.lineWidth = 1;
-  ctx.stroke();
+  // 3. Bagian Bawah: Focus Persona & Narasi
+  const contentPadX = pad + 6;
+  const contentW = width - contentPadX * 2;
+  const textSectionTop = pad + imgCardH + (isSquare ? 18 : isPortrait ? 26 : 34);
 
-  const textStartY =
-    rowDividerY + (aspectRatio === "story" ? 50 : aspectRatio === "portrait" ? 40 : 32);
-  const boxTitleSize =
-    aspectRatio === "story" ? 26 : aspectRatio === "portrait" ? 22 : 18;
-  const boxValSize =
-    aspectRatio === "story" ? 26 : aspectRatio === "portrait" ? 22 : 17;
-  const boxDescSize =
-    aspectRatio === "story" ? 20 : aspectRatio === "portrait" ? 16 : 13;
-
-  // Col 1: Focus Type
-  const col1X = 84;
+  // Tag Kategori Persona
   ctx.textAlign = "left";
-  ctx.fillStyle = "#FFFFFF";
-  ctx.font = `800 ${boxTitleSize}px "Urbanist", sans-serif`;
-  ctx.fillText(isEn ? "Focus Type" : "Tipe Fokus", col1X, textStartY);
+  const tagSize = isSquare ? 13 : isPortrait ? 15 : 17;
+  ctx.font = `800 ${tagSize}px "Urbanist", sans-serif`;
+  ctx.fillStyle = "#0D9488";
+  ctx.fillText(t.personaLabel.toUpperCase(), contentPadX, textSectionTop + tagSize);
 
-  ctx.fillStyle = "#FFFFFF";
-  ctx.font = `700 ${boxValSize}px "Urbanist", sans-serif`;
-  ctx.fillText(
-    isEn ? "Evergreen Guardian" : "Penjaga Abadi",
-    col1X,
-    textStartY + (aspectRatio === "story" ? 40 : 30),
-  );
+  // Nama Persona Utama
+  const personaTitleSize = isSquare ? 26 : isPortrait ? 34 : 40;
+  ctx.font = `900 ${personaTitleSize}px "Urbanist", sans-serif`;
+  ctx.fillStyle = "#154E63";
+  const personaY = textSectionTop + tagSize + personaTitleSize * 1.05;
+  ctx.fillText(t.personaName, contentPadX, personaY);
 
-  ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
-  ctx.font = `500 ${boxDescSize}px "Urbanist", sans-serif`;
-  const descText =
-    isEn
-      ? "Focused throughout the day, steady like the pines."
-      : "Fokus konsisten sepanjang hari bagai pinus abadi.";
-  ctx.fillText(
-    descText,
-    col1X,
-    textStartY + (aspectRatio === "story" ? 78 : 58),
-  );
+  // Deskripsi Singkat Persona
+  const descFontSize = isSquare ? 14 : isPortrait ? 17 : 20;
+  const descLineH = descFontSize * 1.4;
+  ctx.font = `500 ${descFontSize}px "Urbanist", sans-serif`;
+  ctx.fillStyle = "#475569";
+  const descStartY = personaY + (isSquare ? 12 : 16);
+  const descLines = getWrappedTextLines(ctx, t.personaDesc, contentW);
+  descLines.slice(0, 2).forEach((line, idx) => {
+    ctx.fillText(line, contentPadX, descStartY + idx * descLineH);
+  });
 
-  // Col 2: Hari Terfokus
-  const col2X = colMidX + 36;
-  ctx.fillStyle = "#FFFFFF";
-  ctx.font = `800 ${boxTitleSize}px "Urbanist", sans-serif`;
-  ctx.fillText(isEn ? "Top Day" : "Hari Terfokus", col2X, textStartY);
+  // 4. Dua Kotak Micro-Cards di Bawah
+  const cardGap = width * 0.025;
+  const subCardW = (contentW - cardGap) / 2;
+  const subCardH = isSquare ? 75 : isPortrait ? 95 : 110;
+  const subCardY = height - pad - subCardH - 4;
+  const cardRadius = 16;
 
-  ctx.fillStyle = "#FFFFFF";
-  ctx.font = `800 ${boxValSize + 4}px "Urbanist", sans-serif`;
-  ctx.fillText(
-    mostFocusedDay,
-    col2X,
-    textStartY + (aspectRatio === "story" ? 40 : 30),
-  );
+  // Box 1: Most Focused Day
+  const box1X = contentPadX;
+  ctx.fillStyle = "#F8FAFC";
+  drawRoundedRect(ctx, box1X, subCardY, subCardW, subCardH, cardRadius);
+  ctx.fill();
+  ctx.strokeStyle = "#E2E8F0";
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
 
-  ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
-  ctx.font = `500 ${boxDescSize}px "Urbanist", sans-serif`;
-  const peakLabel = isEn
-    ? `Peak Hours: ${peakWindowLabel || "10:00 – 12:00"}`
-    : `Jam Emas: ${peakWindowLabel || "10:00 – 12:00"}`;
-  ctx.fillText(
-    peakLabel,
-    col2X,
-    textStartY + (aspectRatio === "story" ? 78 : 58),
-  );
+  // Box 1 Teks
+  const subLabelSize = isSquare ? 11 : isPortrait ? 13 : 15;
+  const subValSize = isSquare ? 18 : isPortrait ? 22 : 26;
+  const subNoteSize = isSquare ? 11 : isPortrait ? 13 : 14;
 
-  // 4. Footer Watermark: STRICTLY "Rimba" (NO tree icon!)
-  ctx.textAlign = "center";
-  ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
-  ctx.font = '700 24px "Urbanist", sans-serif';
-  ctx.fillText("Rimba", width / 2, height - (aspectRatio === "story" ? 45 : 30));
+  ctx.fillStyle = "#64748B";
+  ctx.font = `800 ${subLabelSize}px "Urbanist", sans-serif`;
+  ctx.fillText(t.bestDayLabel.toUpperCase(), box1X + 16, subCardY + subLabelSize + 12);
+
+  ctx.fillStyle = "#154E63";
+  ctx.font = `900 ${subValSize}px "Urbanist", sans-serif`;
+  ctx.fillText(mostFocusedDay || "Thursday", box1X + 16, subCardY + subLabelSize + subValSize + 16);
+
+  ctx.fillStyle = "#0D9488";
+  ctx.font = `600 ${subNoteSize}px "Urbanist", sans-serif`;
+  ctx.fillText(t.bestDaySub, box1X + 16, subCardY + subCardH - 12);
+
+  // Box 2: Golden Window
+  const box2X = contentPadX + subCardW + cardGap;
+  ctx.fillStyle = "#F8FAFC";
+  drawRoundedRect(ctx, box2X, subCardY, subCardW, subCardH, cardRadius);
+  ctx.fill();
+  ctx.strokeStyle = "#E2E8F0";
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Box 2 Teks
+  ctx.fillStyle = "#64748B";
+  ctx.font = `800 ${subLabelSize}px "Urbanist", sans-serif`;
+  ctx.fillText(t.goldenWindowLabel.toUpperCase(), box2X + 16, subCardY + subLabelSize + 12);
+
+  ctx.fillStyle = "#154E63";
+  ctx.font = `900 ${subValSize}px "Urbanist", sans-serif`;
+  ctx.fillText(cleanPeakWindow(peakWindowLabel), box2X + 16, subCardY + subLabelSize + subValSize + 16);
+
+  ctx.fillStyle = "#0D9488";
+  ctx.font = `600 ${subNoteSize}px "Urbanist", sans-serif`;
+  ctx.fillText(t.goldenWindowSub, box2X + 16, subCardY + subCardH - 12);
 }
 
 export function StoryShareCard({
@@ -255,108 +301,91 @@ export function StoryShareCard({
   mostFocusedDay,
   peakWindowLabel,
 }: StoryCardProps) {
-  const isEn = language === "en";
+  const t = getI18n(language);
+
+  const containerAspectClass =
+    aspectRatio === "story"
+      ? "aspect-[9/16]"
+      : aspectRatio === "portrait"
+      ? "aspect-[4/5]"
+      : "aspect-square";
+
+  const hoursDisplay =
+    totalHoursNum >= 1
+      ? `${totalHoursNum} ${t.hoursUnit}`
+      : `${totalMinutes} ${t.minsUnit}`;
 
   return (
     <div
-      className={`relative w-full rounded-3xl overflow-hidden p-3.5 text-left flex flex-col justify-between transition-all duration-300 shadow-md font-urbanist ${
-        aspectRatio === "story"
-          ? "aspect-[9/15]"
-          : aspectRatio === "portrait"
-          ? "aspect-[4/5]"
-          : "aspect-square"
-      }`}
+      className={`relative w-full bg-white rounded-[32px] sm:rounded-[38px] p-4 sm:p-5 flex flex-col justify-between shadow-2xl font-urbanist select-none overflow-hidden ${containerAspectClass}`}
     >
-      {/* FULL-BLEED CHAPTER ARTWORK */}
-      <img
-        src={story.image}
-        alt={story.title}
-        className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-        onError={(e) => {
-          (e.target as HTMLImageElement).src = "/story/story_chapter_1.webp";
-        }}
-      />
+      {/* 1. KOTAK ILUSTRASI ATAS */}
+      <div className="relative w-full rounded-[24px] sm:rounded-[28px] overflow-hidden flex-[1.35] min-h-0">
+        <img
+          src={story.image || "/story/story_chapter_1.webp"}
+          alt={story.title}
+          className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = "/story/story_chapter_1.webp";
+          }}
+        />
 
-      {/* Top Fade for Contrast */}
-      <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-black/65 via-black/30 to-transparent pointer-events-none" />
-
-      {/* Top Header (ALL WHITE TEXT) */}
-      <div className="relative z-10 flex items-start justify-between">
-        <div>
-          <p className="text-[26px] font-black text-white tracking-tight leading-none drop-shadow-sm">
-            2026
-          </p>
-          <p className="text-[10px] font-bold text-white/90 mt-0.5 leading-tight drop-shadow-2xs">
-            Rimba Chronicle<br />
-            {isEn ? "Year in Review" : "Kilas Balik 2026"}
-          </p>
-        </div>
-        <div className="text-right">
-          <p className="text-[9px] font-bold text-white/80 uppercase tracking-wider drop-shadow-2xs">
-            CH. {story.chapterNumber || 1}
-          </p>
-          <p className="text-[12.5px] font-black text-white leading-tight drop-shadow-sm">
-            {story.title}
+        {/* Gradien dasar ilustrasi */}
+        <div className="absolute inset-x-0 bottom-0 pt-16 pb-3 sm:pb-5 px-4 bg-gradient-to-t from-[#041016]/95 via-[#05161f]/65 to-transparent flex flex-col items-center text-center justify-end">
+          <span className="text-[11px] sm:text-[13px] font-bold text-white/90 tracking-wide">
+            {t.totalFocusTime}
+          </span>
+          <div className="text-[28px] sm:text-[36px] font-black text-white leading-tight my-0.5 drop-shadow-sm">
+            {hoursDisplay}
+          </div>
+          <p className="text-[9.5px] sm:text-[11px] text-white/90 leading-snug max-w-[280px] font-medium">
+            {t.compMessage(regionalBonusHours)}
           </p>
         </div>
       </div>
 
-      {/* Center: Open Nature Art */}
-      <div className="my-auto pointer-events-none" />
-
-      {/* Bottom Section with Dark Fade (ALL WHITE TEXT) */}
-      <div className="relative z-10 -mx-3.5 -mb-3.5 px-3.5 pb-3 pt-8 bg-gradient-to-t from-black/95 via-black/75 to-transparent flex flex-col gap-2">
-        <div className="text-center">
-          <span className="text-[9px] font-bold text-white/85 uppercase tracking-widest">
-            {isEn ? "Total Focus Time" : "Total Waktu Fokus"}
+      {/* 2. BAGIAN TEKS BAWAH (BERSIH & TERSTRUKTUR) */}
+      <div className="flex-1 flex flex-col justify-between pt-3.5 sm:pt-4 px-1 pb-0.5 min-h-0 text-[#154e63]">
+        {/* Header Persona */}
+        <div>
+          <span className="text-[9.5px] sm:text-[10px] font-extrabold uppercase tracking-wider text-[#0d9488]">
+            {t.personaLabel}
           </span>
-          <div className="text-[30px] font-black text-white leading-tight drop-shadow-sm my-0.5">
-            {totalHoursNum >= 1
-              ? (isEn ? `${totalHoursNum} hours` : `${totalHoursNum} jam`)
-              : (isEn ? `${totalMinutes} mins` : `${totalMinutes} mnt`)}
-          </div>
-          <p className="text-[9px] text-white/95 leading-snug max-w-[280px] mx-auto font-medium">
-            {isEn
-              ? `+${regionalBonusHours}h above average in your region · Amazing!`
-              : `+${regionalBonusHours} jam di atas rata-rata regional · Luar biasa!`}
+          <h3 className="text-[20px] sm:text-[23px] font-black text-[#154e63] tracking-tight leading-tight mt-0.5">
+            {t.personaName}
+          </h3>
+          <p className="text-[10.5px] sm:text-[11.5px] text-[#475569] leading-relaxed mt-1 font-medium line-clamp-2">
+            {t.personaDesc}
           </p>
         </div>
 
-        {/* Two-Column Info Row (ALL WHITE, subtle faded dividers) */}
-        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/10 text-left">
-          <div className="pr-1.5 border-r border-white/10">
-            <span className="text-[9px] font-bold text-white">
-              {isEn ? "Focus Type" : "Tipe Fokus"}
+        {/* Micro-cards Grid */}
+        <div className="grid grid-cols-2 gap-2 sm:gap-2.5 pt-2">
+          {/* Card 1: Hari Paling Fokus */}
+          <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-2xl p-2.5 flex flex-col justify-between">
+            <span className="text-[8.5px] sm:text-[9px] font-extrabold uppercase tracking-wider text-[#64748b]">
+              {t.bestDayLabel}
             </span>
-            <p className="text-[10px] font-extrabold text-white leading-tight mt-0.5">
-              {isEn ? "Evergreen Guardian" : "Penjaga Abadi"}
+            <p className="text-[14px] sm:text-[16px] font-black text-[#154e63] leading-tight my-0.5">
+              {mostFocusedDay || "Thursday"}
             </p>
-            <p className="text-[7.5px] text-white/85 leading-tight mt-0.5">
-              {isEn
-                ? "Focused throughout the day, steady like the pines."
-                : "Fokus konsisten sepanjang hari bagai pinus abadi."}
-            </p>
-          </div>
-          <div className="pl-1.5">
-            <span className="text-[9px] font-bold text-white">
-              {isEn ? "Top Day" : "Hari Terfokus"}
+            <span className="text-[8.5px] sm:text-[9px] font-semibold text-[#0d9488]">
+              {t.bestDaySub}
             </span>
-            <p className="text-[11px] font-extrabold text-white leading-tight mt-0.5">
-              {mostFocusedDay}
-            </p>
-            <p className="text-[7.5px] text-white/85 leading-tight mt-0.5">
-              {isEn
-                ? `Peak Hours: ${peakWindowLabel || "10:00 – 12:00"}`
-                : `Jam Emas: ${peakWindowLabel || "10:00 – 12:00"}`}
-            </p>
           </div>
-        </div>
 
-        {/* Clean Watermark (STRICTLY "Rimba", NO tree icon!) */}
-        <div className="text-center pt-0.5">
-          <span className="text-[9.5px] text-white/80 font-bold tracking-[0.25em] uppercase">
-            Rimba
-          </span>
+          {/* Card 2: Jam Emas */}
+          <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-2xl p-2.5 flex flex-col justify-between">
+            <span className="text-[8.5px] sm:text-[9px] font-extrabold uppercase tracking-wider text-[#64748b]">
+              {t.goldenWindowLabel}
+            </span>
+            <p className="text-[13px] sm:text-[15px] font-black text-[#154e63] leading-tight my-0.5 truncate">
+              {cleanPeakWindow(peakWindowLabel)}
+            </p>
+            <span className="text-[8.5px] sm:text-[9px] font-semibold text-[#0d9488] truncate">
+              {t.goldenWindowSub}
+            </span>
+          </div>
         </div>
       </div>
     </div>

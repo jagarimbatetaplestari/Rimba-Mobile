@@ -30,6 +30,7 @@ import { useAuthStore } from "@/lib/auth/useAuthStore";
 import { getLevelFromXp } from "@/lib/game/levelRules";
 import { RangerAvatar } from "@/components/ui/RangerAvatar";
 import { useTranslation } from "@/lib/i18n/translations";
+import { useNetworkStatus } from "@/lib/mobile/useNetworkStatus";
 
 export interface MobileHeaderHUDProps {
   onOpenStreak?: () => void;
@@ -81,6 +82,7 @@ export function MobileHeaderHUD({
   const toggleActiveBiome = useGameStore((state) => state.toggleActiveBiome);
   const devFastMode = useGameStore((state) => state.devFastMode);
   const { t, lang, setLanguage } = useTranslation();
+  const { isOnline, justReconnected } = useNetworkStatus();
 
   const currentLevel = getLevelFromXp(profile.xp);
   const nickname = authUser?.name?.trim() || "Penjaga";
@@ -246,6 +248,37 @@ export function MobileHeaderHUD({
         }}
       >
         <div className="w-full max-w-[390px] flex items-start justify-between pointer-events-none relative select-none">
+          {/* Zen Pill: Offline & Reconnected Indicator */}
+          {(!isOnline || justReconnected) && (
+            <div className="absolute top-[48px] left-1/2 -translate-x-1/2 z-30 pointer-events-none animate-in fade-in slide-in-from-top-1 duration-300">
+              <div
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold border backdrop-blur-md shadow-sm transition-all duration-300 ${
+                  !isOnline
+                    ? "bg-[#18120b]/90 text-amber-200 border-amber-500/40"
+                    : "bg-[#0b1b13]/90 text-emerald-200 border-emerald-400/50"
+                }`}
+              >
+                {!isOnline ? (
+                  <>
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                    <span>
+                      {lang === "en"
+                        ? "Offline · Saved Locally"
+                        : "Mode Offline · Tersimpan Lokal"}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                    <span>
+                      {lang === "en" ? "Online · Synced" : "Online · Tersinkron"}
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* ======================================================== */}
           {/* SISI KIRI: PROFIL & DYNAMIC PILLAR                      */}
           {/* ======================================================== */}

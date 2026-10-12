@@ -27,6 +27,7 @@ import { LegalModal } from "@/components/modals/LegalModal";
 import { RangerAvatar } from "@/components/ui/RangerAvatar";
 import { uploadGameSaveToCloud } from "@/lib/supabase/cloudSync";
 import { useTranslation } from "@/lib/i18n/translations";
+import { usePwaInstall } from "@/lib/mobile/usePwaInstall";
 import {
   Music,
   Volume2,
@@ -65,6 +66,7 @@ export function MobileSettingsSheet({
   const saveData = useGameStore((state) => state.saveData);
   const prefs = usePreferencesStore();
   const { t, lang, setLanguage } = useTranslation();
+  const { canInstall, promptInstall } = usePwaInstall();
 
   const profile = saveData?.profile || { xp: 0, goldCached: 0 };
   const currentLevel = Math.floor((profile?.xp || 0) / 100) + 1;
@@ -752,6 +754,38 @@ export function MobileSettingsSheet({
                     </div>
                     <ChevronRight className="w-4 h-4 text-[#4C7567]/70 stroke-[1.8]" />
                   </button>
+
+                  {/* Pasang PWA di Layar Utama */}
+                  {canInstall && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        hapticSuccess();
+                        soundManager.playPop();
+                        await promptInstall();
+                      }}
+                      className="w-full flex items-center justify-between p-3 text-left bg-gradient-to-r from-[#187557]/10 via-emerald-500/10 to-teal-500/10 hover:from-[#187557]/20 hover:to-emerald-500/20 rounded-2xl transition-all cursor-pointer border border-[#187557]/25 shadow-xs"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-xl bg-[#187557] text-white flex items-center justify-center shadow-xs">
+                          <Download className="w-4 h-4 stroke-[2.2]" />
+                        </div>
+                        <div>
+                          <p className="text-[13px] font-bold text-[#0D3528]">
+                            {lang === "en"
+                              ? "Install Rimba App"
+                              : "Pasang Aplikasi Rimba"}
+                          </p>
+                          <p className="text-[11px] text-[#4C7567] font-normal">
+                            {lang === "en"
+                              ? "Full screen & instant offline launch"
+                              : "Layar penuh & buka instan offline"}
+                          </p>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-[#187557] stroke-[2]" />
+                    </button>
+                  )}
 
                   {/* Versi Aplikasi */}
                   <div className="flex items-center justify-between px-3 py-2 text-xs">

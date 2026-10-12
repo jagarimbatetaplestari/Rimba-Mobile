@@ -43,6 +43,8 @@ import {
 } from "@/lib/mobile/notificationManager";
 import { usePreferencesStore } from "@/lib/settings/usePreferencesStore";
 import { useCampfireStore } from "@/lib/game/campfireStore";
+import { registerServiceWorker } from "@/lib/mobile/serviceWorkerRegistration";
+import { PwaInstallBanner } from "@/components/feedback/PwaInstallBanner";
 
 export default function RimbaDioramaApp() {
   const router = useRouter();
@@ -250,6 +252,11 @@ export default function RimbaDioramaApp() {
       cleanupGuard();
     };
   }, [init, checkReclamation]);
+
+  // Hybrid PWA: Register Service Worker for offline asset caching (3D GLBs, textures, fonts)
+  useEffect(() => {
+    registerServiceWorker();
+  }, []);
 
   // Smart Daily Streak Reminder: If user hasn't focused today, schedule evening reminder; if already focused, cancel reminder
   useEffect(() => {
@@ -856,6 +863,7 @@ export default function RimbaDioramaApp() {
       <ObjectInspectModal />
       <FaunaDialogPopover />
       <NotificationToast />
+      <PwaInstallBanner />
 
       {/* Growth & Retention Layer: Strict Guard & Unified Journal Modal */}
       <StrictFocusGuard />

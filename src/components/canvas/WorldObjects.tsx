@@ -8,6 +8,8 @@ import { useGameStore } from '@/lib/game/useGameStore';
 import { ASSET_MANIFEST, getManifestItem } from '@/lib/game/assetManifest';
 import { BulldozerMarker } from './BulldozerMarker';
 import { ConstructionCones } from './ConstructionCones';
+import { soundManager } from '@/lib/audio/sounds';
+import { hapticLight } from '@/lib/mobile/nativeBridge';
 import {
   buildRiverTileMap,
   getRiverWaterGeometry,
@@ -148,6 +150,16 @@ function ConnectedRiverTile({ adjacency }: ConnectedRiverTileProps) {
 
   return (
     <group>
+      {/* 0. Solid Meadow Turf Base Underneath River Tile to eliminate any cavities */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.001, 0]} receiveShadow>
+        <planeGeometry args={[1.02, 1.02]} />
+        <meshStandardMaterial
+          color={isSnow ? '#F8F8FB' : '#5AC487'}
+          roughness={0.88}
+          metalness={0.0}
+        />
+      </mesh>
+
       {/* 1. Recessed Warm Sandy Riverbed Canal (Foto 2 / Kenney style) */}
       <mesh geometry={bedGeo} position={[0, 0.002, 0]} receiveShadow renderOrder={0}>
         <meshStandardMaterial
@@ -194,9 +206,21 @@ interface ObjectItemProps {
   onSelect: (obj: WorldObject) => void;
   riverAdjacency?: RiverAdjacency;
   interactive?: boolean;
+  isPlacementMode?: boolean;
+  onTileTap?: (grid_x: number, grid_y: number) => void;
 }
 
-function ObjectItem({ object, isSelected, onSelect, riverAdjacency, interactive = true }: ObjectItemProps) {
+function ObjectItem({
+  object,
+  isSelected,
+  onSelect,
+  riverAdjacency,
+  interactive = true,
+  isPlacementMode = false,
+  onTileTap,
+}: ObjectItemProps) {
+  const pointerDownRef = useRef<{ x: number; y: number; time: number } | null>(null);
+
   // Resolve model path from asset manifest
   const manifestItem = useMemo(
     () => getManifestItem(object.model_variant),
@@ -424,7 +448,32 @@ function ObjectItem({ object, isSelected, onSelect, riverAdjacency, interactive 
       position={[x, y, z]}
       rotation={isRiver ? [0, 0, 0] : [0, object.rotation, 0]}
       scale={[currentScale, currentScale, currentScale]}
+      onPointerDown={(e) => {
+        if (isPlacementMode) {
+          const clientX = 'clientX' in e.nativeEvent ? e.nativeEvent.clientX : 0;
+          const clientY = 'clientY' in e.nativeEvent ? e.nativeEvent.clientY : 0;
+          pointerDownRef.current = { x: clientX, y: clientY, time: Date.now() };
+        }
+      }}
+      onPointerUp={(e) => {
+        if (isPlacementMode && pointerDownRef.current) {
+          const clientX = 'clientX' in e.nativeEvent ? e.nativeEvent.clientX : 0;
+          const clientY = 'clientY' in e.nativeEvent ? e.nativeEvent.clientY : 0;
+          const dist = Math.hypot(clientX - pointerDownRef.current.x, clientY - pointerDownRef.current.y);
+          const elapsed = Date.now() - pointerDownRef.current.time;
+          pointerDownRef.current = null;
+          if (dist < 28 && elapsed < 650) {
+            e.stopPropagation();
+            onTileTap?.(object.grid_x, object.grid_y);
+          }
+        }
+      }}
       onClick={(e) => {
+        if (isPlacementMode) {
+          e.stopPropagation();
+          onTileTap?.(object.grid_x, object.grid_y);
+          return;
+        }
         if (!interactive) return;
         e.stopPropagation();
         onSelect(object);
@@ -539,6 +588,12 @@ export function WorldObjects() {
     return () => clearTimeout(timer);
   }, []);
 
+  const handleTileTap = (grid_x: number, grid_y: number) => {
+    useGameStore.getState().setHoveredGridTile({ grid_x, grid_y });
+    soundManager.playPop();
+    hapticLight();
+  };
+
   return (
     <group>
       {worldObjects.map((obj) => {
@@ -551,6 +606,8 @@ export function WorldObjects() {
               onSelect={setSelectedObject}
               riverAdjacency={riverTileMap.get(`${obj.grid_x},${obj.grid_y}`)}
               interactive={!isInteractingWithGrid}
+              isPlacementMode={isInteractingWithGrid}
+              onTileTap={handleTileTap}
             />
           </React.Suspense>
         );

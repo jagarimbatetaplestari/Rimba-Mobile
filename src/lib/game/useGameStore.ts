@@ -328,13 +328,14 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     set({
       relocatingObjectId: objectId,
+      hoveredGridTile: { grid_x: target.grid_x, grid_y: target.grid_y },
       selectedObject: null,
       selectedTool: null,
       selectedCatalogItem: null,
       placementRotation: target.rotation || 0,
     });
     get().notify(
-      `Pindahkan ${target.object_type}: Klik petak kosong baru untuk menaruh (Tekan R untuk putar, Esc untuk batal)`,
+      `Pindahkan ${target.object_type}: Ketuk petak baru untuk menaruh preview, lalu tekan tombol konfirmasi.`,
       'info'
     );
   },

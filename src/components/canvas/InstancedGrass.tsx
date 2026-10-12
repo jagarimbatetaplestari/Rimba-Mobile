@@ -274,7 +274,7 @@ export function InstancedGrass({ count: overrideCount }: InstancedGrassProps) {
     });
 
     // Helper: checks if world coordinate (wx, wz) falls strictly inside the river water channel
-    const isRiverZone = (wx: number, wz: number, radius = 0.38): boolean => {
+    const isRiverZone = (wx: number, wz: number, radius = 0.30): boolean => {
       if (riverTileMap.size === 0) return false;
       const g = worldToGrid(wx, wz);
       if (!g) return false;
@@ -285,7 +285,7 @@ export function InstancedGrass({ count: overrideCount }: InstancedGrassProps) {
         const [cx, , cz] = gridToWorld(g.grid_x, g.grid_y, 0);
         const adj = riverTileMap.get(currentKey)!;
         const dStream = getRiverChannelDistance(wx - cx, wz - cz, adj);
-        if (dStream < 0.39) return true;
+        if (dStream < radius) return true;
       }
 
       const candidates = [
@@ -312,7 +312,7 @@ export function InstancedGrass({ count: overrideCount }: InstancedGrassProps) {
     };
 
     const targetTotal = Math.min(count, unlockedTiles.length * 640);
-    const maxAttempts = targetTotal * 2;
+    const maxAttempts = targetTotal * 4;
 
     for (let attempt = 0; attempt < maxAttempts && blades.length < targetTotal; attempt++) {
       // Pick a random unlocked tile and sample a 100% continuous random point across its full span
@@ -330,7 +330,7 @@ export function InstancedGrass({ count: overrideCount }: InstancedGrassProps) {
       const z = tb.cz + localZ;
 
       // 1. Strict River exclusion: NEVER spawn grass inside water channels, but allow lush banks
-      if (isRiverZone(x, z, 0.38)) continue;
+      if (isRiverZone(x, z, 0.30)) continue;
 
       // 2. Stepping-stone paths exclusion
       let nearPath = false;

@@ -8,6 +8,7 @@ import {
   getLandExpansionZoneInfo,
   isTileUnlocked,
   isTileOccupied,
+  findEmptyTileNearCenter,
 } from "@/lib/game/worldRules";
 import {
   Waves,
@@ -228,6 +229,43 @@ export function NatureWorkshopSheet() {
     if (manifestItem) {
       preloadModelPath(manifestItem.modelPath);
     }
+
+    // Immediately calculate an open, unlocked tile closest to the center of the island
+    const isBridge =
+      item.id.toLowerCase().includes("bridge") ||
+      item.model.toLowerCase().includes("bridge");
+    let defaultTile = findEmptyTileNearCenter(worldObjects, unlockedSet);
+
+    // If placing a bridge, optionally prefer finding an unoccupied river tile
+    if (isBridge) {
+      const riverTile = worldObjects.find(
+        (o) =>
+          ((o.model_variant || "").toLowerCase().includes("river") ||
+            (o.id || "").toLowerCase().includes("river")) &&
+          !worldObjects.some(
+            (other) =>
+              other.grid_x === o.grid_x &&
+              other.grid_y === o.grid_y &&
+              ((other.id || "").toLowerCase().includes("bridge") ||
+                (other.model_variant || "").toLowerCase().includes("bridge"))
+          )
+      );
+      if (riverTile) {
+        defaultTile = { grid_x: riverTile.grid_x, grid_y: riverTile.grid_y };
+      }
+    }
+
+    if (!defaultTile) {
+      const firstUnlocked = Array.from(unlockedSet)[0];
+      if (firstUnlocked) {
+        const [fx, fy] = firstUnlocked.split(",").map(Number);
+        defaultTile = { grid_x: fx, grid_y: fy };
+      } else {
+        defaultTile = { grid_x: 4, grid_y: 4 };
+      }
+    }
+
+    useGameStore.getState().setHoveredGridTile(defaultTile);
     setSelectedCatalogItem(item);
     setIsOpen(false);
   };

@@ -9,7 +9,10 @@ import {
   getUnlockedTilesSet,
   getUnlockedTilesSignature,
   gridToWorld,
+  worldToGrid,
 } from '@/lib/game/worldRules';
+import { soundManager } from '@/lib/audio/sounds';
+import { hapticLight } from '@/lib/mobile/nativeBridge';
 import { TreeSpecies } from '@/types/game';
 
 // Preload models for growth stages
@@ -297,11 +300,69 @@ export function FocusSapling() {
     groupRef.current.rotation.y = now * 0.0003;
   });
 
+  const saplingPointerDownRef = useRef<{ x: number; y: number; time: number } | null>(null);
+
   return (
     <>
       <group
         position={saplingWorldPos}
+        onPointerDown={(e) => {
+          const state = useGameStore.getState();
+          const isInteractingWithGrid = Boolean(
+            state.selectedCatalogItem ||
+            state.selectedTool ||
+            state.relocatingObjectId ||
+            state.isExpandLandMode
+          );
+          if (isInteractingWithGrid) {
+            const clientX = 'clientX' in e.nativeEvent ? e.nativeEvent.clientX : 0;
+            const clientY = 'clientY' in e.nativeEvent ? e.nativeEvent.clientY : 0;
+            saplingPointerDownRef.current = { x: clientX, y: clientY, time: Date.now() };
+          }
+        }}
+        onPointerUp={(e) => {
+          const state = useGameStore.getState();
+          const isInteractingWithGrid = Boolean(
+            state.selectedCatalogItem ||
+            state.selectedTool ||
+            state.relocatingObjectId ||
+            state.isExpandLandMode
+          );
+          if (isInteractingWithGrid && saplingPointerDownRef.current) {
+            const clientX = 'clientX' in e.nativeEvent ? e.nativeEvent.clientX : 0;
+            const clientY = 'clientY' in e.nativeEvent ? e.nativeEvent.clientY : 0;
+            const dist = Math.hypot(clientX - saplingPointerDownRef.current.x, clientY - saplingPointerDownRef.current.y);
+            const elapsed = Date.now() - saplingPointerDownRef.current.time;
+            saplingPointerDownRef.current = null;
+            if (dist < 28 && elapsed < 650) {
+              e.stopPropagation();
+              const grid = worldToGrid(e.point.x, e.point.z) || (targetTile ? { grid_x: targetTile.grid_x, grid_y: targetTile.grid_y } : null);
+              if (grid) {
+                state.setHoveredGridTile(grid);
+                soundManager.playPop();
+                hapticLight();
+              }
+            }
+          }
+        }}
         onClick={(e) => {
+          const state = useGameStore.getState();
+          const isInteractingWithGrid = Boolean(
+            state.selectedCatalogItem ||
+            state.selectedTool ||
+            state.relocatingObjectId ||
+            state.isExpandLandMode
+          );
+          if (isInteractingWithGrid) {
+            e.stopPropagation();
+            const grid = worldToGrid(e.point.x, e.point.z) || (targetTile ? { grid_x: targetTile.grid_x, grid_y: targetTile.grid_y } : null);
+            if (grid) {
+              state.setHoveredGridTile(grid);
+              soundManager.playPop();
+              hapticLight();
+            }
+            return;
+          }
           e.stopPropagation();
           if (!activeSession) return;
           const now = Date.now();

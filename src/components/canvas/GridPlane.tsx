@@ -332,55 +332,8 @@ export function GridPlane() {
   }, [isRelocating, relocatingObject, selectedCatalogItem, selectedTool]);
 
   const pointerDownPosRef = useRef<{ x: number; y: number; time: number } | null>(null);
-
-  const handlePointerDown = (e: { nativeEvent: MouseEvent | TouchEvent | PointerEvent; point: THREE.Vector3; stopPropagation: () => void }) => {
-    if (!isInteractingWithGrid) return;
-    e.stopPropagation();
-    const isTouch = ('touches' in e.nativeEvent) || ((e as unknown as { pointerType?: string }).pointerType === 'touch');
-    const clientX = 'clientX' in e.nativeEvent ? e.nativeEvent.clientX : ((e.nativeEvent as unknown as TouchEvent).touches?.[0]?.clientX || 0);
-    const clientY = 'clientY' in e.nativeEvent ? e.nativeEvent.clientY : ((e.nativeEvent as unknown as TouchEvent).touches?.[0]?.clientY || 0);
-    pointerDownPosRef.current = {
-      x: clientX,
-      y: clientY,
-      time: Date.now(),
-    };
-    if (!isTouch) {
-      const grid = worldToGrid(e.point.x, e.point.z);
-      if (grid) setHoveredTile(grid);
-    }
-  };
-
-  const handlePointerUp = (e: { nativeEvent: MouseEvent | TouchEvent | PointerEvent; point: THREE.Vector3; stopPropagation: () => void }) => {
-    if (!isInteractingWithGrid) return;
-    e.stopPropagation();
-    if (pointerDownPosRef.current) {
-      const clientX = 'clientX' in e.nativeEvent ? e.nativeEvent.clientX : ((e.nativeEvent as unknown as TouchEvent).changedTouches?.[0]?.clientX || 0);
-      const clientY = 'clientY' in e.nativeEvent ? e.nativeEvent.clientY : ((e.nativeEvent as unknown as TouchEvent).changedTouches?.[0]?.clientY || 0);
-      const dx = clientX - pointerDownPosRef.current.x;
-      const dy = clientY - pointerDownPosRef.current.y;
-      const dist = Math.hypot(dx, dy);
-      const elapsed = Date.now() - pointerDownPosRef.current.time;
-      pointerDownPosRef.current = null;
-      if (dist < 20 && elapsed < 600) {
-        handleClick({ point: e.point, stopPropagation: () => {} });
-      }
-    }
-  };
-
-  const handlePointerMove = (e: { nativeEvent?: MouseEvent | TouchEvent | PointerEvent; point: THREE.Vector3; stopPropagation: () => void }) => {
-    if (!isInteractingWithGrid) return;
-    const isTouch = e.nativeEvent && (('touches' in e.nativeEvent) || ((e as unknown as { pointerType?: string }).pointerType === 'touch'));
-    if (isTouch) return;
-    e.stopPropagation();
-    const grid = worldToGrid(e.point.x, e.point.z);
-    setHoveredTile(grid);
-  };
-
-  const handlePointerLeave = () => {
-    if (!isInteractingWithGrid) return;
-    setHoveredTile(null);
-  };
-
+  const lastTapTimeRef = useRef<number>(0);
+  const lastTappedTileRef = useRef<string>('');
   const lastExpandTimeRef = useRef<number>(0);
 
   const handleExpandTile = (grid_x: number, grid_y: number) => {
@@ -397,28 +350,62 @@ export function GridPlane() {
     }
   };
 
-  const handleClick = (e: { point?: THREE.Vector3; stopPropagation: () => void }) => {
-    if (!isInteractingWithGrid) return;
-    e.stopPropagation();
-    const target = (e.point ? worldToGrid(e.point.x, e.point.z) : null) || hoveredTile;
+  const applyGridTap = (point: THREE.Vector3) => {
+    const target = worldToGrid(point.x, point.z);
     if (!target) return;
 
-    // 1. Expanding land: strictly when isExpandLandMode is actively true
+    const tileKey = `${target.grid_x},${target.grid_y}`;
+    const now = Date.now();
+    // Debounce duplicate rapid events within 180ms
+    if (now - lastTapTimeRef.current < 180 && lastTappedTileRef.current === tileKey) {
+      return;
+    }
+    lastTapTimeRef.current = now;
+    lastTappedTileRef.current = tileKey;
+
     if (isExpandLandMode) {
       handleExpandTile(target.grid_x, target.grid_y);
       return;
     }
 
-    // 2. Placing Catalog Item or Relocating Object:
-    // User requested: "ketika object ditempatkan, jangan langsung di donekan, melainkan user harus tekan tombol konfirmasi gitu"
-    // Tapping a tile only selects/previews the prospective location and provides tactile feedback.
-    // Placement is explicitly finalized by pressing the confirmation button in NatureWorkshopSheet!
     if (isBuildActive || isRelocating) {
       setHoveredTile(target);
       soundManager.playPop();
       hapticLight();
-      return;
     }
+  };
+
+  const handlePointerDown = (e: { nativeEvent?: MouseEvent | TouchEvent | PointerEvent; point: THREE.Vector3 }) => {
+    if (!isInteractingWithGrid) return;
+    const clientX = e.nativeEvent && 'clientX' in e.nativeEvent ? e.nativeEvent.clientX : 0;
+    const clientY = e.nativeEvent && 'clientY' in e.nativeEvent ? e.nativeEvent.clientY : 0;
+    pointerDownPosRef.current = {
+      x: clientX,
+      y: clientY,
+      time: Date.now(),
+    };
+  };
+
+  const handlePointerUp = (e: { nativeEvent?: MouseEvent | TouchEvent | PointerEvent; point: THREE.Vector3; stopPropagation: () => void }) => {
+    if (!isInteractingWithGrid) return;
+    if (pointerDownPosRef.current) {
+      const clientX = e.nativeEvent && 'clientX' in e.nativeEvent ? e.nativeEvent.clientX : 0;
+      const clientY = e.nativeEvent && 'clientY' in e.nativeEvent ? e.nativeEvent.clientY : 0;
+      const dist = Math.hypot(clientX - pointerDownPosRef.current.x, clientY - pointerDownPosRef.current.y);
+      const elapsed = Date.now() - pointerDownPosRef.current.time;
+      pointerDownPosRef.current = null;
+      // Tap gesture threshold (movement < 28px, duration < 650ms)
+      if (dist < 28 && elapsed < 650) {
+        e.stopPropagation();
+        applyGridTap(e.point);
+      }
+    }
+  };
+
+  const handleClick = (e: { point: THREE.Vector3; stopPropagation: () => void }) => {
+    if (!isInteractingWithGrid) return;
+    e.stopPropagation();
+    applyGridTap(e.point);
   };
 
   const ghostWorldPos = hoveredTile
@@ -497,8 +484,6 @@ export function GridPlane() {
           position={[0, 0.05, 0]}
           onPointerDown={handlePointerDown}
           onPointerUp={handlePointerUp}
-          onPointerMove={handlePointerMove}
-          onPointerLeave={handlePointerLeave}
           onClick={handleClick}
         >
           <planeGeometry args={[gridSize * tileSize, gridSize * tileSize]} />

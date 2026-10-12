@@ -8,6 +8,7 @@ import { useGameStore } from '@/lib/game/useGameStore';
 import { checkFaunaEligibility, isFlowerOrBush } from '@/lib/game/faunaRules';
 import {
   gridToWorld,
+  worldToGrid,
   getUnlockedTilesSet,
   isTileOccupied,
   getTerrainElevation,
@@ -16,6 +17,7 @@ import { buildRiverTileMap, getRiverChannelDistance, getConnectedRiverPatrolPath
 import { GAME_CONFIG } from '@/lib/game/config';
 import { FaunaSpecies, WorldObject } from '@/types/game';
 import { soundManager } from '@/lib/audio/sounds';
+import { hapticLight } from '@/lib/mobile/nativeBridge';
 
 // Preload 3D GLB animal models
 useGLTF.preload('/models/animal-deer.glb');
@@ -1540,6 +1542,22 @@ export function FaunaEcosystem() {
   };
 
   const handleSelectSpecies = (species: FaunaSpecies, pos: [number, number, number]) => {
+    const state = useGameStore.getState();
+    const isInteractingWithGrid = Boolean(
+      state.selectedCatalogItem ||
+      state.selectedTool ||
+      state.relocatingObjectId ||
+      state.isExpandLandMode
+    );
+    if (isInteractingWithGrid) {
+      const grid = worldToGrid(pos[0], pos[2]);
+      if (grid) {
+        state.setHoveredGridTile(grid);
+        soundManager.playPop();
+        hapticLight();
+      }
+      return;
+    }
     spawnHeart(pos);
     setSelectedFauna(species);
   };

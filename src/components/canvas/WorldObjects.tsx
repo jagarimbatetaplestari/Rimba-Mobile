@@ -122,6 +122,15 @@ function createWaterCausticTexture(): THREE.CanvasTexture | null {
   return texture;
 }
 
+let sharedWaterCausticTexture: THREE.CanvasTexture | null = null;
+
+function getSharedWaterCausticTexture(): THREE.CanvasTexture | null {
+  if (!sharedWaterCausticTexture) {
+    sharedWaterCausticTexture = createWaterCausticTexture();
+  }
+  return sharedWaterCausticTexture;
+}
+
 interface ConnectedRiverTileProps {
   adjacency: RiverAdjacency;
 }
@@ -129,24 +138,10 @@ interface ConnectedRiverTileProps {
 function ConnectedRiverTile({ adjacency }: ConnectedRiverTileProps) {
   const waterGeo = useMemo(() => getRiverWaterGeometry(adjacency.mask), [adjacency.mask]);
   const bedGeo = useMemo(() => getRiverBedGeometry(adjacency.mask), [adjacency.mask]);
-  const causticTexture = useMemo(() => createWaterCausticTexture(), []);
+  const causticTexture = useMemo(() => getSharedWaterCausticTexture(), []);
   const matRef = useRef<THREE.MeshStandardMaterial>(null);
   const activeBiome = useGameStore((state) => state.activeBiome || 'meadow');
   const isSnow = activeBiome === 'snow';
-
-  // Smooth living animated river current flowing downstream
-  useFrame((_, delta) => {
-    if (causticTexture) {
-      causticTexture.offset.x = (causticTexture.offset.x + delta * 0.035) % 1;
-      causticTexture.offset.y = (causticTexture.offset.y + delta * 0.018) % 1;
-    }
-  });
-
-  useEffect(() => {
-    return () => {
-      causticTexture?.dispose();
-    };
-  }, [causticTexture]);
 
   return (
     <group>
@@ -587,6 +582,14 @@ export function WorldObjects() {
     }, 2000);
     return () => clearTimeout(timer);
   }, []);
+
+  // Single synchronized global water caustic shimmer loop for all river tiles
+  useFrame((_, delta) => {
+    if (sharedWaterCausticTexture) {
+      sharedWaterCausticTexture.offset.x = (sharedWaterCausticTexture.offset.x + delta * 0.035) % 1;
+      sharedWaterCausticTexture.offset.y = (sharedWaterCausticTexture.offset.y + delta * 0.018) % 1;
+    }
+  });
 
   const handleTileTap = (grid_x: number, grid_y: number) => {
     useGameStore.getState().setHoveredGridTile({ grid_x, grid_y });

@@ -15,9 +15,39 @@ import {
 } from '@/lib/game/worldRules';
 import { buildRiverTileMap, getRiverChannelDistance, getConnectedRiverPatrolPaths } from '@/lib/game/riverSystem';
 import { GAME_CONFIG } from '@/lib/game/config';
-import { FaunaSpecies, WorldObject } from '@/types/game';
+import { FaunaSpecies, WorldObject, RimbaSaveData } from '@/types/game';
 import { soundManager } from '@/lib/audio/sounds';
 import { hapticLight } from '@/lib/mobile/nativeBridge';
+import { usePreferencesStore } from '@/lib/settings/usePreferencesStore';
+
+// Global texture cache to prevent duplicate TextureLoader allocations & VRAM bloating
+let cachedCubepetsTexture: THREE.Texture | null = null;
+function getCubepetsTexture(): THREE.Texture | null {
+  if (typeof window === 'undefined') return null;
+  if (!cachedCubepetsTexture) {
+    const loader = new THREE.TextureLoader();
+    cachedCubepetsTexture = loader.load('/models/Textures/colormap_cubepets.png', () => {
+      if (cachedCubepetsTexture) cachedCubepetsTexture.needsUpdate = true;
+    });
+    cachedCubepetsTexture.flipY = false;
+    cachedCubepetsTexture.colorSpace = THREE.SRGBColorSpace;
+  }
+  return cachedCubepetsTexture;
+}
+
+let cachedFoxTexture: THREE.Texture | null = null;
+function getFoxTexture(): THREE.Texture | null {
+  if (typeof window === 'undefined') return null;
+  if (!cachedFoxTexture) {
+    const loader = new THREE.TextureLoader();
+    cachedFoxTexture = loader.load('/models/Textures/colormap_fox.png', () => {
+      if (cachedFoxTexture) cachedFoxTexture.needsUpdate = true;
+    });
+    cachedFoxTexture.flipY = false;
+    cachedFoxTexture.colorSpace = THREE.SRGBColorSpace;
+  }
+  return cachedFoxTexture;
+}
 
 // Preload 3D GLB animal models
 useGLTF.preload('/models/animal-deer.glb');
@@ -85,15 +115,7 @@ function HoneyBee({ centers, speed, radius, phaseOffset, scale = 0.14, isNight =
   const groupRef = useRef<THREE.Group>(null);
   const { scene } = useGLTF('/models/fauna_bee.glb');
 
-  const beeTexture = useMemo(() => {
-    const loader = new THREE.TextureLoader();
-    const tex = loader.load('/models/Textures/colormap_cubepets.png', () => {
-      tex.needsUpdate = true;
-    });
-    tex.flipY = false;
-    tex.colorSpace = THREE.SRGBColorSpace;
-    return tex;
-  }, []);
+  const beeTexture = getCubepetsTexture();
 
   const clonedScene = useMemo(() => {
     const cloned = scene.clone(true);
@@ -740,16 +762,7 @@ function ForestFox({
   const groupRef = useRef<THREE.Group>(null);
   const { scene } = useGLTF('/models/fauna_fox.glb');
 
-  // Load custom vibrant red fox texture (eliminates blue Kenney default)
-  const foxTexture = useMemo(() => {
-    const loader = new THREE.TextureLoader();
-    const tex = loader.load('/models/Textures/colormap_fox.png', () => {
-      tex.needsUpdate = true;
-    });
-    tex.flipY = false;
-    tex.colorSpace = THREE.SRGBColorSpace;
-    return tex;
-  }, []);
+  const foxTexture = getFoxTexture();
 
   const clonedScene = useMemo(() => {
     const cloned = scene.clone(true);
@@ -940,15 +953,7 @@ function TreeKoala({ basePos, groundPositionsRef, isNight = false, onSelect }: T
   const leafRef = useRef<THREE.Group>(null);
   const { scene } = useGLTF('/models/fauna_koala.glb');
 
-  const koalaTexture = useMemo(() => {
-    const loader = new THREE.TextureLoader();
-    const tex = loader.load('/models/Textures/colormap_cubepets.png', () => {
-      tex.needsUpdate = true;
-    });
-    tex.flipY = false;
-    tex.colorSpace = THREE.SRGBColorSpace;
-    return tex;
-  }, []);
+  const koalaTexture = getCubepetsTexture();
 
   const clonedScene = useMemo(() => {
     const cloned = scene.clone(true);
@@ -1097,15 +1102,7 @@ function CubePetGroundWalker({
   const groupRef = useRef<THREE.Group>(null);
   const { scene } = useGLTF(modelPath);
 
-  const petTexture = useMemo(() => {
-    const loader = new THREE.TextureLoader();
-    const tex = loader.load('/models/Textures/colormap_cubepets.png', () => {
-      tex.needsUpdate = true;
-    });
-    tex.flipY = false;
-    tex.colorSpace = THREE.SRGBColorSpace;
-    return tex;
-  }, []);
+  const petTexture = getCubepetsTexture();
 
   const clonedScene = useMemo(() => {
     const cloned = scene.clone(true);
@@ -1283,15 +1280,7 @@ function RiverFish({
   const groupRef = useRef<THREE.Group>(null);
   const { scene } = useGLTF('/models/animal-fish.glb');
 
-  const fishTexture = useMemo(() => {
-    const loader = new THREE.TextureLoader();
-    const tex = loader.load('/models/Textures/colormap_cubepets.png', () => {
-      tex.needsUpdate = true;
-    });
-    tex.flipY = false;
-    tex.colorSpace = THREE.SRGBColorSpace;
-    return tex;
-  }, []);
+  const fishTexture = getCubepetsTexture();
 
   const clonedScene = useMemo(() => {
     const cloned = scene.clone(true);
@@ -1427,15 +1416,7 @@ function TreeMonkey({
   const groupRef = useRef<THREE.Group>(null);
   const { scene } = useGLTF('/models/animal-monkey.glb');
 
-  const monkeyTexture = useMemo(() => {
-    const loader = new THREE.TextureLoader();
-    const tex = loader.load('/models/Textures/colormap_cubepets.png', () => {
-      tex.needsUpdate = true;
-    });
-    tex.flipY = false;
-    tex.colorSpace = THREE.SRGBColorSpace;
-    return tex;
-  }, []);
+  const monkeyTexture = getCubepetsTexture();
 
   const clonedScene = useMemo(() => {
     const cloned = scene.clone(true);
@@ -1519,10 +1500,14 @@ function TreeMonkey({
 // MAIN FAUNA ECOSYSTEM ROOT COMPONENT
 // ============================================================================
 export function FaunaEcosystem() {
-  const saveData = useGameStore((state) => state.saveData);
+  const world = useGameStore((state) => state.saveData.world);
+  const worldObjects = useGameStore((state) => state.saveData.world_objects || []);
+  const playerXp = useGameStore((state) => state.saveData.profile?.xp || 0);
+  const focusSessions = useGameStore((state) => state.saveData.focus_sessions || []);
   const timeOfDay = useGameStore((state) => state.timeOfDay);
   const activeBiome = useGameStore((state) => state.activeBiome);
   const setSelectedFauna = useGameStore((state) => state.setSelectedFauna);
+  const isEcoMode = usePreferencesStore((state) => state.graphicsQuality === 'eco');
   const isNight = timeOfDay === 'night';
 
   const [hearts, setHearts] = useState<HeartParticle[]>([]);
@@ -1562,31 +1547,40 @@ export function FaunaEcosystem() {
     setSelectedFauna(species);
   };
 
-  // Eligibility checks for all 17 species
-  const canBee = checkFaunaEligibility('bee', saveData, timeOfDay, undefined, activeBiome);
-  const canBird = checkFaunaEligibility('bird', saveData, timeOfDay, undefined, activeBiome);
-  const canRabbit = checkFaunaEligibility('rabbit', saveData, timeOfDay, undefined, activeBiome);
-  const canFox = checkFaunaEligibility('fox', saveData, timeOfDay, undefined, activeBiome);
-  const canKoala = checkFaunaEligibility('koala', saveData, timeOfDay, undefined, activeBiome);
-  const canDeer =
-    checkFaunaEligibility('deer', saveData, timeOfDay, undefined, activeBiome) ||
-    checkFaunaEligibility('mystic_stag', saveData, timeOfDay, undefined, activeBiome);
-  const canElephant = checkFaunaEligibility('elephant', saveData, timeOfDay, undefined, activeBiome);
-  const canTiger = checkFaunaEligibility('tiger', saveData, timeOfDay, undefined, activeBiome);
-  const canPolar = checkFaunaEligibility('polar', saveData, timeOfDay, undefined, activeBiome);
-  const canPanda = checkFaunaEligibility('panda', saveData, timeOfDay, undefined, activeBiome);
-  const canMonkey = checkFaunaEligibility('monkey', saveData, timeOfDay, undefined, activeBiome);
-  const canLion = checkFaunaEligibility('lion', saveData, timeOfDay, undefined, activeBiome);
-  const canHog = checkFaunaEligibility('hog', saveData, timeOfDay, undefined, activeBiome);
-  const canGiraffe = checkFaunaEligibility('giraffe', saveData, timeOfDay, undefined, activeBiome);
-  const canFish = checkFaunaEligibility('fish', saveData, timeOfDay, undefined, activeBiome);
-  const canCat = checkFaunaEligibility('cat', saveData, timeOfDay, undefined, activeBiome);
-  const canBeaver = checkFaunaEligibility('beaver', saveData, timeOfDay, undefined, activeBiome);
+  // Lightweight mock save data for eligibility checks, insulated from currency, todos & analytics changes
+  const faunaSaveData = useMemo(() => {
+    return {
+      world,
+      world_objects: worldObjects,
+      profile: { id: 'local-user', xp: playerXp, goldCached: 0 },
+      focus_sessions: focusSessions,
+    } as unknown as RimbaSaveData;
+  }, [world, worldObjects, playerXp, focusSessions]);
 
-  const worldObjects = saveData.world_objects || [];
+  // Eligibility checks for all 17 species
+  const canBee = checkFaunaEligibility('bee', faunaSaveData, timeOfDay, undefined, activeBiome);
+  const canBird = checkFaunaEligibility('bird', faunaSaveData, timeOfDay, undefined, activeBiome);
+  const canRabbit = checkFaunaEligibility('rabbit', faunaSaveData, timeOfDay, undefined, activeBiome);
+  const canFox = checkFaunaEligibility('fox', faunaSaveData, timeOfDay, undefined, activeBiome);
+  const canKoala = checkFaunaEligibility('koala', faunaSaveData, timeOfDay, undefined, activeBiome);
+  const canDeer =
+    checkFaunaEligibility('deer', faunaSaveData, timeOfDay, undefined, activeBiome) ||
+    checkFaunaEligibility('mystic_stag', faunaSaveData, timeOfDay, undefined, activeBiome);
+  const canElephant = checkFaunaEligibility('elephant', faunaSaveData, timeOfDay, undefined, activeBiome);
+  const canTiger = checkFaunaEligibility('tiger', faunaSaveData, timeOfDay, undefined, activeBiome);
+  const canPolar = checkFaunaEligibility('polar', faunaSaveData, timeOfDay, undefined, activeBiome);
+  const canPanda = checkFaunaEligibility('panda', faunaSaveData, timeOfDay, undefined, activeBiome);
+  const canMonkey = checkFaunaEligibility('monkey', faunaSaveData, timeOfDay, undefined, activeBiome);
+  const canLion = checkFaunaEligibility('lion', faunaSaveData, timeOfDay, undefined, activeBiome);
+  const canHog = checkFaunaEligibility('hog', faunaSaveData, timeOfDay, undefined, activeBiome);
+  const canGiraffe = checkFaunaEligibility('giraffe', faunaSaveData, timeOfDay, undefined, activeBiome);
+  const canFish = checkFaunaEligibility('fish', faunaSaveData, timeOfDay, undefined, activeBiome);
+  const canCat = checkFaunaEligibility('cat', faunaSaveData, timeOfDay, undefined, activeBiome);
+  const canBeaver = checkFaunaEligibility('beaver', faunaSaveData, timeOfDay, undefined, activeBiome);
+
   const unlockedSet = useMemo(
-    () => getUnlockedTilesSet(saveData.world, worldObjects),
-    [saveData.world, worldObjects]
+    () => getUnlockedTilesSet(world, worldObjects),
+    [world, worldObjects]
   );
 
   // River network mapping
@@ -1945,33 +1939,37 @@ export function FaunaEcosystem() {
             isNight={isNight}
             onSelect={() => handleSelectSpecies('bee', beeCenters[0])}
           />
-          <HoneyBee
-            centers={beeCenters}
-            speed={1.3}
-            radius={0.5}
-            phaseOffset={Math.PI}
-            scale={0.12}
-            isNight={isNight}
-            onSelect={() => handleSelectSpecies('bee', beeCenters[0])}
-          />
-          <HoneyBee
-            centers={beeCenters}
-            speed={0.95}
-            radius={0.75}
-            phaseOffset={2.2}
-            scale={0.12}
-            isNight={isNight}
-            onSelect={() => handleSelectSpecies('bee', beeCenters[0])}
-          />
-          <HoneyBee
-            centers={beeCenters}
-            speed={1.2}
-            radius={0.58}
-            phaseOffset={4.1}
-            scale={0.11}
-            isNight={isNight}
-            onSelect={() => handleSelectSpecies('bee', beeCenters[0])}
-          />
+          {!isEcoMode && (
+            <>
+              <HoneyBee
+                centers={beeCenters}
+                speed={1.3}
+                radius={0.5}
+                phaseOffset={Math.PI}
+                scale={0.12}
+                isNight={isNight}
+                onSelect={() => handleSelectSpecies('bee', beeCenters[0])}
+              />
+              <HoneyBee
+                centers={beeCenters}
+                speed={0.95}
+                radius={0.75}
+                phaseOffset={2.2}
+                scale={0.12}
+                isNight={isNight}
+                onSelect={() => handleSelectSpecies('bee', beeCenters[0])}
+              />
+              <HoneyBee
+                centers={beeCenters}
+                speed={1.2}
+                radius={0.58}
+                phaseOffset={4.1}
+                scale={0.11}
+                isNight={isNight}
+                onSelect={() => handleSelectSpecies('bee', beeCenters[0])}
+              />
+            </>
+          )}
         </group>
       )}
 
@@ -1988,26 +1986,30 @@ export function FaunaEcosystem() {
             isNight={isNight}
             onSelect={() => handleSelectSpecies('bird', birdWaypoints[0])}
           />
-          <Songbird
-            waypoints={birdWaypoints.length > 1 ? [...birdWaypoints].reverse() : birdWaypoints}
-            bodyColor="#F59E0B"
-            breastColor="#FEF08A"
-            wingColor="#D97706"
-            scale={0.26}
-            phaseOffset={3.8}
-            isNight={isNight}
-            onSelect={() => handleSelectSpecies('bird', birdWaypoints[0])}
-          />
-          <Songbird
-            waypoints={birdWaypoints}
-            bodyColor="#059669"
-            breastColor="#D1FAE5"
-            wingColor="#047857"
-            scale={0.24}
-            phaseOffset={1.9}
-            isNight={isNight}
-            onSelect={() => handleSelectSpecies('bird', birdWaypoints[0])}
-          />
+          {!isEcoMode && (
+            <>
+              <Songbird
+                waypoints={birdWaypoints.length > 1 ? [...birdWaypoints].reverse() : birdWaypoints}
+                bodyColor="#F59E0B"
+                breastColor="#FEF08A"
+                wingColor="#D97706"
+                scale={0.26}
+                phaseOffset={3.8}
+                isNight={isNight}
+                onSelect={() => handleSelectSpecies('bird', birdWaypoints[0])}
+              />
+              <Songbird
+                waypoints={birdWaypoints}
+                bodyColor="#059669"
+                breastColor="#D1FAE5"
+                wingColor="#047857"
+                scale={0.24}
+                phaseOffset={1.9}
+                isNight={isNight}
+                onSelect={() => handleSelectSpecies('bird', birdWaypoints[0])}
+              />
+            </>
+          )}
         </group>
       )}
 
@@ -2026,30 +2028,34 @@ export function FaunaEcosystem() {
             isNight={isNight}
             onSelect={() => handleSelectSpecies('rabbit', bunnyRoamingTiles[0])}
           />
-          <MeadowBunny
-            id="rabbit_2"
-            furColor="#FDE68A"
-            scale={0.20}
-            phaseOffset={4.5}
-            localOffset={[0.22, 0, -0.12]}
-            roamingTiles={bunnyRoamingTiles.length > 1 ? [...bunnyRoamingTiles].reverse() : bunnyRoamingTiles}
-            groundPositionsRef={groundPositionsRef}
-            isRiverZone={isRiverZone}
-            isNight={isNight}
-            onSelect={() => handleSelectSpecies('rabbit', bunnyRoamingTiles[0])}
-          />
-          <MeadowBunny
-            id="rabbit_3"
-            furColor="#E2E8F0"
-            scale={0.17}
-            phaseOffset={2.4}
-            localOffset={[0.02, 0, 0.22]}
-            roamingTiles={bunnyRoamingTiles}
-            groundPositionsRef={groundPositionsRef}
-            isRiverZone={isRiverZone}
-            isNight={isNight}
-            onSelect={() => handleSelectSpecies('rabbit', bunnyRoamingTiles[0])}
-          />
+          {!isEcoMode && (
+            <>
+              <MeadowBunny
+                id="rabbit_2"
+                furColor="#FDE68A"
+                scale={0.20}
+                phaseOffset={4.5}
+                localOffset={[0.22, 0, -0.12]}
+                roamingTiles={bunnyRoamingTiles.length > 1 ? [...bunnyRoamingTiles].reverse() : bunnyRoamingTiles}
+                groundPositionsRef={groundPositionsRef}
+                isRiverZone={isRiverZone}
+                isNight={isNight}
+                onSelect={() => handleSelectSpecies('rabbit', bunnyRoamingTiles[0])}
+              />
+              <MeadowBunny
+                id="rabbit_3"
+                furColor="#E2E8F0"
+                scale={0.17}
+                phaseOffset={2.4}
+                localOffset={[0.02, 0, 0.22]}
+                roamingTiles={bunnyRoamingTiles}
+                groundPositionsRef={groundPositionsRef}
+                isRiverZone={isRiverZone}
+                isNight={isNight}
+                onSelect={() => handleSelectSpecies('rabbit', bunnyRoamingTiles[0])}
+              />
+            </>
+          )}
         </group>
       )}
 
@@ -2066,16 +2072,18 @@ export function FaunaEcosystem() {
             isNight={isNight}
             onSelect={() => handleSelectSpecies('fox', foxRoamingTiles[0])}
           />
-          <ForestFox
-            id="fox_2"
-            scale={0.17}
-            phaseOffset={5.0}
-            roamingTiles={foxRoamingTiles.length > 1 ? [...foxRoamingTiles].reverse() : foxRoamingTiles}
-            groundPositionsRef={groundPositionsRef}
-            isRiverZone={isRiverZone}
-            isNight={isNight}
-            onSelect={() => handleSelectSpecies('fox', foxRoamingTiles[0])}
-          />
+          {!isEcoMode && (
+            <ForestFox
+              id="fox_2"
+              scale={0.17}
+              phaseOffset={5.0}
+              roamingTiles={foxRoamingTiles.length > 1 ? [...foxRoamingTiles].reverse() : foxRoamingTiles}
+              groundPositionsRef={groundPositionsRef}
+              isRiverZone={isRiverZone}
+              isNight={isNight}
+              onSelect={() => handleSelectSpecies('fox', foxRoamingTiles[0])}
+            />
+          )}
         </group>
       )}
 
@@ -2248,7 +2256,7 @@ export function FaunaEcosystem() {
       {/* 15. River Fish (Ikan Koi Sungai) - Strictly bounded within connected water networks */}
       {canFish &&
         riverPatrolNetworks.length > 0 &&
-        riverPatrolNetworks.slice(0, 3).map((network, idx) => (
+        riverPatrolNetworks.slice(0, isEcoMode ? 1 : 3).map((network, idx) => (
           <RiverFish
             key={`fish-${idx}`}
             id={`fish-${idx}`}

@@ -71,8 +71,7 @@ export function MobileHeaderHUD({
   isZenDimmed = false,
 }: MobileHeaderHUDProps) {
   const router = useRouter();
-  const saveData = useGameStore((state) => state.saveData);
-  const profile = saveData.profile;
+  const profile = useGameStore((state) => state.saveData.profile);
   const authUser = useAuthStore((state) => state.user);
   const timeOfDay = useGameStore((state) => state.timeOfDay);
   const setTimeOfDay = useGameStore((state) => state.setTimeOfDay);

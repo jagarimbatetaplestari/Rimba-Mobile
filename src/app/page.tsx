@@ -772,77 +772,99 @@ export default function RimbaDioramaApp() {
 
       {/* Growth & Retention Layer: Strict Guard & Unified Journal Modal */}
       <StrictFocusGuard />
-      <SanctuaryJournalModal
-        isOpen={isJournalOpen}
-        onClose={() => setIsJournalOpen(false)}
-        initialTab={journalInitialTab}
-      />
-      <ShareSnapshotModal
-        isOpen={isShareOpen}
-        onClose={() => setIsShareOpen(false)}
-      />
-      <SoundscapeModal
-        isOpen={isSoundscapeOpen}
-        onClose={() => setIsSoundscapeOpen(false)}
-      />
-      <DevDebugDrawer
-        isOpen={isDevOpen}
-        onClose={() => setIsDevOpen(false)}
-        onOpenOnboarding={() => {
-          setIsDevOpen(false);
-          setIsOnboardingOpen(true);
-        }}
-      />
+      {isJournalOpen && (
+        <SanctuaryJournalModal
+          isOpen={isJournalOpen}
+          onClose={() => setIsJournalOpen(false)}
+          initialTab={journalInitialTab}
+        />
+      )}
+      {isShareOpen && (
+        <ShareSnapshotModal
+          isOpen={isShareOpen}
+          onClose={() => setIsShareOpen(false)}
+        />
+      )}
+      {isSoundscapeOpen && (
+        <SoundscapeModal
+          isOpen={isSoundscapeOpen}
+          onClose={() => setIsSoundscapeOpen(false)}
+        />
+      )}
+      {isDevOpen && (
+        <DevDebugDrawer
+          isOpen={isDevOpen}
+          onClose={() => setIsDevOpen(false)}
+          onOpenOnboarding={() => {
+            setIsDevOpen(false);
+            setIsOnboardingOpen(true);
+          }}
+        />
+      )}
 
       {/* Mobile Special Drawers & Onboarding */}
-      <MobileProfileModal
-        isOpen={isProfileOpen}
-        onClose={() => setIsProfileOpen(false)}
-        initialTab={profileInitialTab}
-        onOpenLeaderboard={() => setIsLeaderboardOpen(true)}
-      />
-      <MobileStatisticsModal
-        isOpen={isStatisticsOpen}
-        onClose={() => setIsStatisticsOpen(false)}
-      />
-      <MobileLeaderboardModal
-        isOpen={isLeaderboardOpen}
-        onClose={() => setIsLeaderboardOpen(false)}
-      />
-      <MobileSettingsSheet
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-        onOpenProfile={() => {
-          setIsSettingsOpen(false);
-          setIsProfileOpen(true);
-        }}
-      />
-      <CampfireRoomModal
-        isOpen={isCampfireOpen}
-        onClose={() => setIsCampfireOpen(false)}
-      />
-      <GameplayGuideModal
-        isOpen={isGameplayGuideOpen}
-        onClose={() => setIsGameplayGuideOpen(false)}
-      />
-      <MobileOnboardingModal
-        isOpen={isOnboardingOpen}
-        onComplete={() => {
-          if (typeof window !== "undefined") {
-            localStorage.setItem("rimba_onboarding_completed", "true");
-            if (window.location.search.includes("onboarding=")) {
-              const url = new URL(window.location.href);
-              url.searchParams.delete("onboarding");
-              window.history.replaceState(
-                {},
-                "",
-                url.pathname + (url.search ? url.search : ""),
-              );
+      {isProfileOpen && (
+        <MobileProfileModal
+          isOpen={isProfileOpen}
+          onClose={() => setIsProfileOpen(false)}
+          initialTab={profileInitialTab}
+          onOpenLeaderboard={() => setIsLeaderboardOpen(true)}
+        />
+      )}
+      {isStatisticsOpen && (
+        <MobileStatisticsModal
+          isOpen={isStatisticsOpen}
+          onClose={() => setIsStatisticsOpen(false)}
+        />
+      )}
+      {isLeaderboardOpen && (
+        <MobileLeaderboardModal
+          isOpen={isLeaderboardOpen}
+          onClose={() => setIsLeaderboardOpen(false)}
+        />
+      )}
+      {isSettingsOpen && (
+        <MobileSettingsSheet
+          isOpen={isSettingsOpen}
+          onClose={() => setIsSettingsOpen(false)}
+          onOpenProfile={() => {
+            setIsSettingsOpen(false);
+            setIsProfileOpen(true);
+          }}
+        />
+      )}
+      {isCampfireOpen && (
+        <CampfireRoomModal
+          isOpen={isCampfireOpen}
+          onClose={() => setIsCampfireOpen(false)}
+        />
+      )}
+      {isGameplayGuideOpen && (
+        <GameplayGuideModal
+          isOpen={isGameplayGuideOpen}
+          onClose={() => setIsGameplayGuideOpen(false)}
+        />
+      )}
+      {isOnboardingOpen && (
+        <MobileOnboardingModal
+          isOpen={isOnboardingOpen}
+          onComplete={() => {
+            if (typeof window !== "undefined") {
+              localStorage.setItem("rimba_onboarding_completed", "true");
+              if (window.location.search.includes("onboarding=")) {
+                const url = new URL(window.location.href);
+                url.searchParams.delete("onboarding");
+                window.history.replaceState(
+                  {},
+                  "",
+                  url.pathname + (url.search ? url.search : ""),
+                );
+              }
             }
-          }
-          setIsOnboardingOpen(false);
-        }}
-      />
+            setIsOnboardingOpen(false);
+          }}
+        />
+      )}
 
       {/* Smooth Crossfade Loading Overlay */}
       {showLoadingOverlay && (

@@ -106,6 +106,13 @@ export function ZenFocusOverlay() {
         const end = new Date(activeSession.expected_end_at).getTime();
         const diffSec = Math.max(0, Math.ceil((end - now) / 1000));
         setRemainingSec(diffSec);
+
+        if (diffSec === 0 && isZenMode) {
+          soundManager.playComplete();
+          soundscapeManager.stop();
+          setZenMode(false);
+          window.dispatchEvent(new CustomEvent("rimba:open_harvest"));
+        }
       }
     };
 
@@ -283,7 +290,19 @@ export function ZenFocusOverlay() {
               {!activeSession.is_stopwatch && (
                 <button
                   type="button"
+                  disabled={Boolean(activeSession.strict_mode)}
                   onClick={() => {
+                    if (activeSession.strict_mode) {
+                      soundManager.playPop();
+                      hapticLight();
+                      useGameStore.getState().notify(
+                        language === "en"
+                          ? "Strict Mode is active — pausing is disabled."
+                          : "Mode Fokus Penuh aktif — jeda dinonaktifkan.",
+                        "error"
+                      );
+                      return;
+                    }
                     soundManager.playPop();
                     hapticLight();
                     if (activeSession.is_paused) {
@@ -292,18 +311,24 @@ export function ZenFocusOverlay() {
                       pauseFocus();
                     }
                   }}
-                  className={`p-1.5 rounded-full transition-all active:scale-90 text-white border border-white/20 cursor-pointer ${
-                    activeSession.is_paused
-                      ? "bg-amber-500/40 text-amber-200 border-amber-300/50"
-                      : "bg-white/12 hover:bg-white/22"
+                  className={`p-1.5 rounded-full transition-all text-white border ${
+                    activeSession.strict_mode
+                      ? "opacity-30 cursor-not-allowed bg-white/5 border-white/10 text-white/40"
+                      : activeSession.is_paused
+                      ? "bg-amber-500/40 text-amber-200 border-amber-300/50 active:scale-90 cursor-pointer"
+                      : "bg-white/12 hover:bg-white/22 border-white/20 active:scale-90 cursor-pointer"
                   }`}
                   title={
-                    activeSession.is_paused
+                    activeSession.strict_mode
+                      ? (language === "en" ? "Pause disabled in Strict Mode" : "Jeda dinonaktifkan di Mode Fokus Penuh")
+                      : activeSession.is_paused
                       ? (language === "en" ? "Resume Focus" : "Lanjutkan Fokus")
                       : (language === "en" ? "Pause Session" : "Jeda Sesi")
                   }
                   aria-label={
-                    activeSession.is_paused ? "Resume Focus" : "Pause Session"
+                    activeSession.strict_mode
+                      ? "Pause disabled in Strict Mode"
+                      : activeSession.is_paused ? "Resume Focus" : "Pause Session"
                   }
                 >
                   {activeSession.is_paused ? (

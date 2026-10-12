@@ -328,12 +328,17 @@ export function MobileFocusCard({
       if (hasChimedRef.current !== activeSession.id) {
         hasChimedRef.current = activeSession.id;
         soundManager.playComplete();
+        soundscapeManager.stop();
         useGameStore
           .getState()
           .notify(
-            '🌱 Waktu fokus selesai! Klik "Panen!" untuk mengumpulkan hasil fokusmu.',
+            language === "en"
+              ? "🌱 Focus session complete! Harvesting your sanctuary tree!"
+              : "🌱 Waktu fokus selesai! Memanen pohon suakamu!",
             "success",
           );
+        setShowHarvestModal(true);
+        setZenMode(false);
       }
       if (typeof document !== "undefined") {
         document.title = "🌱 Pohon Siap Dipanen! — Rimba";
@@ -350,6 +355,9 @@ export function MobileFocusCard({
 
   const handleStart = async () => {
     soundManager.playStart();
+    if (activeSoundscape !== "off") {
+      soundscapeManager.play(activeSoundscape);
+    }
     const isStopwatch = selectedMinutes === 0;
     const durationSec = devFastMode
       ? GAME_CONFIG.focus.devFastDurationSec
@@ -405,6 +413,7 @@ export function MobileFocusCard({
     if (isWithinGrace) {
       soundManager.playPop();
       hapticLight();
+      soundscapeManager.stop();
       setShowAbandonModal(false);
       cancelPendingFocusNotifications();
       abandonFocus();
@@ -421,6 +430,7 @@ export function MobileFocusCard({
     const sessionToRecord = activeSession;
     setShowAbandonModal(false);
     hapticWarning();
+    soundscapeManager.stop();
     cancelPendingFocusNotifications();
     abandonFocus();
 
@@ -443,15 +453,18 @@ export function MobileFocusCard({
       const elapsedMs = Math.max(0, Date.now() - startMs);
       if (elapsedMs < 300000) {
         cancelPendingFocusNotifications();
+        soundscapeManager.stop();
         completeFocus();
         return;
       }
     }
+    soundscapeManager.stop();
     setShowHarvestModal(true);
   };
 
   const handleConfirmHarvest = (reflectionNote?: string) => {
     cancelPendingFocusNotifications();
+    soundscapeManager.stop();
     if (reflectionNote && reflectionNote.trim()) {
       updateActiveSessionMeta({ task_note: reflectionNote.trim() });
     }
@@ -1271,7 +1284,19 @@ export function MobileFocusCard({
               {!isTimeReached && (
                 <button
                   type="button"
+                  disabled={Boolean(activeSession.strict_mode)}
                   onClick={() => {
+                    if (activeSession.strict_mode) {
+                      soundManager.playPop();
+                      hapticLight();
+                      useGameStore.getState().notify(
+                        language === "en"
+                          ? "Strict Mode active — pausing is disabled."
+                          : "Mode Fokus Penuh aktif — jeda dinonaktifkan.",
+                        "error"
+                      );
+                      return;
+                    }
                     soundManager.playPop();
                     if (activeSession.is_paused) {
                       resumeFocus();
@@ -1279,18 +1304,24 @@ export function MobileFocusCard({
                       pauseFocus();
                     }
                   }}
-                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all active:scale-90 cursor-pointer border backdrop-blur-md ${
-                    activeSession.is_paused
-                      ? "bg-amber-400/35 text-amber-200 border-amber-300/60 shadow-xs"
-                      : "bg-white/12 hover:bg-white/20 text-white border-white/25"
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all border backdrop-blur-md ${
+                    activeSession.strict_mode
+                      ? "opacity-30 cursor-not-allowed bg-white/5 border-white/10 text-white/40"
+                      : activeSession.is_paused
+                      ? "bg-amber-400/35 text-amber-200 border-amber-300/60 shadow-xs cursor-pointer active:scale-90"
+                      : "bg-white/12 hover:bg-white/20 text-white border-white/25 cursor-pointer active:scale-90"
                   }`}
                   title={
-                    activeSession.is_paused
+                    activeSession.strict_mode
+                      ? (language === "en" ? "Pause disabled in Strict Mode" : "Jeda dinonaktifkan di Mode Fokus Penuh")
+                      : activeSession.is_paused
                       ? (language === "en" ? "Resume Focus" : "Lanjutkan Fokus")
                       : (language === "en" ? "Pause Session" : "Jeda Sesi")
                   }
                   aria-label={
-                    activeSession.is_paused ? "Resume Focus" : "Pause Session"
+                    activeSession.strict_mode
+                      ? "Pause disabled in Strict Mode"
+                      : activeSession.is_paused ? "Resume Focus" : "Pause Session"
                   }
                 >
                   {activeSession.is_paused ? (

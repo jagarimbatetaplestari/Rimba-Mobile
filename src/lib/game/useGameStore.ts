@@ -50,6 +50,7 @@ import {
 import { createInitialSaveData, loadSaveData, saveSaveData } from './storage';
 import { requestScreenWakeLock, releaseScreenWakeLock } from '@/lib/mobile/nativeBridge';
 import { syncProfileUpdate, scheduleDebouncedCloudSync } from '../supabase/cloudSync';
+import { soundscapeManager } from '@/lib/audio/soundscapes';
 
 export interface NotificationState {
   id: string;
@@ -1069,6 +1070,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       };
       saveSaveData(updatedData);
       releaseScreenWakeLock();
+      soundscapeManager.stop();
       set({
         saveData: updatedData,
         activeSession: null,
@@ -1115,6 +1117,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     saveSaveData(updatedData);
     releaseScreenWakeLock();
+    soundscapeManager.stop();
     scheduleDebouncedCloudSync();
     set({
       saveData: updatedData,
@@ -1294,6 +1297,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     saveSaveData(updatedData);
     releaseScreenWakeLock();
+    soundscapeManager.stop();
     scheduleDebouncedCloudSync();
     set({
       saveData: updatedData,

@@ -1,4 +1,4 @@
-import React, { Suspense, useMemo, useRef, useEffect, useState } from 'react';
+import React, { Suspense, useMemo, useRef, useEffect, useState, useCallback } from 'react';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import { OrbitControls, ContactShadows } from '@react-three/drei';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
@@ -52,7 +52,11 @@ function ResponsiveCamera() {
   return null;
 }
 
-function CameraEventListener() {
+function CameraEventListener({
+  onInteractionChange,
+}: {
+  onInteractionChange?: (active: boolean) => void;
+}) {
   const { camera } = useThree();
   const controlsRef = useRef<OrbitControlsImpl>(null);
   const unlockedCount = useGameStore(
@@ -74,6 +78,7 @@ function CameraEventListener() {
 
     if (camera.position.distanceTo(camPos) < 0.05 && controlsRef.current.target.distanceTo(targetPos) < 0.05) {
       animTargetRef.current.active = false;
+      onInteractionChange?.(false);
     }
   });
 
@@ -88,39 +93,50 @@ function CameraEventListener() {
       const adaptiveCfg = getAdaptiveCameraConfig(unlockedCount, isPortrait);
 
       if (action === 'snap_reset') {
+        onInteractionChange?.(true);
         camera.position.copy(adaptiveCfg.position);
         controls.target.set(0, 0, 0);
         controls.update();
         animTargetRef.current = null;
+        setTimeout(() => onInteractionChange?.(false), 300);
       } else if (action === 'reset') {
+        onInteractionChange?.(true);
         animTargetRef.current = {
           camPos: adaptiveCfg.position.clone(),
           targetPos: new THREE.Vector3(0, 0, 0),
           active: true,
         };
       } else if (action === 'rotate_left') {
+        onInteractionChange?.(true);
         const offset = camera.position.clone().sub(controls.target);
         offset.applyAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 4);
         camera.position.copy(controls.target).add(offset);
         controls.update();
+        setTimeout(() => onInteractionChange?.(false), 300);
       } else if (action === 'rotate_right') {
+        onInteractionChange?.(true);
         const offset = camera.position.clone().sub(controls.target);
         offset.applyAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI / 4);
         camera.position.copy(controls.target).add(offset);
         controls.update();
+        setTimeout(() => onInteractionChange?.(false), 300);
       } else if (action === 'zoom_in') {
         const offset = camera.position.clone().sub(controls.target);
         if (offset.length() > 6.5) {
+          onInteractionChange?.(true);
           offset.multiplyScalar(0.85);
           camera.position.copy(controls.target).add(offset);
           controls.update();
+          setTimeout(() => onInteractionChange?.(false), 300);
         }
       } else if (action === 'zoom_out') {
         const offset = camera.position.clone().sub(controls.target);
         if (offset.length() < 30) {
+          onInteractionChange?.(true);
           offset.multiplyScalar(1.18);
           camera.position.copy(controls.target).add(offset);
           controls.update();
+          setTimeout(() => onInteractionChange?.(false), 300);
         }
       }
     };
@@ -129,6 +145,7 @@ function CameraEventListener() {
       const detail = (e as CustomEvent<{ position: [number, number, number]; distance?: number }>).detail;
       const controls = controlsRef.current;
       if (!detail || !controls) return;
+      onInteractionChange?.(true);
       const targetVec = new THREE.Vector3(...detail.position);
       const dist = detail.distance || 7.2;
       const desiredCam = new THREE.Vector3(
@@ -150,7 +167,7 @@ function CameraEventListener() {
       window.removeEventListener('rimba:camera', handleCameraAction);
       window.removeEventListener('rimba:camera_focus_target', handleFocusTarget);
     };
-  }, [camera, unlockedCount]);
+  }, [camera, unlockedCount, onInteractionChange]);
 
   return (
     <OrbitControls
@@ -163,8 +180,40 @@ function CameraEventListener() {
       maxPolarAngle={Math.PI / 2.2}
       enableDamping={true}
       dampingFactor={0.06}
+      onStart={() => onInteractionChange?.(true)}
+      onEnd={() => onInteractionChange?.(false)}
     />
   );
+}
+
+/**
+ * Eco-Limiter: Automatically clamps render passes to 30 FPS when Zen Mode is engaged,
+ * eco graphics quality is enabled, or phone is resting during active focus sessions.
+ */
+function EcoFrameLimiter({
+  enabled,
+  targetFps = 30,
+}: {
+  enabled: boolean;
+  targetFps?: number;
+}) {
+  const elapsedRef = useRef(0);
+  const minInterval = 1 / targetFps;
+
+  useFrame((state, delta) => {
+    if (!enabled) {
+      state.gl.render(state.scene, state.camera);
+      return;
+    }
+
+    elapsedRef.current += delta;
+    if (elapsedRef.current >= minInterval) {
+      state.gl.render(state.scene, state.camera);
+      elapsedRef.current = elapsedRef.current % minInterval;
+    }
+  }, 1);
+
+  return null;
 }
 
 export function Scene({ isPaused = false }: { isPaused?: boolean } = {}) {
@@ -249,7 +298,36 @@ export function Scene({ isPaused = false }: { isPaused?: boolean } = {}) {
     };
   }, [weather, timeOfDay, backgroundTheme, theme.fogColor]);
 
+  const isZenMode = useGameStore((state) => state.isZenMode);
+  const activeSession = useGameStore((state) => state.activeSession);
   const graphicsQuality = usePreferencesStore((state) => state.graphicsQuality);
+
+  // Interaction tracking (reset idle timer on user touch/camera control)
+  const [isInteracting, setIsInteracting] = useState(false);
+  const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleInteractionChange = useCallback((active: boolean) => {
+    if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    if (active) {
+      setIsInteracting(true);
+    } else {
+      idleTimerRef.current = setTimeout(() => {
+        setIsInteracting(false);
+      }, 4000);
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    };
+  }, []);
+
+  // Eco-throttling condition:
+  // Active when: graphicsQuality === 'eco' OR ((isZenMode || activeSession) && !isInteracting)
+  const isEcoThrottleActive =
+    graphicsQuality === 'eco' ||
+    ((isZenMode || Boolean(activeSession)) && !isInteracting);
 
   const grassCount = useMemo(() => {
     if (graphicsQuality === 'eco') return 3000;
@@ -334,7 +412,10 @@ export function Scene({ isPaused = false }: { isPaused?: boolean } = {}) {
       />
 
       {/* Dynamic Interactive Camera Handler & Orbit Controls */}
-      <CameraEventListener />
+      <CameraEventListener onInteractionChange={handleInteractionChange} />
+
+      {/* Frame Limiter: Throttles to 30 FPS in Zen/Eco/Idle Focus to preserve mobile battery & GPU temps */}
+      <EcoFrameLimiter enabled={isEcoThrottleActive} targetFps={30} />
 
       {/* Floating Diorama Island, Velvet Grass, Objects & Dynamic Weather */}
       <Suspense fallback={null}>

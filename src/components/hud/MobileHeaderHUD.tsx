@@ -32,6 +32,7 @@ import { getLevelFromXp } from "@/lib/game/levelRules";
 import { RangerAvatar } from "@/components/ui/RangerAvatar";
 import { useTranslation } from "@/lib/i18n/translations";
 import { useNetworkStatus } from "@/lib/mobile/useNetworkStatus";
+import { UnifiedAudioCapsule } from "./UnifiedAudioCapsule";
 
 export interface MobileHeaderHUDProps {
   onOpenStreak?: () => void;
@@ -281,6 +282,13 @@ export function MobileHeaderHUD({
               </div>
             </div>
           )}
+
+          {/* Dynamic Audio Activity Capsule (Apple Live Activity Style) */}
+          <UnifiedAudioCapsule
+            onOpenSoundscapes={onOpenSoundscapes}
+            isNight={isNight}
+            isOfflinePillShown={!isOnline || justReconnected}
+          />
 
           {/* ======================================================== */}
           {/* SISI KIRI: PROFIL & DYNAMIC PILLAR                      */}

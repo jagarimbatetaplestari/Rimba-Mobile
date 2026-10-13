@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -26,7 +26,7 @@
           <span>🌿</span> RIMBA SUPABASE AUTH TEMPLATES
         </div>
         <h1 class="serif-title italic text-2xl sm:text-3xl font-medium text-white">Email Templates & Copy Center</h1>
-        <p class="text-xs sm:text-sm text-[#C7B7A8] mt-1">Pratinjau visual & salin satu-klik untuk 6 template email resmi di Supabase Dashboard.</p>
+        <p class="text-xs sm:text-sm text-[#C7B7A8] mt-1">Live visual preview & 1-click copy for all 6 official email templates in Supabase Dashboard.</p>
       </div>
       <div class="flex items-center gap-2">
         <button id="viewMobile" onclick="setViewMode('mobile')" class="px-3 py-1.5 rounded-xl text-xs font-medium border border-white/10 bg-white/5 hover:bg-white/10 transition-colors">
@@ -64,22 +64,22 @@
     <div class="p-4 rounded-2xl bg-[#111C14] border border-emerald-500/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
       <div class="flex flex-col gap-1">
         <div>
-          <span class="text-emerald-400 font-bold">Subject Email:</span>
+          <span class="text-emerald-400 font-bold">Recommended Subject:</span>
           <code id="subjectText" class="ml-2 font-mono text-emerald-200 bg-black/50 px-2.5 py-1 rounded border border-emerald-500/30 select-all">
-            Kode Verifikasi Rimba: {{ .Token }} — Selamat Datang di Suaka Fokus
+            Your Rimba Verification Code: {{ .Token }} — Welcome to Sanctuary
           </code>
         </div>
         <div class="text-[11px] text-[#A69686] flex items-center gap-2 mt-0.5">
-          <span>🔗 Link Dashboard:</span>
+          <span>🔗 Dashboard Tab:</span>
           <a id="dashboardLink" href="https://supabase.com/dashboard/project/rkljugrrscmqopeuwtpd/auth/templates/confirm-sign-up" target="_blank" rel="noopener noreferrer" class="text-emerald-300 underline hover:text-white transition-colors">
-            Buka Tab Template Ini di Supabase →
+            Open This Template in Supabase Dashboard →
           </a>
         </div>
       </div>
       <div class="flex items-center gap-2 shrink-0 w-full sm:w-auto">
         <button onclick="copyCurrentTemplate()" id="copyBtn" class="w-full sm:w-auto px-4 py-2 rounded-full bg-emerald-400 hover:bg-emerald-300 active:scale-95 text-[#041A12] font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer">
           <span>📋</span>
-          <span id="copyBtnText">Salin Kode HTML Template</span>
+          <span id="copyBtnText">Copy HTML Template</span>
         </button>
       </div>
     </div>
@@ -96,32 +96,32 @@
     const templates = {
       confirmation: {
         file: 'confirmation.html',
-        subject: 'Kode Verifikasi Rimba: {{ .Token }} — Selamat Datang di Suaka Fokus',
+        subject: 'Your Rimba Verification Code: {{ .Token }} — Welcome to Sanctuary',
         url: 'https://supabase.com/dashboard/project/rkljugrrscmqopeuwtpd/auth/templates/confirm-sign-up'
       },
       invite: {
         file: 'invite.html',
-        subject: 'Undangan Bergabung ke Suaka Rimba — Mulai Perjalanan Fokusmu',
+        subject: "You're Invited to Rimba Sanctuary — Begin Your Mindful Journey",
         url: 'https://supabase.com/dashboard/project/rkljugrrscmqopeuwtpd/auth/templates/invite-user'
       },
       magic_link: {
         file: 'magic_link.html',
-        subject: 'Kode Masuk Rimba: {{ .Token }} — Lanjutkan Sesi Fokusmu',
+        subject: 'Your Rimba Sign-In Code: {{ .Token }} — Resume Your Focus',
         url: 'https://supabase.com/dashboard/project/rkljugrrscmqopeuwtpd/auth/templates/magic-link-or-otp'
       },
       email_change: {
         file: 'email_change.html',
-        subject: 'Konfirmasi Perubahan Email Rimba: {{ .Token }}',
+        subject: 'Confirm Email Change for Rimba: {{ .Token }}',
         url: 'https://supabase.com/dashboard/project/rkljugrrscmqopeuwtpd/auth/templates/change-email-address'
       },
       recovery: {
         file: 'recovery.html',
-        subject: 'Atur Ulang Kata Sandi Rimba: {{ .Token }} — Pemulihan Akun',
+        subject: 'Reset Your Rimba Password: {{ .Token }} — Account Recovery',
         url: 'https://supabase.com/dashboard/project/rkljugrrscmqopeuwtpd/auth/templates/reset-password'
       },
       reauthentication: {
         file: 'reauthentication.html',
-        subject: 'Konfirmasi Identitas Rimba: {{ .Token }} — Tindakan Sensitif',
+        subject: 'Confirm Your Identity for Rimba: {{ .Token }} — Sensitive Action',
         url: 'https://supabase.com/dashboard/project/rkljugrrscmqopeuwtpd/auth/templates/reauthentication'
       }
     };
@@ -170,12 +170,12 @@
         const html = await res.text();
         await navigator.clipboard.writeText(html);
 
-        copyBtnText.textContent = 'Tersalin ke Clipboard! ✓';
+        copyBtnText.textContent = 'Copied to Clipboard! ✓';
         setTimeout(() => {
-          copyBtnText.textContent = 'Salin Kode HTML Template';
+          copyBtnText.textContent = 'Copy HTML Template';
         }, 2000);
       } catch (err) {
-        alert('Gagal menyalin otomatis. Silakan buka file ' + t.file + ' secara manual.');
+        alert('Failed to copy automatically. Please open ' + t.file + ' directly.');
       }
     }
   </script>

@@ -9,8 +9,8 @@
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,500;0,600;1,400;1,600&display=swap');
     body {
       font-family: 'Plus Jakarta Sans', sans-serif;
-      background-color: #0A110C;
-      color: #F3ECE2;
+      background-color: #F8FAF8;
+      color: #1E293B;
     }
     .serif-title {
       font-family: 'Playfair Display', Georgia, serif;
@@ -20,64 +20,64 @@
 <body class="min-h-screen p-4 sm:p-8 flex flex-col items-center">
   <div class="max-w-5xl w-full space-y-6">
     <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-6 rounded-3xl bg-white/[0.03] border border-white/10 backdrop-blur-xl">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-6 rounded-3xl bg-white border border-slate-200 shadow-sm">
       <div>
-        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold mb-2">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold mb-2">
           <span>🌿</span> RIMBA SUPABASE AUTH TEMPLATES
         </div>
-        <h1 class="serif-title italic text-2xl sm:text-3xl font-medium text-white">Email Templates & Copy Center</h1>
-        <p class="text-xs sm:text-sm text-[#C7B7A8] mt-1">Live visual preview & 1-click copy for all 6 official email templates in Supabase Dashboard.</p>
+        <h1 class="serif-title italic text-2xl sm:text-3xl font-medium text-slate-900">Email Templates & Copy Center</h1>
+        <p class="text-xs sm:text-sm text-slate-500 mt-1">Clean Alabaster White & Forest Green email templates for Supabase Dashboard.</p>
       </div>
       <div class="flex items-center gap-2">
-        <button id="viewMobile" onclick="setViewMode('mobile')" class="px-3 py-1.5 rounded-xl text-xs font-medium border border-white/10 bg-white/5 hover:bg-white/10 transition-colors">
+        <button id="viewMobile" onclick="setViewMode('mobile')" class="px-3 py-1.5 rounded-xl text-xs font-medium border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 transition-colors">
           📱 Mobile View
         </button>
-        <button id="viewDesktop" onclick="setViewMode('desktop')" class="px-3 py-1.5 rounded-xl text-xs font-medium border border-emerald-500/40 bg-emerald-500/20 text-emerald-300 transition-colors">
+        <button id="viewDesktop" onclick="setViewMode('desktop')" class="px-3 py-1.5 rounded-xl text-xs font-medium border border-emerald-300 bg-emerald-50 text-emerald-800 transition-colors">
           💻 Desktop View
         </button>
       </div>
     </div>
 
     <!-- Tabs (6 Template Supabase) -->
-    <div class="flex flex-wrap gap-2 p-1.5 rounded-2xl bg-white/[0.02] border border-white/5">
-      <button onclick="switchTab('confirmation')" id="tab-confirmation" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold transition-all bg-emerald-500 text-black shadow-lg">
+    <div class="flex flex-wrap gap-2 p-1.5 rounded-2xl bg-white border border-slate-200 shadow-xs">
+      <button onclick="switchTab('confirmation')" id="tab-confirmation" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold transition-all bg-emerald-600 text-white shadow-sm">
         1. Confirm Sign Up
       </button>
-      <button onclick="switchTab('invite')" id="tab-invite" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold transition-all text-white/70 hover:text-white">
+      <button onclick="switchTab('invite')" id="tab-invite" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold transition-all text-slate-600 hover:text-slate-900">
         2. Invite User
       </button>
-      <button onclick="switchTab('magic_link')" id="tab-magic_link" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold transition-all text-white/70 hover:text-white">
+      <button onclick="switchTab('magic_link')" id="tab-magic_link" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold transition-all text-slate-600 hover:text-slate-900">
         3. Magic Link / OTP
       </button>
-      <button onclick="switchTab('email_change')" id="tab-email_change" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold transition-all text-white/70 hover:text-white">
+      <button onclick="switchTab('email_change')" id="tab-email_change" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold transition-all text-slate-600 hover:text-slate-900">
         4. Change Email
       </button>
-      <button onclick="switchTab('recovery')" id="tab-recovery" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold transition-all text-white/70 hover:text-white">
+      <button onclick="switchTab('recovery')" id="tab-recovery" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold transition-all text-slate-600 hover:text-slate-900">
         5. Reset Password
       </button>
-      <button onclick="switchTab('reauthentication')" id="tab-reauthentication" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold transition-all text-white/70 hover:text-white">
+      <button onclick="switchTab('reauthentication')" id="tab-reauthentication" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold transition-all text-slate-600 hover:text-slate-900">
         6. Reauthentication
       </button>
     </div>
 
     <!-- Instructions & Action Bar -->
-    <div class="p-4 rounded-2xl bg-[#111C14] border border-emerald-500/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+    <div class="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
       <div class="flex flex-col gap-1">
         <div>
-          <span class="text-emerald-400 font-bold">Recommended Subject:</span>
-          <code id="subjectText" class="ml-2 font-mono text-emerald-200 bg-black/50 px-2.5 py-1 rounded border border-emerald-500/30 select-all">
+          <span class="text-emerald-900 font-bold">Recommended Subject:</span>
+          <code id="subjectText" class="ml-2 font-mono text-emerald-800 bg-white px-2.5 py-1 rounded border border-emerald-200 select-all shadow-2xs">
             Your Rimba Verification Code: {{ .Token }} — Welcome to Sanctuary
           </code>
         </div>
-        <div class="text-[11px] text-[#A69686] flex items-center gap-2 mt-0.5">
+        <div class="text-[11px] text-slate-600 flex items-center gap-2 mt-0.5">
           <span>🔗 Dashboard Tab:</span>
-          <a id="dashboardLink" href="https://supabase.com/dashboard/project/rkljugrrscmqopeuwtpd/auth/templates/confirm-sign-up" target="_blank" rel="noopener noreferrer" class="text-emerald-300 underline hover:text-white transition-colors">
+          <a id="dashboardLink" href="https://supabase.com/dashboard/project/rkljugrrscmqopeuwtpd/auth/templates/confirm-sign-up" target="_blank" rel="noopener noreferrer" class="text-emerald-700 font-semibold underline hover:text-emerald-900 transition-colors">
             Open This Template in Supabase Dashboard →
           </a>
         </div>
       </div>
       <div class="flex items-center gap-2 shrink-0 w-full sm:w-auto">
-        <button onclick="copyCurrentTemplate()" id="copyBtn" class="w-full sm:w-auto px-4 py-2 rounded-full bg-emerald-400 hover:bg-emerald-300 active:scale-95 text-[#041A12] font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer">
+        <button onclick="copyCurrentTemplate()" id="copyBtn" class="w-full sm:w-auto px-4 py-2 rounded-full bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer">
           <span>📋</span>
           <span id="copyBtnText">Copy HTML Template</span>
         </button>
@@ -86,7 +86,7 @@
 
     <!-- Frame Container -->
     <div class="w-full flex justify-center py-2">
-      <div id="frameWrapper" class="w-full max-w-2xl transition-all duration-300 rounded-[32px] overflow-hidden border border-white/10 shadow-[0_24px_60px_rgba(0,0,0,0.85)] bg-[#0A110C]">
+      <div id="frameWrapper" class="w-full max-w-2xl transition-all duration-300 rounded-[32px] overflow-hidden border border-slate-200 shadow-md bg-[#F7F9F7]">
         <iframe id="previewFrame" src="confirmation.html" class="w-full h-[700px] border-0"></iframe>
       </div>
     </div>
@@ -133,11 +133,11 @@
       const t = templates[key];
 
       document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.className = 'tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold transition-all text-white/70 hover:text-white';
+        btn.className = 'tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold transition-all text-slate-600 hover:text-slate-900';
       });
       const activeBtn = document.getElementById('tab-' + key);
       if (activeBtn) {
-        activeBtn.className = 'tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold transition-all bg-emerald-500 text-black shadow-lg';
+        activeBtn.className = 'tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold transition-all bg-emerald-600 text-white shadow-sm';
       }
 
       document.getElementById('subjectText').textContent = t.subject;
@@ -151,13 +151,13 @@
       const btnDesktop = document.getElementById('viewDesktop');
 
       if (mode === 'mobile') {
-        wrapper.className = 'w-[375px] transition-all duration-300 rounded-[32px] overflow-hidden border border-white/20 shadow-[0_24px_60px_rgba(0,0,0,0.85)] bg-[#0A110C]';
-        btnMobile.className = 'px-3 py-1.5 rounded-xl text-xs font-medium border border-emerald-500/40 bg-emerald-500/20 text-emerald-300 transition-colors';
-        btnDesktop.className = 'px-3 py-1.5 rounded-xl text-xs font-medium border border-white/10 bg-white/5 hover:bg-white/10 transition-colors';
+        wrapper.className = 'w-[375px] transition-all duration-300 rounded-[32px] overflow-hidden border border-slate-300 shadow-lg bg-[#F7F9F7]';
+        btnMobile.className = 'px-3 py-1.5 rounded-xl text-xs font-medium border border-emerald-300 bg-emerald-50 text-emerald-800 transition-colors';
+        btnDesktop.className = 'px-3 py-1.5 rounded-xl text-xs font-medium border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 transition-colors';
       } else {
-        wrapper.className = 'w-full max-w-2xl transition-all duration-300 rounded-[32px] overflow-hidden border border-white/10 shadow-[0_24px_60px_rgba(0,0,0,0.85)] bg-[#0A110C]';
-        btnDesktop.className = 'px-3 py-1.5 rounded-xl text-xs font-medium border border-emerald-500/40 bg-emerald-500/20 text-emerald-300 transition-colors';
-        btnMobile.className = 'px-3 py-1.5 rounded-xl text-xs font-medium border border-white/10 bg-white/5 hover:bg-white/10 transition-colors';
+        wrapper.className = 'w-full max-w-2xl transition-all duration-300 rounded-[32px] overflow-hidden border border-slate-200 shadow-md bg-[#F7F9F7]';
+        btnDesktop.className = 'px-3 py-1.5 rounded-xl text-xs font-medium border border-emerald-300 bg-emerald-50 text-emerald-800 transition-colors';
+        btnMobile.className = 'px-3 py-1.5 rounded-xl text-xs font-medium border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 transition-colors';
       }
     }
 

@@ -123,31 +123,28 @@ export default function TermsOfServicePage() {
               </h2>
               <div className="space-y-2 text-[13px] text-white/80 leading-relaxed font-normal">
                 {section.content.map((paragraph, pIdx) => {
-                  const parts = paragraph.split(/(\*\*.*?\*\*|\*.*?\*)/g);
-                  return (
-                    <p key={pIdx}>
-                      {parts.map((part, partIdx) => {
-                        if (part.startsWith("**") && part.endsWith("**")) {
-                          return (
-                            <strong
-                              key={partIdx}
-                              className="font-bold text-white"
-                            >
-                              {part.slice(2, -2)}
-                            </strong>
-                          );
-                        }
-                        if (part.startsWith("*") && part.endsWith("*")) {
-                          return (
-                            <em key={partIdx} className="italic text-emerald-200">
-                              {part.slice(1, -1)}
-                            </em>
-                          );
-                        }
-                        return part;
-                      })}
-                    </p>
-                  );
+                  const bulletMatch = paragraph.match(/^•\s*([^:]+):\s*(.+)$/);
+                  if (bulletMatch) {
+                    const [, label, text] = bulletMatch;
+                    return (
+                      <div key={pIdx} className="flex items-start gap-2.5 py-0.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-2 shrink-0" />
+                        <p className="leading-relaxed">
+                          <strong className="font-semibold text-white">{label}: </strong>
+                          <span className="text-white/80">{text}</span>
+                        </p>
+                      </div>
+                    );
+                  }
+                  if (paragraph.startsWith("• ")) {
+                    return (
+                      <div key={pIdx} className="flex items-start gap-2.5 py-0.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-2 shrink-0" />
+                        <p className="leading-relaxed text-white/80">{paragraph.slice(2)}</p>
+                      </div>
+                    );
+                  }
+                  return <p key={pIdx}>{paragraph}</p>;
                 })}
               </div>
             </section>

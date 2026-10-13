@@ -27,7 +27,7 @@ export const LEGAL_CONTENT: Record<
           title: "1. Prinsip Utama & Arsitektur Local-First",
           content: [
             "Rimba dirancang sebagai suaka fokus pribadi yang mengedepankan kedaulatan data pengguna.",
-            "Secara *default*, seluruh data perkembangan pulau suaka, riwayat sesi fokus, catatan jurnal, dan preferensi disimpan langsung di penyimpanan lokal perangkat Anda (Local Storage / IndexedDB).",
+            "Secara default, seluruh data perkembangan pulau suaka, riwayat sesi fokus, catatan jurnal, dan preferensi disimpan langsung di penyimpanan lokal perangkat Anda (Local Storage / IndexedDB).",
             "Kami menganut prinsip minimasi data: kami hanya memproses data yang benar-benar esensial untuk mendukung pengalaman fokus, pemulihan suaka, dan gamifikasi produktivitas Anda.",
           ],
         },
@@ -35,10 +35,10 @@ export const LEGAL_CONTENT: Record<
           id: "data-yang-dikumpulkan",
           title: "2. Data yang Kami Kumpulkan",
           content: [
-            "**Data Sesi Fokus:** Durasi fokus, jenis mode (Timer, Stopwatch, atau Pomodoro), status keberhasilan sesi, timestamp waktu mulai dan selesai, serta kategori aktivitas.",
-            "**Data Pulau Suaka:** Tata letak petak grid 3D, tanaman dan pohon yang ditanam, koin Soul yang diperoleh, ekspansi lahan, dan status objek alam.",
-            "**Data Akun (Jika Mendaftar):** Alamat email dan nama tampilan yang Anda berikan saat membuat akun untuk keperluan otentikasi. Jika Anda memilih Mode Tamu (Guest Mode), tidak ada informasi pengenal pribadi yang disimpan di server.",
-            "**Preferensi Aplikasi:** Pengaturan kualitas grafis (Eco, Balanced, Ultra), volume efek suara dan soundscape, notifikasi pengingat harian lokal, dan preferensi haptik.",
+            "• Data Sesi Fokus: Durasi fokus, jenis mode (Timer, Stopwatch, atau Pomodoro), status keberhasilan sesi, timestamp waktu mulai dan selesai, serta kategori aktivitas.",
+            "• Data Pulau Suaka: Tata letak petak grid 3D, tanaman dan pohon yang ditanam, koin Soul yang diperoleh, ekspansi lahan, dan status objek alam.",
+            "• Data Akun (Jika Mendaftar): Alamat email dan nama tampilan yang Anda berikan saat membuat akun untuk keperluan otentikasi. Jika Anda memilih Mode Tamu (Guest Mode), tidak ada informasi pengenal pribadi yang disimpan di server.",
+            "• Preferensi Aplikasi: Pengaturan kualitas grafis (Eco, Balanced, Ultra), volume efek suara dan soundscape, notifikasi pengingat harian lokal, dan preferensi haptik.",
           ],
         },
         {
@@ -64,9 +64,9 @@ export const LEGAL_CONTENT: Record<
           id: "hak-kedaulatan-pengguna",
           title: "5. Hak Pengguna & Penghapusan Akun Permanen",
           content: [
-            "**Hak Ekspor Data (Cadangan Mandiri):** Anda berhak mengunduh seluruh berkas data suaka Anda dalam format JSON kapan saja melalui menu Pengaturan > Cadangan & Pemulihan.",
-            "**Hak Reset Pulau:** Anda dapat mereset tata letak pulau kapan saja tanpa menghapus riwayat sesi fokus.",
-            "**Hak Penghapusan Akun & Data (Apple Guideline 5.1.1):** Anda berhak menghapus akun Anda beserta seluruh data pulau dan riwayat sesi fokus secara permanen dan seketika melalui tombol 'Hapus Akun & Data Suaka' di menu Pengaturan. Tindakan ini bersifat ireversibel dan langsung membersihkan data dari perangkat dan server.",
+            "• Hak Ekspor Data (Cadangan Mandiri): Anda berhak mengunduh seluruh berkas data suaka Anda dalam format JSON kapan saja melalui menu Pengaturan > Cadangan & Pemulihan.",
+            "• Hak Reset Pulau: Anda dapat mereset tata letak pulau kapan saja tanpa menghapus riwayat sesi fokus.",
+            "• Hak Penghapusan Akun & Data (Apple Guideline 5.1.1): Anda berhak menghapus akun Anda beserta seluruh data pulau dan riwayat sesi fokus secara permanen dan seketika melalui tombol 'Hapus Akun & Data Suaka' di menu Pengaturan. Tindakan ini bersifat ireversibel dan langsung membersihkan data dari perangkat dan server.",
           ],
         },
         {
@@ -82,7 +82,7 @@ export const LEGAL_CONTENT: Record<
           title: "7. Hubungi Kami",
           content: [
             "Jika Anda memiliki pertanyaan, masukan, atau permohonan terkait data pribadi Anda di Rimba, silakan hubungi tim kami melalui email resmi:",
-            "📧 **halo@rimba.app** atau melalui repositori resmi Jagat Rimba Tetap Lestari.",
+            "Email resmi: halo@rimba.app atau melalui repositori resmi Jagat Rimba Tetap Lestari.",
           ],
         },
       ],
@@ -175,10 +175,10 @@ export const LEGAL_CONTENT: Record<
           id: "data-we-collect",
           title: "2. Information We Collect",
           content: [
-            "**Focus Session Data:** Duration, timer mode (Timer, Stopwatch, or Pomodoro), session success outcome, start and completion timestamps, and category tags.",
-            "**Sanctuary Island Data:** 3D grid layouts, planted flora and trees, earned Soul currency, unlocked land expansions, and environmental object placements.",
-            "**Account Information (If Registered):** Email address and display name provided during registration for authentication purposes. In Guest Mode, zero personally identifiable information is stored on our servers.",
-            "**App Preferences:** Graphic quality presets (Eco, Balanced, Ultra), soundscape and SFX volume levels, local daily reminder schedules, and haptic feedback toggles.",
+            "• Focus Session Data: Duration, timer mode (Timer, Stopwatch, or Pomodoro), session success outcome, start and completion timestamps, and category tags.",
+            "• Sanctuary Island Data: 3D grid layouts, planted flora and trees, earned Soul currency, unlocked land expansions, and environmental object placements.",
+            "• Account Information (If Registered): Email address and display name provided during registration for authentication purposes. In Guest Mode, zero personally identifiable information is stored on our servers.",
+            "• App Preferences: Graphic quality presets (Eco, Balanced, Ultra), soundscape and SFX volume levels, local daily reminder schedules, and haptic feedback toggles.",
           ],
         },
         {
@@ -204,9 +204,9 @@ export const LEGAL_CONTENT: Record<
           id: "user-rights-deletion",
           title: "5. User Rights & Account Deletion (Apple 5.1.1)",
           content: [
-            "**Data Export Right:** You can download a complete backup of your sanctuary data in JSON format at any time via Settings > Backup & Restore.",
-            "**Island Reset Right:** You may reset your 3D island layout whenever desired without wiping your historical focus sessions.",
-            "**Permanent Account Deletion (Apple Guideline 5.1.1):** You can permanently erase your account, all cloud backups, and local sanctuary data instantly via the 'Delete Account & Sanctuary Data' option in Settings. This process is irreversible.",
+            "• Data Export Right: You can download a complete backup of your sanctuary data in JSON format at any time via Settings > Backup & Restore.",
+            "• Island Reset Right: You may reset your 3D island layout whenever desired without wiping your historical focus sessions.",
+            "• Permanent Account Deletion (Apple Guideline 5.1.1): You can permanently erase your account, all cloud backups, and local sanctuary data instantly via the 'Delete Account & Sanctuary Data' option in Settings. This process is irreversible.",
           ],
         },
         {
@@ -222,7 +222,7 @@ export const LEGAL_CONTENT: Record<
           title: "7. Contact Us",
           content: [
             "If you have questions, feedback, or data requests regarding Rimba, please reach out via our official communication channels:",
-            "📧 **halo@rimba.app** or through the Jagat Rimba Tetap Lestari repository.",
+            "Official email: halo@rimba.app or through the Jagat Rimba Tetap Lestari repository.",
           ],
         },
       ],

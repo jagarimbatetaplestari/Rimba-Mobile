@@ -167,32 +167,28 @@ export function LegalModal({
                   </h3>
                   <div className="space-y-2 text-[12px] text-[#33594B] leading-relaxed font-normal">
                     {section.content.map((paragraph, pIdx) => {
-                      // Basic bold markdown parser
-                      const parts = paragraph.split(/(\*\*.*?\*\*|\*.*?\*)/g);
-                      return (
-                        <p key={pIdx}>
-                          {parts.map((part, partIdx) => {
-                            if (part.startsWith("**") && part.endsWith("**")) {
-                              return (
-                                <strong
-                                  key={partIdx}
-                                  className="font-bold text-[#0D3528]"
-                                >
-                                  {part.slice(2, -2)}
-                                </strong>
-                              );
-                            }
-                            if (part.startsWith("*") && part.endsWith("*")) {
-                              return (
-                                <em key={partIdx} className="italic">
-                                  {part.slice(1, -1)}
-                                </em>
-                              );
-                            }
-                            return part;
-                          })}
-                        </p>
-                      );
+                      const bulletMatch = paragraph.match(/^•\s*([^:]+):\s*(.+)$/);
+                      if (bulletMatch) {
+                        const [, label, text] = bulletMatch;
+                        return (
+                          <div key={pIdx} className="flex items-start gap-2 py-0.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#187557] mt-1.5 shrink-0" />
+                            <p className="leading-relaxed">
+                              <strong className="font-semibold text-[#0D3528]">{label}: </strong>
+                              <span className="text-[#33594B]">{text}</span>
+                            </p>
+                          </div>
+                        );
+                      }
+                      if (paragraph.startsWith("• ")) {
+                        return (
+                          <div key={pIdx} className="flex items-start gap-2 py-0.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#187557] mt-1.5 shrink-0" />
+                            <p className="leading-relaxed text-[#33594B]">{paragraph.slice(2)}</p>
+                          </div>
+                        );
+                      }
+                      return <p key={pIdx}>{paragraph}</p>;
                     })}
                   </div>
                 </div>

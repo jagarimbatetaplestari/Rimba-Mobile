@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Atur Ulang Kata Sandi Rimba</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #030D08;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      color: #E2E8F0;
+      -webkit-font-smoothing: antialiased;
+    }
+    table {
+      border-spacing: 0;
+    }
+    td {
+      padding: 0;
+    }
+    img {
+      border: 0;
+    }
+    .wrapper {
+      width: 100%;
+      table-layout: fixed;
+      background-color: #030D08;
+      padding: 40px 16px;
+    }
+    .main-card {
+      background: linear-gradient(180deg, #09261B 0%, #061912 100%);
+      margin: 0 auto;
+      width: 100%;
+      max-width: 560px;
+      border-radius: 28px;
+      border: 1px solid #144A39;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+      overflow: hidden;
+    }
+    .content-padding {
+      padding: 44px 36px;
+    }
+    .badge {
+      display: inline-block;
+      background-color: rgba(244, 63, 94, 0.12);
+      border: 1px solid rgba(244, 63, 94, 0.3);
+      color: #FB7185;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      margin-bottom: 20px;
+    }
+    .heading {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
+      color: #FFFFFF;
+      font-size: 30px;
+      line-height: 1.25;
+      margin: 0 0 14px 0;
+      font-weight: normal;
+    }
+    .subtext {
+      color: #94A3B8;
+      font-size: 14px;
+      line-height: 1.6;
+      margin: 0 0 28px 0;
+    }
+    .otp-container {
+      background-color: #02120B;
+      border: 1px solid #FB7185;
+      border-radius: 20px;
+      padding: 24px 20px;
+      text-align: center;
+      margin: 0 0 28px 0;
+      box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.5), 0 0 24px rgba(244, 63, 94, 0.15);
+    }
+    .otp-label {
+      color: #FDA4AF;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 10px;
+    }
+    .otp-code {
+      font-family: 'SF Mono', Monaco, Menlo, Consolas, monospace;
+      color: #FB7185;
+      font-size: 38px;
+      font-weight: 700;
+      letter-spacing: 10px;
+      padding-left: 10px;
+      margin: 0;
+      text-shadow: 0 0 16px rgba(244, 63, 94, 0.4);
+    }
+    .otp-hint {
+      color: #64748B;
+      font-size: 11px;
+      margin-top: 10px;
+    }
+    .cta-button {
+      display: inline-block;
+      background: linear-gradient(135deg, #FB7185 0%, #E11D48 100%);
+      color: #FFFFFF !important;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: 0.3px;
+      padding: 14px 32px;
+      border-radius: 9999px;
+      box-shadow: 0 10px 24px rgba(244, 63, 94, 0.35);
+      margin-bottom: 28px;
+    }
+    .divider {
+      height: 1px;
+      background-color: rgba(255, 255, 255, 0.08);
+      margin: 32px 0 24px 0;
+    }
+    .security-note {
+      color: #64748B;
+      font-size: 12px;
+      line-height: 1.6;
+      margin: 0 0 8px 0;
+    }
+    .footer {
+      text-align: center;
+      padding: 24px 16px 0 16px;
+      color: #475569;
+      font-size: 11px;
+      line-height: 1.6;
+    }
+    .footer a {
+      color: #10B981;
+      text-decoration: none;
+    }
+    .footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <center class="wrapper">
+    <table class="main-card" role="presentation">
+      <tr>
+        <td class="content-padding">
+          <div style="text-align: center;">
+            <div class="badge">🔒 RIMBA · ATUR ULANG KATA SANDI</div>
+          </div>
+
+          <h1 class="heading" style="text-align: center;">Permintaan Atur Ulang Sandi</h1>
+          <p class="subtext" style="text-align: center;">
+            Kami menerima permintaan untuk mengatur ulang kata sandi akun Rimba Anda. Masukkan kode 6 digit berikut di aplikasi:
+          </p>
+
+          <div class="otp-container">
+            <div class="otp-label">Kode Pemulihan Akun</div>
+            <div class="otp-code">{{ .Token }}</div>
+            <div class="otp-hint">Kode berlaku selama 60 menit</div>
+          </div>
+
+          <div style="text-align: center;">
+            <p style="font-size: 12px; color: #64748B; margin-bottom: 12px;">
+              Atau atur ulang kata sandi via peramban web:
+            </p>
+            <a href="{{ .ConfirmationURL }}" class="cta-button" target="_blank" rel="noopener noreferrer">
+              Atur Ulang Kata Sandi →
+            </a>
+          </div>
+
+          <div class="divider"></div>
+          <p class="security-note" style="text-align: center;">
+            ⚠️ <em>Penting:</em> Jika Anda tidak pernah meminta perubahan kata sandi, segera amankan akun Anda atau abaikan email ini. Kata sandi lama Anda tetap terlindungi.
+          </p>
+        </td>
+      </tr>
+    </table>
+
+    <div class="footer">
+      <p style="margin: 0 0 6px 0;">
+        Rimba: Focus Garden · Tumbuhkan Suaka Alami Fokus
+      </p>
+      <p style="margin: 0;">
+        <a href="https://rimba-website.pages.dev/privacy">Kebijakan Privasi</a> · 
+        <a href="https://rimba-website.pages.dev/terms">Syarat Layanan</a>
+      </p>
+    </div>
+  </center>
+</body>
+</html>

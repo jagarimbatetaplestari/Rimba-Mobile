@@ -7,7 +7,7 @@ import { useAuthStore } from "@/lib/auth/useAuthStore";
 import { useTranslation } from "@/lib/i18n/translations";
 import { soundManager } from "@/lib/audio/sounds";
 import { hapticLight, hapticMedium, hapticSuccess, hapticWarning } from "@/lib/mobile/nativeBridge";
-import { Mail, Lock, Eye, EyeOff, ArrowLeft, RefreshCw, CheckCircle2, ShieldCheck } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ArrowLeft, RefreshCw, CheckCircle2, ShieldCheck, User } from "lucide-react";
 import { LegalModal } from "@/components/modals/LegalModal";
 
 function WelcomeAuthPageContent() {
@@ -27,6 +27,7 @@ function WelcomeAuthPageContent() {
   } = useAuthStore();
 
   const [isSignUp, setIsSignUp] = useState(initialMode);
+  const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -96,7 +97,8 @@ function WelcomeAuthPageContent() {
       if (isSignUp) {
         // Alur Registrasi: Nama default diambil dari email prefix, diisi saat onboarding
         const fallbackName = cleanEmail.split("@")[0] || "Penjaga Rimba";
-        const result = await registerWithEmail(fallbackName, cleanEmail, cleanPassword);
+        const finalName = displayName.trim() || fallbackName;
+        const result = await registerWithEmail(finalName, cleanEmail, cleanPassword);
         if (result.success) {
           if (result.requiresOtp) {
             soundManager.playPop();
@@ -309,7 +311,7 @@ function WelcomeAuthPageContent() {
           </h1>
           <p className="mb-1 text-xs sm:text-[13px] text-white/90 font-light tracking-wide max-w-[270px] mx-auto leading-relaxed drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]">
             {isOtpStep
-              ? t.auth.otpDesc
+              ? t.auth.otpSent.replace("{email}", email.trim() || "email Anda")
               : isSignUp
               ? t.auth.subSignUp
               : t.auth.subSignIn}
@@ -414,6 +416,24 @@ function WelcomeAuthPageContent() {
           /* STATE B: EMAIL & PASSWORD INPUT                           */
           /* ========================================================= */
           <form onSubmit={handleSubmit} className="w-full space-y-2.5">
+            {/* Ranger Display Name Capsule (Only during Sign Up) */}
+            {isSignUp && (
+              <div className="relative flex items-center px-4 py-3.5 rounded-2xl bg-black/25 hover:bg-black/30 focus-within:bg-black/35 backdrop-blur-md border border-white/[0.12] focus-within:border-white/35 shadow-[0_8px_24px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.2)] transition-all animate-in fade-in">
+                <User className="w-4 h-4 text-white/70 stroke-[1.8] flex-shrink-0 drop-shadow-sm" />
+                <input
+                  type="text"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder={t.auth.namePlaceholder}
+                  autoCapitalize="words"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  autoComplete="name"
+                  className="w-full bg-transparent pl-3 pr-2 text-xs font-normal text-white placeholder-white/50 focus:outline-none drop-shadow-sm"
+                />
+              </div>
+            )}
+
             {/* Email Capsule */}
             <div className="relative flex items-center px-4 py-3.5 rounded-2xl bg-black/25 hover:bg-black/30 focus-within:bg-black/35 backdrop-blur-md border border-white/[0.12] focus-within:border-white/35 shadow-[0_8px_24px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.2)] transition-all">
               <Mail className="w-4 h-4 text-white/70 stroke-[1.8] flex-shrink-0 drop-shadow-sm" />
@@ -484,6 +504,34 @@ function WelcomeAuthPageContent() {
                 </span>
               )}
             </button>
+
+            {/* Terms Disclaimer on Sign Up */}
+            {isSignUp && (
+              <p className="text-[10px] text-white/50 pt-1 leading-relaxed text-center">
+                {t.auth.termsNoticePrefix}{" "}
+                <button
+                  type="button"
+                  onClick={() => {
+                    hapticLight();
+                    setLegalModalTab("terms");
+                  }}
+                  className="text-emerald-300 underline underline-offset-2 hover:text-white transition-colors cursor-pointer"
+                >
+                  {t.auth.termsLink}
+                </button>{" "}
+                &{" "}
+                <button
+                  type="button"
+                  onClick={() => {
+                    hapticLight();
+                    setLegalModalTab("privacy");
+                  }}
+                  className="text-emerald-300 underline underline-offset-2 hover:text-white transition-colors cursor-pointer"
+                >
+                  {t.auth.privacyLink}
+                </button>.
+              </p>
+            )}
           </form>
         )}
 

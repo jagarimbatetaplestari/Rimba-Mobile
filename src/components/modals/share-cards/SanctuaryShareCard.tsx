@@ -121,36 +121,45 @@ export async function drawSanctuaryCardCanvas(
   ctx.font = `600 ${subSize}px "Urbanist", sans-serif`;
   ctx.fillText(favoriteTreeSpecies, width - 72, topY + topGap2);
 
-  // 3. Bottom Grass Section: Soft Dark Emerald Gradient Fade (Strictly BELOW the tree)
-  const gradH = aspectRatio === "story" ? 680 : aspectRatio === "portrait" ? 490 : 390;
-  const gradY = height - gradH;
+  // 3. Bottom Grass Section: Soft Translucent Gradient Fade (Grass remains clearly visible)
+  const isSquare = aspectRatio === "square";
+  const isPortrait = aspectRatio === "portrait";
+  const isStory = aspectRatio === "story";
+
+  // Bottom-up Layout calculation: Anchor text cleanly to the very bottom
+  const bottomPad = isStory ? 68 : isPortrait ? 52 : 38;
+  const boxDescGap = isStory ? 68 : isPortrait ? 54 : 44;
+  const boxValGap = isStory ? 34 : isPortrait ? 27 : 22;
+  const textStartY = height - bottomPad - boxDescGap;
+  const rowDividerY = textStartY - (isStory ? 44 : isPortrait ? 36 : 28);
+  const compY = rowDividerY - (isStory ? 52 : isPortrait ? 40 : 32);
+  const focusHoursY = compY - (isStory ? 64 : isPortrait ? 48 : 38);
+  const focusLabelY = focusHoursY - (isStory ? 82 : isPortrait ? 64 : 52);
+
+  // Soft translucent gradient starting gently above the focusLabelY (never pitch-black!)
+  const gradY = focusLabelY - (isStory ? 90 : isPortrait ? 70 : 55);
+  const gradH = height - gradY;
   const fadeGrad = ctx.createLinearGradient(0, gradY, 0, height);
   fadeGrad.addColorStop(0, "rgba(8, 24, 18, 0)");
-  fadeGrad.addColorStop(0.25, "rgba(8, 24, 18, 0.7)");
-  fadeGrad.addColorStop(0.65, "rgba(8, 24, 18, 0.94)");
-  fadeGrad.addColorStop(1, "rgba(6, 18, 14, 0.99)");
+  fadeGrad.addColorStop(0.3, "rgba(8, 24, 18, 0.22)");
+  fadeGrad.addColorStop(0.7, "rgba(8, 24, 18, 0.42)");
+  fadeGrad.addColorStop(1, "rgba(6, 20, 15, 0.52)");
   ctx.fillStyle = fadeGrad;
   ctx.fillRect(0, gradY, width, gradH);
 
-  // Focus Metrics (Semibold, Positioned strictly BELOW tree trunk on the grass mound)
-  const focusLabelY =
-    gradY + (aspectRatio === "story" ? 70 : aspectRatio === "portrait" ? 50 : 40);
-  const focusHoursY =
-    focusLabelY + (aspectRatio === "story" ? 95 : aspectRatio === "portrait" ? 70 : 58);
-  const compY =
-    focusHoursY + (aspectRatio === "story" ? 68 : aspectRatio === "portrait" ? 50 : 42);
+  // Focus Metrics (With subtle shadow for crisp readability against the diorama grass)
+  ctx.save();
+  ctx.shadowColor = "rgba(0, 0, 0, 0.45)";
+  ctx.shadowBlur = 8;
+  ctx.shadowOffsetY = 2;
 
   ctx.textAlign = "center";
-  ctx.fillStyle = "rgba(255, 255, 255, 0.60)";
-  ctx.font = `600 ${
-    aspectRatio === "story" ? 18 : aspectRatio === "portrait" ? 15 : 13
-  }px "Urbanist", sans-serif`;
+  ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
+  ctx.font = `600 ${isStory ? 18 : isPortrait ? 15 : 13}px "Urbanist", sans-serif`;
   ctx.fillText(isEn ? "TOTAL FOCUS TIME" : "TOTAL WAKTU FOKUS", width / 2, focusLabelY);
 
   ctx.fillStyle = "#FFFFFF";
-  ctx.font = `600 ${
-    aspectRatio === "story" ? 74 : aspectRatio === "portrait" ? 58 : 46
-  }px "Urbanist", sans-serif`;
+  ctx.font = `700 ${isStory ? 74 : isPortrait ? 58 : 46}px "Urbanist", sans-serif`;
   const hoursText =
     totalHoursNum >= 1
       ? (isEn ? `${totalHoursNum} hours` : `${totalHoursNum} jam`)
@@ -158,10 +167,8 @@ export async function drawSanctuaryCardCanvas(
   ctx.fillText(hoursText, width / 2, focusHoursY);
 
   // Single concise line for comparison
-  ctx.fillStyle = "rgba(255, 255, 255, 0.75)";
-  ctx.font = `500 ${
-    aspectRatio === "story" ? 19 : aspectRatio === "portrait" ? 16 : 13
-  }px "Urbanist", sans-serif`;
+  ctx.fillStyle = "rgba(255, 255, 255, 0.88)";
+  ctx.font = `500 ${isStory ? 19 : isPortrait ? 16 : 13}px "Urbanist", sans-serif`;
   const compText =
     isEn
       ? `+${regionalBonusHours}h above average in your region · Amazing!`
@@ -169,51 +176,43 @@ export async function drawSanctuaryCardCanvas(
   ctx.fillText(compText, width / 2, compY);
 
   // 4. Two-Column Info Row - Faded subtle dividers
-  const rowDividerY =
-    compY + (aspectRatio === "story" ? 55 : aspectRatio === "portrait" ? 42 : 34);
   ctx.beginPath();
   ctx.moveTo(80, rowDividerY);
   ctx.lineTo(width - 80, rowDividerY);
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.10)";
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.20)";
   ctx.lineWidth = 1;
   ctx.stroke();
 
   // Vertical mid divider
   const colMidX = width / 2;
-  const rowHeight =
-    aspectRatio === "story" ? 160 : aspectRatio === "portrait" ? 125 : 100;
+  const rowHeight = textStartY + boxDescGap - rowDividerY;
   ctx.beginPath();
-  ctx.moveTo(colMidX, rowDividerY + 16);
+  ctx.moveTo(colMidX, rowDividerY + 12);
   ctx.lineTo(colMidX, rowDividerY + rowHeight);
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.10)";
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.20)";
   ctx.lineWidth = 1;
   ctx.stroke();
 
-  const textStartY =
-    rowDividerY + (aspectRatio === "story" ? 50 : aspectRatio === "portrait" ? 40 : 32);
-  const boxBadgeSize =
-    aspectRatio === "story" ? 17 : aspectRatio === "portrait" ? 14 : 12;
-  const boxValSize =
-    aspectRatio === "story" ? 22 : aspectRatio === "portrait" ? 18 : 15;
-  const boxDescSize =
-    aspectRatio === "story" ? 17 : aspectRatio === "portrait" ? 14 : 12;
+  const boxBadgeSize = isStory ? 17 : isPortrait ? 14 : 12;
+  const boxValSize = isStory ? 22 : isPortrait ? 18 : 15;
+  const boxDescSize = isStory ? 17 : isPortrait ? 14 : 12;
 
   // Col 1: Focus Type
   const col1X = 84;
   ctx.textAlign = "left";
-  ctx.fillStyle = "rgba(255, 255, 255, 0.60)";
+  ctx.fillStyle = "rgba(255, 255, 255, 0.80)";
   ctx.font = `600 ${boxBadgeSize}px "Urbanist", sans-serif`;
   ctx.fillText(isEn ? "FOCUS TYPE" : "TIPE FOKUS", col1X, textStartY);
 
   ctx.fillStyle = "#FFFFFF";
-  ctx.font = `600 ${boxValSize}px "Urbanist", sans-serif`;
+  ctx.font = `700 ${boxValSize}px "Urbanist", sans-serif`;
   ctx.fillText(
     isEn ? "Evergreen Guardian" : "Penjaga Abadi",
     col1X,
-    textStartY + (aspectRatio === "story" ? 36 : 28),
+    textStartY + boxValGap,
   );
 
-  ctx.fillStyle = "rgba(255, 255, 255, 0.60)";
+  ctx.fillStyle = "rgba(255, 255, 255, 0.80)";
   ctx.font = `400 ${boxDescSize}px "Urbanist", sans-serif`;
   const descText =
     isEn
@@ -222,24 +221,24 @@ export async function drawSanctuaryCardCanvas(
   ctx.fillText(
     descText,
     col1X,
-    textStartY + (aspectRatio === "story" ? 72 : 56),
+    textStartY + boxDescGap,
   );
 
   // Col 2: Hari Terfokus
   const col2X = colMidX + 36;
-  ctx.fillStyle = "rgba(255, 255, 255, 0.60)";
+  ctx.fillStyle = "rgba(255, 255, 255, 0.80)";
   ctx.font = `600 ${boxBadgeSize}px "Urbanist", sans-serif`;
   ctx.fillText(isEn ? "TOP DAY" : "HARI TERFOKUS", col2X, textStartY);
 
   ctx.fillStyle = "#FFFFFF";
-  ctx.font = `600 ${boxValSize}px "Urbanist", sans-serif`;
+  ctx.font = `700 ${boxValSize}px "Urbanist", sans-serif`;
   ctx.fillText(
     mostFocusedDay,
     col2X,
-    textStartY + (aspectRatio === "story" ? 36 : 28),
+    textStartY + boxValGap,
   );
 
-  ctx.fillStyle = "rgba(255, 255, 255, 0.60)";
+  ctx.fillStyle = "rgba(255, 255, 255, 0.80)";
   ctx.font = `400 ${boxDescSize}px "Urbanist", sans-serif`;
   const peakLabel = isEn
     ? `Peak Hours: ${peakWindowLabel || "10:00 – 12:00"}`
@@ -247,8 +246,9 @@ export async function drawSanctuaryCardCanvas(
   ctx.fillText(
     peakLabel,
     col2X,
-    textStartY + (aspectRatio === "story" ? 72 : 56),
+    textStartY + boxDescGap,
   );
+  ctx.restore();
 }
 
 export function SanctuaryShareCard({
@@ -316,7 +316,7 @@ export function SanctuaryShareCard({
       <div className="flex-1 min-h-[140px] pointer-events-none" />
 
       {/* Bottom Grass Section: Strictly BELOW the tree on the grassy mound */}
-      <div className="relative z-10 -mx-3.5 -mb-3.5 px-3.5 pb-3.5 pt-4 bg-gradient-to-t from-[#081812]/95 via-[#0A261D]/80 to-transparent flex flex-col gap-1.5 font-urbanist">
+      <div className="relative z-10 -mx-3.5 -mb-3.5 px-3.5 pb-3.5 pt-5 bg-gradient-to-t from-[#081812]/75 via-[#0A261D]/45 to-transparent flex flex-col gap-1.5 font-urbanist">
         <div className="text-center">
           <span className="text-[8px] font-semibold text-white/60 uppercase tracking-[0.2em] block">
             {isEn ? "Total Focus Time" : "Total Waktu Fokus"}

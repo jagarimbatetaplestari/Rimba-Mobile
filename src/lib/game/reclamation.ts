@@ -7,7 +7,7 @@ import {
 } from '@/types/game';
 import { GAME_CONFIG } from './config';
 import { canAfford, createLedgerEntry } from './economy';
-import { gridToWorld } from './worldRules';
+import { gridToWorld, getUnlockedTilesSet } from './worldRules';
 
 export interface ReclamationCheckResult {
   shouldReclaim: boolean;
@@ -117,7 +117,8 @@ export function triggerBulldozerReclamation(
   objects: WorldObject[],
   currentBulldozer: BulldozerThreat | null | undefined,
   lastFocusCompletedAt: string | null,
-  devFastMode = false
+  devFastMode = false,
+  unlockedTiles?: string[]
 ): BulldozerReclamationResult {
   const eligibility = checkReclamationEligibility(lastFocusCompletedAt, devFastMode);
   if (!eligibility.shouldReclaim) {
@@ -224,10 +225,45 @@ export function triggerBulldozerReclamation(
 
   const [treeX, , treeZ] = gridToWorld(oldestTree.grid_x, oldestTree.grid_y, 0.05);
 
-  // Position bulldozer at island edge (x = 4.25 or -4.25) facing the tree
-  const edgeX = treeX >= 0 ? 4.25 : -4.25;
-  const edgeZ = Math.max(-4.2, Math.min(4.2, treeZ));
-  const rotY = Math.atan2(treeX - edgeX, treeZ - edgeZ);
+  // Position bulldozer on an actual outer perimeter unlocked tile of the island
+  const unlockedSet = getUnlockedTilesSet({ unlocked_tiles: unlockedTiles }, objects);
+  const perimeterTiles: { gx: number; gy: number; distSq: number }[] = [];
+  unlockedSet.forEach((key) => {
+    const [gx, gy] = key.split(',').map(Number);
+    if (!Number.isInteger(gx) || !Number.isInteger(gy)) return;
+
+    // Check if tile has at least one non-unlocked cardinal neighbor
+    const hasEmptyNeighbor =
+      !unlockedSet.has(`${gx + 1},${gy}`) ||
+      !unlockedSet.has(`${gx - 1},${gy}`) ||
+      !unlockedSet.has(`${gx},${gy + 1}`) ||
+      !unlockedSet.has(`${gx},${gy - 1}`);
+
+    if (hasEmptyNeighbor) {
+      const dx = gx - oldestTree.grid_x;
+      const dy = gy - oldestTree.grid_y;
+      perimeterTiles.push({ gx, gy, distSq: dx * dx + dy * dy });
+    }
+  });
+
+  // Pick the perimeter tile closest to the target tree (preferring adjacent so it doesn't overlap the tree)
+  let bGx = oldestTree.grid_x;
+  let bGy = oldestTree.grid_y;
+  if (perimeterTiles.length > 0) {
+    perimeterTiles.sort((a, b) => a.distSq - b.distSq);
+    const nonTreeTile = perimeterTiles.find((t) => t.gx !== oldestTree.grid_x || t.gy !== oldestTree.grid_y);
+    if (nonTreeTile) {
+      bGx = nonTreeTile.gx;
+      bGy = nonTreeTile.gy;
+    } else {
+      bGx = perimeterTiles[0].gx;
+      bGy = perimeterTiles[0].gy;
+    }
+  }
+
+  // World coordinate on the perimeter land tile
+  const [bWorldX, bWorldY, bWorldZ] = gridToWorld(bGx, bGy, 0.05);
+  const rotY = Math.atan2(treeX - bWorldX, treeZ - bWorldZ);
 
   // 2 construction cones around the tree
   const conePositions: [[number, number, number], [number, number, number]] = [
@@ -241,7 +277,7 @@ export function triggerBulldozerReclamation(
     active: true,
     target_tree_id: oldestTree.id,
     threatened_tile: threatenedCoord,
-    position: [edgeX, 0.05, edgeZ],
+    position: [bWorldX, bWorldY, bWorldZ],
     rotation: rotY,
     cone_positions: conePositions,
     spawned_at: now,
@@ -445,3 +481,84 @@ export function restoreObject(
     ledgerEntry,
   };
 }
+
+/**
+ * Ensures an active BulldozerThreat is positioned on an actual unlocked perimeter tile
+ * of the island, repairing any floating or legacy out-of-bounds positions from previous versions.
+ */
+export function sanitizeBulldozerPosition(
+  bulldozer: BulldozerThreat | null | undefined,
+  unlockedTiles?: string[],
+  objects: WorldObject[] = []
+): BulldozerThreat | null {
+  if (!bulldozer || !bulldozer.active) return bulldozer || null;
+
+  const unlockedSet = getUnlockedTilesSet({ unlocked_tiles: unlockedTiles }, objects);
+  if (unlockedSet.size === 0) return bulldozer;
+
+  const targetTree = objects.find((o) => o.id === bulldozer.target_tree_id);
+  const targetGx = targetTree ? targetTree.grid_x : 0;
+  const targetGy = targetTree ? targetTree.grid_y : 0;
+  const [treeX, , treeZ] = gridToWorld(targetGx, targetGy, 0.05);
+
+  const [curX, , curZ] = bulldozer.position;
+  let minDistSq = Infinity;
+  unlockedSet.forEach((key) => {
+    const [gx, gy] = key.split(',').map(Number);
+    if (!Number.isInteger(gx) || !Number.isInteger(gy)) return;
+    const [wx, , wz] = gridToWorld(gx, gy, 0.05);
+    const d = (curX - wx) ** 2 + (curZ - wz) ** 2;
+    if (d < minDistSq) minDistSq = d;
+  });
+
+  // If bulldozer is more than 1.5 grid units away (> 2.0 distSq) from any unlocked tile, it's floating in the void!
+  if (minDistSq > 2.0) {
+    const perimeterTiles: { gx: number; gy: number; distSq: number }[] = [];
+    unlockedSet.forEach((key) => {
+      const [gx, gy] = key.split(',').map(Number);
+      if (!Number.isInteger(gx) || !Number.isInteger(gy)) return;
+
+      const hasEmptyNeighbor =
+        !unlockedSet.has(`${gx + 1},${gy}`) ||
+        !unlockedSet.has(`${gx - 1},${gy}`) ||
+        !unlockedSet.has(`${gx},${gy + 1}`) ||
+        !unlockedSet.has(`${gx},${gy - 1}`);
+
+      if (hasEmptyNeighbor) {
+        const dx = gx - targetGx;
+        const dy = gy - targetGy;
+        perimeterTiles.push({ gx, gy, distSq: dx * dx + dy * dy });
+      }
+    });
+
+    let bGx = targetGx;
+    let bGy = targetGy;
+    if (perimeterTiles.length > 0) {
+      perimeterTiles.sort((a, b) => a.distSq - b.distSq);
+      const nonTree = perimeterTiles.find((t) => t.gx !== targetGx || t.gy !== targetGy);
+      if (nonTree) {
+        bGx = nonTree.gx;
+        bGy = nonTree.gy;
+      } else {
+        bGx = perimeterTiles[0].gx;
+        bGy = perimeterTiles[0].gy;
+      }
+    }
+
+    const [bWorldX, bWorldY, bWorldZ] = gridToWorld(bGx, bGy, 0.05);
+    const rotY = Math.atan2(treeX - bWorldX, treeZ - bWorldZ);
+
+    return {
+      ...bulldozer,
+      position: [bWorldX, bWorldY, bWorldZ],
+      rotation: rotY,
+      cone_positions: [
+        [treeX + 0.42, 0.05, treeZ + 0.38],
+        [treeX - 0.42, 0.05, treeZ - 0.38],
+      ],
+    };
+  }
+
+  return bulldozer;
+}
+

@@ -110,8 +110,21 @@ async function generateAndroidAssets() {
     const minDim = Math.min(width, height);
     const logoSplashSize = Math.min(Math.round(minDim * 0.45), 450);
 
-    const logoBuffer = await sharp(sourcePath)
-      .resize(logoSplashSize, logoSplashSize, { fit: 'contain' })
+    const zenSvg = Buffer.from(`
+      <svg width="${logoSplashSize}" height="${logoSplashSize}" viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="120" cy="98" r="62" stroke="#2D6049" stroke-width="2" stroke-opacity="0.6"/>
+        <circle cx="120" cy="98" r="52" stroke="#458A6A" stroke-width="1.5" stroke-opacity="0.4"/>
+        <path d="M96 130C112 128 128 128 144 130" stroke="#3A6C53" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M120 128V88C120 80 120 76 120 70" stroke="#52A379" stroke-width="3" stroke-linecap="round"/>
+        <path d="M120 92C126 80 140 80 142 92C136 94 126 96 120 92Z" fill="#3D8361" fill-opacity="0.35" stroke="#52A379" stroke-width="2"/>
+        <path d="M120 100C112 90 98 92 98 104C104 106 114 104 120 100Z" fill="#52A379" fill-opacity="0.45" stroke="#52A379" stroke-width="2"/>
+        <text x="120" y="184" text-anchor="middle" font-family="sans-serif" font-size="18" font-weight="700" letter-spacing="6" fill="#E8F1EC">RIMBA</text>
+        <text x="120" y="201" text-anchor="middle" font-family="sans-serif" font-size="9" font-weight="500" letter-spacing="3" fill="#6E9E83">SANCTUARY</text>
+      </svg>
+    `);
+
+    const logoBuffer = await sharp(zenSvg)
+      .resize(logoSplashSize, logoSplashSize)
       .png()
       .toBuffer();
 
@@ -136,8 +149,21 @@ async function generateAndroidAssets() {
     fs.mkdirSync(defaultDrawableDir, { recursive: true });
   }
 
-  const universalLogoBuffer = await sharp(sourcePath)
-    .resize(480, 480, { fit: 'contain' })
+  const universalZenSvg = Buffer.from(`
+    <svg width="480" height="480" viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="120" cy="98" r="62" stroke="#2D6049" stroke-width="2" stroke-opacity="0.6"/>
+      <circle cx="120" cy="98" r="52" stroke="#458A6A" stroke-width="1.5" stroke-opacity="0.4"/>
+      <path d="M96 130C112 128 128 128 144 130" stroke="#3A6C53" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M120 128V88C120 80 120 76 120 70" stroke="#52A379" stroke-width="3" stroke-linecap="round"/>
+      <path d="M120 92C126 80 140 80 142 92C136 94 126 96 120 92Z" fill="#3D8361" fill-opacity="0.35" stroke="#52A379" stroke-width="2"/>
+      <path d="M120 100C112 90 98 92 98 104C104 106 114 104 120 100Z" fill="#52A379" fill-opacity="0.45" stroke="#52A379" stroke-width="2"/>
+      <text x="120" y="184" text-anchor="middle" font-family="sans-serif" font-size="18" font-weight="700" letter-spacing="6" fill="#E8F1EC">RIMBA</text>
+      <text x="120" y="201" text-anchor="middle" font-family="sans-serif" font-size="9" font-weight="500" letter-spacing="3" fill="#6E9E83">SANCTUARY</text>
+    </svg>
+  `);
+
+  const universalLogoBuffer = await sharp(universalZenSvg)
+    .resize(480, 480)
     .png()
     .toBuffer();
 

@@ -508,16 +508,48 @@ function ObjectItem({
 
       {/* Translucent azure river water flowing underneath bridge arches (0.82m wide) */}
       {isBridge && (
-        <mesh position={[0, -0.05, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-          <planeGeometry args={[0.82, 1.02]} />
-          <meshStandardMaterial
-            color="#38BDF8"
-            transparent
-            opacity={0.88}
-            roughness={0.08}
-            metalness={0.15}
-          />
-        </mesh>
+        <>
+          <mesh position={[0, -0.05, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+            <planeGeometry args={[0.82, 1.02]} />
+            <meshStandardMaterial
+              color="#38BDF8"
+              transparent
+              opacity={0.88}
+              roughness={0.08}
+              metalness={0.15}
+            />
+          </mesh>
+
+          {/* Structural Bridge Support Pillars & Crossbeams (Tiang Penyangga Jembatan Rimba) */}
+          <group position={[0, -0.06, 0]}>
+            {/* 4 sturdy timber pilings anchored down into the riverbed */}
+            <mesh position={[-0.34, -0.06, -0.38]} castShadow receiveShadow>
+              <cylinderGeometry args={[0.042, 0.048, 0.28, 8]} />
+              <meshStandardMaterial color="#5C3A21" roughness={0.88} />
+            </mesh>
+            <mesh position={[0.34, -0.06, -0.38]} castShadow receiveShadow>
+              <cylinderGeometry args={[0.042, 0.048, 0.28, 8]} />
+              <meshStandardMaterial color="#5C3A21" roughness={0.88} />
+            </mesh>
+            <mesh position={[-0.34, -0.06, 0.38]} castShadow receiveShadow>
+              <cylinderGeometry args={[0.042, 0.048, 0.28, 8]} />
+              <meshStandardMaterial color="#5C3A21" roughness={0.88} />
+            </mesh>
+            <mesh position={[0.34, -0.06, 0.38]} castShadow receiveShadow>
+              <cylinderGeometry args={[0.042, 0.048, 0.28, 8]} />
+              <meshStandardMaterial color="#5C3A21" roughness={0.88} />
+            </mesh>
+            {/* Horizontal crossbeams reinforcing the pilings */}
+            <mesh position={[0, 0.01, -0.38]} castShadow>
+              <boxGeometry args={[0.72, 0.04, 0.04]} />
+              <meshStandardMaterial color="#6B4423" roughness={0.85} />
+            </mesh>
+            <mesh position={[0, 0.01, 0.38]} castShadow>
+              <boxGeometry args={[0.72, 0.04, 0.04]} />
+              <meshStandardMaterial color="#6B4423" roughness={0.85} />
+            </mesh>
+          </group>
+        </>
       )}
 
       {/* Selected Indicator Ring */}

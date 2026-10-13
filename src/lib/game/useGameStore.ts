@@ -46,6 +46,7 @@ import {
   canExecuteBulldozerTier2,
   bribeBulldozer,
   dismissBulldozerViaFocus,
+  sanitizeBulldozerPosition,
 } from './reclamation';
 import { getLevelFromXp } from './levelRules';
 import {
@@ -615,6 +616,19 @@ export const useGameStore = create<GameState>((set, get) => ({
         `🛡️ Embun Pelindung aktif! Absen kemarin dimaafkan, streak harianmu tetap utuh! (Sisa perisai: ${updatedShields})`,
         'success'
       );
+    }
+
+    // Auto-repair bulldozer coordinates if floating outside unlocked land
+    if (data.world.bulldozer?.active) {
+      const sanitized = sanitizeBulldozerPosition(
+        data.world.bulldozer,
+        data.world.unlocked_tiles,
+        data.world_objects
+      );
+      if (sanitized && (sanitized.position[0] !== data.world.bulldozer.position[0] || sanitized.position[2] !== data.world.bulldozer.position[2])) {
+        data.world.bulldozer = sanitized;
+        persistAndSyncSaveData(data);
+      }
     }
 
     set({
@@ -1622,7 +1636,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       saveData.world_objects,
       saveData.world.bulldozer,
       saveData.world.last_focus_completed_at,
-      devFastMode
+      devFastMode,
+      saveData.world.unlocked_tiles
     );
 
     if (result.triggered) {

@@ -177,6 +177,38 @@ function CelestialArchBridge({ activeBiome }: { activeBiome: string }) {
         <cylinderGeometry args={[0.22, 0.26, 0.6, 8]} />
         <meshStandardMaterial color={stoneColor} roughness={0.85} />
       </mesh>
+
+      {/* Structural Bridge Support Pillars & Braces (Tiang Penyangga Tengah & Penopang Tebing) */}
+      {/* 1. Main Central Stone Pier down to the cliff base */}
+      <mesh position={[5.25, -0.32, -0.18]} castShadow receiveShadow>
+        <cylinderGeometry args={[0.16, 0.22, 1.15, 8]} />
+        <meshStandardMaterial color={stoneColor} roughness={0.9} />
+      </mesh>
+      {/* Central pier capital stone cap supporting the arch */}
+      <mesh position={[5.25, 0.24, -0.18]} castShadow>
+        <boxGeometry args={[0.42, 0.08, 0.74]} />
+        <meshStandardMaterial color={stoneColor} roughness={0.85} />
+      </mesh>
+
+      {/* 2. Timber Struts / Diagonal Support Braces (Penopang Miring) */}
+      <mesh position={[4.82, 0.10, -0.10]} rotation={[0, 0.15, 0.52]} castShadow>
+        <boxGeometry args={[0.07, 0.48, 0.07]} />
+        <meshStandardMaterial color={plankColor} roughness={0.8} />
+      </mesh>
+      <mesh position={[5.68, 0.20, -0.26]} rotation={[0, 0.15, -0.45]} castShadow>
+        <boxGeometry args={[0.07, 0.50, 0.07]} />
+        <meshStandardMaterial color={plankColor} roughness={0.8} />
+      </mesh>
+
+      {/* 3. Longitudinal Timber Stringer Beams underneath both edges of the deck */}
+      <mesh position={[5.28, 0.25, 0.14]} rotation={[0, 0.15, -0.18]} castShadow>
+        <boxGeometry args={[2.05, 0.06, 0.06]} />
+        <meshStandardMaterial color="#5C3A21" roughness={0.82} />
+      </mesh>
+      <mesh position={[5.28, 0.25, -0.50]} rotation={[0, 0.15, -0.18]} castShadow>
+        <boxGeometry args={[2.05, 0.06, 0.06]} />
+        <meshStandardMaterial color="#5C3A21" roughness={0.82} />
+      </mesh>
     </group>
   );
 }

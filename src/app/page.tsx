@@ -1019,8 +1019,7 @@ export default function RimbaDioramaApp() {
       {/* Smooth Crossfade Loading Overlay */}
       {showLoadingOverlay && (
         <LoadingSanctuary
-          message="Cultivating Sanctuary"
-          subMessage="Nurturing flora & calm focus..."
+          message="Menyiapkan Suaka Rimba"
           fullScreen={true}
           isFadingOut={isFadingOutLoading}
         />

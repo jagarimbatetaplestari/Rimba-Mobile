@@ -620,38 +620,49 @@ export function MobileStatisticsModal({
                 </div>
               </div>
 
-              {/* 24-Hour Interactive Bar Capsules */}
+              {/* 24-Hour Interactive Bar Capsules (Ergonomic Touch Targets) */}
               <div className="relative pt-4 pb-1">
-                <div className="relative h-24 flex items-end justify-between gap-[2px]">
+                <div className="relative h-24 flex items-end justify-between gap-[1.5px] select-none touch-pan-x">
                   {circadianData.hourlyMinutes.map((mins, h) => {
                     const heightPct = mins > 0 ? Math.max(14, Math.round((mins / maxHourlyMinutes) * 100)) : 8;
                     const isSelected = selectedHour === h;
                     const isPeak = mins === circadianData.peakHourMinutes && mins > 0;
 
                     return (
-                      <div
+                      <button
                         key={`hour_${h}`}
+                        type="button"
                         onClick={() => {
                           hapticLight();
                           setSelectedHour(isSelected ? null : h);
                         }}
-                        className="flex-1 flex flex-col items-center h-full justify-end cursor-pointer group"
+                        onPointerEnter={(e) => {
+                          if (e.buttons === 1 && selectedHour !== h) {
+                            hapticLight();
+                            setSelectedHour(h);
+                          }
+                        }}
+                        className={`flex-1 flex flex-col items-center h-full justify-end cursor-pointer group relative py-1 rounded-sm transition-colors touch-manipulation before:absolute before:-inset-x-1.5 before:inset-y-0 before:content-[''] ${
+                          isSelected ? "bg-[#187557]/10" : "hover:bg-[#0D3528]/5"
+                        }`}
+                        title={`${String(h).padStart(2, '0')}:00 – ${mins} ${t.common.minShort}`}
+                        aria-label={`Jam ${h}:00, ${mins} menit fokus`}
                       >
-                        <div className="w-full flex-1 flex items-end">
+                        <div className="w-full flex-1 flex items-end justify-center px-[0.5px]">
                           <div
-                            className={`w-full rounded-full transition-all duration-300 ${
+                            className={`w-full max-w-[10px] rounded-full transition-all duration-300 ${
                               mins > 0
                                 ? isPeak
                                   ? "bg-gradient-to-t from-amber-500 to-amber-300 shadow-xs"
                                   : "bg-gradient-to-t from-[#187557] to-[#2BB688]"
-                                : "bg-[#0D3528]/10"
+                                : "bg-[#0D3528]/12"
                             } ${
-                              isSelected ? "ring-2 ring-[#0D3528] scale-125" : ""
+                              isSelected ? "ring-2 ring-[#0D3528] scale-y-110 shadow-sm" : ""
                             }`}
                             style={{ height: `${heightPct}%` }}
                           />
                         </div>
-                      </div>
+                      </button>
                     );
                   })}
                 </div>

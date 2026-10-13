@@ -278,6 +278,20 @@ export function NatureWorkshopSheet() {
     (item) => item.category === activeCategory,
   );
   const rotationDegrees = Math.round((placementRotation * 180) / Math.PI) % 360;
+  const normalizedDegrees = ((rotationDegrees % 360) + 360) % 360;
+  const directionInfo = useMemo(() => {
+    const isEn = language === "en";
+    if (normalizedDegrees >= 45 && normalizedDegrees < 135) {
+      return { arrow: "→", label: isEn ? "East" : "Timur" };
+    }
+    if (normalizedDegrees >= 135 && normalizedDegrees < 225) {
+      return { arrow: "↓", label: isEn ? "South" : "Selatan" };
+    }
+    if (normalizedDegrees >= 225 && normalizedDegrees < 315) {
+      return { arrow: "←", label: isEn ? "West" : "Barat" };
+    }
+    return { arrow: "↑", label: isEn ? "North" : "Utara" };
+  }, [normalizedDegrees, language]);
 
   const getCategoryIcon = (cat: CategoryType) => {
     switch (cat) {
@@ -438,9 +452,15 @@ export function NatureWorkshopSheet() {
                       </span>
                     )}
                   </div>
-                  <span className="text-[10.5px] text-[#456b57] font-medium">
-                    {rotationDegrees}° {t.workshop.rotation}
-                  </span>
+                  <div className="flex items-center gap-1.5 text-[10.5px] text-[#456b57] font-medium">
+                    <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded bg-[#187557]/10 text-[#187557] font-bold text-[10px] shrink-0 leading-none">
+                      {directionInfo.arrow}
+                    </span>
+                    <span>{normalizedDegrees}°</span>
+                    <span className="text-[#143525]/60 font-semibold">
+                      ({directionInfo.label})
+                    </span>
+                  </div>
                 </div>
               </div>
 

@@ -433,8 +433,8 @@ export function SanctuaryJournalModal({
             </button>
           </div>
 
-          {/* 5-PILLAR SEGMENTED SWITCHER (Floating Capsule Glass) */}
-          <div className="rounded-full p-1 border border-white/25 bg-white/20 backdrop-blur-md shadow-xs grid grid-cols-5 gap-0.5">
+          {/* 5-PILLAR SEGMENTED SWITCHER (Ergonomic Glass Capsule - Responsive & Scrollable) */}
+          <div className="rounded-full p-1 border border-white/25 bg-white/20 backdrop-blur-md shadow-xs flex items-center justify-between gap-1 overflow-x-auto no-scrollbar">
             <button
               type="button"
               onClick={() => {
@@ -442,15 +442,15 @@ export function SanctuaryJournalModal({
                 hapticLight();
                 setActiveTab("quests");
               }}
-              className={`py-2 rounded-full text-[11px] sm:text-[12px] transition-all relative cursor-pointer text-center ${
+              className={`flex-1 min-w-[56px] py-1.5 px-2 rounded-full text-[11px] sm:text-[12px] whitespace-nowrap transition-all relative cursor-pointer text-center ${
                 activeTab === "quests"
                   ? "bg-white text-[#0D3528] shadow-sm font-semibold"
-                  : "text-emerald-50/80 hover:text-white font-medium"
+                  : "text-emerald-50/85 hover:text-white font-medium"
               }`}
             >
-              {t.journal.tabQuests}
+              <span>{t.journal.tabQuests}</span>
               {questSummary.claimableCount > 0 && (
-                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-[#187557] ring-2 ring-white" />
+                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-600 ring-2 ring-white" />
               )}
             </button>
 
@@ -461,13 +461,13 @@ export function SanctuaryJournalModal({
                 hapticLight();
                 setActiveTab("reflections");
               }}
-              className={`py-2 rounded-full text-[11px] sm:text-[12px] transition-all cursor-pointer text-center ${
+              className={`flex-1 min-w-[56px] py-1.5 px-2 rounded-full text-[11px] sm:text-[12px] whitespace-nowrap transition-all cursor-pointer text-center ${
                 activeTab === "reflections"
                   ? "bg-white text-[#0D3528] shadow-sm font-semibold"
-                  : "text-emerald-50/80 hover:text-white font-medium"
+                  : "text-emerald-50/85 hover:text-white font-medium"
               }`}
             >
-              {t.journal.tabNotes}
+              <span>{t.journal.tabNotes}</span>
             </button>
 
             <button
@@ -477,15 +477,15 @@ export function SanctuaryJournalModal({
                 hapticLight();
                 setActiveTab("story");
               }}
-              className={`py-2 rounded-full text-[11px] sm:text-[12px] transition-all relative cursor-pointer text-center ${
+              className={`flex-1 min-w-[56px] py-1.5 px-2 rounded-full text-[11px] sm:text-[12px] whitespace-nowrap transition-all relative cursor-pointer text-center ${
                 activeTab === "story"
                   ? "bg-white text-[#0D3528] shadow-sm font-semibold"
-                  : "text-emerald-50/80 hover:text-white font-medium"
+                  : "text-emerald-50/85 hover:text-white font-medium"
               }`}
             >
-              {t.journal.tabStory}
+              <span>{t.journal.tabStory}</span>
               {claimableStoryCount > 0 && (
-                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-[#187557] ring-2 ring-white" />
+                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-600 ring-2 ring-white" />
               )}
             </button>
 
@@ -496,15 +496,15 @@ export function SanctuaryJournalModal({
                 hapticLight();
                 setActiveTab("wisdom");
               }}
-              className={`py-2 rounded-full text-[11px] sm:text-[12px] transition-all relative cursor-pointer text-center ${
+              className={`flex-1 min-w-[56px] py-1.5 px-2 rounded-full text-[11px] sm:text-[12px] whitespace-nowrap transition-all relative cursor-pointer text-center ${
                 activeTab === "wisdom"
                   ? "bg-white text-[#0D3528] shadow-sm font-semibold"
-                  : "text-emerald-50/80 hover:text-white font-medium"
+                  : "text-emerald-50/85 hover:text-white font-medium"
               }`}
             >
-              {t.journal.tabQuotes}
+              <span>{t.journal.tabQuotes}</span>
               {claimableWisdomCount > 0 && (
-                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-amber-400 ring-2 ring-white animate-pulse" />
+                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-400 ring-2 ring-white animate-pulse" />
               )}
             </button>
 
@@ -515,13 +515,13 @@ export function SanctuaryJournalModal({
                 hapticLight();
                 setActiveTab("biomes");
               }}
-              className={`py-2 rounded-full text-[11px] sm:text-[12px] transition-all relative cursor-pointer text-center ${
+              className={`flex-1 min-w-[56px] py-1.5 px-2 rounded-full text-[11px] sm:text-[12px] whitespace-nowrap transition-all relative cursor-pointer text-center ${
                 activeTab === "biomes"
                   ? "bg-white text-[#0D3528] shadow-sm font-semibold"
-                  : "text-emerald-50/80 hover:text-white font-medium"
+                  : "text-emerald-50/85 hover:text-white font-medium"
               }`}
             >
-              {language === "en" ? "Biomes" : "Bioma"}
+              <span>{language === "en" ? "Biomes" : "Bioma"}</span>
             </button>
           </div>
 

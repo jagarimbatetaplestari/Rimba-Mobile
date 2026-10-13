@@ -1308,7 +1308,7 @@ export function MobileFocusCard({
                   }}
                   className={`w-10 h-10 rounded-full flex items-center justify-center transition-all border backdrop-blur-md ${
                     activeSession.strict_mode
-                      ? "opacity-30 cursor-not-allowed bg-white/5 border-white/10 text-white/40"
+                      ? "opacity-60 cursor-not-allowed bg-amber-500/15 border-amber-300/30 text-amber-300 shadow-xs"
                       : activeSession.is_paused
                       ? "bg-amber-400/35 text-amber-200 border-amber-300/60 shadow-xs cursor-pointer active:scale-90"
                       : "bg-white/12 hover:bg-white/20 text-white border-white/25 cursor-pointer active:scale-90"
@@ -1326,7 +1326,9 @@ export function MobileFocusCard({
                       : activeSession.is_paused ? "Resume Focus" : "Pause Session"
                   }
                 >
-                  {activeSession.is_paused ? (
+                  {activeSession.strict_mode ? (
+                    <Lock className="w-3.5 h-3.5 text-amber-300 stroke-[2.2]" />
+                  ) : activeSession.is_paused ? (
                     <Play className="w-4 h-4 fill-current translate-x-0.5" />
                   ) : (
                     <Pause className="w-4 h-4 fill-current" />

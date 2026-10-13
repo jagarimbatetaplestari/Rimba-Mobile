@@ -198,6 +198,23 @@ export interface RimbaSaveData {
   streak_shields?: number;
   used_shield_dates?: string[];
   claimed_story_chapters?: string[];
+  active_biome?: BiomeType;
+  auto_season_enabled?: boolean;
+}
+
+export type BiomeType = 'meadow' | 'autumn' | 'snow' | 'lotus';
+
+export interface BiomeConfig {
+  id: BiomeType;
+  name: string;
+  nameEn: string;
+  levelRequired: number;
+  description: string;
+  descriptionEn: string;
+  turfColor: string;
+  leafColor: string;
+  weatherParticle: 'leaves' | 'snow' | 'petals' | 'dandelion';
+  icon: string;
 }
 
 

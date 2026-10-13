@@ -560,11 +560,210 @@ function MountainMist() {
 }
 
 // ==========================================
+// 6. AUTUMN MAPLE SWIRLING LEAVES
+// ==========================================
+const AUTUMN_LEAF_COUNT = 48;
+
+function AutumnMapleLeaves() {
+  const pointsRef = useRef<THREE.Points>(null);
+
+  const mapleTexture = useMemo(() => {
+    return getRadialGlowTexture(
+      'rgba(255, 140, 50, 1)',
+      'rgba(220, 60, 20, 0.85)',
+      'rgba(140, 20, 10, 0.2)',
+      64
+    );
+  }, []);
+
+  const { positions, rotOffsets } = useMemo(() => {
+    const pos = new Float32Array(AUTUMN_LEAF_COUNT * 3);
+    const rot = new Float32Array(AUTUMN_LEAF_COUNT);
+    for (let i = 0; i < AUTUMN_LEAF_COUNT; i++) {
+      pos[i * 3 + 0] = (Math.random() - 0.5) * 16;
+      pos[i * 3 + 1] = 0.5 + Math.random() * 5.5;
+      pos[i * 3 + 2] = (Math.random() - 0.5) * 16;
+      rot[i] = Math.random() * Math.PI * 2;
+    }
+    return { positions: pos, rotOffsets: rot };
+  }, []);
+
+  useFrame(({ clock }) => {
+    if (!pointsRef.current) return;
+    const t = clock.getElapsedTime();
+    const posAttr = pointsRef.current.geometry.attributes.position;
+    const array = posAttr.array as Float32Array;
+
+    for (let i = 0; i < AUTUMN_LEAF_COUNT; i++) {
+      array[i * 3 + 0] -= 0.038 + Math.sin(t * 1.5 + rotOffsets[i]) * 0.012;
+      array[i * 3 + 1] -= 0.015;
+      array[i * 3 + 2] += 0.022 + Math.cos(t * 1.2 + rotOffsets[i]) * 0.01;
+
+      if (array[i * 3 + 1] < 0.1 || array[i * 3 + 0] < -8.5) {
+        array[i * 3 + 0] = 8.5;
+        array[i * 3 + 1] = 3.5 + Math.random() * 2.5;
+        array[i * 3 + 2] = (Math.random() - 0.5) * 16;
+      }
+    }
+    posAttr.needsUpdate = true;
+  });
+
+  return (
+    <points ref={pointsRef}>
+      <bufferGeometry>
+        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
+      </bufferGeometry>
+      <pointsMaterial
+        map={mapleTexture || undefined}
+        color="#EA580C"
+        size={0.34}
+        transparent
+        opacity={0.88}
+        depthWrite={false}
+      />
+    </points>
+  );
+}
+
+// ==========================================
+// 7. LOTUS & SAKURA DRIFTING PETALS
+// ==========================================
+const LOTUS_PETAL_COUNT = 52;
+
+function LotusSakuraPetals() {
+  const pointsRef = useRef<THREE.Points>(null);
+
+  const petalTexture = useMemo(() => {
+    return getRadialGlowTexture(
+      'rgba(255, 230, 240, 1)',
+      'rgba(244, 114, 182, 0.85)',
+      'rgba(219, 39, 119, 0.2)',
+      64
+    );
+  }, []);
+
+  const { positions, driftPhases } = useMemo(() => {
+    const pos = new Float32Array(LOTUS_PETAL_COUNT * 3);
+    const phases = new Float32Array(LOTUS_PETAL_COUNT);
+    for (let i = 0; i < LOTUS_PETAL_COUNT; i++) {
+      pos[i * 3 + 0] = (Math.random() - 0.5) * 15;
+      pos[i * 3 + 1] = 0.4 + Math.random() * 4.5;
+      pos[i * 3 + 2] = (Math.random() - 0.5) * 15;
+      phases[i] = Math.random() * Math.PI * 2;
+    }
+    return { positions: pos, driftPhases: phases };
+  }, []);
+
+  useFrame(({ clock }) => {
+    if (!pointsRef.current) return;
+    const t = clock.getElapsedTime();
+    const posAttr = pointsRef.current.geometry.attributes.position;
+    const array = posAttr.array as Float32Array;
+
+    for (let i = 0; i < LOTUS_PETAL_COUNT; i++) {
+      array[i * 3 + 0] += Math.sin(t * 1.1 + driftPhases[i]) * 0.015 - 0.018;
+      array[i * 3 + 1] -= 0.012;
+      array[i * 3 + 2] += Math.cos(t * 0.9 + driftPhases[i]) * 0.018 + 0.012;
+
+      if (array[i * 3 + 1] < 0.08 || array[i * 3 + 0] < -8.0) {
+        array[i * 3 + 0] = 7.5 + Math.random() * 1.5;
+        array[i * 3 + 1] = 3.0 + Math.random() * 2.5;
+        array[i * 3 + 2] = (Math.random() - 0.5) * 15;
+      }
+    }
+    posAttr.needsUpdate = true;
+  });
+
+  return (
+    <points ref={pointsRef}>
+      <bufferGeometry>
+        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
+      </bufferGeometry>
+      <pointsMaterial
+        map={petalTexture || undefined}
+        color="#F472B6"
+        size={0.30}
+        transparent
+        opacity={0.82}
+        depthWrite={false}
+      />
+    </points>
+  );
+}
+
+// ==========================================
+// 8. ZEN WINTER SNOWFLAKES
+// ==========================================
+const SNOW_COUNT = 85;
+
+function ZenSnowflakes() {
+  const pointsRef = useRef<THREE.Points>(null);
+
+  const snowTexture = useMemo(() => {
+    return getRadialGlowTexture(
+      'rgba(255, 255, 255, 1)',
+      'rgba(224, 242, 254, 0.85)',
+      'rgba(186, 230, 253, 0.2)',
+      64
+    );
+  }, []);
+
+  const { positions, flutterRates } = useMemo(() => {
+    const pos = new Float32Array(SNOW_COUNT * 3);
+    const rates = new Float32Array(SNOW_COUNT);
+    for (let i = 0; i < SNOW_COUNT; i++) {
+      pos[i * 3 + 0] = (Math.random() - 0.5) * 16;
+      pos[i * 3 + 1] = 0.5 + Math.random() * 7;
+      pos[i * 3 + 2] = (Math.random() - 0.5) * 16;
+      rates[i] = 0.015 + Math.random() * 0.02;
+    }
+    return { positions: pos, flutterRates: rates };
+  }, []);
+
+  useFrame(({ clock }) => {
+    if (!pointsRef.current) return;
+    const t = clock.getElapsedTime();
+    const posAttr = pointsRef.current.geometry.attributes.position;
+    const array = posAttr.array as Float32Array;
+
+    for (let i = 0; i < SNOW_COUNT; i++) {
+      array[i * 3 + 0] += Math.sin(t * 1.5 + i) * 0.008;
+      array[i * 3 + 1] -= flutterRates[i];
+      array[i * 3 + 2] += Math.cos(t * 1.2 + i) * 0.008;
+
+      if (array[i * 3 + 1] < 0.1) {
+        array[i * 3 + 0] = (Math.random() - 0.5) * 16;
+        array[i * 3 + 1] = 7.0 + Math.random() * 1.5;
+        array[i * 3 + 2] = (Math.random() - 0.5) * 16;
+      }
+    }
+    posAttr.needsUpdate = true;
+  });
+
+  return (
+    <points ref={pointsRef}>
+      <bufferGeometry>
+        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
+      </bufferGeometry>
+      <pointsMaterial
+        map={snowTexture || undefined}
+        color="#F8FAFC"
+        size={0.24}
+        transparent
+        opacity={0.88}
+        depthWrite={false}
+      />
+    </points>
+  );
+}
+
+// ==========================================
 // MAIN WEATHER & ATMOSPHERE EFFECTS CONTAINER
 // ==========================================
 export function WeatherEffects() {
   const timeOfDay = useGameStore((state) => state.timeOfDay);
   const weather = useGameStore((state) => state.weather);
+  const activeBiome = useGameStore((state) => state.activeBiome);
   const [activeSoundscape, setActiveSoundscape] = useState<SoundscapeType>(
     soundscapeManager.getCurrentTrack()
   );
@@ -603,6 +802,15 @@ export function WeatherEffects() {
 
       {/* 🍃 Pine Wind Drifting Leaves */}
       {activeSoundscape === 'wind' && <WindLeaves />}
+
+      {/* 🍁 Autumn Maple Swirling Leaves */}
+      {activeBiome === 'autumn' && <AutumnMapleLeaves />}
+
+      {/* 🌸 Lotus Blossom Pink Petals */}
+      {activeBiome === 'lotus' && <LotusSakuraPetals />}
+
+      {/* ❄️ Winter Snowflakes */}
+      {activeBiome === 'snow' && <ZenSnowflakes />}
     </group>
   );
 }

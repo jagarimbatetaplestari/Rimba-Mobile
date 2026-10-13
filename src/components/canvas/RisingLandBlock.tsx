@@ -5,10 +5,11 @@ import { useGLTF } from '@react-three/drei';
 import { GAME_CONFIG } from '@/lib/game/config';
 import { soundManager } from '@/lib/audio/sounds';
 import { hapticSuccess } from '@/lib/mobile/nativeBridge';
+import { BiomeType } from '@/types/game';
 
 interface RisingLandBlockProps {
   coordKey: string; // "grid_x,grid_y"
-  activeBiome?: 'meadow' | 'snow';
+  activeBiome?: BiomeType;
   soilTexture?: THREE.CanvasTexture | null;
   onSettled: (coordKey: string) => void;
 }
@@ -81,9 +82,15 @@ export function RisingLandBlock({
     hapticSuccess();
 
     const newParticles: Particle[] = [];
-    const waterColor = new THREE.Color(activeBiome === 'snow' ? '#BAE6FD' : '#38BDF8');
-    const goldColor = new THREE.Color(activeBiome === 'snow' ? '#E0F2FE' : '#FBBF24');
-    const emeraldColor = new THREE.Color(activeBiome === 'snow' ? '#FFFFFF' : '#34D399');
+    const waterColor = new THREE.Color(
+      activeBiome === 'snow' ? '#BAE6FD' : activeBiome === 'autumn' ? '#FDBA74' : activeBiome === 'lotus' ? '#5EEAD4' : '#38BDF8'
+    );
+    const goldColor = new THREE.Color(
+      activeBiome === 'snow' ? '#E0F2FE' : activeBiome === 'autumn' ? '#EA580C' : activeBiome === 'lotus' ? '#F472B6' : '#FBBF24'
+    );
+    const emeraldColor = new THREE.Color(
+      activeBiome === 'snow' ? '#FFFFFF' : activeBiome === 'autumn' ? '#D97706' : activeBiome === 'lotus' ? '#2DD4BF' : '#34D399'
+    );
 
     // 28 Water Splash Droplets
     for (let i = 0; i < 28; i++) {

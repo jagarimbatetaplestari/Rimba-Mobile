@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { useGameStore } from '@/lib/game/useGameStore';
+import { BiomeType } from '@/types/game';
 import {
   getUnlockedTilesSignature,
 } from '@/lib/game/worldRules';
@@ -69,6 +70,20 @@ function ModularBlockInstances({
 
 
 
+function getBiomeTurfColor(biome: BiomeType): string {
+  switch (biome) {
+    case 'autumn':
+      return '#D98A3B'; // Golden Amber
+    case 'snow':
+      return '#F8F8FB'; // Pure Snow
+    case 'lotus':
+      return '#4BA388'; // Mystic Jade Moss
+    case 'meadow':
+    default:
+      return '#5AC487'; // Emerald Grass
+  }
+}
+
 /**
  * Seamless unified lawn turf overlay on interior tiles:
  * Covers flat interior land with a smooth, solid turf layer.
@@ -80,23 +95,24 @@ function SeamlessTurfOverlay({
   activeBiome,
 }: {
   positions: [number, number, number][];
-  activeBiome: 'meadow' | 'snow';
+  activeBiome: BiomeType;
 }) {
   const instRef = useRef<THREE.InstancedMesh>(null);
   const dummy = useMemo(() => new THREE.Object3D(), []);
   const geo = useMemo(() => new THREE.PlaneGeometry(1.002, 1.002), []);
-  const isSnow = activeBiome === 'snow';
+
+  const turfColor = useMemo(() => getBiomeTurfColor(activeBiome), [activeBiome]);
 
   const mat = useMemo(() => {
     return new THREE.MeshStandardMaterial({
-      color: isSnow ? '#F8F8FB' : '#5AC487', // Exact Kenney top grass color matching colormap.png
+      color: turfColor,
       roughness: 0.88,
       metalness: 0.0,
       polygonOffset: true,
       polygonOffsetFactor: -1,
       polygonOffsetUnits: -1,
     });
-  }, [isSnow]);
+  }, [turfColor]);
 
   useEffect(() => {
     if (!instRef.current || positions.length === 0) return;
@@ -141,23 +157,24 @@ function JunctionSealOverlay({
   activeBiome,
 }: {
   positions: [number, number, number][];
-  activeBiome: 'meadow' | 'snow';
+  activeBiome: BiomeType;
 }) {
   const instRef = useRef<THREE.InstancedMesh>(null);
   const dummy = useMemo(() => new THREE.Object3D(), []);
   const geo = useMemo(() => new THREE.CircleGeometry(0.30, 24), []);
-  const isSnow = activeBiome === 'snow';
+
+  const turfColor = useMemo(() => getBiomeTurfColor(activeBiome), [activeBiome]);
 
   const mat = useMemo(() => {
     return new THREE.MeshStandardMaterial({
-      color: isSnow ? '#F8F8FB' : '#5AC487',
+      color: turfColor,
       roughness: 0.88,
       metalness: 0.0,
       polygonOffset: true,
       polygonOffsetFactor: -1.5,
       polygonOffsetUnits: -1.5,
     });
-  }, [isSnow]);
+  }, [turfColor]);
 
   useEffect(() => {
     if (!instRef.current || positions.length === 0) return;

@@ -9,7 +9,13 @@ import {
   getStreakMilestone,
   toLocalDateString,
 } from "@/lib/game/analytics";
-import { TREE_SPECIES_CONFIG } from "@/lib/game/config";
+import {
+  TREE_SPECIES_CONFIG,
+  BIOME_CATALOG,
+  CELESTIAL_ISLAND_LEVEL_REQUIRED,
+  detectRealWorldSeasonBiome,
+} from "@/lib/game/config";
+import { getLevelFromXp } from "@/lib/game/levelRules";
 import { getDailyQuestStatus } from "@/lib/game/quests";
 import { STORY_CHAPTERS } from "@/lib/game/storyLore";
 import { getWisdomProgress, WisdomFragment } from "@/lib/game/wisdomLore";
@@ -22,7 +28,7 @@ import {
   hapticWarning,
 } from "@/lib/mobile/nativeBridge";
 import { StoryReaderModal } from "@/components/modals/StoryReaderModal";
-import { DailyQuestId } from "@/types/game";
+import { DailyQuestId, BiomeType } from "@/types/game";
 import { useTranslation } from "@/lib/i18n/translations";
 import {
   X,
@@ -49,6 +55,8 @@ import {
   BookOpen,
   Quote,
   Copy,
+  Eye,
+  Calendar,
 } from "lucide-react";
 
 export type JournalTab =
@@ -56,6 +64,7 @@ export type JournalTab =
   | "reflections"
   | "story"
   | "wisdom"
+  | "biomes"
   | "streak"
   | "almanac";
 
@@ -89,18 +98,24 @@ export function SanctuaryJournalModal({
   const claimStoryChapter = useGameStore((state) => state.claimStoryChapter);
   const claimWisdomFragment = useGameStore((state) => state.claimWisdomFragment);
   const updateSessionNote = useGameStore((state) => state.updateSessionNote);
+  const activeBiome = useGameStore((state) => state.activeBiome);
+  const setActiveBiome = useGameStore((state) => state.setActiveBiome);
+  const isBiomeUnlocked = useGameStore((state) => state.isBiomeUnlocked);
+  const isAutoSeason = useGameStore((state) => state.isAutoSeason);
+  const setAutoSeason = useGameStore((state) => state.setAutoSeason);
+  const devFastMode = useGameStore((state) => state.devFastMode);
 
   // Normalize initial tab aliases
   const normalizeTab = (
     tab: JournalTab,
-  ): "quests" | "reflections" | "story" | "wisdom" => {
+  ): "quests" | "reflections" | "story" | "wisdom" | "biomes" => {
     if (tab === "streak") return "quests";
     if (tab === "almanac") return "reflections";
-    return tab as "quests" | "reflections" | "story" | "wisdom";
+    return tab as "quests" | "reflections" | "story" | "wisdom" | "biomes";
   };
 
   const [activeTab, setActiveTab] = useState<
-    "quests" | "reflections" | "story" | "wisdom"
+    "quests" | "reflections" | "story" | "wisdom" | "biomes"
   >(normalizeTab(initialTab));
 
   // Reflection editor state
@@ -170,6 +185,14 @@ export function SanctuaryJournalModal({
   const claimableWisdomCount = useMemo(() => {
     return wisdomProgress.fragments.filter((f) => f.isUnlocked && !f.isClaimed).length;
   }, [wisdomProgress]);
+
+  const currentLevel = useMemo(
+    () => getLevelFromXp(saveData.profile?.xp || 0),
+    [saveData.profile?.xp],
+  );
+  const currentSeasonBiome = useMemo(() => detectRealWorldSeasonBiome(), []);
+  const isCelestialUnlocked =
+    currentLevel >= CELESTIAL_ISLAND_LEVEL_REQUIRED || devFastMode;
 
   // Mini calendar (28 days)
   const calendarDays = useMemo(() => {
@@ -410,8 +433,8 @@ export function SanctuaryJournalModal({
             </button>
           </div>
 
-          {/* 4-PILLAR SEGMENTED SWITCHER (Floating Capsule Glass) */}
-          <div className="rounded-full p-1 border border-white/25 bg-white/20 backdrop-blur-md shadow-xs grid grid-cols-4 gap-1">
+          {/* 5-PILLAR SEGMENTED SWITCHER (Floating Capsule Glass) */}
+          <div className="rounded-full p-1 border border-white/25 bg-white/20 backdrop-blur-md shadow-xs grid grid-cols-5 gap-0.5">
             <button
               type="button"
               onClick={() => {
@@ -419,7 +442,7 @@ export function SanctuaryJournalModal({
                 hapticLight();
                 setActiveTab("quests");
               }}
-              className={`py-2 rounded-full text-[12px] transition-all relative cursor-pointer text-center ${
+              className={`py-2 rounded-full text-[11px] sm:text-[12px] transition-all relative cursor-pointer text-center ${
                 activeTab === "quests"
                   ? "bg-white text-[#0D3528] shadow-sm font-semibold"
                   : "text-emerald-50/80 hover:text-white font-medium"
@@ -427,7 +450,7 @@ export function SanctuaryJournalModal({
             >
               {t.journal.tabQuests}
               {questSummary.claimableCount > 0 && (
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#187557] ring-2 ring-white" />
+                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-[#187557] ring-2 ring-white" />
               )}
             </button>
 
@@ -438,7 +461,7 @@ export function SanctuaryJournalModal({
                 hapticLight();
                 setActiveTab("reflections");
               }}
-              className={`py-2 rounded-full text-[12px] transition-all cursor-pointer text-center ${
+              className={`py-2 rounded-full text-[11px] sm:text-[12px] transition-all cursor-pointer text-center ${
                 activeTab === "reflections"
                   ? "bg-white text-[#0D3528] shadow-sm font-semibold"
                   : "text-emerald-50/80 hover:text-white font-medium"
@@ -454,7 +477,7 @@ export function SanctuaryJournalModal({
                 hapticLight();
                 setActiveTab("story");
               }}
-              className={`py-2 rounded-full text-[12px] transition-all relative cursor-pointer text-center ${
+              className={`py-2 rounded-full text-[11px] sm:text-[12px] transition-all relative cursor-pointer text-center ${
                 activeTab === "story"
                   ? "bg-white text-[#0D3528] shadow-sm font-semibold"
                   : "text-emerald-50/80 hover:text-white font-medium"
@@ -462,7 +485,7 @@ export function SanctuaryJournalModal({
             >
               {t.journal.tabStory}
               {claimableStoryCount > 0 && (
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#187557] ring-2 ring-white" />
+                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-[#187557] ring-2 ring-white" />
               )}
             </button>
 
@@ -473,7 +496,7 @@ export function SanctuaryJournalModal({
                 hapticLight();
                 setActiveTab("wisdom");
               }}
-              className={`py-2 rounded-full text-[12px] transition-all relative cursor-pointer text-center ${
+              className={`py-2 rounded-full text-[11px] sm:text-[12px] transition-all relative cursor-pointer text-center ${
                 activeTab === "wisdom"
                   ? "bg-white text-[#0D3528] shadow-sm font-semibold"
                   : "text-emerald-50/80 hover:text-white font-medium"
@@ -481,8 +504,24 @@ export function SanctuaryJournalModal({
             >
               {t.journal.tabQuotes}
               {claimableWisdomCount > 0 && (
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-amber-400 ring-2 ring-white animate-pulse" />
+                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-amber-400 ring-2 ring-white animate-pulse" />
               )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                soundManager.playPop();
+                hapticLight();
+                setActiveTab("biomes");
+              }}
+              className={`py-2 rounded-full text-[11px] sm:text-[12px] transition-all relative cursor-pointer text-center ${
+                activeTab === "biomes"
+                  ? "bg-white text-[#0D3528] shadow-sm font-semibold"
+                  : "text-emerald-50/80 hover:text-white font-medium"
+              }`}
+            >
+              {language === "en" ? "Biomes" : "Bioma"}
             </button>
           </div>
 
@@ -1359,6 +1398,226 @@ export function SanctuaryJournalModal({
                       </div>
                     );
                   })}
+              </div>
+            </div>
+          )}
+
+          {/* ======================================================== */}
+          {/* PILAR 5: BIOMA & EKSPANSI SUAKA                          */}
+          {/* ======================================================== */}
+          {activeTab === "biomes" && (
+            <div className="space-y-4 animate-in fade-in duration-200">
+              {/* Sanctuary Level & Biome Header Card */}
+              <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-[#E4F4ED] border border-[#BCE5D3] flex items-center justify-center text-[#187557]">
+                      <Compass className="w-5 h-5 stroke-[2.2]" />
+                    </div>
+                    <div>
+                      <h3 className="text-[16px] font-bold text-[#0D3528]">
+                        {language === "en" ? "Sanctuary Biomes & Realms" : "Bioma & Wilayah Suaka"}
+                      </h3>
+                      <p className="text-[11.5px] text-[#4C7567] font-normal">
+                        {language === "en"
+                          ? "Progress through focus to unlock new natural atmospheres"
+                          : "Tingkatkan fokus untuk membuka tema alam dan atmosfer baru"}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-[11.5px] font-bold text-[#14664D] bg-[#E4F4ED] px-3 py-1 rounded-full border border-[#BCE5D3]">
+                    Lv. {currentLevel}
+                  </span>
+                </div>
+
+                {/* Auto-Season Toggle in Journal */}
+                <div
+                  onClick={() => {
+                    soundManager.playPop();
+                    hapticLight();
+                    setAutoSeason(!isAutoSeason);
+                  }}
+                  className={`flex items-center justify-between p-3 rounded-2xl border transition-all cursor-pointer ${
+                    isAutoSeason
+                      ? "bg-[#E4F4ED] border-[#BCE5D3]"
+                      : "bg-[#0D3528]/4 border-[#0D3528]/8 hover:bg-[#0D3528]/6"
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Calendar className="w-4 h-4 text-[#187557] stroke-[2.2]" />
+                    <div>
+                      <p className="text-[12.5px] font-semibold text-[#0D3528]">
+                        {language === "en" ? "Real-World Season Sync" : "Ikuti Musim Nyata (Auto-Season)"}
+                      </p>
+                      <p className="text-[11px] text-[#4C7567] font-normal">
+                        {language === "en"
+                          ? `Currently aligned with ${currentSeasonBiome.toUpperCase()}`
+                          : `Rekomendasi bulan ini: ${currentSeasonBiome === "meadow" ? "Padang Rumput" : currentSeasonBiome === "autumn" ? "Musim Gugur" : currentSeasonBiome === "snow" ? "Salju Zen" : "Mata Air Teratai"}`}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div
+                    className={`w-10 h-5 rounded-full p-0.5 transition-colors ${
+                      isAutoSeason ? "bg-[#187557]" : "bg-[#0D3528]/20"
+                    }`}
+                  >
+                    <div
+                      className={`w-4 h-4 rounded-full bg-white shadow-xs transition-transform ${
+                        isAutoSeason ? "translate-x-5" : "translate-x-0"
+                      }`}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Biome Cards List */}
+              <div className="space-y-3">
+                {BIOME_CATALOG.map((biome) => {
+                  const isUnlocked = isBiomeUnlocked(biome.id);
+                  const isActive = activeBiome === biome.id;
+
+                  return (
+                    <div
+                      key={biome.id}
+                      className={`rounded-3xl border p-4 shadow-md backdrop-blur-xl transition-all ${
+                        isActive
+                          ? "bg-gradient-to-b from-white via-emerald-50/40 to-white border-[#BCE5D3] ring-2 ring-[#187557]/20"
+                          : isUnlocked
+                            ? "bg-white/95 border-white/70 hover:shadow-lg"
+                            : "bg-white/70 border-white/40 opacity-75"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-3.5 min-w-0">
+                          <div
+                            className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-sm border border-black/10 shrink-0 relative overflow-hidden"
+                            style={{ backgroundColor: biome.turfColor }}
+                          >
+                            <span className="relative z-10">{biome.icon}</span>
+                            <div className="absolute inset-0 bg-black/10 pointer-events-none" />
+                          </div>
+
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <h4 className="text-[14.5px] font-bold text-[#0D3528] truncate">
+                                {language === "en" ? biome.nameEn : biome.name}
+                              </h4>
+                              <span
+                                className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border shrink-0 ${
+                                  isUnlocked
+                                    ? "bg-[#E4F4ED] border-[#BCE5D3] text-[#14664D]"
+                                    : "bg-stone-100 border-stone-200 text-stone-500"
+                                }`}
+                              >
+                                {isUnlocked
+                                  ? `Lv. ${biome.levelRequired}`
+                                  : language === "en"
+                                    ? `Req. Lv. ${biome.levelRequired}`
+                                    : `Butuh Lv. ${biome.levelRequired}`}
+                              </span>
+                            </div>
+
+                            <p className="text-[11.5px] text-[#4C7567] font-normal mt-1 leading-relaxed">
+                              {language === "en" ? biome.descriptionEn : biome.description}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Apply button or status */}
+                        <div className="shrink-0 pt-0.5">
+                          {isActive ? (
+                            <div className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-[#187557] text-white text-[11px] font-semibold shadow-xs">
+                              <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+                              <span>{language === "en" ? "Active" : "Aktif"}</span>
+                            </div>
+                          ) : isUnlocked ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                soundManager.playComplete();
+                                hapticSuccess();
+                                setActiveBiome(biome.id, true);
+                              }}
+                              className="px-3.5 py-1.5 rounded-full bg-[#187557]/10 hover:bg-[#187557] text-[#187557] hover:text-white border border-[#187557]/30 text-[11.5px] font-semibold transition-all cursor-pointer active:scale-95"
+                            >
+                              {language === "en" ? "Apply" : "Terapkan"}
+                            </button>
+                          ) : (
+                            <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-stone-100 border border-stone-200 text-stone-500 text-[10.5px]">
+                              <Lock className="w-3 h-3 stroke-[2]" />
+                              <span>Lv. {biome.levelRequired}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* Grand Milestone: Level 100 Celestial Island */}
+                <div
+                  className={`rounded-3xl border p-4.5 shadow-lg backdrop-blur-xl transition-all ${
+                    isCelestialUnlocked
+                      ? "bg-gradient-to-br from-amber-50 via-white to-orange-50/50 border-amber-300 ring-2 ring-amber-400/30"
+                      : "bg-white/70 border-white/40 opacity-80"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3.5">
+                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 border border-amber-300 flex items-center justify-center text-2xl shadow-sm shrink-0">
+                        ⛩️
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-[14.5px] font-bold text-[#0D3528]">
+                            {language === "en" ? "Celestial Archipelago" : "Kahyangan Awan Suaka"}
+                          </h4>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 border border-amber-300 text-amber-800">
+                            Lv. {CELESTIAL_ISLAND_LEVEL_REQUIRED}
+                          </span>
+                        </div>
+                        <p className="text-[11.5px] text-[#4C7567] font-normal mt-1 leading-relaxed">
+                          {language === "en"
+                            ? "Grand floating satellite island with sacred bonsai, stone lanterns, and connecting bridge"
+                            : "Pulau satelit melayang megah dengan kuil bonsai suci, lentera batu, dan jembatan pelengkung"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="shrink-0 pt-0.5">
+                      {isCelestialUnlocked ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            soundManager.playPop();
+                            hapticLight();
+                            if (typeof window !== "undefined") {
+                              window.dispatchEvent(
+                                new CustomEvent("rimba:camera_focus_target", {
+                                  detail: {
+                                    position: [11.5, 4.5, -9.0],
+                                    distance: 12.0,
+                                  },
+                                })
+                              );
+                            }
+                            onClose();
+                          }}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold text-[11px] shadow-sm hover:brightness-105 active:scale-95 cursor-pointer transition-all"
+                        >
+                          <Eye className="w-3.5 h-3.5 stroke-[2.4]" />
+                          <span>{language === "en" ? "Visit" : "Kunjungi"}</span>
+                        </button>
+                      ) : (
+                        <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-stone-100 border border-stone-200 text-stone-500 text-[10.5px]">
+                          <Lock className="w-3 h-3 stroke-[2]" />
+                          <span>Lv. {CELESTIAL_ISLAND_LEVEL_REQUIRED}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}

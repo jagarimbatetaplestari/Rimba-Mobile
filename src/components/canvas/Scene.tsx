@@ -14,6 +14,7 @@ import { FocusSapling } from './FocusSapling';
 import { GridPlane } from './GridPlane';
 import { WeatherEffects } from './WeatherEffects';
 import { FaunaEcosystem } from './FaunaEcosystem';
+import { FloatingSatelliteIsland } from './FloatingSatelliteIsland';
 
 function getAdaptiveCameraConfig(tileCount: number, isPortrait: boolean) {
   const count = Math.max(9, tileCount || 9);
@@ -344,6 +345,7 @@ export function Scene({ isPaused = false }: { isPaused?: boolean } = {}) {
         <WeatherEffects />
         <FaunaEcosystem />
         <GridPlane />
+        <FloatingSatelliteIsland />
       </Suspense>
     </Canvas>
   );

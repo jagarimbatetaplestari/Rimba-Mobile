@@ -1,4 +1,4 @@
-import { FaunaConfig, FaunaSpecies, RimbaSaveData, TimeOfDay, WorldObject } from '@/types/game';
+import { FaunaConfig, FaunaSpecies, RimbaSaveData, TimeOfDay, WorldObject, BiomeType } from '@/types/game';
 import { calculateAnalytics, toLocalDateString } from './analytics';
 import { calculateBalances, createLedgerEntry } from './economy';
 import { getUnlockedTilesSet } from './worldRules';
@@ -269,7 +269,7 @@ export function checkFaunaEligibility(
   saveData: RimbaSaveData,
   timeOfDay: TimeOfDay = 'day',
   targetDateStr?: string,
-  activeBiome: 'meadow' | 'snow' = 'meadow'
+  activeBiome: BiomeType = 'meadow'
 ): boolean {
   const worldObjects = saveData.world_objects || [];
   const playerLevel = getLevelFromXp(saveData.profile.xp);
@@ -401,7 +401,7 @@ export function getActiveFaunaList(
   saveData: RimbaSaveData,
   timeOfDay: TimeOfDay = 'day',
   targetDateStr?: string,
-  activeBiome: 'meadow' | 'snow' = 'meadow'
+  activeBiome: BiomeType = 'meadow'
 ): FaunaSpecies[] {
   return ALL_FAUNA_SPECIES.filter((species) =>
     checkFaunaEligibility(species, saveData, timeOfDay, targetDateStr, activeBiome)
@@ -436,7 +436,7 @@ export function greetFauna(
   saveData: RimbaSaveData,
   timeOfDay: TimeOfDay = 'day',
   todayStr: string = toLocalDateString(new Date()),
-  activeBiome: 'meadow' | 'snow' = 'meadow'
+  activeBiome: BiomeType = 'meadow'
 ): GreetFaunaResult {
   const config = FAUNA_CONFIG[species];
   if (!config) {

@@ -7,6 +7,7 @@ import { useAuthStore } from "@/lib/auth/useAuthStore";
 import { GAME_CONFIG, detectLocalTimeOfDay } from "@/lib/game/config";
 import { CanvasWrapper } from "@/components/canvas/CanvasWrapper";
 import { MobileHeaderHUD } from "@/components/hud/MobileHeaderHUD";
+import { QuickBiomePickerSheet } from "@/components/hud/QuickBiomePickerSheet";
 import { MobileFocusCard } from "@/components/focus/MobileFocusCard";
 import { NatureWorkshopSheet } from "@/components/workshop/NatureWorkshopSheet";
 import { ObjectInspectModal } from "@/components/workshop/ObjectInspectModal";
@@ -77,6 +78,7 @@ export default function RimbaDioramaApp() {
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isBiomePickerOpen, setIsBiomePickerOpen] = useState(false);
   const [isCampfireOpen, setIsCampfireOpen] = useState(false);
   const [isGameplayGuideOpen, setIsGameplayGuideOpen] = useState(false);
   const [isZenDimmed, setIsZenDimmed] = useState(false);
@@ -366,6 +368,11 @@ export default function RimbaDioramaApp() {
       };
       window.addEventListener("rimba:open_campfire", handleOpenCampfire);
 
+      const handleOpenBiomePicker = () => {
+        setIsBiomePickerOpen(true);
+      };
+      window.addEventListener("rimba:open_biome_picker", handleOpenBiomePicker);
+
       return () => {
         window.removeEventListener(
           "rimba:open_onboarding",
@@ -380,6 +387,10 @@ export default function RimbaDioramaApp() {
         window.removeEventListener("rimba:open_journal", handleOpenJournal);
         window.removeEventListener("rimba:open_stats", handleOpenStats);
         window.removeEventListener("rimba:open_campfire", handleOpenCampfire);
+        window.removeEventListener(
+          "rimba:open_biome_picker",
+          handleOpenBiomePicker,
+        );
       };
     }
   }, [isAuthHydrated, authUser]);
@@ -424,6 +435,7 @@ export default function RimbaDioramaApp() {
     isStatisticsOpen ||
     isLeaderboardOpen ||
     isSettingsOpen ||
+    isBiomePickerOpen ||
     isCampfireOpen ||
     isGameplayGuideOpen ||
     isOnboardingOpen;
@@ -445,6 +457,7 @@ export default function RimbaDioramaApp() {
     setIsStatisticsOpen(false);
     setIsLeaderboardOpen(false);
     setIsSettingsOpen(false);
+    setIsBiomePickerOpen(false);
     setIsCampfireOpen(false);
     setIsGameplayGuideOpen(false);
     setIsOnboardingOpen(false);
@@ -875,6 +888,7 @@ export default function RimbaDioramaApp() {
             }}
             onOpenSoundscapes={() => setIsSoundscapeOpen(true)}
             onOpenSettings={() => setIsSettingsOpen(true)}
+            onOpenBiomePicker={() => setIsBiomePickerOpen(true)}
             onOpenOnboarding={() => setIsOnboardingOpen(true)}
             onOpenGuide={() => setIsGameplayGuideOpen(true)}
             onOpenCampfire={() => setIsCampfireOpen(true)}
@@ -961,6 +975,12 @@ export default function RimbaDioramaApp() {
             setIsSettingsOpen(false);
             setIsProfileOpen(true);
           }}
+        />
+      )}
+      {isBiomePickerOpen && (
+        <QuickBiomePickerSheet
+          isOpen={isBiomePickerOpen}
+          onClose={() => setIsBiomePickerOpen(false)}
         />
       )}
       {isCampfireOpen && (

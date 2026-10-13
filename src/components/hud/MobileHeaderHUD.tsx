@@ -45,6 +45,7 @@ export interface MobileHeaderHUDProps {
   onOpenPioneer?: () => void;
   onOpenWorkshop?: () => void;
   onOpenSettings?: () => void;
+  onOpenBiomePicker?: () => void;
   onOpenOnboarding?: () => void;
   onOpenGuide?: () => void;
   onOpenCampfire?: () => void;
@@ -65,6 +66,7 @@ export function MobileHeaderHUD({
   onOpenPioneer,
   onOpenWorkshop,
   onOpenSettings,
+  onOpenBiomePicker,
   onOpenOnboarding,
   onOpenGuide,
   onOpenCampfire,
@@ -457,39 +459,58 @@ export function MobileHeaderHUD({
                   {getWeatherIcon()}
                 </button>
 
-                {/* 2. Tombol Bioma Salju */}
-                {(currentLevel >= 20 || devFastMode) && (
-                  <button
-                    type="button"
-                    onClick={handleToggleBiome}
-                    className={`
-                      ${iconButtonClass}
-                      ${
-                        activeBiome === "snow"
+                {/* 2. Tombol Bioma Suaka (Buka Quick Picker Sheet) */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    soundManager.playPop();
+                    hapticLight();
+                    if (onOpenBiomePicker) {
+                      onOpenBiomePicker();
+                    } else {
+                      toggleActiveBiome();
+                    }
+                  }}
+                  className={`
+                    ${iconButtonClass}
+                    ${
+                      activeBiome === "snow"
+                        ? isNight
+                          ? "bg-sky-400/25 border border-sky-300/40 text-sky-200"
+                          : "bg-sky-500/20 border border-sky-600/30 text-sky-950 font-semibold"
+                        : activeBiome === "autumn"
                           ? isNight
-                            ? "bg-sky-400/25 border border-sky-300/40 text-sky-200"
-                            : "bg-sky-500/20 border border-sky-600/30 text-sky-950 font-semibold"
-                          : ""
-                      }
-                    `}
-                    title={
-                      activeBiome === "snow"
-                        ? t.hud.biomeSnow
-                        : t.hud.biomeGrass
+                            ? "bg-amber-400/25 border border-amber-300/40 text-amber-200"
+                            : "bg-amber-500/20 border border-amber-600/30 text-amber-950 font-semibold"
+                          : activeBiome === "lotus"
+                            ? isNight
+                              ? "bg-pink-400/25 border border-pink-300/40 text-pink-200"
+                              : "bg-pink-500/20 border border-pink-600/30 text-pink-950 font-semibold"
+                            : ""
                     }
-                    aria-label={
-                      activeBiome === "snow"
-                        ? t.hud.biomeSnow
-                        : t.hud.biomeGrass
-                    }
-                  >
-                    {activeBiome === "snow" ? (
-                      <Snowflake className="w-4 h-4 stroke-[2.4]" />
-                    ) : (
-                      <Sprout className="w-4 h-4 stroke-[2.4]" />
-                    )}
-                  </button>
-                )}
+                  `}
+                  title={
+                    activeBiome === "snow"
+                      ? "Bioma Salju"
+                      : activeBiome === "autumn"
+                        ? "Bioma Musim Gugur"
+                        : activeBiome === "lotus"
+                          ? "Bioma Mata Air Teratai"
+                          : "Bioma Padang Rumput"
+                  }
+                  aria-label="Pilih Tema & Bioma Suaka"
+                >
+                  <span className="text-[13px] leading-none select-none">
+                    {activeBiome === "snow"
+                      ? "❄️"
+                      : activeBiome === "autumn"
+                        ? "🍁"
+                        : activeBiome === "lotus"
+                          ? "🌸"
+                          : "🍃"}
+                  </span>
+                </button>
 
                 {/* 3. Tombol Siklus Waktu */}
                 <button

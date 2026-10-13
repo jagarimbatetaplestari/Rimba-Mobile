@@ -11,8 +11,18 @@ import {
   TreeSpecies,
   WorldObject,
   WeatherType,
+  BiomeType,
 } from '@/types/game';
-import { BUILD_CATALOG, CatalogItem, GAME_CONFIG, ATMOSPHERE_CONFIG, detectLocalTimeOfDay } from './config';
+import {
+  BUILD_CATALOG,
+  CatalogItem,
+  GAME_CONFIG,
+  ATMOSPHERE_CONFIG,
+  detectLocalTimeOfDay,
+  BIOME_CATALOG,
+  detectRealWorldSeasonBiome,
+  CELESTIAL_ISLAND_LEVEL_REQUIRED,
+} from './config';
 import { calculateBalances, canAfford, createLedgerEntry, getObjectBaseCost } from './economy';
 import {
   abandonFocusSession,
@@ -78,7 +88,8 @@ interface GameState {
   notification: NotificationState | null;
   backgroundTheme: 'cream' | 'matcha';
   grassPalette: 'natural' | 'emerald';
-  activeBiome: 'meadow' | 'snow';
+  activeBiome: BiomeType;
+  isAutoSeason: boolean;
   timeOfDay: TimeOfDay;
   isTimeAuto: boolean;
   weather: WeatherType;
@@ -120,8 +131,10 @@ interface GameState {
   setBackgroundTheme: (theme: 'cream' | 'matcha') => void;
   toggleBackgroundTheme: () => void;
   setGrassPalette: (palette: 'natural' | 'emerald') => void;
-  setActiveBiome: (biome: 'meadow' | 'snow') => void;
+  setActiveBiome: (biome: BiomeType, showToast?: boolean) => void;
   toggleActiveBiome: () => void;
+  setAutoSeason: (enabled: boolean) => void;
+  isBiomeUnlocked: (biome: BiomeType) => boolean;
   setTimeOfDay: (time: TimeOfDay) => void;
   toggleTimeOfDay: () => void;
   setAutoTime: (enabled: boolean) => void;
@@ -196,6 +209,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   backgroundTheme: 'cream',
   grassPalette: 'natural',
   activeBiome: 'meadow',
+  isAutoSeason: false,
   timeOfDay: 'day',
   isTimeAuto: true,
   weather: 'clear',
@@ -539,15 +553,30 @@ export const useGameStore = create<GameState>((set, get) => ({
       }
     }
 
-    let savedBiome: 'meadow' | 'snow' = 'meadow';
+    let savedBiome: BiomeType = 'meadow';
+    let isAutoSeason = false;
     if (typeof window !== 'undefined') {
-      const storedBiome = localStorage.getItem('rimba_active_biome');
-      if (storedBiome === 'meadow' || storedBiome === 'snow') {
+      const storedAuto = localStorage.getItem('rimba_auto_season') ?? (data.auto_season_enabled ? 'true' : 'false');
+      if (storedAuto === 'true') {
+        isAutoSeason = true;
+      }
+      const storedBiome = (localStorage.getItem('rimba_active_biome') || data.active_biome) as BiomeType | null;
+      const validBiomes: BiomeType[] = ['meadow', 'autumn', 'snow', 'lotus'];
+      if (storedBiome && validBiomes.includes(storedBiome)) {
         const lvl = getLevelFromXp(data.profile.xp);
-        if (storedBiome === 'snow' && lvl < 20 && !get().devFastMode) {
-          savedBiome = 'meadow';
-        } else {
+        const config = BIOME_CATALOG.find((b) => b.id === storedBiome);
+        if (config && (lvl >= config.levelRequired || get().devFastMode)) {
           savedBiome = storedBiome;
+        } else {
+          savedBiome = 'meadow';
+        }
+      }
+      if (isAutoSeason) {
+        const seasonal = detectRealWorldSeasonBiome();
+        const config = BIOME_CATALOG.find((b) => b.id === seasonal);
+        const lvl = getLevelFromXp(data.profile.xp);
+        if (config && (lvl >= config.levelRequired || get().devFastMode)) {
+          savedBiome = seasonal;
         }
       }
     }
@@ -594,6 +623,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       backgroundTheme: savedTheme,
       grassPalette: savedGrass,
       activeBiome: savedBiome,
+      isAutoSeason: isAutoSeason,
       timeOfDay: initialTime,
       isTimeAuto: isAuto,
       weather: initialWeather,
@@ -611,29 +641,63 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({ grassPalette: palette });
   },
 
-  setActiveBiome: (biome) => {
+  isBiomeUnlocked: (biome) => {
+    const { saveData, devFastMode } = get();
+    if (devFastMode) return true;
+    const currentLevel = getLevelFromXp(saveData.profile.xp);
+    const config = BIOME_CATALOG.find((b) => b.id === biome);
+    if (!config) return true;
+    return currentLevel >= config.levelRequired;
+  },
+
+  setActiveBiome: (biome, showToast = true) => {
     const { saveData, devFastMode } = get();
     const currentLevel = getLevelFromXp(saveData.profile.xp);
-    if (biome === 'snow' && currentLevel < 20 && !devFastMode) {
-      get().notify('🔒 Bioma Salju terbuka saat mencapai Level 20! Teruslah fokus.', 'error');
+    const config = BIOME_CATALOG.find((b) => b.id === biome);
+    if (config && currentLevel < config.levelRequired && !devFastMode) {
+      get().notify(`🔒 ${config.name} terbuka saat mencapai Level ${config.levelRequired}! Teruslah fokus.`, 'error');
       return;
     }
     if (typeof window !== 'undefined') {
       localStorage.setItem('rimba_active_biome', biome);
     }
-    set({ activeBiome: biome });
-    get().notify(
-      biome === 'snow'
-        ? '❄️ Bioma Salju Abadi (Winter Wonderland) aktif!'
-        : '🌿 Bioma Padang Rumput (Lush Meadow) aktif!',
-      'info'
-    );
+    const updatedData = { ...saveData, active_biome: biome };
+    persistAndSyncSaveData(updatedData);
+    set({ activeBiome: biome, saveData: updatedData });
+    if (showToast && config) {
+      get().notify(`${config.icon} Tema ${config.name} aktif!`, 'info');
+    }
+  },
+
+  setAutoSeason: (enabled) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('rimba_auto_season', String(enabled));
+    }
+    const { saveData } = get();
+    const updatedData = { ...saveData, auto_season_enabled: enabled };
+    persistAndSyncSaveData(updatedData);
+    set({ isAutoSeason: enabled, saveData: updatedData });
+    if (enabled) {
+      const seasonal = detectRealWorldSeasonBiome();
+      if (get().isBiomeUnlocked(seasonal)) {
+        get().setActiveBiome(seasonal, true);
+      }
+    }
   },
 
   toggleActiveBiome: () => {
+    const unlocked = BIOME_CATALOG.filter((b) => get().isBiomeUnlocked(b.id));
+    if (unlocked.length <= 1) {
+      const nextLocked = BIOME_CATALOG.find((b) => !get().isBiomeUnlocked(b.id));
+      if (nextLocked) {
+        get().notify(`🔒 Bioma berikutnya (${nextLocked.name}) terbuka di Level ${nextLocked.levelRequired}!`, 'info');
+      }
+      return;
+    }
     const current = get().activeBiome;
-    const nextBiome = current === 'meadow' ? 'snow' : 'meadow';
-    get().setActiveBiome(nextBiome);
+    const currentIndex = unlocked.findIndex((b) => b.id === current);
+    const nextIndex = (currentIndex + 1) % unlocked.length;
+    get().setActiveBiome(unlocked[nextIndex].id, true);
   },
 
   setBackgroundTheme: (theme) => {

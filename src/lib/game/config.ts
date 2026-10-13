@@ -1,4 +1,4 @@
-import { ObjectType, FocusTag, TreeSpecies, TimeOfDay } from '@/types/game';
+import { ObjectType, FocusTag, TreeSpecies, TimeOfDay, BiomeConfig, BiomeType } from '@/types/game';
 
 export interface CatalogItem {
   id: string;
@@ -736,5 +736,81 @@ export function detectLocalTimeOfDay(date: Date = new Date()): TimeOfDay {
   if (decimalHours >= 6 && decimalHours < 16.5) return 'day';
   if (decimalHours >= 16.5 && decimalHours < 18.5) return 'sunset';
   return 'night';
+}
+
+/**
+ * Level requirement to unlock the Secondary Floating Celestial Satellite Island
+ */
+export const CELESTIAL_ISLAND_LEVEL_REQUIRED = 100;
+
+/**
+ * Biome progression catalog with spaced out levels
+ */
+export const BIOME_CATALOG: BiomeConfig[] = [
+  {
+    id: 'meadow',
+    name: 'Padang Rumput Zamrud',
+    nameEn: 'Emerald Meadow',
+    levelRequired: 1,
+    description: 'Suaka hijau subur dengan embun pagi segar dan bunga liar yang damai.',
+    descriptionEn: 'Lush green sanctuary with morning dew and peaceful blooming wildflowers.',
+    turfColor: '#5AC487',
+    leafColor: '#82C84A',
+    weatherParticle: 'dandelion',
+    icon: '🍃',
+  },
+  {
+    id: 'autumn',
+    name: 'Musim Gugur Maple',
+    nameEn: 'Golden Autumn',
+    levelRequired: 20,
+    description: 'Hamparan rerumputan keemasan hangat dengan tarian dedaunan maple jingga di udara.',
+    descriptionEn: 'Warm golden grounds with drifting orange-red maple leaves dancing in the breeze.',
+    turfColor: '#D98A3B',
+    leafColor: '#E67E22',
+    weatherParticle: 'leaves',
+    icon: '🍁',
+  },
+  {
+    id: 'snow',
+    name: 'Puncak Salju Zen',
+    nameEn: 'Zen Winter Peak',
+    levelRequired: 40,
+    description: 'Puncak suaka hening berselimut salju putih kristal dan kepingan es lembut.',
+    descriptionEn: 'A silent winter peak blanketed in pure white snow crystals and gentle flakes.',
+    turfColor: '#F8F8FB',
+    leafColor: '#E2E8F0',
+    weatherParticle: 'snow',
+    icon: '❄️',
+  },
+  {
+    id: 'lotus',
+    name: 'Mata Air Teratai',
+    nameEn: 'Mystic Lotus Springs',
+    levelRequired: 70,
+    description: 'Telaga hening berlumut giok dengan kelopak bunga sakura dan teratai merah muda mengapung.',
+    descriptionEn: 'Serene jade-moss spring with floating pink lotus and cherry blossom petals.',
+    turfColor: '#4BA388',
+    leafColor: '#48BB78',
+    weatherParticle: 'petals',
+    icon: '🌸',
+  },
+];
+
+/**
+ * Detects the real-world month's recommended seasonal biome
+ */
+export function detectRealWorldSeasonBiome(date: Date = new Date()): BiomeType {
+  const month = date.getMonth(); // 0 = Jan, 11 = Dec
+  if (month === 11 || month === 0 || month === 1) {
+    return 'snow'; // Winter (Dec, Jan, Feb)
+  }
+  if (month >= 2 && month <= 4) {
+    return 'lotus'; // Spring (Mar, Apr, May)
+  }
+  if (month >= 8 && month <= 10) {
+    return 'autumn'; // Autumn (Sep, Oct, Nov)
+  }
+  return 'meadow'; // Summer / Dry season (Jun, Jul, Aug)
 }
 

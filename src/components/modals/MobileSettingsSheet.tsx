@@ -29,6 +29,12 @@ import { uploadGameSaveToCloud } from "@/lib/supabase/cloudSync";
 import { useTranslation } from "@/lib/i18n/translations";
 import { usePwaInstall } from "@/lib/mobile/usePwaInstall";
 import {
+  BIOME_CATALOG,
+  CELESTIAL_ISLAND_LEVEL_REQUIRED,
+  detectRealWorldSeasonBiome,
+} from "@/lib/game/config";
+import { getLevelFromXp } from "@/lib/game/levelRules";
+import {
   Music,
   Volume2,
   Smartphone,
@@ -48,6 +54,11 @@ import {
   Cloud,
   RefreshCw,
   Globe,
+  Compass,
+  Check,
+  Lock,
+  Sparkles,
+  Calendar,
   X,
 } from "lucide-react";
 
@@ -69,7 +80,15 @@ export function MobileSettingsSheet({
   const { canInstall, promptInstall } = usePwaInstall();
 
   const profile = saveData?.profile || { xp: 0, goldCached: 0 };
-  const currentLevel = Math.floor((profile?.xp || 0) / 100) + 1;
+  const currentLevel = getLevelFromXp(profile?.xp || 0);
+
+  const activeBiome = useGameStore((state) => state.activeBiome);
+  const setActiveBiome = useGameStore((state) => state.setActiveBiome);
+  const isBiomeUnlocked = useGameStore((state) => state.isBiomeUnlocked);
+  const isAutoSeason = useGameStore((state) => state.isAutoSeason);
+  const setAutoSeason = useGameStore((state) => state.setAutoSeason);
+  const devFastMode = useGameStore((state) => state.devFastMode);
+  const currentSeasonBiome = detectRealWorldSeasonBiome();
 
   const [currentView, setCurrentView] = useState<"main" | "storage">("main");
   const [showSoundscapePicker, setShowSoundscapePicker] = useState(false);
@@ -516,6 +535,103 @@ export function MobileSettingsSheet({
                         {t.settings.hapticsDesc}
                       </p>
                     </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* ====================================================
+                  TEMA SUAKA & BIOMA (Progressive Themes)
+                  ==================================================== */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between px-1">
+                  <p className="text-[12px] font-medium uppercase tracking-[0.12em] text-white/90 drop-shadow-xs">
+                    {lang === "en" ? "Island Theme & Biome" : "Tema Suaka (Bioma)"}
+                  </p>
+                  <span className="text-[11px] font-medium text-[#14664D] bg-[#E4F4ED] px-2.5 py-0.5 rounded-full border border-[#BCE5D3]">
+                    {BIOME_CATALOG.find((b) => b.id === activeBiome)?.icon}{" "}
+                    {lang === "en"
+                      ? BIOME_CATALOG.find((b) => b.id === activeBiome)?.nameEn
+                      : BIOME_CATALOG.find((b) => b.id === activeBiome)?.name}
+                  </span>
+                </div>
+
+                <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-4 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-3">
+                  {/* Selector Grid for Unlocked Biomes */}
+                  <div className="grid grid-cols-4 gap-1.5 p-1 rounded-2xl bg-[#0D3528]/6">
+                    {BIOME_CATALOG.map((biome) => {
+                      const isUnlocked = isBiomeUnlocked(biome.id);
+                      const isActive = activeBiome === biome.id;
+
+                      return (
+                        <button
+                          key={biome.id}
+                          type="button"
+                          onClick={() => {
+                            if (!isUnlocked) {
+                              soundManager.playError();
+                              hapticWarning();
+                              return;
+                            }
+                            soundManager.playComplete();
+                            hapticSuccess();
+                            setActiveBiome(biome.id, true);
+                          }}
+                          className={`flex flex-col items-center py-2 px-1 rounded-xl transition-all cursor-pointer relative ${
+                            isActive
+                              ? "bg-white shadow-xs text-[#0D3528] font-bold"
+                              : isUnlocked
+                                ? "text-[#4C7567] hover:text-[#0D3528] font-medium"
+                                : "text-stone-400 opacity-50 cursor-not-allowed"
+                          }`}
+                        >
+                          <span className="text-base">{biome.icon}</span>
+                          <span className="text-[11px] mt-0.5 truncate max-w-[64px]">
+                            {lang === "en" ? biome.nameEn.split(" ")[0] : biome.name.split(" ")[0]}
+                          </span>
+                          {!isUnlocked && (
+                            <span className="text-[9px] text-stone-400 font-normal">
+                              Lv.{biome.levelRequired}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Auto-Season Toggle in Settings */}
+                  <div className="flex items-center justify-between pt-1 border-t border-[#0D3528]/8">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-[#187557] stroke-[1.8]" />
+                      <div className="text-left">
+                        <p className="text-[12.5px] font-semibold text-[#0D3528]">
+                          {lang === "en" ? "Sync Real-World Season" : "Ikuti Musim Nyata (Auto-Season)"}
+                        </p>
+                        <p className="text-[10.5px] text-[#4C7567] font-normal">
+                          {lang === "en"
+                            ? "Automatically sets island biome based on global season"
+                            : "Sesuaikan tema pulau otomatis berdasarkan bulan kalender"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={isAutoSeason}
+                      onClick={() => {
+                        hapticLight();
+                        setAutoSeason(!isAutoSeason);
+                      }}
+                      className={`relative w-11 h-6 shrink-0 rounded-full p-0.5 transition-colors duration-200 cursor-pointer ${
+                        isAutoSeason ? "bg-[#187557]" : "bg-[#0D3528]/15"
+                      }`}
+                    >
+                      <div
+                        className={`w-5 h-5 rounded-full bg-white shadow-xs transition-transform duration-200 ${
+                          isAutoSeason ? "translate-x-5" : "translate-x-0"
+                        }`}
+                      />
+                    </button>
                   </div>
                 </div>
               </div>

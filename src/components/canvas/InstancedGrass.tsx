@@ -408,12 +408,24 @@ export function InstancedGrass({ count: overrideCount }: InstancedGrassProps) {
     if (!grassRef.current) return;
 
     const isSnow = activeBiome === 'snow';
+    const isAutumn = activeBiome === 'autumn';
+    const isLotus = activeBiome === 'lotus';
     const isEmerald = grassPalette === 'emerald';
 
     // Snow Biome: Soft, shimmering winter frost crystals
     const frostBase = new THREE.Color('#CBD5E1');
     const frostMid = new THREE.Color('#E2E8F0');
     const frostTip = new THREE.Color('#FFFFFF');
+
+    // Autumn Biome: Warm rust, golden wheat, and sunlit amber
+    const autumnBase = new THREE.Color('#B45309');
+    const autumnMid = new THREE.Color('#D97706');
+    const autumnTip = new THREE.Color('#F59E0B');
+
+    // Lotus Biome: Mystic jade, teal moss, and dewy mint
+    const lotusBase = new THREE.Color('#134E4A');
+    const lotusMid = new THREE.Color('#14B8A6');
+    const lotusTip = new THREE.Color('#5EEAD4');
 
     // Meadow Biome: Lush emerald and sunlit gold tones
     const lushEmerald = new THREE.Color(isEmerald ? '#2EA86E' : '#6EAE46');
@@ -441,6 +453,18 @@ export function InstancedGrass({ count: overrideCount }: InstancedGrassProps) {
         } else {
           tempCol.lerpColors(frostMid, frostTip, (item.tSunlit - 0.5) * 2.0);
         }
+      } else if (isAutumn) {
+        if (item.tSunlit < 0.55) {
+          tempCol.lerpColors(autumnBase, autumnMid, item.tSunlit / 0.55);
+        } else {
+          tempCol.lerpColors(autumnMid, autumnTip, (item.tSunlit - 0.55) / 0.45);
+        }
+      } else if (isLotus) {
+        if (item.tSunlit < 0.6) {
+          tempCol.lerpColors(lotusBase, lotusMid, item.tSunlit / 0.6);
+        } else {
+          tempCol.lerpColors(lotusMid, lotusTip, (item.tSunlit - 0.6) / 0.4);
+        }
       } else {
         if (item.tSunlit < 0.65) {
           tempCol.lerpColors(lushEmerald, sunlitMeadow, item.tSunlit / 0.65);
@@ -458,15 +482,31 @@ export function InstancedGrass({ count: overrideCount }: InstancedGrassProps) {
     }
   }, [dummy, bladeData, grassPalette, activeBiome]);
 
-  // Set transforms and pastel colors for meadow wildflowers or winter frost florets
+  // Set transforms and pastel colors for meadow wildflowers or seasonal florets
   useEffect(() => {
     if (!flowerRef.current) return;
 
     const isSnow = activeBiome === 'snow';
+    const isAutumn = activeBiome === 'autumn';
+    const isLotus = activeBiome === 'lotus';
 
-    const creamWhite = new THREE.Color(isSnow ? '#FFFFFF' : '#FFFDF5');
-    const buttercupYellow = new THREE.Color(isSnow ? '#BAE6FD' : '#FDE68A');
-    const softBlossom = new THREE.Color(isSnow ? '#E0F2FE' : '#FBCFE8');
+    let colorPrimary = new THREE.Color('#FFFDF5');
+    let colorSecondary = new THREE.Color('#FDE68A');
+    let colorAccent = new THREE.Color('#FBCFE8');
+
+    if (isSnow) {
+      colorPrimary = new THREE.Color('#FFFFFF');
+      colorSecondary = new THREE.Color('#BAE6FD');
+      colorAccent = new THREE.Color('#E0F2FE');
+    } else if (isAutumn) {
+      colorPrimary = new THREE.Color('#F59E0B');
+      colorSecondary = new THREE.Color('#EA580C');
+      colorAccent = new THREE.Color('#FEF08A');
+    } else if (isLotus) {
+      colorPrimary = new THREE.Color('#F472B6');
+      colorSecondary = new THREE.Color('#FBCFE8');
+      colorAccent = new THREE.Color('#FFFFFF');
+    }
 
     for (let i = 0; i < flowerData.length; i++) {
       const f = flowerData[i];
@@ -478,10 +518,10 @@ export function InstancedGrass({ count: overrideCount }: InstancedGrassProps) {
       flowerRef.current.setMatrixAt(i, dummy.matrix);
       const col =
         f.colorType < 0.62
-          ? creamWhite
+          ? colorPrimary
           : f.colorType < 0.88
-          ? buttercupYellow
-          : softBlossom;
+          ? colorSecondary
+          : colorAccent;
       flowerRef.current.setColorAt(i, col);
     }
 

@@ -3,189 +3,121 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Konfirmasi Perubahan Email Rimba</title>
+  <title>Konfirmasi Perubahan Email — Rimba Sanctuary</title>
   <style>
     body {
       margin: 0;
       padding: 0;
-      background-color: #030D08;
+      background-color: #0A110C;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      color: #E2E8F0;
+      color: #F3ECE2;
       -webkit-font-smoothing: antialiased;
     }
-    table {
-      border-spacing: 0;
-    }
-    td {
-      padding: 0;
-    }
-    img {
-      border: 0;
-    }
-    .wrapper {
-      width: 100%;
-      table-layout: fixed;
-      background-color: #030D08;
-      padding: 40px 16px;
-    }
-    .main-card {
-      background: linear-gradient(180deg, #09261B 0%, #061912 100%);
-      margin: 0 auto;
-      width: 100%;
-      max-width: 560px;
-      border-radius: 28px;
-      border: 1px solid #144A39;
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
-      overflow: hidden;
-    }
-    .content-padding {
-      padding: 44px 36px;
-    }
-    .badge {
-      display: inline-block;
-      background-color: rgba(56, 189, 248, 0.12);
-      border: 1px solid rgba(56, 189, 248, 0.3);
-      color: #38BDF8;
-      padding: 6px 14px;
-      border-radius: 9999px;
-      font-size: 12px;
-      font-weight: 600;
-      letter-spacing: 0.5px;
-      margin-bottom: 20px;
-    }
-    .heading {
-      font-family: Georgia, 'Times New Roman', serif;
-      font-style: italic;
-      color: #FFFFFF;
-      font-size: 30px;
-      line-height: 1.25;
-      margin: 0 0 14px 0;
-      font-weight: normal;
-    }
-    .subtext {
-      color: #94A3B8;
-      font-size: 14px;
-      line-height: 1.6;
-      margin: 0 0 28px 0;
-    }
-    .otp-container {
-      background-color: #02120B;
-      border: 1px solid #38BDF8;
-      border-radius: 20px;
-      padding: 24px 20px;
-      text-align: center;
-      margin: 0 0 28px 0;
-      box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.5), 0 0 24px rgba(56, 189, 248, 0.15);
-    }
-    .otp-label {
-      color: #7DD3FC;
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      margin-bottom: 10px;
-    }
-    .otp-code {
-      font-family: 'SF Mono', Monaco, Menlo, Consolas, monospace;
-      color: #38BDF8;
-      font-size: 38px;
-      font-weight: 700;
-      letter-spacing: 10px;
-      padding-left: 10px;
-      margin: 0;
-      text-shadow: 0 0 16px rgba(56, 189, 248, 0.4);
-    }
-    .otp-hint {
-      color: #64748B;
-      font-size: 11px;
-      margin-top: 10px;
-    }
-    .cta-button {
-      display: inline-block;
-      background: linear-gradient(135deg, #38BDF8 0%, #0284C7 100%);
-      color: #041724 !important;
-      text-decoration: none;
-      font-weight: 700;
-      font-size: 13px;
-      letter-spacing: 0.3px;
-      padding: 14px 32px;
-      border-radius: 9999px;
-      box-shadow: 0 10px 24px rgba(56, 189, 248, 0.35);
-      margin-bottom: 28px;
-    }
-    .divider {
-      height: 1px;
-      background-color: rgba(255, 255, 255, 0.08);
-      margin: 32px 0 24px 0;
-    }
-    .security-note {
-      color: #64748B;
-      font-size: 12px;
-      line-height: 1.6;
-      margin: 0 0 8px 0;
-    }
-    .footer {
-      text-align: center;
-      padding: 24px 16px 0 16px;
-      color: #475569;
-      font-size: 11px;
-      line-height: 1.6;
-    }
-    .footer a {
-      color: #10B981;
-      text-decoration: none;
-    }
-    .footer a:hover {
-      text-decoration: underline;
+    table { border-spacing: 0; }
+    td { padding: 0; }
+    img { border: 0; }
+    @media only screen and (max-width: 600px) {
+      .main-card { width: 100% !important; border-radius: 20px !important; }
+      .content-padding { padding: 32px 20px !important; }
+      .otp-code { font-size: 32px !important; letter-spacing: 6px !important; }
+      .heading { font-size: 26px !important; }
     }
   </style>
 </head>
-<body>
-  <center class="wrapper">
-    <table class="main-card" role="presentation">
+<body style="margin: 0; padding: 0; background-color: #0A110C; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #F3ECE2;">
+  <center style="width: 100%; table-layout: fixed; background-color: #0A110C; padding: 40px 12px;">
+    <!-- Main Email Container -->
+    <table class="main-card" role="presentation" style="background: linear-gradient(180deg, #17241A 0%, #111A13 40%, #0D140E 100%); margin: 0 auto; width: 100%; max-width: 540px; border-radius: 28px; border: 1px solid #2B4231; box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7); overflow: hidden;">
+      
+      <!-- Top Decorative Living Soil Accent -->
       <tr>
-        <td class="content-padding">
-          <div style="text-align: center;">
-            <div class="badge">📧 RIMBA · UBAH ALAMAT EMAIL</div>
-          </div>
+        <td style="height: 4px; background: linear-gradient(90deg, #263C24 0%, #34D399 50%, #D4A373 100%);"></td>
+      </tr>
 
-          <h1 class="heading" style="text-align: center;">Konfirmasi Email Baru</h1>
-          <p class="subtext" style="text-align: center;">
-            Anda telah mengajukan perubahan alamat email untuk akun Rimba Anda. Masukkan kode 6 digit berikut untuk memvalidasi email baru:
+      <tr>
+        <td class="content-padding" style="padding: 44px 36px;">
+          <!-- Living Soil Badge -->
+          <table role="presentation" align="center" style="margin: 0 auto 22px auto;">
+            <tr>
+              <td style="background-color: rgba(52, 211, 153, 0.12); border: 1px solid rgba(52, 211, 153, 0.35); padding: 6px 16px; border-radius: 9999px;">
+                <span style="display: inline-block; width: 7px; height: 7px; border-radius: 50%; background-color: #34D399; margin-right: 8px; vertical-align: middle;"></span>
+                <span style="color: #34D399; font-size: 11px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; vertical-align: middle;">PEMBARUAN EMAIL PENJAGA</span>
+              </td>
+            </tr>
+          </table>
+
+          <!-- Editorial Serif Heading -->
+          <h1 class="heading" style="font-family: Georgia, 'Playfair Display', serif; font-style: italic; color: #F3ECE2; font-size: 30px; line-height: 1.25; margin: 0 0 16px 0; font-weight: normal; text-align: center;">
+            “Memperbarui akar profilmu.”
+          </h1>
+          <p style="color: #C7B7A8; font-size: 14px; line-height: 1.6; margin: 0 0 30px 0; text-align: center;">
+            Kami menerima permohonan untuk mengubah alamat email terdaftar akun <strong style="color: #F3ECE2;">Rimba</strong> Anda. Masukkan 6 digit kode konfirmasi di bawah ini ke dalam aplikasi:
           </p>
 
-          <div class="otp-container">
-            <div class="otp-label">Kode Konfirmasi Email</div>
-            <div class="otp-code">{{ .Token }}</div>
-            <div class="otp-hint">Kode berlaku selama 60 menit</div>
-          </div>
+          <!-- OTP Code Box -->
+          <table role="presentation" width="100%" style="background-color: #061009; border: 1px solid #10B981; border-radius: 20px; margin: 0 0 30px 0; box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.6), 0 0 24px rgba(16, 185, 129, 0.15);">
+            <tr>
+              <td style="padding: 24px 16px; text-align: center;">
+                <div style="color: #6EE7B7; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 10px;">
+                  Kode Konfirmasi Email Baru
+                </div>
+                <div class="otp-code" style="font-family: 'SF Mono', Monaco, Menlo, Consolas, monospace; color: #34D399; font-size: 38px; font-weight: 800; letter-spacing: 10px; padding-left: 10px; margin: 0; line-height: 1;">
+                  {{ .Token }}
+                </div>
+                <div style="color: #8C7A6B; font-size: 11px; margin-top: 10px;">
+                  ⏳ Kode berlaku selama 60 menit
+                </div>
+              </td>
+            </tr>
+          </table>
 
-          <div style="text-align: center;">
-            <p style="font-size: 12px; color: #64748B; margin-bottom: 12px;">
-              Atau konfirmasi via satu ketukan tautan:
-            </p>
-            <a href="{{ .ConfirmationURL }}" class="cta-button" target="_blank" rel="noopener noreferrer">
-              Konfirmasi Alamat Email Baru →
-            </a>
-          </div>
+          <!-- Fallback One-Click Confirmation Button -->
+          <table role="presentation" align="center" style="margin: 0 auto 30px auto;">
+            <tr>
+              <td style="text-align: center;">
+                <p style="font-size: 12px; color: #8C7A6B; margin: 0 0 12px 0;">
+                  Atau klik tombol konfirmasi langsung di bawah ini:
+                </p>
+                <a href="{{ .ConfirmationURL }}" target="_blank" rel="noopener noreferrer" style="display: inline-block; background: linear-gradient(135deg, #34D399 0%, #10B981 100%); color: #05140D !important; text-decoration: none; font-weight: 800; font-size: 13px; letter-spacing: 0.03em; padding: 14px 34px; border-radius: 9999px; box-shadow: 0 10px 24px rgba(16, 185, 129, 0.35); text-align: center;">
+                  Konfirmasi Email Baru Sekarang →
+                </a>
+              </td>
+            </tr>
+          </table>
 
-          <div class="divider"></div>
-          <p class="security-note" style="text-align: center;">
-            🔒 <em>Keamanan Akun:</em> Jika Anda tidak melakukan permohonan ini, hubungi tim kami atau segera ganti kata sandi akun Anda.
+          <!-- Subtle Divider -->
+          <table role="presentation" width="100%">
+            <tr>
+              <td style="height: 1px; background-color: rgba(243, 236, 226, 0.08); margin: 0;"></td>
+            </tr>
+          </table>
+
+          <!-- Security Notice -->
+          <p style="color: #8C7A6B; font-size: 11.5px; line-height: 1.6; margin: 24px 0 0 0; text-align: center;">
+            🔒 <em>Penting:</em> Jika Anda tidak merasa melakukan permohonan penggantian email ini, segera login ke akun Rimba Anda dan ganti kata sandi untuk mencegah akses tidak sah.
           </p>
         </td>
       </tr>
     </table>
 
-    <div class="footer">
-      <p style="margin: 0 0 6px 0;">
-        Rimba: Focus Garden · Tumbuhkan Suaka Alami Fokus
-      </p>
-      <p style="margin: 0;">
-        <a href="https://rimba-website.pages.dev/privacy">Kebijakan Privasi</a> · 
-        <a href="https://rimba-website.pages.dev/terms">Syarat Layanan</a>
-      </p>
-    </div>
+    <!-- Soil Footer -->
+    <table role="presentation" style="margin: 24px auto 0 auto; max-width: 540px; text-align: center;">
+      <tr>
+        <td style="color: #6B5E52; font-size: 11px; line-height: 1.7; padding: 0 16px;">
+          <p style="margin: 0 0 6px 0; color: #8C7A6B;">
+            <strong>Rimba</strong> · Living Soil & Canopy Focus Sanctuary
+          </p>
+          <p style="margin: 0;">
+            <a href="https://rimba-website.pages.dev/privacy.html" style="color: #34D399; text-decoration: none;">Kebijakan Privasi</a> · 
+            <a href="https://rimba-website.pages.dev/terms" style="color: #8C7A6B; text-decoration: none;">Syarat Layanan</a> · 
+            <a href="https://rimba-website.pages.dev/account-deletion.html" style="color: #FB7185; text-decoration: none;">Hapus Akun</a>
+          </p>
+          <p style="margin: 8px 0 0 0; color: #52473D; font-size: 10px;">
+            © 2026 Rimba Sanctuary. Crafted with reverent stillness for thoughtful minds.
+          </p>
+        </td>
+      </tr>
+    </table>
   </center>
 </body>
 </html>

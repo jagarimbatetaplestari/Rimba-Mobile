@@ -24,6 +24,7 @@ import {
   Snowflake,
   Flame,
   X,
+  Globe,
 } from "lucide-react";
 import { hapticLight } from "@/lib/mobile/nativeBridge";
 import { useAuthStore } from "@/lib/auth/useAuthStore";
@@ -203,24 +204,24 @@ export function MobileHeaderHUD({
       : "0 8px 20px -6px rgba(10, 35, 20, 0.12), inset 0 1px 0 0 rgba(255, 255, 255, 0.6)",
   };
 
-  const pillarGlassStyle: React.CSSProperties = {
+  const popoverGlassStyle: React.CSSProperties = {
     background: isNight
-      ? "linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0%, rgba(15, 34, 24, 0.68) 35%, rgba(8, 20, 14, 0.82) 100%)"
-      : "linear-gradient(180deg, rgba(255, 255, 255, 0.65) 0%, rgba(240, 250, 244, 0.35) 25%, rgba(200, 230, 215, 0.5) 100%)",
-    backdropFilter: "blur(24px) saturate(155%)",
-    WebkitBackdropFilter: "blur(24px) saturate(155%)",
+      ? "linear-gradient(180deg, rgba(255, 255, 255, 0.22) 0%, rgba(15, 34, 24, 0.88) 35%, rgba(8, 20, 14, 0.95) 100%)"
+      : "linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(240, 250, 244, 0.9) 35%, rgba(215, 238, 226, 0.95) 100%)",
+    backdropFilter: "blur(28px) saturate(160%)",
+    WebkitBackdropFilter: "blur(28px) saturate(160%)",
     border: isNight
       ? "1px solid rgba(255, 255, 255, 0.28)"
-      : "1px solid rgba(255, 255, 255, 0.6)",
+      : "1px solid rgba(255, 255, 255, 0.8)",
     boxShadow: isNight
-      ? "0 20px 44px -8px rgba(0, 0, 0, 0.22), inset 0 1px 0 0 rgba(255, 255, 255, 0.45)"
-      : "0 14px 32px -4px rgba(10, 35, 20, 0.14), inset 0 1px 0 0 rgba(255, 255, 255, 0.7)",
+      ? "0 20px 48px -8px rgba(0, 0, 0, 0.45), inset 0 1px 0 0 rgba(255, 255, 255, 0.45)"
+      : "0 18px 40px -6px rgba(10, 35, 20, 0.18), inset 0 1px 0 0 rgba(255, 255, 255, 0.9)",
   };
 
-  // Tombol aksi di dalam pilar (tanpa efek zoom, 44px HIG tap target)
-  const pillarButton = isNight
-    ? "w-9 h-9 rounded-full flex items-center justify-center text-white/90 hover:text-white hover:bg-white/15 active:bg-white/20 transition-colors cursor-pointer relative before:absolute before:-inset-1 before:content-['']"
-    : "w-9 h-9 rounded-full flex items-center justify-center text-[#0b2719] hover:bg-[#0b2719]/10 active:bg-[#0b2719]/15 transition-colors cursor-pointer relative before:absolute before:-inset-1 before:content-['']";
+  // Tombol aksi di dalam popover (dengan label teks & HIG tap target)
+  const popoverItemButton = isNight
+    ? "w-full flex items-center gap-2.5 px-3 py-2 rounded-2xl text-[12px] font-semibold text-white/90 hover:text-white hover:bg-white/15 active:bg-white/20 transition-all cursor-pointer relative"
+    : "w-full flex items-center gap-2.5 px-3 py-2 rounded-2xl text-[12px] font-semibold text-[#0b2719] hover:bg-[#0b2719]/10 active:bg-[#0b2719]/15 transition-all cursor-pointer relative";
 
   // Tombol aksi di sisi kanan (tanpa efek zoom, kontras tinggi, 44px HIG tap target)
   const iconButtonClass = isNight
@@ -340,97 +341,121 @@ export function MobileHeaderHUD({
                 </span>
               </button>
             ) : (
-              /* Dynamic Vertical Pillar Profil */
+              /* Dynamic Compact Popover Profil (Apple Liquid Glass) */
               <div
-                style={pillarGlassStyle}
-                className="w-[44px] rounded-full p-1.5 z-50 flex flex-col items-center gap-1 relative overflow-hidden animate-in fade-in duration-200"
+                style={popoverGlassStyle}
+                className="w-[210px] rounded-[26px] p-2 z-50 flex flex-col gap-1 relative overflow-hidden animate-in fade-in zoom-in-95 duration-150 shadow-2xl"
               >
-                <div className="absolute inset-x-1 top-0 h-8 bg-gradient-to-b from-white/25 to-transparent rounded-t-full pointer-events-none" />
+                <div className="absolute inset-x-2 top-0 h-8 bg-gradient-to-b from-white/25 to-transparent rounded-t-full pointer-events-none" />
 
-                {/* 1. Tombol X (Tutup Pilar) */}
-                <button
-                  type="button"
-                  onClick={closeDropdown}
-                  className={`w-8 h-8 rounded-full flex items-center justify-center border transition-colors cursor-pointer relative z-10 ${
-                    isNight
-                      ? "bg-white/20 hover:bg-white/30 border-white/30 text-white"
-                      : "bg-[#0b2719]/12 hover:bg-[#0b2719]/20 border-[#0b2719]/20 text-[#0b2719]"
-                  }`}
-                  title={t.common.close}
-                  aria-label={t.common.close}
-                >
-                  <X className="w-3.5 h-3.5 stroke-[2.4]" />
-                </button>
+                {/* Header: Mini Profil & Tombol Tutup */}
+                <div className="flex items-center justify-between px-2 pt-1 pb-1.5 border-b border-black/10 dark:border-white/15 relative z-10">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div
+                      className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 border ${
+                        isNight
+                          ? "bg-white/20 border-white/30 text-white"
+                          : "bg-[#0b2719]/10 border-[#0b2719]/20 text-[#0b2719]"
+                      }`}
+                    >
+                      {showAvatarImage ? (
+                        <RangerAvatar
+                          avatarUrl={authUser?.avatarUrl || profile?.avatarUrl}
+                          name={nickname}
+                          size="sm"
+                          className="w-6 h-6"
+                        />
+                      ) : (
+                        <Sprout className="w-3.5 h-3.5" />
+                      )}
+                    </div>
+                    <span
+                      className={`text-[12px] font-bold truncate ${
+                        isNight ? "text-white" : "text-[#0b2719]"
+                      }`}
+                    >
+                      {nickname === "Penjaga" ? t.common.guestName : nickname}
+                    </span>
+                  </div>
 
-                {/* 2. Profil Akun */}
+                  <button
+                    type="button"
+                    onClick={closeDropdown}
+                    className={`w-6 h-6 rounded-full flex items-center justify-center border transition-colors cursor-pointer shrink-0 ${
+                      isNight
+                        ? "bg-white/15 hover:bg-white/25 border-white/20 text-white"
+                        : "bg-[#0b2719]/10 hover:bg-[#0b2719]/18 border-[#0b2719]/15 text-[#0b2719]"
+                    }`}
+                    title={t.common.close}
+                    aria-label={t.common.close}
+                  >
+                    <X className="w-3 h-3 stroke-[2.4]" />
+                  </button>
+                </div>
+
+                {/* 1. Profil Akun */}
                 <button
                   type="button"
                   onClick={() => handleAction(onOpenProfile)}
-                  className={pillarButton}
-                  title={t.hud.menuProfile}
-                  aria-label={t.hud.menuProfile}
+                  className={popoverItemButton}
                 >
-                  <User className="w-4 h-4 stroke-[2.2]" />
+                  <User className="w-4 h-4 stroke-[2.2] shrink-0 opacity-80" />
+                  <span className="truncate">{t.hud.menuProfile}</span>
                 </button>
 
-                {/* 3. Statistik Fokus */}
+                {/* 2. Statistik Fokus */}
                 <button
                   type="button"
                   onClick={() => handleAction(onOpenStats || onOpenProfile)}
-                  className={pillarButton}
-                  title={t.hud.menuStats}
-                  aria-label={t.hud.menuStats}
+                  className={popoverItemButton}
                 >
-                  <BarChart3 className="w-4 h-4 stroke-[2.2]" />
+                  <BarChart3 className="w-4 h-4 stroke-[2.2] shrink-0 opacity-80" />
+                  <span className="truncate">{t.hud.menuStats}</span>
                 </button>
 
-                {/* 4. Jurnal Suaka */}
+                {/* 3. Jurnal Suaka */}
                 <button
                   type="button"
                   onClick={() => handleAction(onOpenJournal || onOpenAlmanac)}
-                  className={pillarButton}
-                  title={t.hud.menuJournal}
-                  aria-label={t.hud.menuJournal}
+                  className={popoverItemButton}
                 >
-                  <BookMarked className="w-4 h-4 stroke-[2.2]" />
+                  <BookMarked className="w-4 h-4 stroke-[2.2] shrink-0 opacity-80" />
+                  <span className="truncate flex-1 text-left">{t.hud.menuJournal}</span>
                   {claimableCount > 0 && (
-                    <span className="absolute top-1 right-1 min-w-[13px] h-[13px] px-0.5 rounded-full bg-emerald-600 text-white font-semibold text-[8px] flex items-center justify-center border border-white shadow-xs">
+                    <span className="min-w-[15px] h-[15px] px-1 rounded-full bg-emerald-600 text-white font-bold text-[9px] flex items-center justify-center border border-white shadow-xs">
                       {claimableCount}
                     </span>
                   )}
                 </button>
 
-                {/* 5. Papan Peringkat */}
+                {/* 4. Papan Peringkat */}
                 <button
                   type="button"
                   onClick={() => handleAction(onOpenLeaderboard)}
-                  className={pillarButton}
-                  title={t.hud.menuRanks}
-                  aria-label={t.hud.menuRanks}
+                  className={popoverItemButton}
                 >
-                  <Trophy className="w-4 h-4 stroke-[2.2]" />
+                  <Trophy className="w-4 h-4 stroke-[2.2] shrink-0 opacity-80" />
+                  <span className="truncate">{t.hud.menuRanks}</span>
                 </button>
 
-                {/* 6. Fokus Bareng (Campfire Focus Room) */}
+                {/* 5. Fokus Bareng (Campfire Focus Room) */}
                 <button
                   type="button"
                   onClick={() => handleAction(onOpenCampfire)}
-                  className={pillarButton}
-                  title={t.hud.menuCampfire}
-                  aria-label={t.hud.menuCampfire}
+                  className={popoverItemButton}
                 >
-                  <Flame className="w-4 h-4 stroke-[2.2] text-amber-500 fill-amber-500/30" />
+                  <Flame className="w-4 h-4 stroke-[2.2] shrink-0 text-amber-500 fill-amber-500/30" />
+                  <span className="truncate">{t.hud.menuCampfire}</span>
                 </button>
 
-                {/* 7. Bagikan Pulau */}
+                {/* 6. Bagikan Pulau */}
                 <button
                   type="button"
                   onClick={() => handleAction(onOpenShare)}
-                  className={pillarButton}
-                  title={t.hud.menuShare}
-                  aria-label={t.hud.menuShare}
+                  className={popoverItemButton}
                 >
-                  <Share2 className="w-4 h-4 stroke-[2.2]" />
+                  <Share2 className="w-4 h-4 stroke-[2.2] shrink-0 opacity-80" />
+                  <span className="truncate">{t.hud.menuShare}</span>
                 </button>
               </div>
             )}
@@ -537,81 +562,89 @@ export function MobileHeaderHUD({
                 </button>
               </div>
             ) : (
-              /* Dynamic Vertical Pillar Pengaturan */
+              /* Dynamic Compact Popover Pengaturan (Apple Liquid Glass) */
               <div
-                style={pillarGlassStyle}
-                className="w-[44px] rounded-full p-1.5 z-50 flex flex-col items-center gap-1 relative overflow-hidden animate-in fade-in duration-200"
+                style={popoverGlassStyle}
+                className="w-[200px] rounded-[26px] p-2 z-50 flex flex-col gap-1 relative overflow-hidden animate-in fade-in zoom-in-95 duration-150 shadow-2xl"
               >
-                <div className="absolute inset-x-1 top-0 h-8 bg-gradient-to-b from-white/25 to-transparent rounded-t-full pointer-events-none" />
+                <div className="absolute inset-x-2 top-0 h-8 bg-gradient-to-b from-white/25 to-transparent rounded-t-full pointer-events-none" />
 
-                {/* 1. Tombol X (Tutup Pengaturan) */}
-                <button
-                  type="button"
-                  onClick={closeDropdown}
-                  className={`w-8 h-8 rounded-full flex items-center justify-center border transition-colors cursor-pointer relative z-10 ${
-                    isNight
-                      ? "bg-white/20 hover:bg-white/30 border-white/30 text-white"
-                      : "bg-[#0b2719]/12 hover:bg-[#0b2719]/20 border-[#0b2719]/20 text-[#0b2719]"
-                  }`}
-                  title={t.common.close}
-                  aria-label={t.common.close}
-                >
-                  <X className="w-3.5 h-3.5 stroke-[2.4]" />
-                </button>
+                {/* Header: Judul & Tombol Tutup */}
+                <div className="flex items-center justify-between px-2 pt-1 pb-1.5 border-b border-black/10 dark:border-white/15 relative z-10">
+                  <span
+                    className={`text-[12px] font-bold ${
+                      isNight ? "text-white" : "text-[#0b2719]"
+                    }`}
+                  >
+                    {t.hud.menuSettings}
+                  </span>
 
-                {/* 2. Pengaturan Utama */}
+                  <button
+                    type="button"
+                    onClick={closeDropdown}
+                    className={`w-6 h-6 rounded-full flex items-center justify-center border transition-colors cursor-pointer shrink-0 ${
+                      isNight
+                        ? "bg-white/15 hover:bg-white/25 border-white/20 text-white"
+                        : "bg-[#0b2719]/10 hover:bg-[#0b2719]/18 border-[#0b2719]/15 text-[#0b2719]"
+                    }`}
+                    title={t.common.close}
+                    aria-label={t.common.close}
+                  >
+                    <X className="w-3 h-3 stroke-[2.4]" />
+                  </button>
+                </div>
+
+                {/* 1. Pengaturan Utama */}
                 <button
                   type="button"
                   onClick={() => handleAction(onOpenSettings)}
-                  className={pillarButton}
-                  title={t.hud.menuSettings}
-                  aria-label={t.hud.menuSettings}
+                  className={popoverItemButton}
                 >
-                  <Settings className="w-4 h-4 stroke-[2.2]" />
+                  <Settings className="w-4 h-4 stroke-[2.2] shrink-0 opacity-80" />
+                  <span className="truncate">{t.hud.menuSettings}</span>
                 </button>
 
-                {/* 3. Dekorasi Pulau */}
+                {/* 2. Dekorasi Pulau (Workshop) */}
                 <button
                   type="button"
                   onClick={() => handleAction(onOpenWorkshop)}
-                  className={pillarButton}
-                  title={t.hud.menuWorkshop}
-                  aria-label={t.hud.menuWorkshop}
+                  className={popoverItemButton}
                 >
-                  <Hammer className="w-4 h-4 stroke-[2.2]" />
+                  <Hammer className="w-4 h-4 stroke-[2.2] shrink-0 opacity-80" />
+                  <span className="truncate">{t.hud.menuWorkshop}</span>
                 </button>
 
-                {/* 4. Audio & Suara Alam */}
+                {/* 3. Audio & Suara Alam */}
                 <button
                   type="button"
                   onClick={() => handleAction(onOpenSoundscapes)}
-                  className={pillarButton}
-                  title={t.hud.menuSoundscape}
-                  aria-label={t.hud.menuSoundscape}
+                  className={popoverItemButton}
                 >
-                  <Headphones className="w-4 h-4 stroke-[2.2]" />
+                  <Headphones className="w-4 h-4 stroke-[2.2] shrink-0 opacity-80" />
+                  <span className="truncate">{t.hud.menuSoundscape}</span>
                 </button>
 
-                {/* 5. Quick Language Switcher (ID / EN) */}
+                {/* 4. Quick Language Switcher (ID / EN) */}
                 <button
                   type="button"
                   onClick={handleToggleLanguage}
-                  className={`${pillarButton} text-[10.5px] font-bold tracking-tight`}
-                  title={t.hud.langToggleTitle}
-                  aria-label={t.hud.langToggleTitle}
+                  className={popoverItemButton}
                 >
-                  <span>{lang.toUpperCase()}</span>
+                  <Globe className="w-4 h-4 stroke-[2.2] shrink-0 opacity-80" />
+                  <span className="truncate flex-1 text-left">{t.hud.langToggleTitle}</span>
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-black/10 dark:bg-white/15 uppercase">
+                    {lang}
+                  </span>
                 </button>
 
-                {/* 6. Panduan Permainan (How to Play) */}
+                {/* 5. Panduan Permainan (How to Play) */}
                 <button
                   type="button"
                   onClick={() => handleAction(onOpenGuide || onOpenOnboarding)}
-                  className={pillarButton}
-                  title={t.hud.menuGuide}
-                  aria-label={t.hud.menuGuide}
+                  className={popoverItemButton}
                 >
-                  <HelpCircle className="w-4 h-4 stroke-[2.2]" />
+                  <HelpCircle className="w-4 h-4 stroke-[2.2] shrink-0 opacity-80" />
+                  <span className="truncate">{t.hud.menuGuide}</span>
                 </button>
               </div>
             )}

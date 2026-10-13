@@ -103,6 +103,7 @@ export function MobileFocusCard({
   const isExpandLandMode = useGameStore((state) => state.isExpandLandMode);
   const selectedCatalogItem = useGameStore((state) => state.selectedCatalogItem);
   const relocatingObjectId = useGameStore((state) => state.relocatingObjectId);
+  const selectedObject = useGameStore((state) => state.selectedObject);
 
   const timeOfDay = useGameStore((state) => state.timeOfDay);
   const isNight = timeOfDay === "night";
@@ -1097,7 +1098,7 @@ export function MobileFocusCard({
   // STATE 1: IDLE / CONFIGURING NEW SESSION
   // ==========================================
   if (!activeSession) {
-    if (isExpandLandMode || selectedCatalogItem || relocatingObjectId) {
+    if (isExpandLandMode || selectedCatalogItem || relocatingObjectId || selectedObject) {
       return (
         <>
           {renderTagManagerModal()}

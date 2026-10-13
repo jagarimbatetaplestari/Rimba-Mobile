@@ -267,14 +267,14 @@ function WelcomeAuthPageContent() {
 
   return (
     <div
-      className="fixed inset-0 h-[100dvh] w-full flex flex-col justify-between items-center px-6 bg-[#040D08] text-slate-100 overflow-hidden select-none antialiased"
+      className="fixed inset-0 h-[100dvh] w-full bg-[#040D08] text-slate-100 overflow-y-auto overscroll-contain select-none antialiased flex flex-col justify-between items-center px-6 no-scrollbar"
       style={{
-        paddingTop: "max(calc(env(safe-area-inset-top, 0px) + 16px), 32px)",
+        paddingTop: "max(calc(env(safe-area-inset-top, 0px) + 16px), 28px)",
         paddingBottom: "max(calc(env(safe-area-inset-bottom, 0px) + 16px), 24px)",
       }}
     >
       {/* 1. Background Art & Smooth Scrim */}
-      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
         <Image
           src="/login-page.webp"
           alt="Rimba Sanctuary"
@@ -293,14 +293,14 @@ function WelcomeAuthPageContent() {
         <div className="absolute inset-x-0 bottom-0 h-[50vh] bg-gradient-to-t from-black/85 via-black/45 via-45% to-transparent pointer-events-none" />
       </div>
 
-      {/* 2. Top Canvas Spacing */}
-      <div className="w-full flex-1 pointer-events-none" />
+      {/* 2. Top Canvas Spacing (collapsible on small viewports) */}
+      <div className="w-full flex-1 min-h-[40px] max-h-[180px] pointer-events-none" />
 
       {/* 3. Core Interface Container */}
-      <div className="relative z-10 w-full max-w-[340px] flex flex-col items-center text-center pb-1">
+      <div className="relative z-10 w-full max-w-[340px] flex flex-col items-center text-center pb-2 my-auto">
         {/* Editorial Serif Header */}
         <div className="mb-2 relative">
-          <h1 className="font-serif italic text-[32px] sm:text-[36px] font-normal tracking-tight text-white leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] drop-shadow-[0_8px_20px_rgba(0,0,0,0.8)]">
+          <h1 className="font-serif italic text-[30px] sm:text-[36px] font-normal tracking-tight text-white leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] drop-shadow-[0_8px_20px_rgba(0,0,0,0.8)]">
             {isOtpStep
               ? t.auth.otpTitle
               : isSignUp
@@ -336,8 +336,8 @@ function WelcomeAuthPageContent() {
         {/* ========================================================= */}
         {isOtpStep ? (
           <div className="w-full space-y-3.5 animate-in fade-in slide-in-from-bottom-2 duration-300">
-            {/* 6-Digit OTP Box Grid */}
-            <div className="flex items-center justify-between gap-1.5 w-full py-1">
+            {/* 6-Digit OTP Box Grid (Responsive on narrow screens) */}
+            <div className="flex items-center justify-between gap-1 sm:gap-1.5 w-full py-1">
               {otpDigits.map((digit, idx) => (
                 <input
                   key={idx}
@@ -352,7 +352,7 @@ function WelcomeAuthPageContent() {
                   onChange={(e) => handleDigitChange(idx, e.target.value)}
                   onKeyDown={(e) => handleDigitKeyDown(idx, e)}
                   onPaste={handlePasteOtp}
-                  className="w-11 h-13 rounded-2xl bg-black/40 text-white font-mono font-bold text-xl text-center border border-white/20 focus:border-emerald-400 focus:bg-black/60 focus:outline-none shadow-[0_4px_16px_rgba(0,0,0,0.3)] transition-all"
+                  className="w-9 h-12 sm:w-11 sm:h-13 max-w-[46px] rounded-xl sm:rounded-2xl bg-black/40 text-white font-mono font-bold text-lg sm:text-xl text-center border border-white/20 focus:border-emerald-400 focus:bg-black/60 focus:outline-none shadow-[0_4px_16px_rgba(0,0,0,0.3)] transition-all"
                 />
               ))}
             </div>
@@ -413,7 +413,7 @@ function WelcomeAuthPageContent() {
           /* ========================================================= */
           /* STATE B: EMAIL & PASSWORD INPUT                           */
           /* ========================================================= */
-          <form onSubmit={handleSubmit} className="w-full space-y-2">
+          <form onSubmit={handleSubmit} className="w-full space-y-2.5">
             {/* Email Capsule */}
             <div className="relative flex items-center px-4 py-3.5 rounded-2xl bg-black/25 hover:bg-black/30 focus-within:bg-black/35 backdrop-blur-md border border-white/[0.12] focus-within:border-white/35 shadow-[0_8px_24px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.2)] transition-all">
               <Mail className="w-4 h-4 text-white/70 stroke-[1.8] flex-shrink-0 drop-shadow-sm" />
@@ -422,6 +422,11 @@ function WelcomeAuthPageContent() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder={t.auth.emailPlaceholder}
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                autoComplete="email"
+                inputMode="email"
                 className="w-full bg-transparent pl-3 pr-2 text-xs font-normal text-white placeholder-white/50 focus:outline-none drop-shadow-sm"
                 required
               />
@@ -435,6 +440,10 @@ function WelcomeAuthPageContent() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder={t.auth.passwordPlaceholder}
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                autoComplete={isSignUp ? "new-password" : "current-password"}
                 className="w-full bg-transparent pl-3 pr-8 text-xs font-normal text-white placeholder-white/50 focus:outline-none drop-shadow-sm"
                 required
               />
@@ -445,6 +454,7 @@ function WelcomeAuthPageContent() {
                   setShowPassword(!showPassword);
                 }}
                 className="absolute right-4 text-white/65 hover:text-white transition cursor-pointer"
+                aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? (
                   <EyeOff className="w-4 h-4 stroke-[1.8]" />
@@ -477,9 +487,9 @@ function WelcomeAuthPageContent() {
           </form>
         )}
 
-        {/* Consolidated Navigation */}
+        {/* Consolidated Navigation & Clear Guest Mode Pill */}
         {!isOtpStep && (
-          <div className="flex items-center justify-center gap-2 text-xs text-white/80 drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)] font-light mt-4">
+          <div className="flex flex-col items-center gap-2 text-xs text-white/80 drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)] font-light mt-4 w-full">
             <button
               type="button"
               onClick={() => {
@@ -488,7 +498,7 @@ function WelcomeAuthPageContent() {
                 setErrorMsg("");
                 setSuccessMsg("");
               }}
-              className="hover:text-white transition-colors cursor-pointer"
+              className="hover:text-white transition-colors cursor-pointer py-1"
             >
               {isSignUp ? (
                 <>
@@ -506,20 +516,21 @@ function WelcomeAuthPageContent() {
                 </>
               )}
             </button>
-            <span className="text-white/35">•</span>
+
             <button
               type="button"
               onClick={handleGuest}
-              className="hover:text-white transition-colors cursor-pointer"
+              className="mt-1 flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white/10 hover:bg-white/15 active:bg-white/20 border border-white/20 text-white/90 font-medium text-xs transition-all cursor-pointer backdrop-blur-md shadow-xs"
             >
-              {t.auth.guestMode}
+              <span>🌿</span>
+              <span>{t.auth.guestMode}</span>
             </button>
           </div>
         )}
       </div>
 
       {/* 4. Single-Line Micro Footnote & Legal Terms */}
-      <div className="relative z-10 flex flex-col items-center gap-1.5 text-center drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)] pb-2">
+      <div className="relative z-10 flex flex-col items-center gap-1.5 text-center drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)] pb-2 pt-2">
         <p className="text-[10px] text-white/45 font-light tracking-wide">
           {t.auth.footnote}
         </p>

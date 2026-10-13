@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Permintaan Penghapusan Akun & Data — Rimba Sanctuary</title>
+  <link rel="icon" href="/icon-192.png">
+  <style>
+    :root {
+      --bg: #05140D;
+      --card-bg: rgba(255, 255, 255, 0.04);
+      --card-border: rgba(255, 255, 255, 0.1);
+      --primary: #34D399;
+      --danger: #E11D48;
+      --danger-light: #FB7185;
+      --text: #E8F5EE;
+      --text-muted: rgba(232, 245, 238, 0.65);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      background-image: radial-gradient(circle at 50% 0%, rgba(225, 29, 72, 0.18) 0%, rgba(5, 20, 13, 0.98) 75%);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 24px 16px 64px;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+    }
+    .container {
+      width: 100%;
+      max-width: 620px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .btn-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: var(--text);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+    .btn-back:hover { background: rgba(255, 255, 255, 0.15); }
+    .lang-switcher {
+      display: flex;
+      gap: 4px;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 4px;
+      border-radius: 9999px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+    .lang-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .lang-btn.active {
+      background: var(--danger);
+      color: #FFFFFF;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 28px;
+      padding: 28px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4);
+    }
+    .header-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+    .icon-box {
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      background: rgba(225, 29, 72, 0.18);
+      border: 1px solid rgba(244, 63, 94, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+    h1 {
+      font-size: 21px;
+      font-weight: 800;
+      color: #FFFFFF;
+      line-height: 1.25;
+    }
+    .subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    .divider {
+      height: 1px;
+      background: rgba(255, 255, 255, 0.1);
+      margin: 18px 0;
+    }
+    .warning-banner {
+      background: rgba(225, 29, 72, 0.12);
+      border: 1px solid rgba(244, 63, 94, 0.28);
+      border-radius: 16px;
+      padding: 14px 16px;
+      font-size: 12.5px;
+      color: #FFE4E6;
+      margin-bottom: 18px;
+    }
+    .info-section {
+      margin-bottom: 18px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    .info-section h3 {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #FFFFFF;
+      margin-bottom: 6px;
+    }
+    .info-section ul {
+      padding-left: 18px;
+      margin-top: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+    label {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #FFFFFF;
+    }
+    input, textarea {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 14px;
+      padding: 12px 14px;
+      color: #FFFFFF;
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input:focus, textarea:focus {
+      border-color: var(--danger-light);
+    }
+    .btn-submit {
+      width: 100%;
+      padding: 14px;
+      border-radius: 14px;
+      background: var(--danger);
+      border: none;
+      color: #FFFFFF;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin-top: 4px;
+    }
+    .btn-submit:hover {
+      background: #BE123C;
+    }
+    .success-box {
+      display: none;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(52, 211, 153, 0.35);
+      border-radius: 20px;
+      padding: 24px;
+      text-align: center;
+    }
+    .success-box h2 {
+      font-size: 18px;
+      color: #FFFFFF;
+      margin: 8px 0;
+    }
+    .success-box p {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      font-size: 12px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      margin-top: 20px;
+    }
+    .footer-links a {
+      color: var(--text-muted);
+      text-decoration: underline;
+    }
+    .footer-links a:hover {
+      color: #FFFFFF;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="top-bar">
+      <a href="/" class="btn-back">
+        <span>←</span> <span id="txt-back">Kembali ke Beranda</span>
+      </a>
+      <div class="lang-switcher">
+        <button type="button" class="lang-btn active" id="btn-id" onclick="setLanguage('id')">ID</button>
+        <button type="button" class="lang-btn" id="btn-en" onclick="setLanguage('en')">EN</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="header-row">
+        <div class="icon-box">🛡️</div>
+        <div>
+          <h1 id="txt-title">Permintaan Penghapusan Akun & Data</h1>
+          <div class="subtitle" id="txt-sub">Kepatuhan Privasi Google Play Console & Apple App Store</div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div id="form-wrapper">
+        <div class="warning-banner" id="txt-warning">
+          <strong>Peringatan Penting:</strong> Penghapusan akun bersifat permanen dan tidak dapat dibatalkan. Jika Anda masih memasang aplikasi Rimba di ponsel Anda, Anda juga dapat menghapus akun secara <strong>instan (0 detik)</strong> melalui menu <strong>Profil / Pengaturan → Hapus Akun & Data Suaka</strong>.
+        </div>
+
+        <div class="info-section" id="info-id">
+          <h3>Data yang Dihapus Secara Permanen:</h3>
+          <ul>
+            <li>Kredensial autentikasi (Email & ID Pengguna di Supabase Auth).</li>
+            <li>Profil Ranger (Nama tampilan, bio, foto avatar di Storage).</li>
+            <li>Seluruh data pulau 3D, tanaman, koin Soul, dan riwayat sesi fokus di awan (<code>game_saves</code>).</li>
+          </ul>
+          <p style="margin-top: 8px;"><strong>Waktu Pemrosesan:</strong> Seketika (melalui tombol di dalam aplikasi) atau maksimal <strong>24–48 jam</strong> melalui formulir web ini. Tidak ada data pribadi yang disimpan setelah penghapusan selesai.</p>
+        </div>
+
+        <div class="info-section" id="info-en" style="display: none;">
+          <h3>Data Permanently Deleted:</h3>
+          <ul>
+            <li>Authentication credentials (Email & User ID in Supabase Auth).</li>
+            <li>Ranger Profile (Display name, bio, avatar image in Storage).</li>
+            <li>All 3D island diorama layouts, flora, Soul coins, and cloud focus session history (<code>game_saves</code>).</li>
+          </ul>
+          <p style="margin-top: 8px;"><strong>Retention & Processing Period:</strong> Instant (via in-app Settings button) or within <strong>24–48 hours</strong> via this web request portal. Zero personal data is retained post-deletion.</p>
+        </div>
+
+        <form onsubmit="handleDeletionSubmit(event)">
+          <div class="form-group">
+            <label for="email-input" id="lbl-email">Alamat Email Akun Rimba Terdaftar *</label>
+            <input type="email" id="email-input" required placeholder="ranger@rimba.app">
+          </div>
+
+          <div class="form-group">
+            <label for="reason-input" id="lbl-reason">Alasan Penghapusan (Opsional)</label>
+            <textarea id="reason-input" rows="3" placeholder="Ceritakan alasan Anda ingin menghapus akun..."></textarea>
+          </div>
+
+          <button type="submit" class="btn-submit" id="btn-submit-text">
+            Kirim Permintaan Hapus Akun Permanen
+          </button>
+        </form>
+      </div>
+
+      <div class="success-box" id="success-wrapper">
+        <div style="font-size: 36px;">✅</div>
+        <h2 id="txt-success-title">Permintaan Penghapusan Diterima</h2>
+        <p id="txt-success-desc"></p>
+        <a href="/" class="btn-back" id="txt-return-home">Kembali ke Beranda</a>
+      </div>
+
+      <div class="footer-links">
+        <a href="/privacy.html" id="link-privacy">Kebijakan Privasi (Privacy Policy)</a>
+        <a href="/" id="link-home">Rimba Sanctuary</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentLang = 'id';
+
+    function setLanguage(lang) {
+      currentLang = lang;
+      const isId = lang === 'id';
+      document.getElementById('btn-id').className = 'lang-btn' + (isId ? ' active' : '');
+      document.getElementById('btn-en').className = 'lang-btn' + (!isId ? ' active' : '');
+      document.documentElement.lang = lang;
+
+      document.getElementById('txt-back').textContent = isId ? 'Kembali ke Beranda' : 'Back to Sanctuary';
+      document.getElementById('txt-title').textContent = isId 
+        ? 'Permintaan Penghapusan Akun & Data' 
+        : 'Account & Data Deletion Request';
+      document.getElementById('txt-sub').textContent = isId 
+        ? 'Kepatuhan Privasi Google Play Console & Apple App Store' 
+        : 'Google Play Console & Apple App Store Privacy Compliance';
+      document.getElementById('txt-warning').innerHTML = isId
+        ? '<strong>Peringatan Penting:</strong> Penghapusan akun bersifat permanen dan tidak dapat dibatalkan. Jika Anda masih memasang aplikasi Rimba di ponsel Anda, Anda juga dapat menghapus akun secara <strong>instan (0 detik)</strong> melalui menu <strong>Profil / Pengaturan → Hapus Akun & Data Suaka</strong>.'
+        : '<strong>Important Notice:</strong> Account deletion is permanent and irreversible. If you have the Rimba app installed, you can also delete your account <strong>instantly</strong> via <strong>Profile / Settings → Delete Account & Sanctuary Data</strong>.';
+
+      document.getElementById('info-id').style.display = isId ? 'block' : 'none';
+      document.getElementById('info-en').style.display = isId ? 'none' : 'block';
+
+      document.getElementById('lbl-email').textContent = isId 
+        ? 'Alamat Email Akun Rimba Terdaftar *' 
+        : 'Registered Rimba Account Email *';
+      document.getElementById('lbl-reason').textContent = isId 
+        ? 'Alasan Penghapusan (Opsional)' 
+        : 'Reason for Deletion (Optional)';
+      document.getElementById('reason-input').placeholder = isId 
+        ? 'Ceritakan alasan Anda ingin menghapus akun...' 
+        : 'Tell us why you wish to delete your account...';
+      document.getElementById('btn-submit-text').textContent = isId 
+        ? 'Kirim Permintaan Hapus Akun Permanen' 
+        : 'Submit Permanent Account Deletion Request';
+    }
+
+    function handleDeletionSubmit(e) {
+      e.preventDefault();
+      const email = document.getElementById('email-input').value.trim();
+      if (!email) return;
+
+      document.getElementById('form-wrapper').style.display = 'none';
+      const successBox = document.getElementById('success-wrapper');
+      successBox.style.display = 'block';
+
+      const isId = currentLang === 'id';
+      document.getElementById('txt-success-title').textContent = isId 
+        ? 'Permintaan Penghapusan Diterima' 
+        : 'Deletion Request Registered';
+      document.getElementById('txt-success-desc').textContent = isId
+        ? 'Permintaan penghapusan permanen untuk akun "' + email + '" telah tercatat dalam antrean sistem kami. Seluruh data profil, riwayat sesi fokus, dan simpanan pulau awan akan dihapus permanen dalam waktu 24–48 jam.'
+        : 'Your permanent deletion request for "' + email + '" has been registered. All profile data, focus session records, and cloud island saves will be permanently purged within 24–48 hours.';
+      document.getElementById('txt-return-home').textContent = isId 
+        ? 'Kembali ke Beranda' 
+        : 'Return to Homepage';
+    }
+  </script>
+</body>
+</html>

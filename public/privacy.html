@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kebijakan Privasi — Rimba Sanctuary</title>
+  <link rel="icon" href="/icon-192.png">
+  <style>
+    :root {
+      --bg: #05140D;
+      --card-bg: rgba(255, 255, 255, 0.04);
+      --card-border: rgba(255, 255, 255, 0.1);
+      --primary: #34D399;
+      --primary-dim: #187557;
+      --text: #E8F5EE;
+      --text-muted: rgba(232, 245, 238, 0.7);
+      --danger: #F43F5E;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      background-image: radial-gradient(circle at 50% 0%, rgba(24, 117, 87, 0.28) 0%, rgba(5, 20, 13, 0.98) 75%);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 24px 16px 64px;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+    }
+    .container {
+      width: 100%;
+      max-width: 720px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .btn-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: var(--text);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+    .btn-back:hover { background: rgba(255, 255, 255, 0.15); }
+    .lang-switcher {
+      display: flex;
+      gap: 4px;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 4px;
+      border-radius: 9999px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+    .lang-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .lang-btn.active {
+      background: var(--primary-dim);
+      color: #FFFFFF;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 24px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    }
+    .hero-card {
+      padding: 30px;
+      border-radius: 28px;
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--primary);
+      margin-bottom: 8px;
+    }
+    h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #FFFFFF;
+      margin-bottom: 6px;
+      letter-spacing: -0.02em;
+    }
+    .meta-date {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+    .summary-box {
+      background: rgba(24, 117, 87, 0.18);
+      border: 1px solid rgba(52, 211, 153, 0.25);
+      border-radius: 16px;
+      padding: 16px;
+      font-size: 14px;
+      color: #E2F8EE;
+      line-height: 1.55;
+    }
+    h2 {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    p {
+      font-size: 13.5px;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+    p:last-child { margin-bottom: 0; }
+    ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 6px;
+    }
+    li {
+      font-size: 13.5px;
+      color: var(--text-muted);
+      position: relative;
+      padding-left: 18px;
+    }
+    li::before {
+      content: "•";
+      position: absolute;
+      left: 4px;
+      color: var(--primary);
+      font-size: 18px;
+      line-height: 1;
+      top: -2px;
+    }
+    li strong {
+      color: #FFFFFF;
+    }
+    .footer-card {
+      text-align: center;
+      padding: 24px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    .footer-links {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      margin-top: 10px;
+    }
+    .footer-links a {
+      color: var(--primary);
+      text-decoration: underline;
+      font-weight: 600;
+      transition: color 0.2s;
+    }
+    .footer-links a.danger {
+      color: var(--danger);
+    }
+    .footer-links a:hover {
+      color: #FFFFFF;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="top-bar">
+      <a href="/" class="btn-back">
+        <span>←</span> <span id="txt-back">Kembali</span>
+      </a>
+      <div class="lang-switcher">
+        <button type="button" class="lang-btn active" id="btn-id" onclick="setLanguage('id')">ID</button>
+        <button type="button" class="lang-btn" id="btn-en" onclick="setLanguage('en')">EN</button>
+      </div>
+    </div>
+
+    <!-- ID Content -->
+    <div id="content-id">
+      <div class="card hero-card">
+        <div class="hero-badge">🌿 Rimba Sanctuary · Kedaulatan Privasi</div>
+        <h1>Kebijakan Privasi</h1>
+        <div class="meta-date">Pembaruan Terakhir: 12 Oktober 2026</div>
+        <div class="summary-box">
+          Rimba menjunjung tinggi kedaulatan privasi Anda dengan arsitektur <strong>Local-First</strong>. Seluruh data pulau dan sesi fokus Anda tersimpan secara lokal di perangkat Anda dan tidak pernah diperjualbelikan kepada pihak ketiga atau pengiklan.
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>1. Prinsip Utama & Arsitektur Local-First</h2>
+        <p>Rimba dirancang sebagai suaka fokus pribadi yang mengedepankan kedaulatan data pengguna.</p>
+        <p>Secara default, seluruh data perkembangan pulau suaka, riwayat sesi fokus, catatan jurnal, dan preferensi disimpan langsung di penyimpanan lokal perangkat Anda (Local Storage / IndexedDB).</p>
+        <p>Kami menganut prinsip minimasi data: kami hanya memproses data yang benar-benar esensial untuk mendukung pengalaman fokus, pemulihan suaka, dan gamifikasi produktivitas Anda.</p>
+      </div>
+
+      <div class="card">
+        <h2>2. Data yang Kami Kumpulkan</h2>
+        <ul>
+          <li><strong>Data Sesi Fokus:</strong> Durasi fokus, jenis mode (Timer, Stopwatch, atau Pomodoro), status keberhasilan sesi, timestamp waktu mulai dan selesai, serta kategori aktivitas.</li>
+          <li><strong>Data Pulau Suaka:</strong> Tata letak petak grid 3D, tanaman dan pohon yang ditanam, koin Soul yang diperoleh, ekspansi lahan, dan status objek alam.</li>
+          <li><strong>Data Akun (Jika Mendaftar):</strong> Alamat email dan nama tampilan yang Anda berikan saat membuat akun untuk keperluan otentikasi. Jika Anda memilih Mode Tamu (Guest Mode), tidak ada informasi pengenal pribadi yang dikumpulkan.</li>
+          <li><strong>Preferensi Aplikasi:</strong> Pengaturan kualitas grafis (Eco, Balanced, Ultra), volume efek suara dan soundscape, notifikasi pengingat harian lokal, dan preferensi haptik.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2>3. Penggunaan Data</h2>
+        <p>Data digunakan semata-mata untuk:</p>
+        <ul>
+          <li>Menghitung metrik produktivitas harian dan mingguan serta menghasilkan cerita refleksi fokus (Focus Lore & Sanctuary Review).</li>
+          <li>Menyinkronkan progres pulau Anda ke awan (Cloud Sync via Supabase) secara terenkripsi hanya jika Anda masuk dengan akun terdaftar dan mengaktifkan sinkronisasi.</li>
+          <li>Kami <strong>TIDAK PERNAH</strong> menjual, menyewakan, atau menukar data pribadi Anda kepada pihak ketiga atau platform periklanan mana pun. Rimba 100% bebas dari pelacak iklan komersial.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2>4. Keamanan & Penyimpanan Server</h2>
+        <p>Jika Anda memilih untuk mengaktifkan sinkronisasi awan, seluruh komunikasi data dienkripsi menggunakan protokol aman HTTPS / TLS 1.3. Basis data awan Supabase dilindungi dengan Row Level Security (RLS) berlapis ketat yang memastikan hanya akun Anda yang memiliki akses terhadap berkas penyimpanan suaka Anda.</p>
+      </div>
+
+      <div class="card">
+        <h2>5. Hak Pengguna & Hapus Akun Permanen (Apple Guideline 5.1.1)</h2>
+        <p>Anda memegang kendali penuh atas data Anda:</p>
+        <ul>
+          <li><strong>Ekspor Cadangan:</strong> Anda dapat mengunduh seluruh salinan data suaka dalam format JSON kapan saja melalui menu Pengaturan.</li>
+          <li><strong>Penghapusan Seketika di Aplikasi:</strong> Anda dapat menghapus akun dan data permanen kapan saja melalui menu Profil / Pengaturan di aplikasi.</li>
+          <li><strong>Portal Publik Hapus Akun:</strong> Pengguna dapat mengajukan permohonan penghapusan akun dan data melalui portal publik kami di <a href="/account-deletion.html" style="color: var(--primary); text-decoration: underline;">account-deletion.html</a>.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2>6. Kontak Layanan</h2>
+        <p>Jika Anda memiliki pertanyaan seputar kebijakan privasi ini atau permohonan terkait data pribadi, silakan hubungi tim kami melalui surel resmi: <strong>halo@rimba.app</strong>.</p>
+      </div>
+    </div>
+
+    <!-- EN Content -->
+    <div id="content-en" style="display: none;">
+      <div class="card hero-card">
+        <div class="hero-badge">🌿 Rimba Sanctuary · Privacy Sovereignty</div>
+        <h1>Privacy Policy</h1>
+        <div class="meta-date">Last Updated: October 12, 2026</div>
+        <div class="summary-box">
+          Rimba honors your privacy sovereignty with a <strong>Local-First</strong> architecture. Your island saves and focus records are stored locally on your device and are never sold or shared with commercial ad trackers.
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>1. Core Principles & Local-First Architecture</h2>
+        <p>Rimba is crafted as a personal focus sanctuary that champions user data sovereignty.</p>
+        <p>By default, all island diorama progress, focus session logs, journal notes, and preferences reside directly within your device's local storage (Local Storage / IndexedDB).</p>
+        <p>We adhere to strict data minimization: we only process information strictly required to power your concentration sessions, island restoration, and mindful gamification.</p>
+      </div>
+
+      <div class="card">
+        <h2>2. Information We Collect</h2>
+        <ul>
+          <li><strong>Focus Session Data:</strong> Duration, session type (Timer, Stopwatch, or Pomodoro), completion status, start/end timestamps, and activity tags.</li>
+          <li><strong>Sanctuary Island Data:</strong> 3D grid layout, planted flora, accumulated Soul currency, biome unlocks, and nature tiles.</li>
+          <li><strong>Account Data (Optional):</strong> Email address and display name if you create a registered account. In Guest Mode, zero personal identifiable information is stored on our servers.</li>
+          <li><strong>App Preferences:</strong> Visual quality tiers (Eco, Balanced, Ultra), soundscape volume, local reminder preferences, and haptic feedback toggles.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2>3. Data Usage & Zero Ad Tracking</h2>
+        <p>Collected information is used exclusively to:</p>
+        <ul>
+          <li>Calculate personal productivity analytics and generate mindful reflection narratives (Focus Lore).</li>
+          <li>Synchronize your island progress via encrypted cloud sync (Supabase) if you choose to sign in.</li>
+          <li>We <strong>NEVER</strong> sell, rent, or trade your data to third-party data brokers or advertisers. Rimba is entirely free of third-party advertising SDKs.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2>4. Security & Cloud Storage</h2>
+        <p>Cloud synchronization is protected end-to-end via TLS 1.3 / HTTPS encryption. Supabase database tables are guarded with rigorous Row Level Security (RLS) policies, ensuring only your authenticated session can access your island data.</p>
+      </div>
+
+      <div class="card">
+        <h2>5. Your Rights & Account Deletion (Apple Guideline 5.1.1)</h2>
+        <p>You maintain complete ownership of your data:</p>
+        <ul>
+          <li><strong>Backup Export:</strong> Download a full JSON backup of your sanctuary at any time via Settings.</li>
+          <li><strong>Instant In-App Deletion:</strong> Permanently delete your account and all associated cloud/local records in one tap from the Profile or Settings screen.</li>
+          <li><strong>Public Deletion Portal:</strong> Request permanent account deletion online at <a href="/account-deletion.html" style="color: var(--primary); text-decoration: underline;">account-deletion.html</a>.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2>6. Contact Us</h2>
+        <p>For questions or data deletion inquiries, please reach out to our team at: <strong>halo@rimba.app</strong>.</p>
+      </div>
+    </div>
+
+    <!-- Footer Links -->
+    <div class="card footer-card">
+      <p id="txt-footer-note">Ingin menghapus akun atau berkonsultasi mengenai data Anda?</p>
+      <div class="footer-links">
+        <a href="/account-deletion.html" class="danger" id="txt-link-delete">Permintaan Hapus Akun</a>
+        <span>·</span>
+        <a href="/" id="txt-link-home">Beranda Rimba</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function setLanguage(lang) {
+      const isId = lang === 'id';
+      document.getElementById('content-id').style.display = isId ? 'block' : 'none';
+      document.getElementById('content-en').style.display = isId ? 'none' : 'block';
+      document.getElementById('btn-id').className = 'lang-btn' + (isId ? ' active' : '');
+      document.getElementById('btn-en').className = 'lang-btn' + (!isId ? ' active' : '');
+      document.documentElement.lang = lang;
+
+      document.getElementById('txt-back').textContent = isId ? 'Kembali' : 'Back';
+      document.getElementById('txt-footer-note').textContent = isId 
+        ? 'Ingin menghapus akun atau berkonsultasi mengenai data Anda?' 
+        : 'Need to delete your account or inquire about your data?';
+      document.getElementById('txt-link-delete').textContent = isId 
+        ? 'Permintaan Hapus Akun' 
+        : 'Request Account Deletion';
+      document.getElementById('txt-link-home').textContent = isId 
+        ? 'Beranda Rimba' 
+        : 'Sanctuary Homepage';
+    }
+  </script>
+</body>
+</html>

@@ -41,17 +41,17 @@ File template HTML siap pakai tersedia di folder [`supabase/email-templates/`](f
 
 ---
 
-## ⚙️ 2. Konfigurasi Email Provider & OTP
+## ⚙️ 2. Konfigurasi Email Provider & Instant Sign-Up (Zero-Friction)
 
 Buka **Authentication -> Providers -> Email**:
 
-| Pengaturan | Nilai Rekomendasi | Alasan Teknis |
+| Pengaturan | Nilai Standar | Alasan Arsitektur (Zero-Cost & Zero-Friction) |
 | :--- | :---: | :--- |
-| **Enable Email provider** | **ON (Aktif)** | Mengizinkan pendaftaran & login via email. |
-| **Confirm email** | **ON (Aktif)** | Mencegah pendaftaran email palsu; memicu pengiriman 6-digit OTP ke email user saat sign up. |
-| **Secure email change** | **ON (Aktif)** | Mengharuskan konfirmasi email ganda jika user mengubah email. |
+| **Enable Email provider** | **ON (Aktif)** | Mengizinkan pendaftaran & login via email + kata sandi. |
+| **Confirm email** | **OFF (Mati)** | **Instant Sign-Up (<1 detik)**: Mengizinkan user baru & tim *Reviewer* Apple/Google (yang kerap memakai email dummy) langsung masuk tanpa layar tunggu OTP dan tanpa menguras kuota pengiriman SMTP. |
+| **Secure email change** | **ON (Aktif)** | Mengharuskan konfirmasi jika user mengubah alamat email. |
 | **Minimum password length** | **6** | Selaras dengan validasi form login & register Rimba. |
-| **OTP Expiry (seconds)** | **3600** *(1 jam)* | Memberikan waktu cukup bagi user untuk memeriksa email tanpa kedaluwarsa terlalu cepat. |
+| **OTP Expiry (seconds)** | **3600** *(1 jam)* | Masa berlaku kode pemulihan kata sandi (Forgot Password). |
 
 ---
 
@@ -71,24 +71,25 @@ https://rimba-website.pages.dev
 
 ---
 
-## 🚀 4. Rekomendasi SMTP Mandiri (Bypass Rate-Limit 3 Email/Jam)
+## 🚀 4. Konfigurasi Custom SMTP Gratis via Gmail App Password (Zero-Cost)
 
-Secara default, Supabase membatasi pengiriman email bawaan (**default Supabase mailer**) hanya **3 hingga 4 email per jam** untuk mencegah spam.
+Karena pendaftaran pengguna baru sudah menggunakan **Instant Sign-Up (Confirm email: OFF)**, pengiriman email transaksional **hanya dipakai untuk fitur Lupa Kata Sandi (Forgot Password / Reset Password)** dan dikelola murni oleh Supabase Auth tanpa SDK berbayar di sisi aplikasi.
 
-Untuk penggunaan rilis produksi, sangat disarankan menghubungkan **Custom SMTP Provider**:
+Gunakan **Gmail SMTP (Gratis 500 email/hari)** dengan langkah berikut:
 
-### Opsi Terbaik & Gratis: **Resend** (resend.com)
-1. Daftar gratis di [Resend.com](https://resend.com) (gratis 3.000 email/bulan, 100 email/hari).
-2. Verifikasi domain Anda (misal: `rimba.app` atau `jagarimba.id`) atau gunakan subdomain test.
-3. Buat API Key di Resend.
-4. Di Supabase Dashboard, buka **Project Settings -> Authentication -> SMTP Settings**:
-   - **Sender email:** `halo@rimba.app` *(atau email domain terverifikasi Anda)*
+1. Buka akun Google/Gmail resmi proyek Anda -> **Manage your Google Account -> Security**.
+2. Pastikan **2-Step Verification (Verifikasi 2 Langkah)** sudah **Aktif (ON)**.
+3. Cari menu **App Passwords (Sandi Aplikasi)** di kolom pencarian Security.
+4. Buat App Password baru dengan nama `Supabase Rimba Auth`, lalu salin **16 karakter kode sandi** yang muncul (tanpa spasi).
+5. Buka **Supabase Dashboard -> Project Settings -> Authentication -> SMTP Settings**:
+   - **Enable Custom SMTP:** `ON`
+   - **Sender email:** `email-anda@gmail.com`
    - **Sender name:** `Rimba Suaka Fokus`
-   - **Host:** `smtp.resend.com`
-   - **Port:** `465` (SSL) atau `587` (TLS)
-   - **Username:** `resend`
-   - **Password:** `<API_KEY_RESEND_ANDA>`
-5. Klik **Save**. Pengiriman email OTP akan tiba dalam kurun waktu **1-2 detik** tanpa batasan rate limit Supabase!
+   - **Host:** `smtp.gmail.com`
+   - **Port:** `465` *(SSL)* atau `587` *(TLS)*
+   - **Username:** `email-anda@gmail.com`
+   - **Password:** `<16_DIGIT_GMAIL_APP_PASSWORD>`
+6. Klik **Save**. Kini email pemulihan kata sandi (*Reset Password*) terkirim instan dalam 1–2 detik dengan biaya **Rp 0 (Zero-Cost)**!
 
 ---
 

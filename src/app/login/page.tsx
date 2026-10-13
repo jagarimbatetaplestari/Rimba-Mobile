@@ -7,14 +7,20 @@ import { useAuthStore } from "@/lib/auth/useAuthStore";
 import { useTranslation } from "@/lib/i18n/translations";
 import { soundManager } from "@/lib/audio/sounds";
 import { hapticLight, hapticMedium, hapticSuccess, hapticWarning } from "@/lib/mobile/nativeBridge";
-import { Mail, Lock, Eye, EyeOff, ArrowLeft, RefreshCw, CheckCircle2, ShieldCheck, User } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ArrowLeft, RefreshCw, CheckCircle2, ShieldCheck, User, KeyRound } from "lucide-react";
+import { Capacitor } from "@capacitor/core";
+import { supabase } from "@/lib/supabase/client";
 import { LegalModal } from "@/components/modals/LegalModal";
 
 function WelcomeAuthPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialMode = searchParams?.get("mode") === "signin" ? false : true;
+  const isResetParam = searchParams?.get("mode") === "reset";
   const { t } = useTranslation();
+
+  // Apple App Store Guideline 4.8 platform check
+  const isNativeIOS = typeof window !== "undefined" && Capacitor.isNativePlatform() && Capacitor.getPlatform() === "ios";
 
   const {
     user,
@@ -22,6 +28,9 @@ function WelcomeAuthPageContent() {
     registerWithEmail,
     verifyOtp,
     resendOtp,
+    resetPasswordForEmail,
+    verifyRecoveryOtpAndSetPassword,
+    updateRecoveredPassword,
     loginAsGuest,
     isLoading,
   } = useAuthStore();
@@ -35,6 +44,13 @@ function WelcomeAuthPageContent() {
   const [successMsg, setSuccessMsg] = useState("");
   const [legalModalTab, setLegalModalTab] = useState<"privacy" | "terms" | null>(null);
 
+  // Forgot / Reset Password state
+  const [forgotStep, setForgotStep] = useState<"none" | "request" | "reset">(isResetParam ? "reset" : "none");
+  const [recoveryCode, setRecoveryCode] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [isSubmittingReset, setIsSubmittingReset] = useState(false);
+
   // OTP Verification state
   const [isOtpStep, setIsOtpStep] = useState(false);
   const [otpDigits, setOtpDigits] = useState<string[]>(["", "", "", "", "", ""]);
@@ -44,12 +60,26 @@ function WelcomeAuthPageContent() {
 
   const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // Redirect if already logged in
+  // Listen to Supabase PASSWORD_RECOVERY event
   useEffect(() => {
-    if (user && !isOtpStep) {
+    const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setForgotStep("reset");
+        setErrorMsg("");
+        setSuccessMsg("");
+      }
+    });
+    return () => {
+      authListener?.subscription?.unsubscribe();
+    };
+  }, []);
+
+  // Redirect if already logged in (hanya jika tidak sedang di alur OTP atau Reset Password)
+  useEffect(() => {
+    if (user && !isOtpStep && forgotStep === "none") {
       router.replace("/");
     }
-  }, [user, router, isOtpStep]);
+  }, [user, router, isOtpStep, forgotStep]);
 
   // Resend cooldown timer
   useEffect(() => {
@@ -257,6 +287,85 @@ function WelcomeAuthPageContent() {
     }
   };
 
+  const handleRequestPasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg("");
+    setSuccessMsg("");
+    const cleanEmail = email.trim();
+    if (!cleanEmail) {
+      setErrorMsg(t.auth.emptyFields);
+      hapticWarning();
+      return;
+    }
+
+    setIsSubmittingReset(true);
+    hapticMedium();
+    try {
+      const res = await resetPasswordForEmail(cleanEmail);
+      setIsSubmittingReset(false);
+      if (res.success) {
+        soundManager.playPop();
+        hapticSuccess();
+        setForgotStep("reset");
+        setSuccessMsg(t.auth.resetSentMsg.replace("{email}", cleanEmail));
+      } else {
+        soundManager.playError();
+        hapticWarning();
+        setErrorMsg(res.error || "Gagal mengirim email pemulihan kata sandi.");
+      }
+    } catch (err: any) {
+      setIsSubmittingReset(false);
+      soundManager.playError();
+      hapticWarning();
+      setErrorMsg(err?.message || t.auth.networkError);
+    }
+  };
+
+  const handleExecutePasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg("");
+    setSuccessMsg("");
+
+    const cleanNewPass = newPassword.trim();
+    if (cleanNewPass.length < 6) {
+      setErrorMsg(t.auth.shortPassword);
+      hapticWarning();
+      return;
+    }
+
+    setIsSubmittingReset(true);
+    hapticMedium();
+    try {
+      let res: { success: boolean; error?: string };
+      if (recoveryCode.trim().length > 0) {
+        res = await verifyRecoveryOtpAndSetPassword(email.trim(), recoveryCode.trim(), cleanNewPass);
+      } else {
+        res = await updateRecoveredPassword(cleanNewPass);
+      }
+      setIsSubmittingReset(false);
+
+      if (res.success) {
+        soundManager.playComplete();
+        hapticSuccess();
+        setSuccessMsg(t.auth.resetSuccessMsg);
+        setTimeout(() => {
+          setForgotStep("none");
+          setIsSignUp(false);
+          router.push("/");
+        }, 1200);
+      } else {
+        soundManager.playError();
+        hapticWarning();
+        setErrorMsg(res.error || "Gagal memperbarui kata sandi.");
+      }
+    } catch (err: any) {
+      setIsSubmittingReset(false);
+      soundManager.playError();
+      hapticWarning();
+      setErrorMsg(err?.message || t.auth.networkError);
+    }
+  };
+
   const handleGuest = () => {
     soundManager.playPop();
     hapticMedium();
@@ -299,18 +408,26 @@ function WelcomeAuthPageContent() {
       <div className="w-full flex-1 min-h-[40px] max-h-[180px] pointer-events-none" />
 
       {/* 3. Core Interface Container */}
-      <div className="relative z-10 w-full max-w-[340px] flex flex-col items-center text-center pb-2 my-auto">
+      <div className="relative z-10 w-full max-w-[340px] flex flex-col items-center text-center pb-2 my-auto" data-native-ios={isNativeIOS ? "true" : "false"}>
         {/* Editorial Serif Header */}
         <div className="mb-2 relative">
           <h1 className="font-serif italic text-[30px] sm:text-[36px] font-normal tracking-tight text-white leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] drop-shadow-[0_8px_20px_rgba(0,0,0,0.8)]">
-            {isOtpStep
+            {forgotStep === "request"
+              ? t.auth.forgotTitle
+              : forgotStep === "reset"
+              ? t.auth.resetTitle
+              : isOtpStep
               ? t.auth.otpTitle
               : isSignUp
               ? t.auth.taglineSignUp
               : t.auth.taglineSignIn}
           </h1>
           <p className="mb-1 text-xs sm:text-[13px] text-white/90 font-light tracking-wide max-w-[270px] mx-auto leading-relaxed drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]">
-            {isOtpStep
+            {forgotStep === "request"
+              ? t.auth.forgotSub
+              : forgotStep === "reset"
+              ? t.auth.resetSub
+              : isOtpStep
               ? t.auth.otpSent.replace("{email}", email.trim() || "email Anda")
               : isSignUp
               ? t.auth.subSignUp
@@ -334,9 +451,143 @@ function WelcomeAuthPageContent() {
         )}
 
         {/* ========================================================= */}
-        {/* STATE A: OTP VERIFICATION STEP IN-APP                     */}
+        {/* STATE 0: FORGOT / RESET PASSWORD STEP                     */}
         {/* ========================================================= */}
-        {isOtpStep ? (
+        {forgotStep === "request" ? (
+          <form onSubmit={handleRequestPasswordReset} className="w-full space-y-2.5 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div className="relative flex items-center px-4 py-3.5 rounded-2xl bg-black/25 hover:bg-black/30 focus-within:bg-black/35 backdrop-blur-md border border-white/[0.12] focus-within:border-white/35 shadow-[0_8px_24px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.2)] transition-all">
+              <Mail className="w-4 h-4 text-white/70 stroke-[1.8] flex-shrink-0 drop-shadow-sm" />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder={t.auth.emailPlaceholder}
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                autoComplete="email"
+                inputMode="email"
+                className="w-full bg-transparent pl-3 pr-2 text-xs font-normal text-white placeholder-white/50 focus:outline-none drop-shadow-sm"
+                required
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={isSubmittingReset}
+              className="group relative w-full mt-2 py-3.5 px-6 rounded-full font-medium text-xs text-white bg-emerald-500/30 hover:bg-emerald-500/25 active:bg-emerald-500/35 backdrop-blur-2xl border border-emerald-300/10 shadow-[0_12px_32px_rgba(4,25,16,0.45),inset_0_1.5px_2px_rgba(255,255,255,0.5),inset_0_-2px_10px_rgba(16,185,129,0.25)] transition-all active:scale-[0.98] flex items-center justify-center gap-2 overflow-hidden cursor-pointer disabled:opacity-50"
+            >
+              {isSubmittingReset ? (
+                <span className="flex items-center gap-2 animate-pulse font-light">
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  <span>{t.auth.sending}</span>
+                </span>
+              ) : (
+                <span className="tracking-wide font-medium drop-shadow-sm">
+                  {t.auth.sendResetBtn}
+                </span>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                soundManager.playPop();
+                hapticLight();
+                setForgotStep("none");
+                setErrorMsg("");
+                setSuccessMsg("");
+              }}
+              className="w-full pt-2 flex items-center justify-center gap-1 text-xs text-white/80 hover:text-white transition-colors cursor-pointer"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>{t.auth.backToSignIn}</span>
+            </button>
+          </form>
+        ) : forgotStep === "reset" ? (
+          <form onSubmit={handleExecutePasswordReset} className="w-full space-y-2.5 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            {/* Optional Recovery Code Input (if opened directly after requesting code) */}
+            <div className="relative flex items-center px-4 py-3.5 rounded-2xl bg-black/25 hover:bg-black/30 focus-within:bg-black/35 backdrop-blur-md border border-white/[0.12] focus-within:border-white/35 shadow-[0_8px_24px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.2)] transition-all">
+              <KeyRound className="w-4 h-4 text-white/70 stroke-[1.8] flex-shrink-0 drop-shadow-sm" />
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                value={recoveryCode}
+                onChange={(e) => setRecoveryCode(e.target.value.replace(/\D/g, ""))}
+                placeholder={t.auth.recoveryCodePlaceholder}
+                className="w-full bg-transparent pl-3 pr-2 text-xs font-mono tracking-widest text-white placeholder-white/50 focus:outline-none drop-shadow-sm"
+              />
+            </div>
+
+            {/* New Password Capsule */}
+            <div className="relative flex items-center px-4 py-3.5 rounded-2xl bg-black/25 hover:bg-black/30 focus-within:bg-black/35 backdrop-blur-md border border-white/[0.12] focus-within:border-white/35 shadow-[0_8px_24px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.2)] transition-all">
+              <Lock className="w-4 h-4 text-white/70 stroke-[1.8] flex-shrink-0 drop-shadow-sm" />
+              <input
+                type={showNewPassword ? "text" : "password"}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder={t.auth.newPasswordPlaceholder}
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                autoComplete="new-password"
+                className="w-full bg-transparent pl-3 pr-8 text-xs font-normal text-white placeholder-white/50 focus:outline-none drop-shadow-sm"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  hapticLight();
+                  setShowNewPassword(!showNewPassword);
+                }}
+                className="absolute right-4 text-white/65 hover:text-white transition cursor-pointer"
+                aria-label={showNewPassword ? "Hide password" : "Show password"}
+              >
+                {showNewPassword ? (
+                  <EyeOff className="w-4 h-4 stroke-[1.8]" />
+                ) : (
+                  <Eye className="w-4 h-4 stroke-[1.8]" />
+                )}
+              </button>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isSubmittingReset}
+              className="group relative w-full mt-2 py-3.5 px-6 rounded-full font-medium text-xs text-white bg-emerald-500/30 hover:bg-emerald-500/25 active:bg-emerald-500/35 backdrop-blur-2xl border border-emerald-300/10 shadow-[0_12px_32px_rgba(4,25,16,0.45),inset_0_1.5px_2px_rgba(255,255,255,0.5),inset_0_-2px_10px_rgba(16,185,129,0.25)] transition-all active:scale-[0.98] flex items-center justify-center gap-2 overflow-hidden cursor-pointer disabled:opacity-50"
+            >
+              {isSubmittingReset ? (
+                <span className="flex items-center gap-2 animate-pulse font-light">
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  <span>{t.auth.connecting}</span>
+                </span>
+              ) : (
+                <span className="tracking-wide font-medium drop-shadow-sm">
+                  {t.auth.saveNewPasswordBtn}
+                </span>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                soundManager.playPop();
+                hapticLight();
+                setForgotStep("none");
+                setErrorMsg("");
+                setSuccessMsg("");
+              }}
+              className="w-full pt-2 flex items-center justify-center gap-1 text-xs text-white/80 hover:text-white transition-colors cursor-pointer"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>{t.auth.backToSignIn}</span>
+            </button>
+          </form>
+        ) : isOtpStep ? (
+          /* ========================================================= */
+          /* STATE A: OTP VERIFICATION STEP IN-APP (Fallback Only)     */
+          /* ========================================================= */
           <div className="w-full space-y-3.5 animate-in fade-in slide-in-from-bottom-2 duration-300">
             {/* 6-Digit OTP Box Grid (Responsive on narrow screens) */}
             <div className="flex items-center justify-between gap-1 sm:gap-1.5 w-full py-1">
@@ -484,6 +735,25 @@ function WelcomeAuthPageContent() {
               </button>
             </div>
 
+            {/* Forgot Password Link (Sign In only) */}
+            {!isSignUp && (
+              <div className="flex justify-end px-1 pt-0.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    soundManager.playPop();
+                    hapticLight();
+                    setForgotStep("request");
+                    setErrorMsg("");
+                    setSuccessMsg("");
+                  }}
+                  className="text-[11px] text-white/70 hover:text-emerald-300 transition-colors underline underline-offset-2 cursor-pointer"
+                >
+                  {t.auth.forgotPasswordLink}
+                </button>
+              </div>
+            )}
+
             {/* Living Dewdrop Action Button */}
             <button
               type="submit"
@@ -536,7 +806,7 @@ function WelcomeAuthPageContent() {
         )}
 
         {/* Consolidated Navigation & Clear Guest Mode Pill */}
-        {!isOtpStep && (
+        {!isOtpStep && forgotStep === "none" && (
           <div className="flex flex-col items-center gap-2 text-xs text-white/80 drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)] font-light mt-4 w-full">
             <button
               type="button"

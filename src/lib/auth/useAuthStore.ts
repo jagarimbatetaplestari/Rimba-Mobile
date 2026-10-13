@@ -2,6 +2,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { Capacitor } from '@capacitor/core';
 import { supabase } from '../supabase/client';
 import { smartSyncOnLogin, uploadGameSaveToCloud } from '../supabase/cloudSync';
 
@@ -31,6 +32,9 @@ interface AuthState {
   registerWithEmail: (name: string, email: string, pass: string) => Promise<AuthResult>;
   verifyOtp: (email: string, token: string) => Promise<AuthResult>;
   resendOtp: (email: string) => Promise<AuthResult>;
+  resetPasswordForEmail: (email: string) => Promise<AuthResult>;
+  verifyRecoveryOtpAndSetPassword: (email: string, token: string, newPass: string) => Promise<AuthResult>;
+  updateRecoveredPassword: (newPass: string) => Promise<AuthResult>;
   loginWithOAuth: (provider: 'google' | 'github' | 'apple') => Promise<boolean>;
   updateProfile: (updates: { name?: string; avatarUrl?: string; bio?: string }) => void;
   uploadAvatarFile: (file: File | Blob) => Promise<string | null>;
@@ -305,7 +309,171 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
+      resetPasswordForEmail: async (email: string): Promise<AuthResult> => {
+        set({ isLoading: true });
+        try {
+          const cleanEmail = email.trim();
+          const redirectUrl =
+            typeof window !== 'undefined' ? `${window.location.origin}/login?mode=reset` : undefined;
+
+          const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
+            redirectTo: redirectUrl,
+          });
+
+          if (error) {
+            set({ isLoading: false });
+            return { success: false, error: error.message || 'Gagal mengirim instruksi pemulihan.' };
+          }
+
+          set({ isLoading: false });
+          return { success: true };
+        } catch (err: any) {
+          set({ isLoading: false });
+          return { success: false, error: err?.message || 'Terjadi kendala saat mengirim email pemulihan.' };
+        }
+      },
+
+      verifyRecoveryOtpAndSetPassword: async (
+        email: string,
+        token: string,
+        newPass: string
+      ): Promise<AuthResult> => {
+        set({ isLoading: true });
+        try {
+          if (newPass.length < 6) {
+            set({ isLoading: false });
+            return { success: false, error: 'Kata sandi baru minimal 6 karakter.' };
+          }
+
+          const cleanEmail = email.trim();
+          const cleanToken = token.trim();
+
+          const { data, error } = await supabase.auth.verifyOtp({
+            email: cleanEmail,
+            token: cleanToken,
+            type: 'recovery',
+          });
+
+          if (error) {
+            set({ isLoading: false });
+            return {
+              success: false,
+              error: error.message || 'Kode pemulihan tidak valid atau telah kadaluarsa.',
+            };
+          }
+
+          const { data: updateData, error: updateError } = await supabase.auth.updateUser({
+            password: newPass,
+          });
+
+          if (updateError) {
+            set({ isLoading: false });
+            return { success: false, error: updateError.message || 'Gagal menyimpan kata sandi baru.' };
+          }
+
+          const updatedUser = updateData.user || data.user;
+          if (updatedUser) {
+            const userId = updatedUser.id;
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', userId)
+              .maybeSingle();
+
+            const displayName =
+              profile?.display_name ||
+              updatedUser.user_metadata?.display_name ||
+              cleanEmail.split('@')[0] ||
+              'Penjaga Rimba';
+
+            const userObj: AuthUser = {
+              id: userId,
+              email: cleanEmail,
+              name: displayName,
+              bio: profile?.bio || 'Penjaga Hutan Suaka',
+              avatarUrl: profile?.avatar_url || '🦌',
+              isGuest: false,
+              createdAt: updatedUser.created_at || new Date().toISOString(),
+            };
+
+            set({ user: userObj, isLoading: false });
+            await smartSyncOnLogin(userId);
+            return { success: true };
+          }
+
+          set({ isLoading: false });
+          return { success: true };
+        } catch (err: any) {
+          set({ isLoading: false });
+          return { success: false, error: err?.message || 'Gagal memulihkan kata sandi.' };
+        }
+      },
+
+      updateRecoveredPassword: async (newPass: string): Promise<AuthResult> => {
+        set({ isLoading: true });
+        try {
+          if (newPass.length < 6) {
+            set({ isLoading: false });
+            return { success: false, error: 'Kata sandi baru minimal 6 karakter.' };
+          }
+
+          const { data, error } = await supabase.auth.updateUser({
+            password: newPass,
+          });
+
+          if (error) {
+            set({ isLoading: false });
+            return { success: false, error: error.message || 'Gagal menyimpan kata sandi baru.' };
+          }
+
+          if (data.user) {
+            const userId = data.user.id;
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', userId)
+              .maybeSingle();
+
+            const displayName =
+              profile?.display_name ||
+              data.user.user_metadata?.display_name ||
+              data.user.email?.split('@')[0] ||
+              'Penjaga Rimba';
+
+            const userObj: AuthUser = {
+              id: userId,
+              email: data.user.email || '',
+              name: displayName,
+              bio: profile?.bio || 'Penjaga Hutan Suaka',
+              avatarUrl: profile?.avatar_url || '🦌',
+              isGuest: false,
+              createdAt: data.user.created_at || new Date().toISOString(),
+            };
+
+            set({ user: userObj, isLoading: false });
+            await smartSyncOnLogin(userId);
+          }
+
+          set({ isLoading: false });
+          return { success: true };
+        } catch (err: any) {
+          set({ isLoading: false });
+          return { success: false, error: err?.message || 'Gagal memperbarui kata sandi.' };
+        }
+      },
+
       loginWithOAuth: async (provider: 'google' | 'github' | 'apple') => {
+        // Apple Guideline 4.8 Protection: Prevent third-party OAuth on native iOS unless Apple Sign In is used
+        const isNativeIOS =
+          typeof window !== 'undefined' &&
+          Capacitor.isNativePlatform() &&
+          Capacitor.getPlatform() === 'ios';
+
+        if (isNativeIOS && provider !== 'apple') {
+          console.warn('Third-party OAuth hidden/disabled on native iOS per Apple Guideline 4.8');
+          return false;
+        }
+
         set({ isLoading: true });
         try {
           const { error } = await supabase.auth.signInWithOAuth({

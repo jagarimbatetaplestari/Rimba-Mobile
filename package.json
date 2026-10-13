@@ -15,7 +15,8 @@
     "android:copy": "cap copy android",
     "android:open": "cap open android",
     "android:assets": "node scripts/generate-android-assets.js",
-    "generate-icons": "node scripts/generate-icons.js"
+    "generate-icons": "node scripts/generate-icons.js",
+    "generate-store-assets": "node scripts/generate-store-assets.js"
   },
   "dependencies": {
     "@capacitor/android": "^6.2.2",

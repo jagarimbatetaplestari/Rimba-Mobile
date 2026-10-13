@@ -14,8 +14,10 @@ Dokumen ini berisi panduan formulir lengkap (**Copy-Paste Ready**) untuk mendaft
 | **Kategori Utama** | **Productivity** (Produktivitas) | **Productivity** (Produktivitas) |
 | **Kategori Sekunder** | **Health & Fitness** atau **Casual** | **Lifestyle** atau **Games (Simulation)** |
 | **Tags / Keywords** | `focus timer, pomodoro, habit, relaxing, meditation, nature, zen, plant trees, productivity` | `focus, pomodoro, timer, relax, zen, mindful, garden, productivity, habit, meditation` |
-| **Support URL** | `https://github.com/jagarimbatetaplestari/Rimba-Mobile/issues` *(atau website resmi)* | `https://github.com/jagarimbatetaplestari/Rimba-Mobile/issues` |
-| **Privacy Policy URL** | `https://rimba-mobile.vercel.app/privacy` | `https://rimba-mobile.vercel.app/privacy` |
+| **Support URL** | `https://github.com/jagarimbatetaplestari/Rimba-Mobile/issues` *(atau https://rimba-website.pages.dev)* | `https://github.com/jagarimbatetaplestari/Rimba-Mobile/issues` |
+| **Privacy Policy URL** | `https://rimba-website.pages.dev/privacy` | `https://rimba-website.pages.dev/privacy` |
+| **Terms of Service URL** | `https://rimba-website.pages.dev/terms` | `https://rimba-website.pages.dev/terms` |
+| **Account & Data Deletion URL** | `https://rimba-website.pages.dev/delete-account` | `https://rimba-website.pages.dev/delete-account` |
 
 ### 📝 Deskripsi Singkat (Short Description) — Maks 80 Karakter:
 ```text
@@ -68,7 +70,7 @@ Google Play mewajibkan pengisian kuisioner Data Safety. Isi dengan jawaban berik
    - Jawab: **YES (Ya)** *(Semua lalu lintas data menggunakan protokol HTTPS / TLS aman)*
 3. **Apakah pengguna dapat meminta penghapusan data mereka?**
    - Jawab: **YES (Ya)**
-   - Link permintaan hapus data: `https://rimba-mobile.vercel.app/privacy` *(Pengguna juga dapat menekan tombol Reset & Hapus Data di menu Pengaturan aplikasi)*
+   - Link permintaan hapus data publik: `https://rimba-website.pages.dev/delete-account` *(Pengguna juga dapat menghapus akun & data permanen langsung dari dalam aplikasi via Profil -> "Hapus Akun & Data" sesuai pedoman Apple 5.1.1(v) atau via menu Pengaturan)*
 4. **Kategori Data yang Dikumpulkan:**
    - **Personal Info -> Email Address:**
      - Dikumpulkan? **YES (Opsional)** *(Hanya jika pengguna memilih login dengan email; tidak wajib di Guest Mode)*
@@ -145,7 +147,7 @@ Masukkan informasi berikut di tab **App Review Information**:
   Key Testing Instructions:
   1. The app offers a full "Guest Mode" (Mode Tamu) accessible directly from the login screen with zero sign-up friction.
   2. The Background Audio entitlement (audio UIBackgroundModes) is used exclusively for playing relaxing nature soundscapes (rain, river, wind) and lo-fi focus ambient sounds while the timer runs, including when the device screen is turned off.
-  3. Account deletion and local data reset can be tested anytime via Settings -> Data & Storage -> Reset / Delete Account.
+  3. Account deletion (mandated by Guideline 5.1.1(v)) and data purge can be tested directly in the app: Open the Profile modal by tapping the user avatar -> select "Hapus Akun & Data" -> type "DELETE" or "HAPUS" to permanently purge Supabase server-side records and local storage. Alternatively, local guest data reset can be tested via Settings -> Data & Storage -> Reset Data.
   
   Thank you for reviewing Rimba!
   ```

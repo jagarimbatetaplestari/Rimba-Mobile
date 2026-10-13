@@ -143,4 +143,38 @@ ON storage.objects FOR UPDATE
 TO authenticated
 USING (bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1]);
 
+-- ==============================================================================
+-- 7. FUNGSI HAPUS AKUN & DATA PENGGUNA (Apple Guideline 5.1.1(v) & Google Play)
+-- Memungkinkan pengguna yang terautentikasi menghapus akun & data mereka secara permanen
+-- ==============================================================================
+CREATE OR REPLACE FUNCTION public.delete_user_account()
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, auth
+AS $$
+DECLARE
+    curr_user_id UUID;
+BEGIN
+    curr_user_id := auth.uid();
+    IF curr_user_id IS NULL THEN
+        RAISE EXCEPTION 'Not authenticated';
+    END IF;
+
+    -- 1. Hapus avatar dari storage bucket jika ada
+    DELETE FROM storage.objects
+    WHERE bucket_id = 'avatars' AND (storage.foldername(name))[1] = curr_user_id::text;
+
+    -- 2. Hapus data game & profil (ON DELETE CASCADE juga menangani relasi ini)
+    DELETE FROM public.game_saves WHERE user_id = curr_user_id;
+    DELETE FROM public.profiles WHERE id = curr_user_id;
+
+    -- 3. Hapus akun dari auth.users
+    DELETE FROM auth.users WHERE id = curr_user_id;
+END;
+$$;
+
+-- Berikan izin eksekusi kepada pengguna yang terautentikasi
+GRANT EXECUTE ON FUNCTION public.delete_user_account() TO authenticated;
+
 -- Selesai!

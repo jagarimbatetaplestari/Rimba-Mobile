@@ -12,7 +12,7 @@ import { TREE_SPECIES_CONFIG } from "@/lib/game/config";
 import { getLevelProgress } from "@/lib/game/levelRules";
 import { downloadSaveDataBackup } from "@/lib/game/backupManager";
 import { soundManager } from "@/lib/audio/sounds";
-import { hapticLight, hapticSuccess } from "@/lib/mobile/nativeBridge";
+import { hapticLight, hapticSuccess, hapticWarning } from "@/lib/mobile/nativeBridge";
 import { AvatarPickerModal } from "@/components/modals/AvatarPickerModal";
 import { BadgesShowcaseModal } from "@/components/modals/BadgesShowcaseModal";
 import { RestoreDataModal } from "@/components/modals/RestoreDataModal";
@@ -35,6 +35,8 @@ import {
   LogOut,
   MapPin,
   Trophy,
+  Trash2,
+  AlertTriangle,
 } from "lucide-react";
 
 export type ProfileTab = "stats" | "profile";
@@ -65,6 +67,27 @@ export function MobileProfileModal({
 
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameInput, setNameInput] = useState("");
+
+  // Apple Guideline 5.1.1(v) & Google Play Data Safety: In-App Account Deletion
+  const [isDeleteAccountOpen, setIsDeleteAccountOpen] = useState(false);
+  const [deleteConfirmInput, setDeleteConfirmInput] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleExecuteDeleteAccount = async () => {
+    const inputUpper = deleteConfirmInput.trim().toUpperCase();
+    if (inputUpper !== "DELETE" && inputUpper !== "HAPUS") return;
+    setIsDeleting(true);
+    hapticWarning();
+    try {
+      await useAuthStore.getState().deleteAccountAndData();
+      setIsDeleteAccountOpen(false);
+      setDeleteConfirmInput("");
+      onClose();
+      window.location.replace("/login");
+    } catch {
+      setIsDeleting(false);
+    }
+  };
 
   const profile = saveData.profile;
   const world = saveData.world;
@@ -541,9 +564,115 @@ export function MobileProfileModal({
                 <span>{t.profile.restoreBtn}</span>
               </button>
             </div>
+
+            {/* Apple Guideline 5.1.1(v) Compliant In-App Account Deletion */}
+            <div className="pt-2 flex items-center justify-between border-t border-[#0D3528]/10 text-[11px]">
+              <span className="text-[#0D3528]/50">
+                {language === "en" ? "Account & Privacy" : "Privasi & Akun"}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  hapticWarning();
+                  setIsDeleteAccountOpen(true);
+                }}
+                className="text-rose-600 hover:text-rose-700 font-semibold underline underline-offset-2 active:opacity-70 transition-opacity flex items-center gap-1 cursor-pointer"
+              >
+                <Trash2 className="w-3 h-3 stroke-[2]" />
+                <span>{language === "en" ? "Delete Account & Data" : "Hapus Akun & Data"}</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Apple Guideline 5.1.1(v) Account Deletion Confirmation Modal */}
+      {isDeleteAccountOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-in fade-in duration-200"
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !isDeleting) {
+              setIsDeleteAccountOpen(false);
+              setDeleteConfirmInput("");
+            }
+          }}
+        >
+          <div className="w-full max-w-sm rounded-[28px] border border-rose-500/30 bg-[#071710] p-6 text-white shadow-2xl space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-rose-500/20 text-rose-400 flex items-center justify-center shrink-0 border border-rose-500/30">
+                <AlertTriangle className="w-5 h-5 stroke-[2.2]" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white">
+                  {language === "en" ? "Delete Account & Data" : "Hapus Akun & Data"}
+                </h3>
+                <p className="text-[11.5px] text-rose-300/80 font-medium">
+                  {language === "en" ? "Action cannot be undone" : "Tindakan ini permanen"}
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-white/70 leading-relaxed">
+              {language === "en"
+                ? "This will permanently delete your account, cloud saves, progress, and all personal records from the Rimba server and local storage."
+                : "Akun, simpanan suaka cloud, progres, dan seluruh data pribadi Anda akan dihapus secara permanen dari server Rimba dan penyimpanan lokal."}
+            </p>
+
+            <div className="space-y-1.5">
+              <label className="text-[11px] text-white/60">
+                {language === "en" ? (
+                  <>Type <span className="font-bold text-rose-400">DELETE</span> to confirm:</>
+                ) : (
+                  <>Ketik <span className="font-bold text-rose-400">HAPUS</span> untuk konfirmasi:</>
+                )}
+              </label>
+              <input
+                type="text"
+                value={deleteConfirmInput}
+                onChange={(e) => setDeleteConfirmInput(e.target.value)}
+                placeholder={language === "en" ? "DELETE" : "HAPUS"}
+                disabled={isDeleting}
+                className="w-full h-11 px-3.5 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/30 text-sm font-semibold tracking-wider focus:outline-none focus:border-rose-400 focus:ring-1 focus:ring-rose-400"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={() => {
+                  setIsDeleteAccountOpen(false);
+                  setDeleteConfirmInput("");
+                }}
+                className="h-10 px-4 rounded-xl text-xs font-semibold text-white/70 hover:text-white bg-white/5 hover:bg-white/10 transition-colors"
+              >
+                {language === "en" ? "Cancel" : "Batal"}
+              </button>
+              <button
+                type="button"
+                disabled={
+                  isDeleting ||
+                  (deleteConfirmInput.trim().toUpperCase() !== "DELETE" &&
+                   deleteConfirmInput.trim().toUpperCase() !== "HAPUS")
+                }
+                onClick={handleExecuteDeleteAccount}
+                className="h-10 px-4 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-md active:scale-95 flex items-center gap-1.5"
+              >
+                {isDeleting ? (
+                  <span>{language === "en" ? "Deleting..." : "Menghapus..."}</span>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5 stroke-[2]" />
+                    <span>{language === "en" ? "Delete Permanently" : "Hapus Permanen"}</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Sub Modals */}
       <AvatarPickerModal

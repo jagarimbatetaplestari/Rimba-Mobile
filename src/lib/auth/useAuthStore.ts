@@ -396,16 +396,34 @@ export const useAuthStore = create<AuthState>()(
       },
 
       deleteAccountAndData: async () => {
+        const currentUser = get().user;
+        // 1. Invoke server-side deletion if user has an authenticated session
+        if (currentUser && currentUser.id && currentUser.email) {
+          try {
+            const { error } = await supabase.rpc('delete_user_account');
+            if (error) {
+              console.warn('Server delete_user_account RPC returned:', error.message);
+            }
+          } catch (rpcErr) {
+            console.warn('Failed to call delete_user_account RPC:', rpcErr);
+          }
+        }
+
+        // 2. Clear client state and sign out
         set({ user: null });
         try {
           await supabase.auth.signOut();
         } catch {
           // ignore
         }
+
+        // 3. Purge all local storage keys
         if (typeof window !== 'undefined') {
           try {
             localStorage.removeItem('rimba_auth_session');
             localStorage.removeItem('rimba_save_data_v1');
+            localStorage.removeItem('rimba_focus_history_v1');
+            localStorage.removeItem('rimba_preferences_v1');
           } catch {
             // Ignore
           }

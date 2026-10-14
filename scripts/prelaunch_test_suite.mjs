@@ -373,6 +373,13 @@ const hasPermissionsInSettings =
   settingsContent.includes('masterAudioTitle');
 assert(hasPermissionsInSettings, 'Mobile Settings provides full permission controls (Notif, Camera/Gallery, Audio Master, Screen Wake Lock, System Shortcut)');
 
+// 5. Bundle Identifier & Package Identity Integrity
+const capConfigContent = fs.readFileSync(path.join(projectRoot, 'capacitor.config.ts'), 'utf8');
+const pbxprojContent = fs.readFileSync(path.join(projectRoot, 'ios/App/App.xcodeproj/project.pbxproj'), 'utf8');
+const hasCapAppId = capConfigContent.includes("appId: 'com.syntheticae.rimba'");
+const hasPbxBundleId = pbxprojContent.includes("PRODUCT_BUNDLE_IDENTIFIER = com.syntheticae.rimba;");
+assert(hasCapAppId && hasPbxBundleId, 'iOS Bundle Identifier & Capacitor App ID set to com.syntheticae.rimba');
+
 // ------------------------------------------------------------------
 // SUITE 6: PWA & Offline Readiness
 // ------------------------------------------------------------------

@@ -10,7 +10,7 @@ Dokumen ini berisi panduan formulir lengkap (**Copy-Paste Ready**) untuk mendaft
 | :--- | :--- | :--- |
 | **App Name** | `Rimba: Focus Garden` *(Maks 30 Karakter)* | `Rimba: Focus Garden` *(Maks 30 Karakter)* |
 | **Subtitle** | *(Tidak ada)* | `Tumbuhkan Suaka Alami Fokus` *(Maks 30 Karakter)* |
-| **Package ID / Bundle ID** | `com.rimba.focus` | `com.rimba.focus` |
+| **Package ID / Bundle ID** | `com.syntheticae.rimba` | `com.syntheticae.rimba` |
 | **Kategori Utama** | **Productivity** (Produktivitas) | **Productivity** (Produktivitas) |
 | **Kategori Sekunder** | **Health & Fitness** atau **Casual** | **Lifestyle** atau **Games (Simulation)** |
 | **Tags / Keywords** | `focus timer, pomodoro, habit, relaxing, meditation, nature, zen, plant trees, productivity` | `focus, pomodoro, timer, relax, zen, mindful, garden, productivity, habit, meditation` |

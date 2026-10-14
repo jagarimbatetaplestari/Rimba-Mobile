@@ -67,7 +67,7 @@ https://rimba-website.pages.dev
 ### B. Redirect URLs (Tambahkan semua baris ini):
 1. `http://localhost:3000/**` *(Untuk testing development lokal)*
 2. `https://rimba-website.pages.dev/**` *(Untuk web publik)*
-3. `com.rimba.focus://**` *(Untuk deep link balik ke aplikasi native Android/iOS)*
+3. `com.syntheticae.rimba://**` *(Untuk deep link balik ke aplikasi native Android/iOS)*
 
 ---
 

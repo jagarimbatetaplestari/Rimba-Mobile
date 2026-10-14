@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.rimba.focus',
+  appId: 'com.syntheticae.rimba',
   appName: 'Rimba',
   webDir: 'out',
   backgroundColor: '#051F18',

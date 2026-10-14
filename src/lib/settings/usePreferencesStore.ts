@@ -39,7 +39,13 @@ export interface PreferencesState {
   notifyStreakWarning: boolean;
   hasNotificationPermission: boolean;
 
+  // Screen & Master Audio Controls
+  masterAudioEnabled: boolean;
+  keepScreenAwake: boolean;
+
   // Actions
+  setMasterAudioEnabled: (enabled: boolean) => void;
+  setKeepScreenAwake: (keep: boolean) => void;
   setSoundFxEnabled: (enabled: boolean) => void;
   setSoundFxVolume: (vol: number) => void;
   setAmbientMusicEnabled: (enabled: boolean) => void;
@@ -85,6 +91,9 @@ const DEFAULT_PREFERENCES = {
   dailyReminderTime: '20:00',
   notifyStreakWarning: true,
   hasNotificationPermission: false,
+
+  masterAudioEnabled: true,
+  keepScreenAwake: true,
 };
 
 export const usePreferencesStore = create<PreferencesState>()(
@@ -99,6 +108,8 @@ export const usePreferencesStore = create<PreferencesState>()(
         set({ language });
       },
       setGraphicsQuality: (graphicsQuality) => set({ graphicsQuality }),
+      setMasterAudioEnabled: (masterAudioEnabled) => set({ masterAudioEnabled }),
+      setKeepScreenAwake: (keepScreenAwake) => set({ keepScreenAwake }),
       setSoundFxEnabled: (soundFxEnabled) => set({ soundFxEnabled }),
       setSoundFxVolume: (soundFxVolume) => set({ soundFxVolume }),
       setAmbientMusicEnabled: (ambientMusicEnabled) => set({ ambientMusicEnabled }),

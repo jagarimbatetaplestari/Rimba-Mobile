@@ -8,7 +8,7 @@ class SoundController {
   private getVolumeScale(): number {
     if (typeof window === 'undefined') return 1;
     const prefs = usePreferencesStore.getState();
-    if (!prefs.soundFxEnabled) return 0;
+    if (!prefs.masterAudioEnabled || !prefs.soundFxEnabled) return 0;
     return Math.max(0, Math.min(1, prefs.soundFxVolume / 100));
   }
 

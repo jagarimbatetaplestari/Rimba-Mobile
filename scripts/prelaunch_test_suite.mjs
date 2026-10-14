@@ -351,6 +351,28 @@ const hasPrivacyHtml = fs.existsSync(path.join(projectRoot, 'public/privacy.html
 const hasLegalModal = fs.existsSync(path.join(projectRoot, 'src/components/modals/LegalModal.tsx'));
 assert(hasPrivacyHtml && hasLegalModal, 'Guideline 5.1.2: Privacy Policy is available both in-app (LegalModal) and via static web URL (privacy.html)');
 
+// 4. iOS & Android Permissions Declarations & In-App Settings Controls
+const infoPlistContent = fs.readFileSync(path.join(projectRoot, 'ios/App/App/Info.plist'), 'utf8');
+const hasIOSCamera = infoPlistContent.includes('NSCameraUsageDescription');
+const hasIOSPhotos = infoPlistContent.includes('NSPhotoLibraryUsageDescription');
+const hasIOSPhotosAdd = infoPlistContent.includes('NSPhotoLibraryAddUsageDescription');
+assert(hasIOSCamera && hasIOSPhotos && hasIOSPhotosAdd, 'iOS Info.plist declares NSCameraUsageDescription & NSPhotoLibraryUsageDescription');
+
+const androidManifestContent = fs.readFileSync(path.join(projectRoot, 'android/app/src/main/AndroidManifest.xml'), 'utf8');
+const hasAndroidCamera = androidManifestContent.includes('android.permission.CAMERA');
+const hasAndroidNotif = androidManifestContent.includes('android.permission.POST_NOTIFICATIONS');
+const hasAndroidMedia = androidManifestContent.includes('android.permission.READ_MEDIA_IMAGES');
+assert(hasAndroidCamera && hasAndroidNotif && hasAndroidMedia, 'Android AndroidManifest.xml declares CAMERA, POST_NOTIFICATIONS, & READ_MEDIA_IMAGES');
+
+const hasPermissionsInSettings =
+  settingsContent.includes('permissionsSection') &&
+  settingsContent.includes('notifTitle') &&
+  settingsContent.includes('cameraTitle') &&
+  settingsContent.includes('wakeLockTitle') &&
+  settingsContent.includes('openAppSettingsBtn') &&
+  settingsContent.includes('masterAudioTitle');
+assert(hasPermissionsInSettings, 'Mobile Settings provides full permission controls (Notif, Camera/Gallery, Audio Master, Screen Wake Lock, System Shortcut)');
+
 // ------------------------------------------------------------------
 // SUITE 6: PWA & Offline Readiness
 // ------------------------------------------------------------------

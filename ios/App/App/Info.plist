@@ -49,5 +49,11 @@
 	<array>
 		<string>audio</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>Rimba memerlukan akses kamera untuk mengambil foto profil Ranger Anda dan fitur tangkapan suaka.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Rimba memerlukan akses galeri foto untuk memilih foto profil Ranger dan menyimpan kartu suaka.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Rimba memerlukan izin untuk menyimpan gambar dan kartu suaka Anda ke galeri foto.</string>
 </dict>
 </plist>

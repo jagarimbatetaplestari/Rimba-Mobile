@@ -171,6 +171,9 @@ let wakeLockSentinel: any = null;
  */
 export async function requestScreenWakeLock(): Promise<void> {
   if (typeof window === 'undefined' || !('wakeLock' in navigator)) return;
+  const prefs = usePreferencesStore.getState();
+  if (prefs.keepScreenAwake === false) return;
+
   try {
     if (!wakeLockSentinel) {
       wakeLockSentinel = await (navigator as any).wakeLock.request('screen');
@@ -195,6 +198,24 @@ export async function releaseScreenWakeLock(): Promise<void> {
     }
     wakeLockSentinel = null;
   }
+}
+
+/**
+ * Opens system settings on iOS / Android
+ */
+export async function openDeviceAppSettings(): Promise<boolean> {
+  if (typeof window === 'undefined') return false;
+  if (isNativeMobile()) {
+    try {
+      if (getAppPlatform() === 'ios') {
+        window.location.href = 'app-settings:';
+        return true;
+      }
+    } catch (e) {
+      console.warn('Failed to open app-settings deep link:', e);
+    }
+  }
+  return false;
 }
 
 /**

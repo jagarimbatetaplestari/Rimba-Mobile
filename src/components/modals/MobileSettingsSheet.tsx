@@ -8,13 +8,19 @@ import { musicPlayer, RIMBA_PLAYLIST } from "@/lib/audio/musicPlayer";
 import { usePreferencesStore } from "@/lib/settings/usePreferencesStore";
 import {
   hapticLight,
+  hapticMedium,
   hapticSuccess,
   hapticWarning,
+  isNativeMobile,
+  openDeviceAppSettings,
 } from "@/lib/mobile/nativeBridge";
 import {
   scheduleDailyStreakReminder,
   cancelDailyStreakReminder,
+  checkOrRequestNotificationPermission,
+  triggerTestNotification,
 } from "@/lib/mobile/notificationManager";
+import { LocalNotifications } from "@capacitor/local-notifications";
 import {
   downloadSaveDataBackup,
   createIslandSnapshot,
@@ -24,6 +30,7 @@ import { SoundscapeModal } from "@/components/modals/SoundscapeModal";
 import { RestoreDataModal } from "@/components/modals/RestoreDataModal";
 import { SnapshotsHistoryModal } from "@/components/modals/SnapshotsHistoryModal";
 import { LegalModal } from "@/components/modals/LegalModal";
+import { AvatarPickerModal } from "@/components/modals/AvatarPickerModal";
 import { RangerAvatar } from "@/components/ui/RangerAvatar";
 import { uploadGameSaveToCloud } from "@/lib/supabase/cloudSync";
 import { useTranslation } from "@/lib/i18n/translations";
@@ -37,6 +44,7 @@ import { getLevelFromXp } from "@/lib/game/levelRules";
 import {
   Music,
   Volume2,
+  VolumeX,
   Smartphone,
   Bell,
   Clock,
@@ -50,6 +58,7 @@ import {
   Trash2,
   Shield,
   ShieldAlert,
+  ShieldCheck,
   FileText,
   Cloud,
   RefreshCw,
@@ -59,6 +68,10 @@ import {
   Lock,
   Sparkles,
   Calendar,
+  Camera,
+  Image as ImageIcon,
+  ExternalLink,
+  Sun,
   X,
 } from "lucide-react";
 
@@ -103,10 +116,79 @@ export function MobileSettingsSheet({
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [showLegalModal, setShowLegalModal] = useState(false);
   const [legalTab, setLegalTab] = useState<"privacy" | "terms">("privacy");
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+  const [notifPermState, setNotifPermState] = useState<"granted" | "denied" | "prompt">("prompt");
+  const [testNotifSent, setTestNotifSent] = useState(false);
+  const [isTestingNotif, setIsTestingNotif] = useState(false);
 
   useEffect(() => {
-    if (isOpen) setCurrentView("main");
+    if (isOpen) {
+      setCurrentView("main");
+      if (typeof window !== "undefined") {
+        if (isNativeMobile()) {
+          LocalNotifications.checkPermissions()
+            .then((status) => {
+              if (status.display === "granted") {
+                setNotifPermState("granted");
+                prefs.setHasNotificationPermission(true);
+              } else if (status.display === "denied") {
+                setNotifPermState("denied");
+                prefs.setHasNotificationPermission(false);
+              } else {
+                setNotifPermState("prompt");
+              }
+            })
+            .catch(() => {});
+        } else if ("Notification" in window) {
+          if (Notification.permission === "granted") {
+            setNotifPermState("granted");
+            prefs.setHasNotificationPermission(true);
+          } else if (Notification.permission === "denied") {
+            setNotifPermState("denied");
+            prefs.setHasNotificationPermission(false);
+          } else {
+            setNotifPermState("prompt");
+          }
+        }
+      }
+    }
   }, [isOpen]);
+
+  const handleTestNotification = async () => {
+    soundManager.playPop();
+    hapticMedium();
+    setIsTestingNotif(true);
+    const granted = await checkOrRequestNotificationPermission();
+    if (granted) {
+      setNotifPermState("granted");
+      const sent = await triggerTestNotification();
+      setIsTestingNotif(false);
+      if (sent) {
+        setTestNotifSent(true);
+        soundManager.playComplete();
+        hapticSuccess();
+        setTimeout(() => setTestNotifSent(false), 5000);
+      }
+    } else {
+      setIsTestingNotif(false);
+      setNotifPermState("denied");
+      soundManager.playError();
+      hapticWarning();
+    }
+  };
+
+  const handleOpenSystemSettings = async () => {
+    soundManager.playPop();
+    hapticLight();
+    const opened = await openDeviceAppSettings();
+    if (!opened) {
+      alert(
+        lang === "en"
+          ? "To adjust permissions, open device Settings -> Rimba -> enable Notifications, Photos, or Camera."
+          : "Untuk mengubah izin, buka menu Pengaturan HP Anda -> Rimba -> aktifkan Notifikasi, Foto, atau Kamera."
+      );
+    }
+  };
 
   const handleManualCloudSync = async () => {
     if (!user || user.isGuest) {
@@ -415,10 +497,67 @@ export function MobileSettingsSheet({
               {/* ====================================================
                   2. SUARA & GETARAN (BENTO TOP)
                   ==================================================== */}
-              <div className="space-y-1.5">
+              {/* ====================================================
+                  2. SUARA & GETARAN (AUDIO & HAPTICS)
+                  ==================================================== */}
+              <div className="space-y-2">
                 <p className="px-1 text-[12px] font-medium uppercase tracking-[0.12em] text-white/90 drop-shadow-xs">
                   {t.settings.soundSection}
                 </p>
+
+                {/* Master Audio Switch */}
+                <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-3.5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-[#E4F4ED] border border-[#BCE5D3] flex items-center justify-center text-[#187557] shrink-0">
+                      {prefs.masterAudioEnabled ? (
+                        <Volume2 className="w-4 h-4 stroke-[2]" />
+                      ) : (
+                        <VolumeX className="w-4 h-4 stroke-[2]" />
+                      )}
+                    </div>
+                    <div className="text-left">
+                      <p className="text-[13px] font-semibold text-[#0D3528]">
+                        {t.settings.masterAudioTitle}
+                      </p>
+                      <p className="text-[11px] text-[#4C7567] font-normal">
+                        {t.settings.masterAudioDesc}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={prefs.masterAudioEnabled}
+                    onClick={() => {
+                      hapticLight();
+                      const next = !prefs.masterAudioEnabled;
+                      prefs.setMasterAudioEnabled(next);
+                      if (!next) {
+                        musicPlayer.stop();
+                      } else {
+                        if (prefs.ambientMusicEnabled) {
+                          musicPlayer.setVolume(
+                            (prefs.ambientMusicVolume || 50) / 100,
+                          );
+                          musicPlayer.togglePlay();
+                        }
+                      }
+                    }}
+                    className={`relative w-11 h-6 shrink-0 rounded-full p-0.5 transition-colors duration-200 cursor-pointer ${
+                      prefs.masterAudioEnabled
+                        ? "bg-[#187557]"
+                        : "bg-[#0D3528]/15"
+                    }`}
+                  >
+                    <div
+                      className={`w-5 h-5 rounded-full bg-white shadow-xs transition-transform duration-200 ${
+                        prefs.masterAudioEnabled
+                          ? "translate-x-5"
+                          : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
 
                 <div className="grid grid-cols-2 gap-3 w-full">
                   {/* Musik Latar */}
@@ -443,14 +582,14 @@ export function MobileSettingsSheet({
                           }
                         }}
                         className={`relative w-11 h-6 shrink-0 rounded-full p-0.5 transition-colors duration-200 cursor-pointer ${
-                          prefs.ambientMusicEnabled
+                          prefs.ambientMusicEnabled && prefs.masterAudioEnabled
                             ? "bg-[#187557]"
                             : "bg-[#0D3528]/15"
                         }`}
                       >
                         <div
                           className={`w-5 h-5 rounded-full bg-white shadow-xs transition-transform duration-200 ${
-                            prefs.ambientMusicEnabled
+                            prefs.ambientMusicEnabled && prefs.masterAudioEnabled
                               ? "translate-x-5"
                               : "translate-x-0"
                           }`}
@@ -518,26 +657,45 @@ export function MobileSettingsSheet({
                             if (next) soundManager.playPop();
                           }}
                           className={`relative w-9 h-5 shrink-0 rounded-full p-0.5 transition-colors duration-200 cursor-pointer ${
-                            prefs.soundFxEnabled
+                            prefs.soundFxEnabled && prefs.masterAudioEnabled
                               ? "bg-[#187557]"
                               : "bg-[#0D3528]/15"
                           }`}
                         >
                           <div
                             className={`w-4 h-4 rounded-full bg-white shadow-xs transition-transform duration-200 ${
-                              prefs.soundFxEnabled
+                              prefs.soundFxEnabled && prefs.masterAudioEnabled
                                 ? "translate-x-4"
                                 : "translate-x-0"
                             }`}
                           />
                         </button>
                       </div>
-                      <p className="pt-1 text-[11px] leading-tight text-[#4C7567] font-normal">
-                        {t.settings.soundFxDesc}
-                      </p>
+
+                      {/* SFX Volume Slider */}
+                      <div className="flex items-center gap-1.5 pt-2 w-full min-w-0 overflow-hidden">
+                        <Volume2 className="h-3 w-3 shrink-0 text-[#4C7567] stroke-[1.8]" />
+                        <div className="flex-1 min-w-0 flex items-center">
+                          <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={prefs.soundFxVolume ?? 80}
+                            onChange={(e) => {
+                              const val = Number(e.target.value);
+                              prefs.setSoundFxVolume(val);
+                            }}
+                            className="w-full min-w-0 h-1 accent-[#187557] bg-[#0D3528]/10 rounded-full cursor-pointer appearance-none"
+                            style={{ width: "100%", minWidth: 0 }}
+                          />
+                        </div>
+                        <span className="shrink-0 text-[10px] font-medium text-[#4C7567] tabular-nums">
+                          {prefs.soundFxVolume ?? 80}%
+                        </span>
+                      </div>
                     </div>
 
-                    {/* Getaran */}
+                    {/* Getaran Haptik */}
                     <div className="flex flex-col justify-between rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-3.5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl min-w-0">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1.5 min-w-0 pr-1">
@@ -570,9 +728,33 @@ export function MobileSettingsSheet({
                           />
                         </button>
                       </div>
-                      <p className="pt-1 text-[11px] leading-tight text-[#4C7567] font-normal">
-                        {t.settings.hapticsDesc}
-                      </p>
+
+                      {/* Haptic Intensity Pills */}
+                      <div className="grid grid-cols-3 gap-1 pt-2">
+                        {(["light", "medium", "heavy"] as const).map((lvl) => (
+                          <button
+                            key={lvl}
+                            type="button"
+                            onClick={() => {
+                              prefs.setHapticIntensity(lvl);
+                              if (lvl === "light") hapticLight();
+                              else if (lvl === "medium") hapticMedium();
+                              else hapticSuccess();
+                            }}
+                            className={`py-1 rounded-xl text-[10.5px] font-semibold transition-all cursor-pointer ${
+                              prefs.hapticIntensity === lvl
+                                ? "bg-[#187557] text-white shadow-2xs"
+                                : "bg-[#0D3528]/6 text-[#4C7567] hover:bg-[#0D3528]/10"
+                            }`}
+                          >
+                            {lvl === "light"
+                              ? lang === "en" ? "Light" : "Ringan"
+                              : lvl === "medium"
+                              ? lang === "en" ? "Med" : "Sedang"
+                              : lang === "en" ? "Strong" : "Kuat"}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -750,74 +932,222 @@ export function MobileSettingsSheet({
               </div>
 
               {/* ====================================================
-                  4. PENGINGAT & DATA (BENTO BOTTOM 2-KOLOM)
+                  4. IZIN & AKSES PERANGKAT (DEVICE PERMISSIONS & PRIVACY)
                   ==================================================== */}
               <div className="space-y-1.5">
-                <p className="px-1 text-[12px] font-medium uppercase tracking-[0.12em] text-white/90 drop-shadow-xs">
-                  {t.settings.reminderDataSection}
-                </p>
+                <div className="flex items-center justify-between px-1">
+                  <p className="text-[12px] font-medium uppercase tracking-[0.12em] text-white/90 drop-shadow-xs flex items-center gap-1.5">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    <span>{t.settings.permissionsSection}</span>
+                  </p>
+                  <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100/90 px-2.5 py-0.5 rounded-full border border-emerald-300 shadow-2xs">
+                    iOS & Android
+                  </span>
+                </div>
 
-                <div className="grid grid-cols-2 gap-3 w-full">
-                  {/* Bento Kiri: Pengingat Harian */}
-                  <div className="flex flex-col justify-between rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-4 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl min-w-0">
-                    <div>
-                      <div className="flex items-center justify-between">
-                        <Bell className="h-4 w-4 text-[#187557] shrink-0 stroke-[1.8]" />
-                        <button
-                          type="button"
-                          role="switch"
-                          aria-checked={prefs.notifyDailyReminder}
-                          onClick={() =>
-                            handleToggleDailyReminder(
-                              !prefs.notifyDailyReminder,
-                            )
-                          }
-                          className={`relative w-11 h-6 shrink-0 rounded-full p-0.5 transition-colors duration-200 cursor-pointer ${
-                            prefs.notifyDailyReminder
-                              ? "bg-[#187557]"
-                              : "bg-[#0D3528]/15"
-                          }`}
-                        >
-                          <div
-                            className={`w-5 h-5 rounded-full bg-white shadow-xs transition-transform duration-200 ${
-                              prefs.notifyDailyReminder
-                                ? "translate-x-5"
-                                : "translate-x-0"
-                            }`}
-                          />
-                        </button>
+                <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-4 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-3">
+                  {/* Row 1: Izin Notifikasi */}
+                  <div className="flex flex-col gap-2 pb-3 border-b border-[#0D3528]/8">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                        <div className="w-8 h-8 rounded-xl bg-[#E4F4ED] border border-[#BCE5D3] flex items-center justify-center text-[#187557] shrink-0">
+                          <Bell className="w-4 h-4 stroke-[2]" />
+                        </div>
+                        <div className="text-left min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[13px] font-semibold text-[#0D3528]">
+                              {t.settings.notifTitle}
+                            </span>
+                            <span
+                              className={`text-[9.5px] font-bold px-2 py-0.5 rounded-full border ${
+                                notifPermState === "granted"
+                                  ? "bg-emerald-50 text-emerald-800 border-emerald-200/80"
+                                  : "bg-amber-50 text-amber-800 border-amber-200/80"
+                              }`}
+                            >
+                              {notifPermState === "granted"
+                                ? t.settings.permGranted
+                                : t.settings.permDenied}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-[#4C7567] font-normal mt-0.5 truncate">
+                            {t.settings.notifDesc}
+                          </p>
+                        </div>
                       </div>
 
-                      <div className="mt-2.5 text-left">
-                        <p className="text-[13.5px] font-semibold text-[#0D3528]">
-                          {t.settings.dailyReminder}
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={prefs.notifyDailyReminder}
+                        onClick={() =>
+                          handleToggleDailyReminder(!prefs.notifyDailyReminder)
+                        }
+                        className={`relative w-11 h-6 shrink-0 rounded-full p-0.5 transition-colors duration-200 cursor-pointer ${
+                          prefs.notifyDailyReminder
+                            ? "bg-[#187557]"
+                            : "bg-[#0D3528]/15"
+                        }`}
+                      >
+                        <div
+                          className={`w-5 h-5 rounded-full bg-white shadow-xs transition-transform duration-200 ${
+                            prefs.notifyDailyReminder
+                              ? "translate-x-5"
+                              : "translate-x-0"
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    {/* Sub-row: Waktu Pengingat & Tombol Uji Notifikasi */}
+                    <div className="flex items-center justify-between pt-1 gap-2 flex-wrap">
+                      <label className="relative flex items-center gap-1.5 rounded-full border border-white/90 bg-white/80 px-3 py-1 text-[11px] font-medium text-[#0D3528] shadow-2xs cursor-pointer hover:border-[#187557]/40 transition-colors">
+                        <Clock className="h-3 w-3 shrink-0 text-[#187557] stroke-[1.8]" />
+                        <span className="text-[#4C7567]">{t.settings.timeLabel}:</span>
+                        <span className="font-semibold tabular-nums text-[#0D3528]">
+                          {prefs.dailyReminderTime || "20:00"} &rsaquo;
+                        </span>
+                        <input
+                          type="time"
+                          value={prefs.dailyReminderTime || "20:00"}
+                          onChange={(e) =>
+                            handleDailyReminderTimeChange(e.target.value)
+                          }
+                          className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                        />
+                      </label>
+
+                      <button
+                        type="button"
+                        disabled={isTestingNotif}
+                        onClick={handleTestNotification}
+                        className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#187557]/10 hover:bg-[#187557]/15 border border-[#187557]/20 text-[#187557] text-[11px] font-semibold active:scale-95 transition-all cursor-pointer"
+                      >
+                        <Bell className="w-3 h-3 stroke-[2]" />
+                        <span>{isTestingNotif ? "Mengirim..." : t.settings.notifTestBtn}</span>
+                      </button>
+                    </div>
+
+                    {testNotifSent && (
+                      <p className="text-[10.5px] text-emerald-700 font-medium bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-200/70 animate-in fade-in">
+                        ✨ {t.settings.notifTestSuccess}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Row 2: Izin Kamera & Galeri Foto */}
+                  <div className="flex flex-col gap-2 pb-3 border-b border-[#0D3528]/8">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                        <div className="w-8 h-8 rounded-xl bg-[#E4F4ED] border border-[#BCE5D3] flex items-center justify-center text-[#187557] shrink-0">
+                          <Camera className="w-4 h-4 stroke-[2]" />
+                        </div>
+                        <div className="text-left min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[13px] font-semibold text-[#0D3528]">
+                              {t.settings.cameraTitle}
+                            </span>
+                            <span className="text-[9.5px] font-bold px-2 py-0.5 rounded-full border bg-emerald-50 text-emerald-800 border-emerald-200/80">
+                              {t.settings.permGranted}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-[#4C7567] font-normal mt-0.5">
+                            {t.settings.cameraDesc} &amp; {t.settings.photoGalleryDesc}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-end pt-0.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          hapticLight();
+                          soundManager.playPop();
+                          setShowAvatarPicker(true);
+                        }}
+                        className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-black/5 border border-[#0D3528]/15 text-[#0D3528] text-[11px] font-semibold shadow-2xs active:scale-95 transition-all cursor-pointer"
+                      >
+                        <ImageIcon className="w-3.5 h-3.5 text-[#187557] stroke-[2]" />
+                        <span>{t.settings.avatarTestBtn}</span>
+                        <ChevronRight className="w-3 h-3 text-[#4C7567]" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Row 3: Layar Tetap Menyala (Screen Wake Lock) */}
+                  <div className="flex items-center justify-between pb-3 border-b border-[#0D3528]/8">
+                    <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                      <div className="w-8 h-8 rounded-xl bg-[#E4F4ED] border border-[#BCE5D3] flex items-center justify-center text-[#187557] shrink-0">
+                        <Sun className="w-4 h-4 stroke-[2]" />
+                      </div>
+                      <div className="text-left min-w-0">
+                        <p className="text-[13px] font-semibold text-[#0D3528]">
+                          {t.settings.wakeLockTitle}
                         </p>
-                        <p className="text-[11.5px] leading-snug text-[#4C7567] font-normal mt-0.5">
-                          {t.settings.dailyReminderDesc}
+                        <p className="text-[11px] text-[#4C7567] font-normal mt-0.5">
+                          {t.settings.wakeLockDesc}
                         </p>
                       </div>
                     </div>
 
-                    <label className="relative mt-3 flex items-center justify-between rounded-full border border-white/90 bg-white/80 px-3 py-1 text-[11.5px] font-medium text-[#0D3528] shadow-2xs cursor-pointer hover:border-[#187557]/40 transition-colors">
-                      <span className="flex items-center gap-1 text-[11px] text-[#4C7567] font-normal">
-                        <Clock className="h-3 w-3 shrink-0 stroke-[1.8]" />
-                        {t.settings.timeLabel}
-                      </span>
-                      <span className="font-semibold tabular-nums text-[#0D3528]">
-                        {prefs.dailyReminderTime || "20:00"} &rsaquo;
-                      </span>
-                      <input
-                        type="time"
-                        value={prefs.dailyReminderTime || "20:00"}
-                        onChange={(e) =>
-                          handleDailyReminderTimeChange(e.target.value)
-                        }
-                        className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={prefs.keepScreenAwake}
+                      onClick={() => {
+                        hapticLight();
+                        prefs.setKeepScreenAwake(!prefs.keepScreenAwake);
+                      }}
+                      className={`relative w-11 h-6 shrink-0 rounded-full p-0.5 transition-colors duration-200 cursor-pointer ${
+                        prefs.keepScreenAwake
+                          ? "bg-[#187557]"
+                          : "bg-[#0D3528]/15"
+                      }`}
+                    >
+                      <div
+                        className={`w-5 h-5 rounded-full bg-white shadow-xs transition-transform duration-200 ${
+                          prefs.keepScreenAwake
+                            ? "translate-x-5"
+                            : "translate-x-0"
+                        }`}
                       />
-                    </label>
+                    </button>
                   </div>
 
-                  {/* Bento Kanan: Cadangan & Pemulihan */}
+                  {/* Row 4: Pintasan Pengaturan Sistem HP */}
+                  <div className="pt-1 flex items-center justify-between">
+                    <div className="text-left pr-2">
+                      <p className="text-[12px] font-semibold text-[#0D3528]">
+                        {t.settings.openAppSettingsBtn}
+                      </p>
+                      <p className="text-[10.5px] text-[#4C7567] font-normal mt-0.5 leading-tight">
+                        {t.settings.openAppSettingsHint}
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleOpenSystemSettings}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-[#187557] hover:bg-[#136147] text-white text-[11px] font-semibold shrink-0 shadow-xs active:scale-95 transition-all cursor-pointer"
+                    >
+                      <span>Buka</span>
+                      <ExternalLink className="w-3 h-3 stroke-[2.2]" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* ====================================================
+                  5. CADANGAN & PENYIMPANAN DATA (CLOUD & LOCAL STORAGE)
+                  ==================================================== */}
+              <div className="space-y-1.5">
+                <p className="px-1 text-[12px] font-medium uppercase tracking-[0.12em] text-white/90 drop-shadow-xs">
+                  {t.settings.backupRestore}
+                </p>
+
+                <div className="grid grid-cols-2 gap-3 w-full">
+                  {/* Bento Kiri: Cadangan & Pemulihan */}
                   <button
                     type="button"
                     onClick={() => {
@@ -840,7 +1170,41 @@ export function MobileSettingsSheet({
                       </p>
                     </div>
                   </button>
+
+                  {/* Bento Kanan: Sinkronisasi Cloud Langsung */}
+                  <button
+                    type="button"
+                    disabled={isSyncingCloud}
+                    onClick={handleManualCloudSync}
+                    className="group flex flex-col justify-between rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-4 text-left shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl transition-all active:scale-[0.98] cursor-pointer min-w-0"
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <Cloud className="h-4 w-4 text-[#187557] shrink-0 stroke-[1.8]" />
+                      <RefreshCw
+                        className={`h-4 w-4 text-[#4C7567]/70 stroke-[1.8] ${
+                          isSyncingCloud ? "animate-spin text-[#187557]" : ""
+                        }`}
+                      />
+                    </div>
+
+                    <div className="mt-3">
+                      <p className="text-[13.5px] font-semibold text-[#0D3528]">
+                        {isSyncingCloud ? t.settings.syncing : t.settings.syncNow}
+                      </p>
+                      <p className="mt-1 text-[11.5px] leading-snug text-[#4C7567] font-normal">
+                        {user && !user.isGuest
+                          ? t.settings.cloudConnected
+                          : t.settings.guestLocalOnly}
+                      </p>
+                    </div>
+                  </button>
                 </div>
+
+                {syncMessage && (
+                  <p className="text-[11px] text-center font-medium text-emerald-800 bg-emerald-100/80 px-3 py-1.5 rounded-2xl border border-emerald-300 shadow-2xs mt-1 animate-in fade-in">
+                    {syncMessage}
+                  </p>
+                )}
               </div>
 
               {/* ====================================================
@@ -1306,6 +1670,11 @@ export function MobileSettingsSheet({
           isOpen={showLegalModal}
           initialTab={legalTab}
           onClose={() => setShowLegalModal(false)}
+        />
+        <AvatarPickerModal
+          isOpen={showAvatarPicker}
+          onClose={() => setShowAvatarPicker(false)}
+          currentAvatarUrl={user?.avatarUrl || profile?.avatarUrl}
         />
       </div>
     </>

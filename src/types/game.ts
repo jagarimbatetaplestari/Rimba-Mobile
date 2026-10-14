@@ -1,3 +1,5 @@
+import { UserSubscription } from './subscription';
+
 export type FocusSessionStatus = 'active' | 'completed' | 'abandoned';
 export type ObjectType = 'tree' | 'rock' | 'path';
 export type ObjectStatus = 'active' | 'reclaimed' | 'marked_for_clearing' | 'withered';
@@ -179,6 +181,15 @@ export interface FaunaConfig {
   };
 }
 
+export interface IslandSlot {
+  id: string;
+  name: string;
+  biome: BiomeType;
+  created_at: string;
+  world: World;
+  world_objects: WorldObject[];
+}
+
 export interface RimbaSaveData {
   version: 1;
   profile: Profile;
@@ -200,6 +211,9 @@ export interface RimbaSaveData {
   claimed_story_chapters?: string[];
   active_biome?: BiomeType;
   auto_season_enabled?: boolean;
+  active_island_id?: string;
+  islands?: IslandSlot[];
+  subscription?: UserSubscription;
 }
 
 export type BiomeType = 'meadow' | 'autumn' | 'snow' | 'lotus';

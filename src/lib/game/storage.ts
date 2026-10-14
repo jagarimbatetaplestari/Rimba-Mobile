@@ -70,6 +70,34 @@ export function createInitialSaveData(): RimbaSaveData {
     streak_shields: 0,
     used_shield_dates: [],
     claimed_story_chapters: [],
+    active_island_id: 'island_default',
+    islands: [
+      {
+        id: 'island_default',
+        name: 'Suaka Utama',
+        biome: 'meadow',
+        created_at: now.toISOString(),
+        world: {
+          id: 'world_local_default',
+          name: 'My Rimba',
+          last_focus_completed_at: oneHourAgo,
+          last_reclamation_at: null,
+          unlocked_tiles: [...STARTER_UNLOCKED_TILES],
+          sealed_tiles: [],
+        },
+        world_objects: [starterTree, starterPath],
+      },
+    ],
+    subscription: {
+      tier: 'free',
+      status: 'none',
+      isPro: false,
+      expiresAt: null,
+      originalPurchaseDate: now.toISOString(),
+      store: 'promo',
+      realTreesPledged: 0,
+      pioneerBadge: false,
+    },
   };
 }
 
@@ -125,6 +153,35 @@ export function loadSaveData(): RimbaSaveData {
     parsed.streak_shields = typeof parsed.streak_shields === 'number' ? parsed.streak_shields : 0;
     parsed.used_shield_dates = parsed.used_shield_dates || [];
     parsed.claimed_story_chapters = parsed.claimed_story_chapters || [];
+
+    // Multi-island safe migration for existing users
+    if (!parsed.islands || parsed.islands.length === 0) {
+      const defaultIsland = {
+        id: parsed.active_island_id || 'island_default',
+        name: parsed.world?.name || 'Suaka Utama',
+        biome: parsed.active_biome || 'meadow',
+        created_at: new Date().toISOString(),
+        world: parsed.world,
+        world_objects: parsed.world_objects || [],
+      };
+      parsed.islands = [defaultIsland];
+      parsed.active_island_id = defaultIsland.id;
+    } else {
+      parsed.active_island_id = parsed.active_island_id || parsed.islands[0].id;
+    }
+
+    if (!parsed.subscription) {
+      parsed.subscription = {
+        tier: 'free',
+        status: 'none',
+        isPro: false,
+        expiresAt: null,
+        originalPurchaseDate: new Date().toISOString(),
+        store: 'promo',
+        realTreesPledged: 0,
+        pioneerBadge: false,
+      };
+    }
 
     // Refresh cached gold/xp from ledger to guarantee accuracy
     const balances = calculateBalances(parsed.currency_ledger);

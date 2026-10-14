@@ -12,7 +12,9 @@ import {
   WorldObject,
   WeatherType,
   BiomeType,
+  IslandSlot,
 } from '@/types/game';
+import { UserSubscription, SubscriptionTier } from '@/types/subscription';
 import {
   BUILD_CATALOG,
   CatalogItem,
@@ -22,6 +24,7 @@ import {
   BIOME_CATALOG,
   detectRealWorldSeasonBiome,
   CELESTIAL_ISLAND_LEVEL_REQUIRED,
+  STARTER_UNLOCKED_TILES,
 } from './config';
 import { calculateBalances, canAfford, createLedgerEntry, getObjectBaseCost } from './economy';
 import {
@@ -204,6 +207,12 @@ interface GameState {
   resetWorld: () => void;
   resetToStarterHub: () => void;
   importSaveData: (data: RimbaSaveData) => boolean;
+  switchIsland: (islandId: string) => boolean;
+  createNewIsland: (name: string, biome: BiomeType) => boolean;
+  renameIsland: (islandId: string, name: string) => void;
+  deleteIsland: (islandId: string) => boolean;
+  updateSubscription: (sub: Partial<UserSubscription>) => void;
+  grantProForTesting: (tier?: SubscriptionTier) => void;
   dismissNotification: () => void;
   notify: (message: string, type?: NotificationState['type']) => void;
 }
@@ -1999,6 +2008,270 @@ export const useGameStore = create<GameState>((set, get) => ({
       get().notify('Gagal memulihkan berkas cadangan.', 'error');
       return false;
     }
+  },
+
+  switchIsland: (islandId: string) => {
+    const { saveData, activeSession } = get();
+    const isEn = getStoreLang() === 'en';
+    if (activeSession && activeSession.status === 'active') {
+      get().notify(
+        isEn
+          ? 'Cannot switch island during an active focus session.'
+          : 'Tidak dapat berpindah pulau saat sesi fokus sedang berjalan.',
+        'error'
+      );
+      return false;
+    }
+
+    const currentIslandId = saveData.active_island_id || 'island_default';
+    if (currentIslandId === islandId) return true;
+
+    const islands = saveData.islands || [];
+    const targetIsland = islands.find((i) => i.id === islandId);
+    if (!targetIsland) return false;
+
+    // 1. Sync current active island state before switching
+    const updatedIslands = islands.map((isl) => {
+      if (isl.id === currentIslandId) {
+        return {
+          ...isl,
+          biome: get().activeBiome,
+          world: saveData.world,
+          world_objects: saveData.world_objects,
+        };
+      }
+      return isl;
+    });
+
+    // 2. Prepare new saveData with target island loaded
+    const updatedData: RimbaSaveData = {
+      ...saveData,
+      islands: updatedIslands,
+      active_island_id: targetIsland.id,
+      active_biome: targetIsland.biome,
+      world: targetIsland.world,
+      world_objects: targetIsland.world_objects,
+    };
+
+    persistAndSyncSaveData(updatedData);
+    set({
+      saveData: updatedData,
+      activeBiome: targetIsland.biome,
+      selectedTool: null,
+      selectedCatalogItem: null,
+      selectedObject: null,
+      hoveredGridTile: null,
+      isExpandLandMode: false,
+      relocatingObjectId: null,
+    });
+
+    get().notify(
+      isEn
+        ? `🏝️ Arrived at ${targetIsland.name}`
+        : `🏝️ Tiba di ${targetIsland.name}`,
+      'info'
+    );
+    return true;
+  },
+
+  createNewIsland: (name: string, biome: BiomeType) => {
+    const { saveData } = get();
+    const isEn = getStoreLang() === 'en';
+    const isPro = saveData.subscription?.isPro ?? false;
+    const maxAllowed = isPro ? 5 : 1;
+    const islands = saveData.islands || [];
+
+    if (islands.length >= maxAllowed) {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('rimba:open_paywall', { detail: { source: 'multi_island_capacity' } })
+        );
+      }
+      get().notify(
+        isEn
+          ? 'Multi-island capacity requires Rimba Pro.'
+          : 'Kapasitas slot pulau tambahan memerlukan Rimba Pro.',
+        'info'
+      );
+      return false;
+    }
+
+    const newIslandId = `island_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    const islandName = name.trim() || `Suaka ${islands.length + 1}`;
+
+    const starterTree: WorldObject = {
+      id: `tree_starter_${newIslandId}`,
+      object_type: 'tree',
+      grid_x: 3,
+      grid_y: 4,
+      rotation: 0.5,
+      scale: 1.1,
+      status: 'active',
+      created_at: new Date().toISOString(),
+      reclaimed_at: null,
+      model_variant: 'tree_oak',
+      species: 'oak',
+      task_note: `${islandName} (Pohon Perdana)`,
+    };
+
+    const newIsland: IslandSlot = {
+      id: newIslandId,
+      name: islandName,
+      biome,
+      created_at: new Date().toISOString(),
+      world: {
+        id: `world_${newIslandId}`,
+        name: islandName,
+        last_focus_completed_at: null,
+        last_reclamation_at: null,
+        unlocked_tiles: [...STARTER_UNLOCKED_TILES],
+        sealed_tiles: [],
+      },
+      world_objects: [starterTree],
+    };
+
+    // Sync current active island first
+    const currentIslandId = saveData.active_island_id || 'island_default';
+    const syncedIslands = islands.map((isl) => {
+      if (isl.id === currentIslandId) {
+        return {
+          ...isl,
+          biome: get().activeBiome,
+          world: saveData.world,
+          world_objects: saveData.world_objects,
+        };
+      }
+      return isl;
+    });
+
+    const finalIslands = [...syncedIslands, newIsland];
+    const updatedData: RimbaSaveData = {
+      ...saveData,
+      islands: finalIslands,
+      active_island_id: newIsland.id,
+      active_biome: newIsland.biome,
+      world: newIsland.world,
+      world_objects: newIsland.world_objects,
+    };
+
+    persistAndSyncSaveData(updatedData);
+    set({
+      saveData: updatedData,
+      activeBiome: newIsland.biome,
+      selectedTool: null,
+      selectedCatalogItem: null,
+      selectedObject: null,
+      hoveredGridTile: null,
+      isExpandLandMode: false,
+    });
+
+    get().notify(
+      isEn
+        ? `🌱 Created new sanctuary: "${islandName}"`
+        : `🌱 Suaka baru berhasil dibuat: "${islandName}"`,
+      'success'
+    );
+    return true;
+  },
+
+  renameIsland: (islandId: string, name: string) => {
+    const { saveData } = get();
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    const islands = (saveData.islands || []).map((isl) =>
+      isl.id === islandId ? { ...isl, name: trimmed, world: { ...isl.world, name: trimmed } } : isl
+    );
+    const updatedWorld =
+      saveData.active_island_id === islandId
+        ? { ...saveData.world, name: trimmed }
+        : saveData.world;
+    const updatedData: RimbaSaveData = { ...saveData, islands, world: updatedWorld };
+    persistAndSyncSaveData(updatedData);
+    set({ saveData: updatedData });
+  },
+
+  deleteIsland: (islandId: string) => {
+    const { saveData } = get();
+    const isEn = getStoreLang() === 'en';
+    const islands = saveData.islands || [];
+    if (islands.length <= 1) {
+      get().notify(
+        isEn
+          ? 'Cannot delete your only remaining island.'
+          : 'Tidak dapat menghapus pulau satu-satunya.',
+        'error'
+      );
+      return false;
+    }
+    const filtered = islands.filter((i) => i.id !== islandId);
+    if (saveData.active_island_id === islandId) {
+      const fallback = filtered[0];
+      const updatedData: RimbaSaveData = {
+        ...saveData,
+        islands: filtered,
+        active_island_id: fallback.id,
+        world: fallback.world,
+        world_objects: fallback.world_objects,
+        active_biome: fallback.biome,
+      };
+      persistAndSyncSaveData(updatedData);
+      set({ saveData: updatedData, activeBiome: fallback.biome });
+    } else {
+      const updatedData: RimbaSaveData = { ...saveData, islands: filtered };
+      persistAndSyncSaveData(updatedData);
+      set({ saveData: updatedData });
+    }
+    get().notify(
+      isEn ? 'Island deleted.' : 'Pulau berhasil dihapus.',
+      'info'
+    );
+    return true;
+  },
+
+  updateSubscription: (subUpdates: Partial<UserSubscription>) => {
+    const { saveData } = get();
+    const currentSub = saveData.subscription || {
+      tier: 'free',
+      status: 'none',
+      isPro: false,
+      expiresAt: null,
+      originalPurchaseDate: new Date().toISOString(),
+      store: 'promo',
+      realTreesPledged: 0,
+      pioneerBadge: false,
+    };
+    const updatedSub: UserSubscription = {
+      ...currentSub,
+      ...subUpdates,
+    };
+    const updatedData: RimbaSaveData = {
+      ...saveData,
+      subscription: updatedSub,
+    };
+    persistAndSyncSaveData(updatedData);
+    set({ saveData: updatedData });
+  },
+
+  grantProForTesting: (tier: SubscriptionTier = 'pro_annual') => {
+    const { updateSubscription, notify } = get();
+    const isEn = getStoreLang() === 'en';
+    updateSubscription({
+      tier,
+      isPro: true,
+      status: 'active',
+      expiresAt: tier === 'pioneer_lifetime' ? null : new Date(Date.now() + 365 * 86400 * 1000).toISOString(),
+      pioneerBadge: tier === 'pioneer_lifetime',
+      realTreesPledged: tier === 'pioneer_lifetime' ? 2 : tier === 'pro_annual' ? 1 : 0,
+      treeCertificateId: `RMB-TEST-${Math.floor(1000 + Math.random() * 9000)}`,
+      treeLocation: 'Hutan Konservasi Mangrove Trimulyo, Jawa Tengah',
+      treeCoordinates: [-6.9538, 110.4285],
+    });
+    notify(
+      isEn
+        ? `👑 Rimba Pro (${tier}) activated for testing!`
+        : `👑 Rimba Pro (${tier}) berhasil diaktifkan untuk pengujian!`,
+      'success'
+    );
   },
 
   addTodo: (text, tag) => {

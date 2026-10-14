@@ -25,6 +25,8 @@ import {
   Flame,
   X,
   Globe,
+  Sparkles,
+  Palmtree,
 } from "lucide-react";
 import { hapticLight } from "@/lib/mobile/nativeBridge";
 import { useAuthStore } from "@/lib/auth/useAuthStore";
@@ -51,6 +53,8 @@ export interface MobileHeaderHUDProps {
   onOpenOnboarding?: () => void;
   onOpenGuide?: () => void;
   onOpenCampfire?: () => void;
+  onOpenIslandSwitcher?: () => void;
+  onOpenPaywall?: () => void;
   claimableCount?: number;
   isZenDimmed?: boolean;
 }
@@ -72,6 +76,8 @@ export function MobileHeaderHUD({
   onOpenOnboarding,
   onOpenGuide,
   onOpenCampfire,
+  onOpenIslandSwitcher,
+  onOpenPaywall,
   claimableCount = 0,
   isZenDimmed = false,
 }: MobileHeaderHUDProps) {
@@ -464,6 +470,32 @@ export function MobileHeaderHUD({
                 >
                   <Share2 className="w-4 h-4 stroke-[2.2] shrink-0 opacity-80" />
                   <span className="truncate">{t.hud.menuShare}</span>
+                </button>
+
+                {/* 7. Daftar Pulau Suaka (Multi-Island) */}
+                <button
+                  type="button"
+                  onClick={() => handleAction(onOpenIslandSwitcher)}
+                  className={popoverItemButton}
+                >
+                  <Palmtree className="w-4 h-4 stroke-[2.2] shrink-0 text-emerald-400" />
+                  <span className="truncate flex-1 text-left">
+                    {lang === "en" ? "Sanctuary Islands" : "Daftar Pulau"}
+                  </span>
+                </button>
+
+                {/* 8. Rimba Pro Subscription */}
+                <button
+                  type="button"
+                  onClick={() => handleAction(onOpenPaywall)}
+                  className={`${popoverItemButton} text-amber-300 font-bold`}
+                >
+                  <Sparkles className="w-4 h-4 stroke-[2.2] shrink-0 fill-amber-400 text-amber-400" />
+                  <span className="truncate flex-1 text-left">
+                    {useGameStore.getState().saveData.subscription?.isPro
+                      ? (lang === "en" ? "Rimba Pro Active" : "Rimba Pro (Aktif)")
+                      : (lang === "en" ? "Upgrade to Pro" : "Langganan Pro")}
+                  </span>
                 </button>
               </div>
             )}

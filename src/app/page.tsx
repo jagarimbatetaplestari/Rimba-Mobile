@@ -32,6 +32,8 @@ import { MobileStatisticsModal } from "@/components/modals/MobileStatisticsModal
 import { MobileLeaderboardModal } from "@/components/modals/MobileLeaderboardModal";
 import { MobileSettingsSheet } from "@/components/modals/MobileSettingsSheet";
 import { CampfireRoomModal } from "@/components/modals/CampfireRoomModal";
+import { IslandSwitcherModal } from "@/components/modals/IslandSwitcherModal";
+import { RimbaProPaywallModal } from "@/components/modals/RimbaProPaywallModal";
 import { syncMobileStatusBar } from "@/lib/mobile/nativeBridge";
 import { setupBackgroundGuard } from "@/lib/mobile/backgroundTimerGuard";
 import { getDailyQuestStatus } from "@/lib/game/quests";
@@ -82,6 +84,9 @@ export default function RimbaDioramaApp() {
   const [isCampfireOpen, setIsCampfireOpen] = useState(false);
   const [isGameplayGuideOpen, setIsGameplayGuideOpen] = useState(false);
   const [isZenDimmed, setIsZenDimmed] = useState(false);
+  const [isIslandSwitcherOpen, setIsIslandSwitcherOpen] = useState(false);
+  const [isPaywallOpen, setIsPaywallOpen] = useState(false);
+  const [paywallSource, setPaywallSource] = useState("general");
 
   // Wait for persisted auth store hydration, then redirect unauthenticated users to /login first
   useEffect(() => {
@@ -373,6 +378,18 @@ export default function RimbaDioramaApp() {
       };
       window.addEventListener("rimba:open_biome_picker", handleOpenBiomePicker);
 
+      const handleOpenIslandSwitcher = () => {
+        setIsIslandSwitcherOpen(true);
+      };
+      window.addEventListener("rimba:open_island_switcher", handleOpenIslandSwitcher);
+
+      const handleOpenPaywall = (e: Event) => {
+        const detail = (e as CustomEvent<{ source?: string }>).detail;
+        setPaywallSource(detail?.source || "general");
+        setIsPaywallOpen(true);
+      };
+      window.addEventListener("rimba:open_paywall", handleOpenPaywall as EventListener);
+
       return () => {
         window.removeEventListener(
           "rimba:open_onboarding",
@@ -390,6 +407,14 @@ export default function RimbaDioramaApp() {
         window.removeEventListener(
           "rimba:open_biome_picker",
           handleOpenBiomePicker,
+        );
+        window.removeEventListener(
+          "rimba:open_island_switcher",
+          handleOpenIslandSwitcher,
+        );
+        window.removeEventListener(
+          "rimba:open_paywall",
+          handleOpenPaywall as EventListener,
         );
       };
     }
@@ -892,6 +917,11 @@ export default function RimbaDioramaApp() {
             onOpenOnboarding={() => setIsOnboardingOpen(true)}
             onOpenGuide={() => setIsGameplayGuideOpen(true)}
             onOpenCampfire={() => setIsCampfireOpen(true)}
+            onOpenIslandSwitcher={() => setIsIslandSwitcherOpen(true)}
+            onOpenPaywall={() => {
+              setPaywallSource("header_hud");
+              setIsPaywallOpen(true);
+            }}
             claimableCount={claimableCount}
           />
         </div>
@@ -993,6 +1023,19 @@ export default function RimbaDioramaApp() {
         <GameplayGuideModal
           isOpen={isGameplayGuideOpen}
           onClose={() => setIsGameplayGuideOpen(false)}
+        />
+      )}
+      {isIslandSwitcherOpen && (
+        <IslandSwitcherModal
+          isOpen={isIslandSwitcherOpen}
+          onClose={() => setIsIslandSwitcherOpen(false)}
+        />
+      )}
+      {isPaywallOpen && (
+        <RimbaProPaywallModal
+          isOpen={isPaywallOpen}
+          onClose={() => setIsPaywallOpen(false)}
+          source={paywallSource}
         />
       )}
       {isOnboardingOpen && (

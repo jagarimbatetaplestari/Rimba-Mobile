@@ -80,6 +80,7 @@ export function MobileSettingsSheet({
   const { canInstall, promptInstall } = usePwaInstall();
 
   const profile = saveData?.profile || { xp: 0, goldCached: 0 };
+  const isPro = saveData?.subscription?.isPro ?? false;
   const currentLevel = getLevelFromXp(profile?.xp || 0);
 
   const activeBiome = useGameStore((state) => state.activeBiome);
@@ -370,6 +371,44 @@ export function MobileSettingsSheet({
                   </div>
 
                   <ChevronRight className="h-4 w-4 shrink-0 text-[#4C7567]/70 transition-transform group-hover:translate-x-0.5 stroke-[1.8]" />
+                </button>
+
+                {/* Rimba Pro / Sanctuary Pass Banner */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    hapticLight();
+                    if (typeof window !== "undefined") {
+                      window.dispatchEvent(
+                        new CustomEvent("rimba:open_paywall", {
+                          detail: { source: "settings" },
+                        })
+                      );
+                    }
+                  }}
+                  className="w-full p-3.5 rounded-3xl border border-white/80 bg-gradient-to-r from-amber-400/20 via-emerald-400/15 to-white/95 text-[#0D3528] shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl flex items-center justify-between transition-all active:scale-[0.98] cursor-pointer text-left"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-2xl bg-amber-400 text-slate-950 flex items-center justify-center shrink-0 shadow-xs">
+                      <Sparkles className="w-5 h-5 fill-slate-950" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[13.5px] font-bold text-[#0D3528]">
+                          {isPro ? "Rimba Pro Active" : "Rimba Pro Pass"}
+                        </span>
+                        <span className="text-[9.5px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 shadow-2xs">
+                          {isPro ? "Pro ✨" : "Upgrade"}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-[#4C7567] mt-0.5">
+                        {isPro
+                          ? (lang === "en" ? "5 Island Slots • Real Trees Pledged" : "Kapasitas 5 Pulau • Pohon Nyata Terdaftar")
+                          : (lang === "en" ? "Unlock 5 islands, peace of mind & real trees" : "Buka 5 pulau, proteksi libur, dan tanam pohon nyata")}
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-4 w-4 shrink-0 text-[#4C7567]/70" />
                 </button>
               </div>
 

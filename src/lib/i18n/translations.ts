@@ -73,6 +73,8 @@ export const translations = {
       progressLabel: "Waktu Berjalan:",
       progressValue: "{elapsed} mnt berlalu · sisa {remaining} mnt",
       encouragement: "Tinggal sedikit lagi sampai pohonmu tumbuh subur.",
+      stopwatchProgress: "{elapsed} mnt berjalan (Mode Bebas)",
+      stopwatchGraceNote: "Di bawah 5 menit, sesi stopwatch tidak menumbuhkan pohon layu maupun pohon suaka.",
       keepFocusing: "Tetap Fokus",
       giveUp: "Menyerah & Biarkan Layu",
     },
@@ -196,8 +198,11 @@ export const translations = {
       layoutSection: "Atur Posisi",
       moveBtn: "Pindahkan",
       clearFreeBtn: "Bersihkan (Gratis)",
+      clearStumpFreeBtn: "Bersihkan Tunggul (Gratis)",
       removeTreeBtn: "Hapus (-2 Soul)",
       recycleBtn: "Simpan (+{refund})",
+      focusStartedToast: "Sesi fokus dimulai! Selesaikan sesi ini untuk menyelamatkan pohonmu.",
+      alreadyFocusingToast: "Kamu sedang dalam sesi fokus! Selesaikan sesi ini untuk menyelamatkan pohonmu.",
     },
     workshop: {
       title: "Dekorasi Pulau",
@@ -748,6 +753,8 @@ export const translations = {
       progressLabel: "Time Elapsed:",
       progressValue: "{elapsed}m done · {remaining}m left",
       encouragement: "Hang in there! Just a little longer until your tree is fully grown.",
+      stopwatchProgress: "{elapsed} mins elapsed (Free Mode)",
+      stopwatchGraceNote: "Under 5 minutes, ending a stopwatch session will not leave a withered tree.",
       keepFocusing: "Keep Focusing",
       giveUp: "Give Up & Let It Wither",
     },
@@ -871,8 +878,11 @@ export const translations = {
       layoutSection: "Manage Item",
       moveBtn: "Move",
       clearFreeBtn: "Clear (Free)",
+      clearStumpFreeBtn: "Clear Stump (Free)",
       removeTreeBtn: "Remove (-2 Soul)",
       recycleBtn: "Store (+{refund})",
+      focusStartedToast: "Focus session started! Complete it to save your tree.",
+      alreadyFocusingToast: "You're already focusing! Complete this session to save your tree.",
     },
     workshop: {
       title: "Island Decor",
@@ -1400,6 +1410,72 @@ export function translateSpeciesName(speciesId: string, fallbackName: string, la
     return SPECIES_NAMES_EN[speciesId] || fallbackName;
   }
   return fallbackName;
+}
+
+export const CATALOG_TRANSLATIONS_EN: Record<string, { name: string; description: string }> = {
+  river_stream: { name: "Rimba Stream", description: "Clear flowing river with gentle sandy banks to divide your island." },
+  river_bend: { name: "Natural River Bend", description: "Gracefully curved water flow to create natural river meanders." },
+  river_pond: { name: "Calm Lotus Pond", description: "Clear pool of water with rippling waves that soothe the island." },
+  river_boulder: { name: "Estuary Water Stone", description: "Smooth river boulder parting the water stream at the estuary." },
+  flower_red: { name: "Red Wildflower", description: "Bright red flower petals attracting woodland butterflies." },
+  flower_yellow: { name: "Yellow Wildflower", description: "Cheerful yellow flowers swaying gently in the breeze." },
+  flower_purple: { name: "Purple Lavender", description: "Charming purple lavender bringing peace to your sanctuary." },
+  mushroom_red: { name: "Forest Mushroom", description: "Cheerful dotted red woodland mushrooms decorating the forest floor." },
+  bush: { name: "Lush Bush", description: "Vibrant natural green shrub to soften the edges of the island." },
+  shroom_amanita: { name: "Red Amanita Shroom", description: "Iconic red mushroom with white dots decorating the woodland floor." },
+  shroom_chanterelle: { name: "Golden Chanterelle", description: "Warm funnel-shaped golden forest chanterelle mushrooms." },
+  lp_mushroom_cluster: { name: "Mushroom Cluster", description: "A close-knit family of woodland mushrooms sprouting in moist soil." },
+  forest_fruit_bush: { name: "Red Berry Bush", description: "Lush green bush brimming with juicy berries loved by forest birds." },
+  fabz_flower_crimson: { name: "Crimson Bloom", description: "Bright red blossom with a sunny center inviting honeybees." },
+  fabz_plant_fern: { name: "Tropical Fern", description: "Feathery forest fern adding lush undergrowth beneath trees." },
+  lp_bush_round: { name: "Neat Round Shrub", description: "Fresh circular shrub with calming geometry." },
+  platformer_plant: { name: "Wild Fern Shrub", description: "Tuft of soft textured green leaves." },
+  platformer_flowers: { name: "Meadow Flower Bed", description: "Delightful meadow blooms adorning the wayside." },
+  platformer_flowers_tall: { name: "Tall Wildflowers", description: "Graceful tall-stemmed wildflowers rising above the grass." },
+  platformer_mushrooms: { name: "Trio Shrooms", description: "Charming trio of tiny woodland mushrooms resting in tree shade." },
+  platformer_hedge: { name: "Lush Hedge", description: "Neat green shrub boundary for a peaceful sanctuary." },
+  platformer_hedge_corner: { name: "Hedge Corner", description: "Corner hedge angle piece for landscape borders." },
+  rock_tall: { name: "Towering Cliff Rock", description: "Tall natural stone pillar adding vertical dimension to the landscape." },
+  rock_small: { name: "Smooth River Pebbles", description: "Cluster of fine pebbles along the rimba riverbanks." },
+  stump: { name: "Mossy Tree Stump", description: "Weathered ancient tree base bearing witness to quiet growth." },
+  log: { name: "Hollow Timber Log", description: "Natural fallen timber offering shelter to forest critters." },
+  survival_rock_flat_grass: { name: "Grassy Flat Stone", description: "Tiered flat river boulder offering a quiet resting spot." },
+  survival_tree_log_small: { name: "Fallen Wood Log", description: "Cozy small log for resting sanctuary fauna." },
+  survival_tree_autumn_tall: { name: "Tall Golden Tree", description: "Towering autumn tree adorned with warm golden leaves." },
+  lpset_rock_mossy_a: { name: "Emerald Moss Rock", description: "Ancient natural stone blanketed in soft emerald moss." },
+  lpset_rock_mossy_b: { name: "Mossy Boulder", description: "Substantial river boulder covered in rich moss." },
+  fabz_rounded_rock: { name: "Smooth River Stone", description: "Clean low-poly grey rounded boulder with natural facets." },
+  pack_stump_moss: { name: "Rings Tree Stump", description: "Aged tree stump with warm exposed growth rings." },
+  fabz_cut_trunk: { name: "Hewn Timber Trunk", description: "Firmly rooted cut trunk adding rustic forest texture." },
+  pack_wood_log_moss: { name: "Ancient Forest Log", description: "Branching fallen tree trunk sheltering a micro-ecosystem." },
+  pack_wood_branch: { name: "Natural Timber Branch", description: "Dry woodland branch on the grass for wild touches." },
+  lp_ancient_root: { name: "Ancient Tree Roots", description: "Meandering wooden roots grounding the island soil." },
+  platformer_rocks: { name: "Valley Round Stones", description: "Pair of smooth rounded rocks in a gentle aesthetic." },
+  campfire: { name: "Sanctuary Campfire", description: "Ring of stones with warm embers for contemplative nights." },
+  tent: { name: "Ranger Tent", description: "Simple canvas shelter to rest under the canopy." },
+  mini_forest_bridge: { name: "Woodland Timber Bridge", description: "Natural timber bridge crossing over the river stream." },
+  path_stepping: { name: "Stepping Stones", description: "Round natural stepping stones weaving through the grass." },
+  path_wood: { name: "Wood Plank Path", description: "Natural wooden planks running along the riverbank." },
+  path_stone: { name: "Valley Flagstone", description: "Natural flat stones marking paths through the forest." },
+};
+
+export function translateCatalogItem(
+  item: { id: string; name: string; description?: string },
+  lang: AppLanguage
+): { name: string; description?: string } {
+  if (lang === "en") {
+    const trans = CATALOG_TRANSLATIONS_EN[item.id];
+    if (trans) {
+      return {
+        name: trans.name,
+        description: trans.description,
+      };
+    }
+  }
+  return {
+    name: item.name,
+    description: item.description,
+  };
 }
 
 export function getLocalizedRangerTitle(level: number, lang: AppLanguage): string {
@@ -1945,5 +2021,7 @@ export function useTranslation() {
       translateSoundscape(sc, language as AppLanguage),
     translateMusicTrack: (track: { id: string; title: string }) =>
       translateMusicTrack(track, language as AppLanguage),
+    translateCatalogItem: (item: { id: string; name: string; description?: string }) =>
+      translateCatalogItem(item, language as AppLanguage),
   };
 }

@@ -3,7 +3,7 @@
 import React, { useEffect } from "react";
 import confetti from "canvas-confetti";
 import { useGameStore } from "@/lib/game/useGameStore";
-import { BUILD_CATALOG, GAME_CONFIG } from "@/lib/game/config";
+import { BUILD_CATALOG, GAME_CONFIG, TREE_SPECIES_CONFIG } from "@/lib/game/config";
 import { getManifestItem } from "@/lib/game/assetManifest";
 import { soundManager } from "@/lib/audio/sounds";
 import { getObjectBaseCost } from "@/lib/game/economy";
@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 
 export function ObjectInspectModal() {
-  const { t, lang, translateTag } = useTranslation();
+  const { t, lang, translateTag, translateSpecies, translateCatalogItem } = useTranslation();
   const selectedObject = useGameStore((state) => state.selectedObject);
   const setSelectedObject = useGameStore((state) => state.setSelectedObject);
   const restoreReclaimedObject = useGameStore(
@@ -40,6 +40,8 @@ export function ObjectInspectModal() {
   const activeSession = useGameStore((state) => state.activeSession);
   const notify = useGameStore((state) => state.notify);
   const gold = useGameStore((state) => state.saveData.profile.goldCached);
+  const timeOfDay = useGameStore((state) => state.timeOfDay);
+  const isNight = timeOfDay === "night";
 
   useEffect(() => {
     if (!selectedObject) return;
@@ -72,13 +74,24 @@ export function ObjectInspectModal() {
 
   const manifestItem = getManifestItem(selectedObject.model_variant);
   const catalogItem = BUILD_CATALOG.find(
-    (c) => c.model === selectedObject.model_variant,
+    (c) => c.model === selectedObject.model_variant || c.id === selectedObject.model_variant,
   );
+  const isTree = selectedObject.object_type === "tree" || Boolean(selectedObject.species);
+  const treeConfig = selectedObject.species
+    ? TREE_SPECIES_CONFIG.find((s) => s.id === selectedObject.species)
+    : null;
+  const translatedCatalog = catalogItem ? translateCatalogItem(catalogItem) : null;
+
   const displayName = isBulldozer
     ? t.inspect.bulldozerName
     : isWithered
       ? t.inspect.witheredTitle
-      : manifestItem?.name || catalogItem?.name || selectedObject.object_type;
+      : isTree
+        ? translateSpecies(
+            selectedObject.species || "oak",
+            treeConfig?.name || manifestItem?.name || "Tree",
+          )
+        : translatedCatalog?.name || manifestItem?.name || selectedObject.object_type;
 
   const handleRestore = () => {
     hapticMedium();
@@ -117,19 +130,9 @@ export function ObjectInspectModal() {
     hapticLight();
     if (!activeSession || activeSession.status !== "active") {
       startFocus();
-      notify(
-        lang === "en"
-          ? "Focus session started! Complete it to save your tree."
-          : "Sesi fokus dimulai! Selesaikan sesi ini untuk menyelamatkan pohonmu.",
-        "info",
-      );
+      notify(t.inspect.focusStartedToast, "info");
     } else {
-      notify(
-        lang === "en"
-          ? "You're already focusing! Complete this session to save your tree."
-          : "Kamu sedang dalam sesi fokus! Selesaikan sesi ini untuk menyelamatkan pohonmu.",
-        "info",
-      );
+      notify(t.inspect.alreadyFocusingToast, "info");
     }
     setSelectedObject(null);
   };
@@ -182,9 +185,19 @@ export function ObjectInspectModal() {
 
       {/* Ergonomic Floating Bottom Sheet Card */}
       <div className="fixed bottom-[max(calc(env(safe-area-inset-bottom,0px)+14px),18px)] left-1/2 -translate-x-1/2 sm:bottom-auto sm:top-24 sm:right-6 sm:left-auto sm:translate-x-0 z-50 pointer-events-auto max-w-[360px] w-[calc(100vw-24px)] animate-in fade-in slide-in-from-bottom-4 sm:zoom-in-95 duration-200 font-urbanist select-none antialiased">
-        <div className="p-4 rounded-3xl border border-white/80 bg-gradient-to-b from-white/95 via-white/95 to-white/90 shadow-2xl shadow-[#0E3B2D]/20 backdrop-blur-xl text-[#0D3528] space-y-3">
+        <div
+          className={`p-4 rounded-3xl border shadow-2xl backdrop-blur-xl space-y-3 transition-colors ${
+            isNight
+              ? "border-white/20 bg-gradient-to-b from-[#182C22]/95 via-[#12241B]/95 to-[#0B1711]/95 text-stone-100 shadow-black/60"
+              : "border-white/80 bg-gradient-to-b from-white/95 via-white/95 to-white/90 text-[#0D3528] shadow-[#0E3B2D]/20"
+          }`}
+        >
           {/* Subtle Mobile Grabber Handle */}
-          <div className="w-9 h-1 rounded-full bg-[#0D3528]/15 mx-auto -mt-1 mb-1 sm:hidden pointer-events-none" />
+          <div
+            className={`w-9 h-1 rounded-full mx-auto -mt-1 mb-1 sm:hidden pointer-events-none ${
+              isNight ? "bg-white/20" : "bg-[#0D3528]/15"
+            }`}
+          />
 
           {/* Header */}
           <div className="flex items-center justify-between pb-2.5 border-b border-[#0D3528]/8">
@@ -405,29 +418,40 @@ export function ObjectInspectModal() {
                   </span>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={handleRestore}
-                  disabled={!canAffordRestore}
-                  className={`w-full py-2.5 rounded-full text-[12px] font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                    canAffordRestore
-                      ? "bg-[#187557] hover:bg-[#126046] text-white active:scale-95 shadow-xs"
-                      : "bg-black/5 border border-black/10 text-[#4C7567]/40 cursor-not-allowed"
-                  }`}
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                  <span>
-                    {canAffordRestore
-                      ? t.inspect.restoreTreeBtn.replace(
-                          "{cost}",
-                          String(restoreCost),
-                        )
-                      : t.inspect.needSoulBtn.replace(
-                          "{cost}",
-                          String(restoreCost),
-                        )}
-                  </span>
-                </button>
+                <div className="grid grid-cols-2 gap-2 pt-0.5">
+                  <button
+                    type="button"
+                    onClick={handleRemove}
+                    className="py-2.5 px-3 rounded-full text-[12px] font-medium border border-rose-200/70 bg-rose-50/60 hover:bg-rose-100/70 text-rose-800 flex items-center justify-center gap-1.5 shadow-2xs active:scale-95 transition-all cursor-pointer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 stroke-[1.8]" />
+                    <span>{t.inspect.clearStumpFreeBtn}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleRestore}
+                    disabled={!canAffordRestore}
+                    className={`py-2.5 px-3 rounded-full text-[12px] font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                      canAffordRestore
+                        ? "bg-[#187557] hover:bg-[#126046] text-white active:scale-95 shadow-xs"
+                        : "bg-black/5 border border-black/10 text-[#4C7567]/40 cursor-not-allowed"
+                    }`}
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                    <span>
+                      {canAffordRestore
+                        ? t.inspect.restoreTreeBtn.replace(
+                            "{cost}",
+                            String(restoreCost),
+                          )
+                        : t.inspect.needSoulBtn.replace(
+                            "{cost}",
+                            String(restoreCost),
+                          )}
+                    </span>
+                  </button>
+                </div>
               </div>
             ) : isReclaimed ? (
               /* STATE 3: RECLAIMED MOSS (RESTORE) */
@@ -491,9 +515,9 @@ export function ObjectInspectModal() {
                   </div>
                 </div>
 
-                {catalogItem?.description && (
+                {catalogItem && (
                   <p className="text-[11px] italic text-[#4C7567] px-1 leading-relaxed font-normal">
-                    &ldquo;{catalogItem.description}&rdquo;
+                    &ldquo;{translatedCatalog?.description || catalogItem.description}&rdquo;
                   </p>
                 )}
 

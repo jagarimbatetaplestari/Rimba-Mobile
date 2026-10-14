@@ -62,6 +62,17 @@ import { createInitialSaveData, loadSaveData, saveSaveData } from './storage';
 import { requestScreenWakeLock, releaseScreenWakeLock } from '@/lib/mobile/nativeBridge';
 import { syncProfileUpdate, scheduleDebouncedCloudSync } from '../supabase/cloudSync';
 import { soundscapeManager } from '@/lib/audio/soundscapes';
+import { usePreferencesStore } from '@/lib/settings/usePreferencesStore';
+import { TAG_TRANSLATIONS_EN } from '@/lib/i18n/translations';
+
+function getStoreLang(): 'id' | 'en' {
+  if (typeof window === 'undefined') return 'id';
+  try {
+    return usePreferencesStore.getState().language || 'id';
+  } catch {
+    return 'id';
+  }
+}
 
 /**
  * Persists game save data to localStorage and schedules debounced cloud synchronization to Supabase.
@@ -431,9 +442,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     // 1. Living tree removal: An ideological & ecological consequence!
     // Uprooting a living mindful tree costs -2 Soul for disrupting sanctuary harmony.
     if (target.object_type === 'tree' && target.status === 'active') {
+      const lang = getStoreLang();
       if (!canAfford(saveData.currency_ledger, 2)) {
         get().notify(
-          'Soul tidak cukup! Mencabut pohon suaka yang hidup membutuhkan 2 Soul sebagai penyeimbang energi alam.',
+          lang === 'en'
+            ? 'Not enough Soul! Uprooting a living sanctuary tree costs 2 Soul to balance nature energy.'
+            : 'Soul tidak cukup! Mencabut pohon suaka yang hidup membutuhkan 2 Soul sebagai penyeimbang energi alam.',
           'error'
         );
         return false;
@@ -462,14 +476,19 @@ export const useGameStore = create<GameState>((set, get) => ({
       });
 
       get().notify(
-        '🍂 Pohon suaka dicabut. Keseimbangan alam terganggu (-2 Soul sebagai konsekuensi).',
+        lang === 'en'
+          ? '🍂 Living sanctuary tree uprooted. Nature balance disturbed (-2 Soul penalty).'
+          : '🍂 Pohon suaka dicabut. Keseimbangan alam terganggu (-2 Soul sebagai konsekuensi).',
         'info'
       );
       return true;
     }
 
     // 2. Withered tree removal: Clearing decayed stumps restores soil fertility (Gratis)
-    if (target.object_type === 'tree' && target.status === 'reclaimed') {
+    if (
+      target.object_type === 'tree' &&
+      (target.status === 'reclaimed' || target.status === 'withered' || target.model_variant === 'nature_stump')
+    ) {
       const updatedObjects = saveData.world_objects.filter((o) => o.id !== objectId);
       const updatedData: RimbaSaveData = {
         ...saveData,
@@ -482,8 +501,11 @@ export const useGameStore = create<GameState>((set, get) => ({
         selectedObject: null,
       });
 
+      const lang = getStoreLang();
       get().notify(
-        '🌱 Tunggul lapuk dibersihkan tanpa biaya. Lahan suaka kembali subur untuk ditanami bibit baru.',
+        lang === 'en'
+          ? '🌱 Withered stump cleared for free. Island soil is fertile again for new saplings.'
+          : '🌱 Tunggul lapuk dibersihkan tanpa biaya. Lahan suaka kembali subur untuk ditanami bibit baru.',
         'success'
       );
       return true;
@@ -886,8 +908,9 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   startFocus: (customDurationSec, tag, strictMode, species, taskNote, todoId) => {
     const { activeSession, devFastMode, saveData, focusSetup } = get();
+    const lang = getStoreLang();
     if (activeSession && activeSession.status === 'active') {
-      get().notify('Sesi fokus sedang berjalan.', 'error');
+      get().notify(lang === 'en' ? 'A focus session is already active.' : 'Sesi fokus sedang berjalan.', 'error');
       return;
     }
 
@@ -942,12 +965,25 @@ export const useGameStore = create<GameState>((set, get) => ({
     });
 
     const mins = Math.max(1, Math.round(duration / 60));
-    const modeLabel = strictMode ? ' [Mode Ketat 🔥]' : '';
+    const modeLabel = strictMode
+      ? (lang === 'en' ? ' [Strict Mode 🔥]' : ' [Mode Ketat 🔥]')
+      : '';
+    const localizedTag = lang === 'en' ? (TAG_TRANSLATIONS_EN[finalTag] || finalTag) : finalTag;
     const taskLabel = newSession.task_note ? ` — "${newSession.task_note}"` : '';
     if (isStopwatch) {
-      get().notify(`Sesi fokus ${finalTag} dimulai (Mode Stopwatch ⏱️)${modeLabel}${taskLabel}. Fokus mengalir bebas!`, 'info');
+      get().notify(
+        lang === 'en'
+          ? `Focus session for ${localizedTag} started (Stopwatch Mode ⏱️)${modeLabel}${taskLabel}. Flow freely!`
+          : `Sesi fokus ${finalTag} dimulai (Mode Stopwatch ⏱️)${modeLabel}${taskLabel}. Fokus mengalir bebas!`,
+        'info'
+      );
     } else {
-      get().notify(`Sesi fokus ${finalTag} dimulai (${mins} menit)${modeLabel}${taskLabel}. Tumbuhkan pohonmu!`, 'info');
+      get().notify(
+        lang === 'en'
+          ? `Focus session for ${localizedTag} started (${mins} mins)${modeLabel}${taskLabel}. Grow your sanctuary!`
+          : `Sesi fokus ${finalTag} dimulai (${mins} menit)${modeLabel}${taskLabel}. Tumbuhkan pohonmu!`,
+        'info'
+      );
     }
   },
 
@@ -1127,6 +1163,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   abandonFocus: () => {
     const { activeSession, saveData } = get();
     if (!activeSession || activeSession.status !== 'active') return;
+    const lang = getStoreLang();
 
     // Safety shield: If the focus duration is ALREADY finished, the tree must NEVER wither!
     // Instead, safely complete the session and harvest the tree.
@@ -1163,7 +1200,12 @@ export const useGameStore = create<GameState>((set, get) => ({
         activeSession: null,
         isZenMode: false,
       });
-      get().notify('Sesi dibatalkan dalam masa tenggang 10 detik (Bebas Penalti).', 'info');
+      get().notify(
+        lang === 'en'
+          ? 'Session cancelled within 10-second grace period (No penalty).'
+          : 'Sesi dibatalkan dalam masa tenggang 10 detik (Bebas Penalti).',
+        'info'
+      );
       return;
     }
 
@@ -1191,7 +1233,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         reclaimed_at: new Date().toISOString(),
         model_variant: 'nature_stump',
         species: activeSession.species || 'oak',
-        task_note: activeSession.task_note || 'Sesi fokus terputus (Tunggul Layu)',
+        task_note: activeSession.task_note || (lang === 'en' ? 'Interrupted focus session (Withered Stump)' : 'Sesi fokus terputus (Tunggul Layu)'),
         focus_tag: activeSession.tag,
       });
     }
@@ -1215,8 +1257,12 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     get().notify(
       emptyTile
-        ? `🥀 Kamu menyerah setelah masa tenggang. Tunggul Layu muncul di petak (${emptyTile.grid_x},${emptyTile.grid_y}) — ketuk tunggul untuk merestorasinya!`
-        : '🥀 Sesi fokus dihentikan. Bibit pohon layu tanpa menghasilkan hadiah.',
+        ? (lang === 'en'
+            ? `🥀 You gave up after the grace period. A Withered Stump appeared at (${emptyTile.grid_x},${emptyTile.grid_y}) — tap it to restore!`
+            : `🥀 Kamu menyerah setelah masa tenggang. Tunggul Layu muncul di petak (${emptyTile.grid_x},${emptyTile.grid_y}) — ketuk tunggul untuk merestorasinya!`)
+        : (lang === 'en'
+            ? '🥀 Focus session stopped. Your sapling withered without rewards.'
+            : '🥀 Sesi fokus dihentikan. Bibit pohon layu tanpa menghasilkan hadiah.'),
       'error'
     );
   },
@@ -1249,7 +1295,13 @@ export const useGameStore = create<GameState>((set, get) => ({
       activeSession: updatedSession,
     });
 
-    get().notify('⏸️ Sesi fokus dijeda sejenak. Tarik napas dan istirahat.', 'info');
+    const lang = getStoreLang();
+    get().notify(
+      lang === 'en'
+        ? '⏸️ Focus paused. Take a breath and relax.'
+        : '⏸️ Sesi fokus dijeda sejenak. Tarik napas dan istirahat.',
+      'info'
+    );
     return true;
   },
 
@@ -1290,7 +1342,13 @@ export const useGameStore = create<GameState>((set, get) => ({
       activeSession: updatedSession,
     });
 
-    get().notify('▶️ Melanjutkan fokus. Selamat menumbuhkan suaka!', 'success');
+    const lang = getStoreLang();
+    get().notify(
+      lang === 'en'
+        ? '▶️ Focus resumed. Keep growing your sanctuary!'
+        : '▶️ Melanjutkan fokus. Selamat menumbuhkan suaka!',
+      'success'
+    );
     return true;
   },
 

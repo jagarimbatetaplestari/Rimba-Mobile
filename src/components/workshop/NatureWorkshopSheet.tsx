@@ -48,7 +48,7 @@ const CATEGORIES: CategoryType[] = [
 ];
 
 export function NatureWorkshopSheet() {
-  const { t, language } = useTranslation();
+  const { t, language, translateCatalogItem } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"catalog" | "expansion">(
     "catalog",
@@ -441,7 +441,7 @@ export function NatureWorkshopSheet() {
                   <div className="flex items-center gap-1.5 min-w-0">
                     <span className="text-xs font-bold truncate tracking-tight text-[#143525]">
                       {selectedCatalogItem
-                        ? selectedCatalogItem.name
+                        ? translateCatalogItem(selectedCatalogItem).name
                         : t.workshop.moveObjTitle}
                     </span>
                     {selectedCatalogItem && (
@@ -669,6 +669,7 @@ export function NatureWorkshopSheet() {
                 <div className="grid grid-cols-2 gap-2.5 overflow-y-auto max-h-[46vh] pr-0.5 no-scrollbar">
                   {categoryItems.map((item) => {
                     const canAfford = gold >= item.cost;
+                    const translated = translateCatalogItem(item);
                     return (
                       <button
                         key={item.id}
@@ -694,10 +695,10 @@ export function NatureWorkshopSheet() {
 
                         <div>
                           <div className="text-[13px] font-semibold text-[#143525] truncate tracking-tight">
-                            {item.name}
+                            {translated.name}
                           </div>
                           <div className="text-[10.5px] text-[#456b57] line-clamp-1 mt-0.5 font-normal">
-                            {item.description}
+                            {translated.description}
                           </div>
                         </div>
                       </button>

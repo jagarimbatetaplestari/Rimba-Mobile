@@ -369,8 +369,8 @@ export function MobileFocusCard({
         ? 0
         : selectedMinutes * 60;
 
-    // Contextual permission prompt on first focus
-    await checkOrRequestNotificationPermission();
+    // Contextual permission prompt on first focus (non-blocking for immediate start)
+    checkOrRequestNotificationPermission().catch(console.warn);
 
     const expectedEndAt = new Date(
       Date.now() + (isStopwatch ? 86400 : durationSec) * 1000,
@@ -1150,7 +1150,9 @@ export function MobileFocusCard({
             onClose={() => setShowWitherModal(false)}
             session={witheredSessionSnapshot}
             onRestartFocus={() => {
-              soundManager.playPop();
+              soundManager.playStart();
+              setShowWitherModal(false);
+              handleStart();
             }}
           />
         )}
@@ -1488,8 +1490,9 @@ export function MobileFocusCard({
           onClose={() => setShowWitherModal(false)}
           session={witheredSessionSnapshot}
           onRestartFocus={() => {
-            // Re-open focus setup
-            soundManager.playPop();
+            soundManager.playStart();
+            setShowWitherModal(false);
+            handleStart();
           }}
         />
       )}

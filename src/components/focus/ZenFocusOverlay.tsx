@@ -27,7 +27,7 @@ import {
 } from "lucide-react";
 
 export function ZenFocusOverlay() {
-  const { language } = useTranslation();
+  const { language, translateSoundscape } = useTranslation();
   const isZenMode = useGameStore((state) => state.isZenMode);
   const activeSession = useGameStore((state) => state.activeSession);
   const setZenMode = useGameStore((state) => state.setZenMode);
@@ -475,11 +475,12 @@ export function ZenFocusOverlay() {
                 }`}
               >
                 <VolumeX className="w-3.5 h-3.5 opacity-70" />
-                <span>Hening (Mati)</span>
+                <span>{language === "en" ? "Silent (Off)" : "Hening (Mati)"}</span>
               </button>
 
               {SOUNDSCAPES_LIST.map((sc) => {
                 const isSelected = activeSoundscape === sc.id;
+                const translated = translateSoundscape(sc);
                 return (
                   <button
                     key={sc.id}
@@ -502,7 +503,7 @@ export function ZenFocusOverlay() {
                     }`}
                   >
                     <span className="text-base leading-none">{sc.icon}</span>
-                    <span className="truncate">{sc.name}</span>
+                    <span className="truncate">{translated.name}</span>
                   </button>
                 );
               })}
@@ -513,7 +514,7 @@ export function ZenFocusOverlay() {
               <div className="flex items-center justify-between text-[11px] text-white/80">
                 <span className="flex items-center gap-1 font-semibold">
                   <Volume2 className="w-3.5 h-3.5" />
-                  <span>Volume Alam</span>
+                  <span>{language === "en" ? "Ambient Volume" : "Volume Alam"}</span>
                 </span>
                 <span className="font-mono font-bold text-white">
                   {Math.round(soundscapeVolume * 100)}%
@@ -531,7 +532,7 @@ export function ZenFocusOverlay() {
                   soundscapeManager.setVolume(val);
                 }}
                 className="w-full accent-white cursor-pointer h-1.5 bg-white/20 rounded-lg appearance-none"
-                aria-label="Volume suara latar alam"
+                aria-label={language === "en" ? "Ambient soundscape volume" : "Volume suara latar alam"}
               />
             </div>
           </div>

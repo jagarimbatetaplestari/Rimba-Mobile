@@ -490,6 +490,22 @@ export function MobileBottomCockpit({
                         })}
                       </div>
                     )}
+
+                    {/* Quick Start Focus Button inside flyout */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        hapticMedium();
+                        closeFlyout();
+                        onStartFocus();
+                      }}
+                      className="w-full mt-2 py-2.5 rounded-2xl bg-white hover:bg-white/95 text-[#0b2719] font-bold text-[13.5px] flex items-center justify-center gap-2 shadow-[0_4px_16px_rgba(0,0,0,0.2)] transition-all cursor-pointer active:scale-[0.98]"
+                    >
+                      <Play className="w-3.5 h-3.5 fill-[#0b2719] text-[#0b2719] shrink-0" />
+                      <span>
+                        {t.cockpit.startFocus} ({selectedMinutes === 0 ? "∞" : `${selectedMinutes}m`})
+                      </span>
+                    </button>
                   </div>
                 )}
 
@@ -602,6 +618,22 @@ export function MobileBottomCockpit({
                           }`}
                         />
                       </div>
+                    </button>
+
+                    {/* Quick Start Focus Button inside flyout */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        hapticMedium();
+                        closeFlyout();
+                        onStartFocus();
+                      }}
+                      className="w-full mt-2.5 py-2.5 rounded-2xl bg-white hover:bg-white/95 text-[#0b2719] font-bold text-[13.5px] flex items-center justify-center gap-2 shadow-[0_4px_16px_rgba(0,0,0,0.2)] transition-all cursor-pointer active:scale-[0.98]"
+                    >
+                      <Play className="w-3.5 h-3.5 fill-[#0b2719] text-[#0b2719] shrink-0" />
+                      <span>
+                        {t.cockpit.startFocus} ({selectedMinutes === 0 ? "∞" : `${selectedMinutes}m`})
+                      </span>
                     </button>
                   </div>
                 )}

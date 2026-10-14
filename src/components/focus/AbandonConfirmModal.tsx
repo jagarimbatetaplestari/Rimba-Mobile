@@ -27,14 +27,22 @@ export function AbandonConfirmModal({
 
   if (!isOpen || !session) return null;
 
-  const totalSeconds = (session.duration_minutes || 25) * 60;
-  const elapsedSeconds = Math.max(0, totalSeconds - secondsRemaining);
+  const isStopwatch = Boolean(session.is_stopwatch);
+  const now = Date.now();
+  const startedAt = session.started_at ? new Date(session.started_at).getTime() : now;
+  const elapsedSeconds = Math.max(0, Math.floor((now - startedAt) / 1000));
   const elapsedMinutes = Math.floor(elapsedSeconds / 60);
-  const remainingMinutes = Math.ceil(secondsRemaining / 60);
-  const progressPercent = Math.min(
-    100,
-    Math.round((elapsedSeconds / totalSeconds) * 100),
-  );
+
+  const totalSeconds = (session.duration_minutes || 25) * 60;
+  const remainingMinutes = isStopwatch
+    ? 0
+    : Math.max(1, Math.ceil(secondsRemaining / 60));
+  const progressPercent = isStopwatch
+    ? Math.min(100, Math.round((elapsedSeconds / 300) * 100))
+    : Math.min(
+        100,
+        Math.round((Math.max(0, totalSeconds - secondsRemaining) / totalSeconds) * 100),
+      );
 
   const handleKeepFocusing = () => {
     soundManager.playPop();
@@ -90,9 +98,13 @@ export function AbandonConfirmModal({
               {t.abandon.progressLabel}
             </span>
             <span className="font-semibold text-[#187557] tabular-nums">
-              {t.abandon.progressValue
-                .replace("{elapsed}", String(elapsedMinutes))
-                .replace("{remaining}", String(remainingMinutes))}
+              {isStopwatch
+                ? (t.abandon.stopwatchProgress
+                    ? t.abandon.stopwatchProgress.replace("{elapsed}", String(elapsedMinutes))
+                    : `${elapsedMinutes}m (Stopwatch)`)
+                : t.abandon.progressValue
+                    .replace("{elapsed}", String(elapsedMinutes))
+                    .replace("{remaining}", String(remainingMinutes))}
             </span>
           </div>
 
@@ -105,7 +117,11 @@ export function AbandonConfirmModal({
 
           <p className="text-[11px] text-[#4C7567]/90 leading-normal flex items-center gap-1.5 pt-0.5">
             <CloudRain className="w-3.5 h-3.5 shrink-0 text-slate-500" />
-            <span>{t.abandon.encouragement}</span>
+            <span>
+              {isStopwatch && elapsedMinutes < 5
+                ? t.abandon.stopwatchGraceNote
+                : t.abandon.encouragement}
+            </span>
           </p>
         </div>
 

@@ -16,7 +16,8 @@
     "android:open": "cap open android",
     "android:assets": "node scripts/generate-android-assets.js",
     "generate-icons": "node scripts/generate-icons.js",
-    "generate-store-assets": "node scripts/generate-store-assets.js"
+    "generate-store-assets": "node scripts/generate-store-assets.js",
+    "test:prelaunch": "node scripts/prelaunch_test_suite.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^6.2.2",

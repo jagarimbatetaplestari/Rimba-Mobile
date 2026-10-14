@@ -1366,15 +1366,19 @@ export const translations = {
 export const TAG_TRANSLATIONS_EN: Record<string, string> = {
   Belajar: "Study",
   Kerja: "Work",
+  Bekerja: "Work",
   Koding: "Coding",
   Membaca: "Reading",
   Kreatif: "Creative",
   Mindfulness: "Mindful",
+  Meditasi: "Meditation",
   Tenang: "Mindful",
   Fokus: "Focus",
   Buku: "Reading",
   Riset: "Research",
   Santai: "Relax",
+  Olahraga: "Exercise",
+  Lainnya: "Other",
 };
 
 export const SPECIES_NAMES_EN: Record<string, string> = {
@@ -1396,6 +1400,10 @@ export const SPECIES_NAMES_EN: Record<string, string> = {
   platformer_pine: "Alpine Pine",
   round_snow: "Snowy Oak",
   pine_snow: "Frost Pine",
+  cherry: "Cherry Blossom",
+  maple: "Autumn Maple",
+  willow: "Weeping Willow",
+  bamboo: "Grove Bamboo",
 };
 
 export function translateTagLabel(tagOrLabel: string, lang: AppLanguage): string {

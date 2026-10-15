@@ -400,11 +400,7 @@ export function SanctuaryJournalModal({
       `}</style>
 
       <div
-        className="fixed inset-0 z-[100] h-[100dvh] w-full overflow-y-auto overscroll-contain no-scrollbar select-none antialiased font-urbanist text-[#0D3528] pointer-events-auto"
-        style={{
-          background:
-            "radial-gradient(130% 90% at 50% -5%, #38B28B 0%, #289874 34%, #1C7459 70%, #165643 100%)",
-        }}
+        className="fixed inset-0 z-[100] h-[100dvh] w-full overflow-y-auto overscroll-contain no-scrollbar select-none antialiased font-urbanist text-[#0D3528] pointer-events-auto bg-[#FAFAF7]"
         role="dialog"
         aria-modal="true"
       >
@@ -412,10 +408,10 @@ export function SanctuaryJournalModal({
           {/* HEADER NAV */}
           <div className="flex items-center justify-between py-1">
             <div className="flex items-center gap-2.5">
-              <h2 className="text-[23px] font-semibold tracking-normal text-white drop-shadow-xs">
+              <h2 className="text-[23px] font-semibold tracking-normal text-[#0D3528]">
                 {t.journal.title}
               </h2>
-              <span className="rounded-full bg-white/20 border border-white/25 px-3 py-0.5 text-[11.5px] font-medium text-emerald-50 backdrop-blur-md">
+              <span className="rounded-full bg-[#E4F4ED] border border-[#BCE5D3] px-3 py-0.5 text-[11.5px] font-medium text-[#14664D]">
                 {t.journal.subtitle}
               </span>
             </div>
@@ -426,15 +422,15 @@ export function SanctuaryJournalModal({
                 hapticLight();
                 onClose();
               }}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 border border-white/30 text-white shadow-sm backdrop-blur-md active:scale-90 transition-transform hover:bg-white/30 cursor-pointer"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0D3528]/5 border border-[#0D3528]/10 text-[#0D3528] shadow-xs active:scale-90 transition-transform hover:bg-[#0D3528]/10 cursor-pointer"
               aria-label={t.common.close}
             >
               <X className="h-4 w-4 stroke-[2]" />
             </button>
           </div>
 
-          {/* 5-PILLAR SEGMENTED SWITCHER (Ergonomic Glass Capsule - Responsive & Scrollable) */}
-          <div className="rounded-full p-1 border border-white/25 bg-white/20 backdrop-blur-md shadow-xs flex items-center justify-between gap-1 overflow-x-auto no-scrollbar">
+          {/* 5-PILLAR SEGMENTED SWITCHER (Clean Alabaster Pill Bar) */}
+          <div className="rounded-full p-1 border border-[#0D3528]/8 bg-[#0D3528]/[0.05] shadow-xs flex items-center justify-between gap-1 overflow-x-auto no-scrollbar">
             <button
               type="button"
               onClick={() => {
@@ -444,8 +440,8 @@ export function SanctuaryJournalModal({
               }}
               className={`flex-1 min-w-[56px] py-1.5 px-2 rounded-full text-[11px] sm:text-[12px] whitespace-nowrap transition-all relative cursor-pointer text-center ${
                 activeTab === "quests"
-                  ? "bg-white text-[#0D3528] shadow-sm font-semibold"
-                  : "text-emerald-50/85 hover:text-white font-medium"
+                  ? "bg-white text-[#0D3528] shadow-xs font-semibold"
+                  : "text-[#4C7567] hover:text-[#0D3528] font-medium"
               }`}
             >
               <span>{t.journal.tabQuests}</span>
@@ -463,8 +459,8 @@ export function SanctuaryJournalModal({
               }}
               className={`flex-1 min-w-[56px] py-1.5 px-2 rounded-full text-[11px] sm:text-[12px] whitespace-nowrap transition-all cursor-pointer text-center ${
                 activeTab === "reflections"
-                  ? "bg-white text-[#0D3528] shadow-sm font-semibold"
-                  : "text-emerald-50/85 hover:text-white font-medium"
+                  ? "bg-white text-[#0D3528] shadow-xs font-semibold"
+                  : "text-[#4C7567] hover:text-[#0D3528] font-medium"
               }`}
             >
               <span>{t.journal.tabNotes}</span>
@@ -479,8 +475,8 @@ export function SanctuaryJournalModal({
               }}
               className={`flex-1 min-w-[56px] py-1.5 px-2 rounded-full text-[11px] sm:text-[12px] whitespace-nowrap transition-all relative cursor-pointer text-center ${
                 activeTab === "story"
-                  ? "bg-white text-[#0D3528] shadow-sm font-semibold"
-                  : "text-emerald-50/85 hover:text-white font-medium"
+                  ? "bg-white text-[#0D3528] shadow-xs font-semibold"
+                  : "text-[#4C7567] hover:text-[#0D3528] font-medium"
               }`}
             >
               <span>{t.journal.tabStory}</span>
@@ -498,8 +494,8 @@ export function SanctuaryJournalModal({
               }}
               className={`flex-1 min-w-[56px] py-1.5 px-2 rounded-full text-[11px] sm:text-[12px] whitespace-nowrap transition-all relative cursor-pointer text-center ${
                 activeTab === "wisdom"
-                  ? "bg-white text-[#0D3528] shadow-sm font-semibold"
-                  : "text-emerald-50/85 hover:text-white font-medium"
+                  ? "bg-white text-[#0D3528] shadow-xs font-semibold"
+                  : "text-[#4C7567] hover:text-[#0D3528] font-medium"
               }`}
             >
               <span>{t.journal.tabQuotes}</span>
@@ -517,8 +513,8 @@ export function SanctuaryJournalModal({
               }}
               className={`flex-1 min-w-[56px] py-1.5 px-2 rounded-full text-[11px] sm:text-[12px] whitespace-nowrap transition-all relative cursor-pointer text-center ${
                 activeTab === "biomes"
-                  ? "bg-white text-[#0D3528] shadow-sm font-semibold"
-                  : "text-emerald-50/85 hover:text-white font-medium"
+                  ? "bg-white text-[#0D3528] shadow-xs font-semibold"
+                  : "text-[#4C7567] hover:text-[#0D3528] font-medium"
               }`}
             >
               <span>{language === "en" ? "Biomes" : "Bioma"}</span>

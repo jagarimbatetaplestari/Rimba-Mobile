@@ -227,11 +227,7 @@ export function MobileStatisticsModal({
       `}</style>
 
       <div
-        className="fixed inset-0 z-[100] h-[100dvh] w-full overflow-y-auto overscroll-contain no-scrollbar select-none antialiased font-urbanist text-[#0D3528] pointer-events-auto"
-        style={{
-          background:
-            "radial-gradient(130% 90% at 50% -5%, #38B28B 0%, #289874 34%, #1C7459 70%, #165643 100%)",
-        }}
+        className="fixed inset-0 z-[100] h-[100dvh] w-full overflow-y-auto overscroll-contain no-scrollbar select-none antialiased font-urbanist text-[#0D3528] pointer-events-auto bg-[#FAFAF7]"
         role="dialog"
         aria-modal="true"
       >
@@ -239,10 +235,10 @@ export function MobileStatisticsModal({
           {/* HEADER NAV */}
           <div className="flex items-center justify-between py-1">
             <div className="flex items-center gap-2.5">
-              <h2 className="text-[23px] font-semibold tracking-normal text-white drop-shadow-xs">
+              <h2 className="text-[23px] font-semibold tracking-normal text-[#0D3528]">
                 {t.stats.title}
               </h2>
-              <span className="rounded-full bg-white/20 border border-white/25 px-3 py-0.5 text-[11.5px] font-medium text-emerald-50 backdrop-blur-md">
+              <span className="rounded-full bg-[#E4F4ED] border border-[#BCE5D3] px-3 py-0.5 text-[11.5px] font-medium text-[#14664D]">
                 {t.stats.subtitle}
               </span>
             </div>
@@ -255,7 +251,7 @@ export function MobileStatisticsModal({
                   hapticLight();
                   setIsShareOpen(true);
                 }}
-                className="flex items-center gap-1.5 h-9 px-3 rounded-full bg-white/20 border border-white/30 text-white shadow-sm backdrop-blur-md active:scale-90 transition-transform hover:bg-white/30 cursor-pointer text-[12px] font-medium"
+                className="flex items-center gap-1.5 h-9 px-3 rounded-full bg-[#0D3528]/5 border border-[#0D3528]/10 text-[#0D3528] shadow-xs active:scale-90 transition-transform hover:bg-[#0D3528]/10 cursor-pointer text-[12px] font-medium"
                 title={t.stats.shareBannerTitle}
               >
                 <Share2 className="h-3.5 w-3.5 stroke-[2.2]" />
@@ -269,7 +265,7 @@ export function MobileStatisticsModal({
                   hapticLight();
                   onClose();
                 }}
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 border border-white/30 text-white shadow-sm backdrop-blur-md active:scale-90 transition-transform hover:bg-white/30 cursor-pointer"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0D3528]/5 border border-[#0D3528]/10 text-[#0D3528] shadow-xs active:scale-90 transition-transform hover:bg-[#0D3528]/10 cursor-pointer"
                 aria-label={t.common.close}
               >
                 <X className="h-4 w-4 stroke-[2]" />
@@ -281,7 +277,7 @@ export function MobileStatisticsModal({
           {/* 1. RINGKASAN UTAMA (SIMETRIS & AIRY)                      */}
           {/* ========================================================= */}
           <div className="space-y-1.5">
-            <p className="px-1 text-[12px] font-medium uppercase tracking-[0.12em] text-white/90 drop-shadow-xs">
+            <p className="px-1 text-[12px] font-medium uppercase tracking-[0.12em] text-[#4C7567]">
               {t.stats.overviewSection}
             </p>
 
@@ -396,7 +392,7 @@ export function MobileStatisticsModal({
           {/* 2. AKTIVITAS WAKTU & PERIODE (BAR CHART)                  */}
           {/* ========================================================= */}
           <div className="space-y-1.5">
-            <p className="px-1 text-[12px] font-medium uppercase tracking-[0.12em] text-white/90 drop-shadow-xs">
+            <p className="px-1 text-[12px] font-medium uppercase tracking-[0.12em] text-[#4C7567]">
               {t.stats.activitySection}
             </p>
 
@@ -567,7 +563,7 @@ export function MobileStatisticsModal({
           {/* 3. JAM RITME SIRKADIAN (24-HOUR FOCUS CLOCK)               */}
           {/* ========================================================= */}
           <div className="space-y-1.5">
-            <p className="px-1 text-[12px] font-medium uppercase tracking-[0.12em] text-white/90 drop-shadow-xs">
+            <p className="px-1 text-[12px] font-medium uppercase tracking-[0.12em] text-[#4C7567]">
               {t.stats.circadianSection}
             </p>
 
@@ -708,7 +704,7 @@ export function MobileStatisticsModal({
           {/* 3. DISTRIBUSI KATEGORI (RING DONUT & LIST)                */}
           {/* ========================================================= */}
           <div className="space-y-1.5">
-            <p className="px-1 text-[12px] font-medium uppercase tracking-[0.12em] text-white/90 drop-shadow-xs">
+            <p className="px-1 text-[12px] font-medium uppercase tracking-[0.12em] text-[#4C7567]">
               {t.stats.categorySection}
             </p>
 
@@ -861,7 +857,7 @@ export function MobileStatisticsModal({
           {/* 4. KONSISTENSI HARIAN (ACTIVITY HEATMAP 12 MINGGU)         */}
           {/* ========================================================= */}
           <div className="space-y-1.5">
-            <p className="px-1 text-[12px] font-medium uppercase tracking-[0.12em] text-white/90 drop-shadow-xs">
+            <p className="px-1 text-[12px] font-medium uppercase tracking-[0.12em] text-[#4C7567]">
               {t.stats.consistencySection}
             </p>
 
@@ -963,7 +959,7 @@ export function MobileStatisticsModal({
           {drilldownDate && (
             <div className="space-y-1.5 animate-in fade-in slide-in-from-bottom-2 duration-200">
               <div className="flex items-center justify-between px-1">
-                <p className="text-[12px] font-medium uppercase tracking-[0.12em] text-white/90 drop-shadow-xs">
+                <p className="text-[12px] font-medium uppercase tracking-[0.12em] text-[#4C7567]">
                   {language === "en" ? "Sessions:" : "Riwayat Sesi:"} {drilldownDate.label}
                 </p>
                 <button
@@ -973,7 +969,7 @@ export function MobileStatisticsModal({
                     setDrilldownDate(null);
                     setSelectedHeatmapDay(null);
                   }}
-                  className="text-[11.5px] text-white/90 hover:text-white underline cursor-pointer"
+                  className="text-[11.5px] text-[#14664D] hover:text-[#0D3528] underline cursor-pointer"
                 >
                   {t.common.close}
                 </button>

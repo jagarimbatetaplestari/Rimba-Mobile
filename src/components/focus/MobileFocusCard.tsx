@@ -260,11 +260,18 @@ export function MobileFocusCard({
     const handleHarvestEvt = () => {
       setShowHarvestModal(true);
     };
+    const handleAbandonEvt = () => {
+      const start = activeSession ? new Date(activeSession.started_at).getTime() : 0;
+      const elapsed = Date.now() - start;
+      const withinGrace = elapsed <= 10000;
+      handleAbandon(withinGrace);
+    };
 
     window.addEventListener("rimba:open_timer", handleOpenTimer);
     window.addEventListener("rimba:start_focus", handleStartFocusEvent);
     window.addEventListener("rimba:soundscape_change", handleSoundscapeEvt);
     window.addEventListener("rimba:open_harvest", handleHarvestEvt);
+    window.addEventListener("rimba:open_abandon", handleAbandonEvt);
     return () => {
       window.removeEventListener("rimba:open_timer", handleOpenTimer);
       window.removeEventListener("rimba:start_focus", handleStartFocusEvent);
@@ -273,6 +280,7 @@ export function MobileFocusCard({
         handleSoundscapeEvt,
       );
       window.removeEventListener("rimba:open_harvest", handleHarvestEvt);
+      window.removeEventListener("rimba:open_abandon", handleAbandonEvt);
     };
   }, [
     activeSession,

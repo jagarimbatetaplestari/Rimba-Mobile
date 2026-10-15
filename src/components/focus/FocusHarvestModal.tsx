@@ -48,8 +48,6 @@ export function FocusHarvestModal({
   const worldObjects = useGameStore((state) => state.saveData.world_objects);
   const todos = useGameStore((state) => state.saveData.todos) || EMPTY_TODOS;
   const notify = useGameStore((state) => state.notify);
-  const timeOfDay = useGameStore((state) => state.timeOfDay);
-  const isNight = timeOfDay === "night";
 
   const [reflectionNote, setReflectionNote] = useState<string>("");
   const [completeLinkedTodo, setCompleteLinkedTodo] = useState<boolean>(true);
@@ -166,20 +164,6 @@ export function FocusHarvestModal({
     }
   };
 
-  /*
-   * Apple Celebration Liquid Glass
-   */
-  const modalGlassStyle: React.CSSProperties = {
-    background: isNight
-      ? "linear-gradient(180deg, rgba(255, 255, 255, 0.22) 0%, rgba(12, 32, 21, 0.55) 25%, rgba(4, 16, 9, 0.85) 100%)"
-      : "linear-gradient(180deg, rgba(255, 255, 255, 0.38) 0%, rgba(18, 52, 34, 0.48) 25%, rgba(8, 28, 17, 0.75) 100%)",
-    backdropFilter: "blur(34px) saturate(190%)",
-    WebkitBackdropFilter: "blur(34px) saturate(190%)",
-    border: "1px solid rgba(255, 255, 255, 0.4)",
-    boxShadow:
-      "inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.75), inset 0 -1px 1px 0 rgba(0, 0, 0, 0.3), 0 28px 60px rgba(0, 0, 0, 0.35)",
-  };
-
   const modalContent = (
     <div
       onClick={(e) => {
@@ -193,17 +177,13 @@ export function FocusHarvestModal({
       }}
     >
       <div
-        style={modalGlassStyle}
-        className="w-full max-w-md rounded-[36px] p-5 sm:p-6 flex flex-col gap-3.5 text-white relative overflow-hidden max-h-[90dvh] overflow-y-auto no-scrollbar shadow-2xl pointer-events-auto"
+        className="w-full max-w-md rounded-[36px] p-5 sm:p-6 flex flex-col gap-3.5 bg-[#FAFAF7] border border-[#0D3528]/10 text-[#0D3528] relative overflow-hidden max-h-[90dvh] overflow-y-auto no-scrollbar shadow-2xl pointer-events-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Top ambient glass arch */}
-        <div className="absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-white/20 to-transparent pointer-events-none rounded-t-[36px]" />
-
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 w-7 h-7 rounded-full flex items-center justify-center bg-white/20 hover:bg-white/30 border border-white/30 text-white transition-all z-10 active:scale-90 cursor-pointer shadow-xs"
+          className="absolute top-4 right-4 w-7 h-7 rounded-full flex items-center justify-center bg-[#0D3528]/5 hover:bg-[#0D3528]/10 border border-[#0D3528]/10 text-[#0D3528] transition-all z-10 active:scale-90 cursor-pointer shadow-xs"
           title={t.common.close}
           aria-label={t.common.close}
         >
@@ -213,64 +193,64 @@ export function FocusHarvestModal({
         {/* Celebratory Icon & Header */}
         <div className="flex flex-col items-center text-center gap-2 pt-1 relative z-10">
           <div className="relative">
-            <div className="w-20 h-20 rounded-[26px] bg-white/20 border border-white/35 flex items-center justify-center text-4xl shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.7)]">
+            <div className="w-20 h-20 rounded-[26px] bg-[#E4F4ED] border border-[#BCE5D3] flex items-center justify-center text-4xl shadow-xs">
               {speciesCfg.icon}
             </div>
-            <span className="absolute -bottom-1 -right-1 p-1 rounded-full bg-white text-[#0f2e1e] shadow-xs">
+            <span className="absolute -bottom-1 -right-1 p-1 rounded-full bg-[#187557] text-white shadow-xs">
               <Sparkles className="w-3.5 h-3.5 fill-current" />
             </span>
           </div>
 
           <div className="space-y-1">
-            <h3 className="text-lg font-bold tracking-tight text-white flex items-center justify-center gap-1.5 drop-shadow-xs">
+            <h3 className="text-lg font-bold tracking-tight text-[#0D3528] flex items-center justify-center gap-1.5">
               <span>{t.harvest.title}</span>
-              <span className="text-emerald-300">🌱</span>
+              <span className="text-emerald-600">🌱</span>
             </h3>
-            <p className="text-[12px] text-white/80 max-w-xs mx-auto leading-relaxed">
+            <p className="text-[12px] text-[#4C7567] max-w-xs mx-auto leading-relaxed">
               {t.harvest.subtitlePre}
-              <b>{localizedSpeciesName}</b>
+              <b className="text-[#0D3528]">{localizedSpeciesName}</b>
               {t.harvest.subtitlePost}
             </p>
           </div>
         </div>
 
         {/* Stat Highlights Card */}
-        <div className="grid grid-cols-3 gap-2 p-2.5 rounded-2xl bg-white/12 border border-white/20 relative z-10 backdrop-blur-md">
-          <div className="flex flex-col items-center text-center p-2 rounded-xl bg-white/10">
-            <span className="text-[10px] text-white/70 flex items-center gap-1 font-medium">
+        <div className="grid grid-cols-3 gap-2 p-2.5 rounded-2xl bg-white border border-[#0D3528]/10 shadow-xs relative z-10">
+          <div className="flex flex-col items-center text-center p-2 rounded-xl bg-[#0D3528]/[0.02]">
+            <span className="text-[10px] text-[#4C7567] flex items-center gap-1 font-medium">
               <Clock className="w-3 h-3 stroke-[2.2]" />
               <span>{t.harvest.duration}</span>
             </span>
-            <span className="text-sm font-bold font-mono text-white mt-0.5 tabular-nums">
+            <span className="text-sm font-bold text-[#0D3528] mt-0.5 tabular-nums">
               {durationMins}m
             </span>
-            <span className="text-[9.5px] font-semibold px-1.5 py-0.2 rounded-md mt-1 truncate max-w-full border border-white/20 bg-white/10 text-white">
+            <span className="text-[9.5px] font-semibold px-1.5 py-0.2 rounded-md mt-1 truncate max-w-full border border-[#0D3528]/10 bg-white text-[#14664D]">
               #{localizedTagLabel}
             </span>
           </div>
 
-          <div className="flex flex-col items-center text-center p-2 rounded-xl bg-white/10">
-            <span className="text-[10px] text-amber-200/90 flex items-center gap-1 font-medium">
+          <div className="flex flex-col items-center text-center p-2 rounded-xl bg-[#0D3528]/[0.02]">
+            <span className="text-[10px] text-amber-700 flex items-center gap-1 font-medium">
               <Sparkles className="w-3 h-3 stroke-[2.2]" />
               <span>Soul</span>
             </span>
-            <span className="text-sm font-bold font-mono text-amber-200 mt-0.5 tabular-nums">
+            <span className="text-sm font-bold text-amber-800 mt-0.5 tabular-nums">
               +{rewards.gold}
             </span>
-            <span className="text-[9px] text-white/60 mt-1">
+            <span className="text-[9px] text-[#4C7567] mt-1">
               {t.harvest.soulSub}
             </span>
           </div>
 
-          <div className="flex flex-col items-center text-center p-2 rounded-xl bg-white/10">
-            <span className="text-[10px] text-emerald-200/90 flex items-center gap-1 font-medium">
+          <div className="flex flex-col items-center text-center p-2 rounded-xl bg-[#0D3528]/[0.02]">
+            <span className="text-[10px] text-[#14664D] flex items-center gap-1 font-medium">
               <Sprout className="w-3 h-3 stroke-[2.2]" />
               <span>Level XP</span>
             </span>
-            <span className="text-sm font-bold font-mono text-emerald-200 mt-0.5 tabular-nums">
+            <span className="text-sm font-bold text-[#187557] mt-0.5 tabular-nums">
               +{rewards.xp}
             </span>
-            <span className="text-[9px] text-white/60 mt-1">
+            <span className="text-[9px] text-[#4C7567] mt-1">
               {t.harvest.xpSub}
             </span>
           </div>
@@ -278,35 +258,35 @@ export function FocusHarvestModal({
 
         {/* Campfire Blessing Pill */}
         {isCampfire && (
-          <div className="p-2.5 rounded-2xl bg-amber-500/20 border border-amber-300/30 flex items-center justify-between text-xs text-amber-100 relative z-10 backdrop-blur-md">
+          <div className="p-2.5 rounded-2xl bg-amber-50 border border-amber-200/80 flex items-center justify-between text-xs text-amber-900 relative z-10 shadow-xs">
             <span className="flex items-center gap-1.5 font-medium text-[11px]">
               <span>🔥</span> {t.harvest.campfireBonus}
             </span>
-            <span className="text-[10px] font-bold text-amber-300 bg-amber-400/20 px-2 py-0.5 rounded-full border border-amber-300/30">
+            <span className="text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-300">
               {t.harvest.withFriends}
             </span>
           </div>
         )}
 
         {/* Sanctuary & Territory Impact Pill */}
-        <div className="p-2.5 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-between text-xs text-white relative z-10 backdrop-blur-md">
+        <div className="p-2.5 rounded-2xl bg-white border border-[#0D3528]/10 flex items-center justify-between text-xs text-[#0D3528] relative z-10 shadow-xs">
           <div className="flex items-center gap-2">
-            <Maximize2 className="w-3.5 h-3.5 text-white/80 shrink-0" />
-            <span className="text-[11px] leading-tight">
+            <Maximize2 className="w-3.5 h-3.5 text-[#187557] shrink-0" />
+            <span className="text-[11px] leading-tight text-[#4C7567]">
               {t.harvest.tileProgress
                 .replace("{pct}", String(landProgressPct))
                 .replace("{cost}", String(zoneInfo.nextTileCost))}
             </span>
           </div>
-          <span className="text-[10px] font-mono font-bold text-white bg-white/20 px-2 py-0.5 rounded-lg border border-white/25">
+          <span className="text-[10px] font-bold text-[#14664D] bg-[#E4F4ED] px-2 py-0.5 rounded-lg border border-[#BCE5D3]">
             {t.harvest.tilesCount.replace("{count}", String(unlockedSet.size))}
           </span>
         </div>
 
         {/* Bulldozer Dismissed Notice if Applicable */}
         {hadBulldozerThreat && (
-          <div className="p-2.5 rounded-2xl bg-amber-400/20 border border-amber-300/35 flex items-center gap-2 text-xs text-amber-100 relative z-10 backdrop-blur-md">
-            <ShieldCheck className="w-4 h-4 text-amber-300 shrink-0 stroke-[2.2]" />
+          <div className="p-2.5 rounded-2xl bg-amber-50 border border-amber-200 flex items-center gap-2 text-xs text-amber-900 relative z-10 shadow-xs">
+            <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0 stroke-[2.2]" />
             <span className="text-[11px]">
               🚜 <b>{t.harvest.bulldozerSavedTitle}</b> {t.harvest.bulldozerSavedDesc}
             </span>
@@ -315,8 +295,8 @@ export function FocusHarvestModal({
 
         {/* Task Reflection Input */}
         <div className="flex flex-col gap-1.5 pt-0.5 relative z-10">
-          <label className="text-[11px] font-semibold text-white/80 flex items-center gap-1.5">
-            <Edit3 className="w-3.5 h-3.5 text-white/70" />
+          <label className="text-[11px] font-semibold text-[#4C7567] flex items-center gap-1.5">
+            <Edit3 className="w-3.5 h-3.5 text-[#187557]" />
             <span>{t.harvest.noteLabel}</span>
           </label>
           <div className="relative">
@@ -326,9 +306,9 @@ export function FocusHarvestModal({
               maxLength={120}
               rows={2}
               placeholder={t.harvest.notePlaceholder}
-              className="w-full px-3.5 py-2.5 rounded-2xl bg-white/12 border border-white/25 focus:border-white/50 text-xs text-white placeholder-white/45 outline-none resize-none transition-colors backdrop-blur-md"
+              className="w-full px-3.5 py-2.5 rounded-2xl bg-white border border-[#0D3528]/15 focus:border-[#187557] text-xs text-[#0D3528] placeholder-[#4C7567]/50 outline-none resize-none transition-colors shadow-xs"
             />
-            <span className="absolute bottom-2 right-3 text-[10px] font-mono text-white/50">
+            <span className="absolute bottom-2 right-3 text-[10px] text-[#4C7567]/60">
               {reflectionNote.length}/120
             </span>
           </div>
@@ -338,12 +318,12 @@ export function FocusHarvestModal({
             <button
               type="button"
               onClick={() => setCompleteLinkedTodo((prev) => !prev)}
-              className="flex items-center gap-2 mt-0.5 text-left text-xs text-white/85 hover:text-white cursor-pointer"
+              className="flex items-center gap-2 mt-0.5 text-left text-xs text-[#0D3528] hover:text-[#187557] cursor-pointer"
             >
               {completeLinkedTodo ? (
-                <CheckSquare className="w-3.5 h-3.5 text-white stroke-[2.4]" />
+                <CheckSquare className="w-3.5 h-3.5 text-[#187557] stroke-[2.4]" />
               ) : (
-                <Square className="w-3.5 h-3.5 text-white/40" />
+                <Square className="w-3.5 h-3.5 text-[#4C7567]/50" />
               )}
               <span className="truncate">
                 {t.harvest.todoCompleteLabel} <b>&quot;{linkedTodo.text}&quot;</b>
@@ -357,16 +337,16 @@ export function FocusHarvestModal({
           <button
             type="button"
             onClick={handleHarvestClick}
-            className="w-full py-3 px-4 rounded-2xl bg-white text-[#0f2e1e] hover:bg-white/95 font-bold text-xs shadow-xs active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-[#187557] via-[#208b68] to-[#2BB688] text-white hover:opacity-95 font-bold text-xs shadow-md shadow-[#187557]/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
-            <Sparkles className="w-4 h-4 fill-current" />
+            <Sparkles className="w-4 h-4 fill-white" />
             <span>{t.harvest.plantBtn}</span>
           </button>
 
           <button
             type="button"
             onClick={handleShareClick}
-            className="w-full sm:w-auto py-3 px-3.5 rounded-2xl bg-white/15 hover:bg-white/25 text-white font-semibold text-xs border border-white/25 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 shrink-0 cursor-pointer backdrop-blur-md"
+            className="w-full sm:w-auto py-3 px-3.5 rounded-2xl bg-[#0D3528]/5 hover:bg-[#0D3528]/10 text-[#0D3528] font-semibold text-xs border border-[#0D3528]/10 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 shrink-0 cursor-pointer shadow-xs"
             title={t.common.share}
           >
             <Share2 className="w-3.5 h-3.5 stroke-[2.2]" />

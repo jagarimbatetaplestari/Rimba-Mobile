@@ -414,19 +414,36 @@ export function ZenFocusOverlay() {
         </div>
 
         {/* Breathing Text Label */}
-        <div className="mt-3 text-center">
+        <div className="mt-3 text-center flex flex-col items-center">
           <p className="text-[13px] font-semibold tracking-tight text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)] transition-all duration-700">
             {breathPhase === "inhale"
               ? (language === "en" ? "Breathe In Slowly..." : "Tarik Napas Perlahan...")
               : (language === "en" ? "Breathe Out & Relax..." : "Hembuskan Napas Rileks...")}
           </p>
-          <p className="text-[10.5px] text-white/60 tracking-tight font-medium mt-0.5">
-            {language === "en" ? "Press " : "Tekan "}
-            <kbd className="px-1.5 py-0.5 rounded-md bg-white/15 text-white font-mono text-[9.5px] border border-white/20">
-              Esc
-            </kbd>{" "}
-            {language === "en" ? "to exit" : "untuk kembali"}
-          </p>
+          <div className="flex items-center gap-2 mt-1.5">
+            <button
+              type="button"
+              onClick={() => {
+                soundManager.playPop();
+                hapticLight();
+                setZenMode(false);
+                if (typeof window !== "undefined") {
+                  window.dispatchEvent(new CustomEvent("rimba:open_abandon"));
+                }
+              }}
+              className="px-2.5 py-0.5 rounded-full bg-white/10 hover:bg-rose-500/20 text-white/75 hover:text-rose-200 text-[10.5px] font-medium border border-white/15 transition-all cursor-pointer active:scale-95"
+            >
+              {language === "en" ? "Give Up" : "Menyerah"}
+            </button>
+            <span className="text-white/30 text-[10px]">•</span>
+            <button
+              type="button"
+              onClick={() => setZenMode(false)}
+              className="text-[10.5px] text-white/60 hover:text-white transition-colors cursor-pointer"
+            >
+              {language === "en" ? "Exit Zen" : "Keluar Zen"}
+            </button>
+          </div>
         </div>
       </div>
 

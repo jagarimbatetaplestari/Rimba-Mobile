@@ -445,39 +445,40 @@ function ObjectItem({
       rotation={isRiver ? [0, 0, 0] : [0, object.rotation, 0]}
       scale={[currentScale, currentScale, currentScale]}
       onPointerDown={(e) => {
-        if (isPlacementMode) {
-          const clientX = 'clientX' in e.nativeEvent ? e.nativeEvent.clientX : 0;
-          const clientY = 'clientY' in e.nativeEvent ? e.nativeEvent.clientY : 0;
-          pointerDownRef.current = { x: clientX, y: clientY, time: Date.now() };
-        }
+        const clientX = 'clientX' in e.nativeEvent ? (e.nativeEvent as PointerEvent).clientX : 0;
+        const clientY = 'clientY' in e.nativeEvent ? (e.nativeEvent as PointerEvent).clientY : 0;
+        pointerDownRef.current = { x: clientX, y: clientY, time: Date.now() };
       }}
       onPointerUp={(e) => {
-        if (isPlacementMode && pointerDownRef.current) {
-          const clientX = 'clientX' in e.nativeEvent ? e.nativeEvent.clientX : 0;
-          const clientY = 'clientY' in e.nativeEvent ? e.nativeEvent.clientY : 0;
-          const dist = Math.hypot(clientX - pointerDownRef.current.x, clientY - pointerDownRef.current.y);
-          const elapsed = Date.now() - pointerDownRef.current.time;
-          pointerDownRef.current = null;
-          if (dist < 28 && elapsed < 650) {
-            lastPointerTapTimeRef.current = Date.now();
-            e.stopPropagation();
+        if (!pointerDownRef.current) return;
+        const clientX = 'clientX' in e.nativeEvent ? (e.nativeEvent as PointerEvent).clientX : 0;
+        const clientY = 'clientY' in e.nativeEvent ? (e.nativeEvent as PointerEvent).clientY : 0;
+        const dist = Math.hypot(clientX - pointerDownRef.current.x, clientY - pointerDownRef.current.y);
+        const elapsed = Date.now() - pointerDownRef.current.time;
+        pointerDownRef.current = null;
+
+        // Strict tap filter: pergeseran < 18px dan durasi < 450ms adalah TAP yang disengaja, BUKAN orbit/drag kamera
+        if (dist < 18 && elapsed < 450) {
+          lastPointerTapTimeRef.current = Date.now();
+          e.stopPropagation();
+          if (isPlacementMode) {
             onTileTap?.(object.grid_x, object.grid_y);
+          } else if (interactive) {
+            onSelect(object);
           }
         }
       }}
       onClick={(e) => {
-        if (isPlacementMode) {
-          e.stopPropagation();
-          // Suppress duplicate synthetic click that fires immediately after onPointerUp on touch screens
-          if (Date.now() - lastPointerTapTimeRef.current < 450) {
-            return;
-          }
-          onTileTap?.(object.grid_x, object.grid_y);
+        e.stopPropagation();
+        // Cegah synthetic click ganda yang ditembakkan browser setelah onPointerUp
+        if (Date.now() - lastPointerTapTimeRef.current < 450) {
           return;
         }
-        if (!interactive) return;
-        e.stopPropagation();
-        onSelect(object);
+        if (isPlacementMode) {
+          onTileTap?.(object.grid_x, object.grid_y);
+        } else if (interactive) {
+          onSelect(object);
+        }
       }}
       onPointerOver={(e) => {
         if (!interactive) return;

@@ -177,11 +177,7 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
       `}</style>
 
       <div
-        className="fixed inset-0 z-[100] h-[100dvh] w-full overflow-y-auto overscroll-contain no-scrollbar select-none antialiased font-urbanist text-[#0D3528] pointer-events-auto"
-        style={{
-          background:
-            "radial-gradient(130% 90% at 50% -5%, #38B28B 0%, #289874 34%, #1C7459 70%, #165643 100%)",
-        }}
+        className="fixed inset-0 z-[100] h-[100dvh] w-full overflow-y-auto overscroll-contain no-scrollbar select-none antialiased font-urbanist text-[#0D3528] pointer-events-auto bg-[#FAFAF7]"
         role="dialog"
         aria-modal="true"
       >
@@ -189,10 +185,10 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
           {/* HEADER NAV */}
           <div className="flex items-center justify-between py-1">
             <div className="flex items-center gap-2.5">
-              <h2 className="text-[23px] font-semibold tracking-normal text-white drop-shadow-xs">
+              <h2 className="text-[23px] font-semibold tracking-normal text-[#0D3528]">
                 {t.audio.title}
               </h2>
-              <span className="rounded-full bg-white/20 border border-white/25 px-3 py-0.5 text-[11.5px] font-medium text-emerald-50 backdrop-blur-md">
+              <span className="rounded-full bg-[#E4F4ED] border border-[#BCE5D3] px-3 py-0.5 text-[11.5px] font-medium text-[#14664D]">
                 {t.audio.badge}
               </span>
             </div>
@@ -203,7 +199,7 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
                 hapticLight();
                 onClose();
               }}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 border border-white/30 text-white shadow-sm backdrop-blur-md active:scale-90 transition-transform hover:bg-white/30 cursor-pointer"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0D3528]/5 border border-[#0D3528]/10 text-[#0D3528] shadow-xs active:scale-90 transition-transform hover:bg-[#0D3528]/10 cursor-pointer"
               aria-label={t.common.close}
             >
               <X className="h-4 w-4 stroke-[2]" />
@@ -211,7 +207,7 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
           </div>
 
           {/* SEGMENTED CONTROL SWITCH (Floating Capsule Glass) */}
-          <div className="rounded-full p-1 border border-white/25 bg-white/20 backdrop-blur-md shadow-xs grid grid-cols-2 gap-1">
+          <div className="rounded-full p-1 border border-[#0D3528]/10 bg-[#0D3528]/5 shadow-xs grid grid-cols-2 gap-1">
             <button
               type="button"
               onClick={() => {
@@ -222,7 +218,7 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
               className={`py-2 px-3 rounded-full text-[12px] flex items-center justify-center gap-2 transition-all cursor-pointer ${
                 activeTab === "music"
                   ? "bg-white text-[#0D3528] shadow-sm font-semibold"
-                  : "text-emerald-50/80 hover:text-white font-medium"
+                  : "text-[#4C7567] hover:text-[#0D3528] font-medium"
               }`}
             >
               <Music2 className="w-3.5 h-3.5 stroke-[1.8]" />
@@ -242,7 +238,7 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
               className={`py-2 px-3 rounded-full text-[12px] flex items-center justify-center gap-2 transition-all cursor-pointer ${
                 activeTab === "nature"
                   ? "bg-white text-[#0D3528] shadow-sm font-semibold"
-                  : "text-emerald-50/80 hover:text-white font-medium"
+                  : "text-[#4C7567] hover:text-[#0D3528] font-medium"
               }`}
             >
               <Wind className="w-3.5 h-3.5 stroke-[1.8]" />
@@ -260,7 +256,7 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
             <div className="space-y-4 animate-in fade-in duration-200">
               {/* Now Playing Bento Card */}
               <div className="space-y-1.5">
-                <p className="px-1 text-[12px] font-medium uppercase tracking-[0.12em] text-white/90 drop-shadow-xs">
+                <p className="px-1 text-[12px] font-medium uppercase tracking-[0.12em] text-[#4C7567]">
                   {t.audio.nowPlaying}
                 </p>
 
@@ -382,7 +378,7 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
               {/* Playlist Section */}
               <div className="space-y-2.5">
                 <div className="flex items-center justify-between px-1">
-                  <p className="text-[12px] font-medium uppercase tracking-[0.12em] text-white/90 drop-shadow-xs">
+                  <p className="text-[12px] font-medium uppercase tracking-[0.12em] text-[#4C7567]">
                     {t.audio.playlist}
                   </p>
 
@@ -406,8 +402,8 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
                         }}
                         className={`px-3 py-0.5 rounded-full text-[11px] font-medium capitalize transition-all cursor-pointer ${
                           musicCategory === cat
-                            ? "bg-white text-[#0D3528] shadow-xs"
-                            : "bg-white/20 text-emerald-50 hover:bg-white/30 backdrop-blur-md border border-white/20"
+                            ? "bg-[#187557] text-white shadow-xs"
+                            : "bg-[#0D3528]/5 text-[#4C7567] hover:bg-[#0D3528]/10 border border-[#0D3528]/10"
                         }`}
                       >
                         {cat === "all" ? t.audio.filterAll : cat}
@@ -481,7 +477,7 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
           {activeTab === "nature" && (
             <div className="space-y-4 animate-in fade-in duration-200">
               <div className="space-y-1.5">
-                <p className="px-1 text-[12px] font-medium uppercase tracking-[0.12em] text-white/90 drop-shadow-xs">
+                <p className="px-1 text-[12px] font-medium uppercase tracking-[0.12em] text-[#4C7567]">
                   {t.audio.chooseAtmosphere}
                 </p>
 

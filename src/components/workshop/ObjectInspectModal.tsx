@@ -129,12 +129,15 @@ export function ObjectInspectModal() {
   const handleFocusToSave = () => {
     hapticLight();
     if (!activeSession || activeSession.status !== "active") {
-      startFocus();
+      setSelectedObject(null);
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("rimba:start_focus"));
+      }
       notify(t.inspect.focusStartedToast, "info");
     } else {
       notify(t.inspect.alreadyFocusingToast, "info");
+      setSelectedObject(null);
     }
-    setSelectedObject(null);
   };
 
   const handleStartRelocate = () => {

@@ -25,7 +25,7 @@ interface IslandSwitcherModalProps {
 }
 
 export function IslandSwitcherModal({ isOpen, onClose }: IslandSwitcherModalProps) {
-  const { language } = useTranslation();
+  const { t, language } = useTranslation();
   const isEn = language === "en";
 
   const saveData = useGameStore((state) => state.saveData);
@@ -35,8 +35,6 @@ export function IslandSwitcherModal({ isOpen, onClose }: IslandSwitcherModalProp
   const createNewIsland = useGameStore((state) => state.createNewIsland);
   const renameIsland = useGameStore((state) => state.renameIsland);
   const deleteIsland = useGameStore((state) => state.deleteIsland);
-  const timeOfDay = useGameStore((state) => state.timeOfDay);
-  const isNight = timeOfDay === "night";
 
   const { isPro, maxIslands, canCreateNewIsland, triggerPaywall } = useEntitlements();
 
@@ -70,7 +68,7 @@ export function IslandSwitcherModal({ isOpen, onClose }: IslandSwitcherModalProp
       triggerPaywall("multi_island_limit");
       return;
     }
-    setNewIslandName(`Suaka ${islands.length + 1}`);
+    setNewIslandName(`${isEn ? "Sanctuary" : "Suaka"} ${islands.length + 1}`);
     setSelectedBiome("meadow");
     setIsCreating(true);
   };
@@ -108,23 +106,10 @@ export function IslandSwitcherModal({ isOpen, onClose }: IslandSwitcherModalProp
   const handleDelete = (isl: IslandSlot) => {
     soundManager.playPop();
     hapticLight();
-    const confirmMsg = isEn
-      ? `Are you sure you want to delete "${isl.name}"? This action cannot be undone.`
-      : `Yakin ingin menghapus pulau "${isl.name}"? Tindakan ini tidak dapat dibatalkan.`;
+    const confirmMsg = t.islandsModal.deleteConfirm.replace("{name}", isl.name);
     if (typeof window !== "undefined" && window.confirm(confirmMsg)) {
       deleteIsland(isl.id);
     }
-  };
-
-  const modalGlassStyle: React.CSSProperties = {
-    background: isNight
-      ? "linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(15, 34, 24, 0.72) 35%, rgba(8, 20, 14, 0.88) 100%)"
-      : "linear-gradient(180deg, rgba(255, 255, 255, 0.42) 0%, rgba(240, 248, 243, 0.25) 22%, rgba(20, 52, 35, 0.52) 100%)",
-    backdropFilter: "blur(28px) saturate(160%)",
-    WebkitBackdropFilter: "blur(28px) saturate(160%)",
-    border: "1px solid rgba(255, 255, 255, 0.35)",
-    boxShadow:
-      "0 24px 48px -8px rgba(0, 0, 0, 0.28), inset 0 1px 0 0 rgba(255, 255, 255, 0.5)",
   };
 
   return (
@@ -137,29 +122,25 @@ export function IslandSwitcherModal({ isOpen, onClose }: IslandSwitcherModalProp
       onClick={onClose}
     >
       <div
-        style={modalGlassStyle}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-sm rounded-[32px] p-5 text-white flex flex-col gap-4 relative overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200"
+        className="w-full max-w-sm rounded-[32px] p-5 bg-[#FAFAF7] border border-[#0D3528]/10 text-[#0D3528] flex flex-col gap-4 relative overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200"
       >
-        {/* Specular sheen */}
-        <div className="absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-white/20 to-transparent pointer-events-none rounded-t-[32px]" />
-
         {/* Header */}
-        <div className="flex items-center justify-between relative z-10 pb-1 border-b border-white/15">
+        <div className="flex items-center justify-between relative z-10 pb-1 border-b border-[#0D3528]/8">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-white/15 border border-white/25 flex items-center justify-center shadow-xs">
-              <Palmtree className="w-4 h-4 text-emerald-300 stroke-[2.2]" />
+            <div className="w-8 h-8 rounded-full bg-[#E4F4ED] border border-[#BCE5D3] flex items-center justify-center shadow-xs">
+              <Palmtree className="w-4 h-4 text-[#187557] stroke-[2.2]" />
             </div>
             <div>
-              <h2 className="text-[15px] font-bold tracking-tight text-white drop-shadow-xs">
-                {isEn ? "Sanctuary Islands" : "Daftar Pulau Suaka"}
+              <h2 className="text-[15px] font-bold tracking-tight text-[#0D3528]">
+                {t.islandsModal.title}
               </h2>
-              <p className="text-[11px] text-white/70">
-                {isEn
-                  ? `Capacity: ${islands.length}/${maxIslands} Slots`
-                  : `Kapasitas: ${islands.length}/${maxIslands} Pulau`}
+              <p className="text-[11px] text-[#4C7567]">
+                {t.islandsModal.capacity
+                  .replace("{current}", String(islands.length))
+                  .replace("{max}", String(maxIslands))}
                 {isPro && (
-                  <span className="ml-1 text-amber-300 font-semibold">
+                  <span className="ml-1 text-amber-700 font-semibold">
                     (Pro ✨)
                   </span>
                 )}
@@ -170,8 +151,8 @@ export function IslandSwitcherModal({ isOpen, onClose }: IslandSwitcherModalProp
           <button
             type="button"
             onClick={onClose}
-            className="w-7 h-7 rounded-full bg-white/15 hover:bg-white/25 border border-white/20 flex items-center justify-center text-white transition-all cursor-pointer shadow-xs active:scale-90"
-            aria-label="Close"
+            className="w-7 h-7 rounded-full bg-[#0D3528]/5 hover:bg-[#0D3528]/10 border border-[#0D3528]/10 flex items-center justify-center text-[#0D3528] transition-all cursor-pointer shadow-xs active:scale-90"
+            aria-label={t.common.close}
           >
             <X className="w-3.5 h-3.5 stroke-[2.4]" />
           </button>
@@ -191,8 +172,8 @@ export function IslandSwitcherModal({ isOpen, onClose }: IslandSwitcherModalProp
                   key={isl.id}
                   className={`p-3 rounded-2xl border transition-all flex items-center justify-between gap-2.5 ${
                     isActive
-                      ? "bg-white text-[#0b2719] border-white shadow-[0_4px_14px_rgba(0,0,0,0.18)]"
-                      : "bg-white/10 hover:bg-white/15 text-white border-white/15"
+                      ? "bg-white text-[#0D3528] border-[#187557]/40 shadow-xs ring-1 ring-[#187557]/20"
+                      : "bg-white/80 hover:bg-white text-[#0D3528] border-[#0D3528]/10"
                   }`}
                 >
                   {/* Left: Island Info / Edit form */}
@@ -200,7 +181,7 @@ export function IslandSwitcherModal({ isOpen, onClose }: IslandSwitcherModalProp
                     className="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer"
                     onClick={() => !isEditing && handleSelectIsland(isl.id)}
                   >
-                    <span className="text-2xl shrink-0 p-1 rounded-xl bg-black/10">
+                    <span className="text-2xl shrink-0 p-1 rounded-xl bg-[#0D3528]/5">
                       {biomeCfg?.icon || "🌱"}
                     </span>
 
@@ -215,12 +196,12 @@ export function IslandSwitcherModal({ isOpen, onClose }: IslandSwitcherModalProp
                               if (e.key === "Enter") handleConfirmRename(isl.id);
                             }}
                             autoFocus
-                            className="w-full px-2 py-0.5 rounded-lg bg-black/10 text-current text-xs font-semibold border border-current/20 outline-none"
+                            className="w-full px-2 py-0.5 rounded-lg bg-white text-[#0D3528] text-xs font-semibold border border-[#187557] outline-none"
                           />
                           <button
                             type="button"
                             onClick={() => handleConfirmRename(isl.id)}
-                            className="p-1 rounded-lg bg-emerald-500 text-white shrink-0"
+                            className="p-1 rounded-lg bg-[#187557] text-white shrink-0"
                           >
                             <Check className="w-3 h-3 stroke-[3]" />
                           </button>
@@ -228,25 +209,17 @@ export function IslandSwitcherModal({ isOpen, onClose }: IslandSwitcherModalProp
                       ) : (
                         <>
                           <div className="flex items-center gap-1.5">
-                            <span
-                              className={`text-[13px] font-bold truncate tracking-tight ${
-                                isActive ? "text-[#0b2719]" : "text-white"
-                              }`}
-                            >
+                            <span className="text-[13px] font-bold truncate tracking-tight text-[#0D3528]">
                               {isl.name}
                             </span>
                             {isActive && (
-                              <span className="text-[9.5px] font-extrabold uppercase px-1.5 py-0.2 rounded-full bg-[#0b2719] text-white">
-                                {isEn ? "Active" : "Aktif"}
+                              <span className="text-[9.5px] font-bold uppercase px-1.5 py-0.2 rounded-full bg-[#187557] text-white">
+                                {t.islandsModal.active}
                               </span>
                             )}
                           </div>
-                          <p
-                            className={`text-[10.5px] truncate font-medium ${
-                              isActive ? "text-[#0b2719]/70" : "text-white/70"
-                            }`}
-                          >
-                            {treeCount} {isEn ? "trees" : "pohon"} • {biomeCfg?.name || "Meadow"}
+                          <p className="text-[10.5px] truncate font-medium text-[#4C7567]">
+                            {treeCount} {t.islandsModal.trees} • {biomeCfg?.name || "Meadow"}
                           </p>
                         </>
                       )}
@@ -259,12 +232,8 @@ export function IslandSwitcherModal({ isOpen, onClose }: IslandSwitcherModalProp
                       <button
                         type="button"
                         onClick={() => handleStartRename(isl)}
-                        className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                          isActive
-                            ? "hover:bg-black/10 text-[#0b2719]/70 hover:text-[#0b2719]"
-                            : "hover:bg-white/15 text-white/70 hover:text-white"
-                        }`}
-                        title={isEn ? "Rename" : "Ganti Nama"}
+                        className="p-1.5 rounded-lg transition-colors cursor-pointer text-[#4C7567] hover:text-[#0D3528] hover:bg-[#0D3528]/5"
+                        title={t.islandsModal.rename}
                       >
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
@@ -273,12 +242,8 @@ export function IslandSwitcherModal({ isOpen, onClose }: IslandSwitcherModalProp
                         <button
                           type="button"
                           onClick={() => handleDelete(isl)}
-                          className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                            isActive
-                              ? "hover:bg-rose-100 text-rose-700"
-                              : "hover:bg-rose-500/20 text-rose-300"
-                          }`}
-                          title={isEn ? "Delete Island" : "Hapus Pulau"}
+                          className="p-1.5 rounded-lg transition-colors cursor-pointer text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+                          title={t.islandsModal.delete}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -293,22 +258,22 @@ export function IslandSwitcherModal({ isOpen, onClose }: IslandSwitcherModalProp
           /* Create New Island Form */
           <form onSubmit={handleConfirmCreate} className="space-y-3 relative z-10 py-1">
             <div className="space-y-1">
-              <label className="text-[11.5px] font-semibold text-white/80">
-                {isEn ? "Island Name" : "Nama Pulau"}
+              <label className="text-[11.5px] font-semibold text-[#4C7567]">
+                {t.islandsModal.nameLabel}
               </label>
               <input
                 type="text"
                 value={newIslandName}
                 onChange={(e) => setNewIslandName(e.target.value)}
-                placeholder={isEn ? "e.g. Work Sanctuary" : "cth: Suaka Kantor"}
+                placeholder={t.islandsModal.namePlaceholder}
                 autoFocus
-                className="w-full px-3 py-2 rounded-xl bg-white/15 border border-white/25 text-white text-xs font-semibold placeholder:text-white/40 outline-none focus:border-white"
+                className="w-full px-3 py-2 rounded-xl bg-white border border-[#0D3528]/15 text-[#0D3528] text-xs font-semibold placeholder:text-[#4C7567]/50 outline-none focus:border-[#187557]"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-[11.5px] font-semibold text-white/80">
-                {isEn ? "Starter Biome" : "Bioma Awal"}
+              <label className="text-[11.5px] font-semibold text-[#4C7567]">
+                {t.islandsModal.biomeLabel}
               </label>
               <div className="grid grid-cols-2 gap-1.5">
                 {BIOME_CATALOG.map((b) => {
@@ -320,8 +285,8 @@ export function IslandSwitcherModal({ isOpen, onClose }: IslandSwitcherModalProp
                       onClick={() => setSelectedBiome(b.id)}
                       className={`p-2 rounded-xl border flex items-center gap-2 text-left transition-all cursor-pointer ${
                         isSel
-                          ? "bg-white text-[#0b2719] border-white font-bold shadow-xs"
-                          : "bg-white/10 hover:bg-white/15 text-white border-white/15 font-medium"
+                          ? "bg-[#E4F4ED] text-[#0D3528] border-[#187557] font-bold shadow-xs"
+                          : "bg-white/80 hover:bg-white text-[#0D3528] border-[#0D3528]/10 font-medium"
                       }`}
                     >
                       <span className="text-lg">{b.icon}</span>
@@ -336,15 +301,15 @@ export function IslandSwitcherModal({ isOpen, onClose }: IslandSwitcherModalProp
               <button
                 type="button"
                 onClick={() => setIsCreating(false)}
-                className="flex-1 py-2 rounded-xl bg-white/15 hover:bg-white/20 text-white font-semibold text-xs border border-white/20 cursor-pointer"
+                className="flex-1 py-2 rounded-xl bg-white hover:bg-[#FAFAF7] text-[#4C7567] font-semibold text-xs border border-[#0D3528]/10 cursor-pointer"
               >
-                {isEn ? "Cancel" : "Batal"}
+                {t.islandsModal.cancelBtn}
               </button>
               <button
                 type="submit"
-                className="flex-1 py-2 rounded-xl bg-white hover:bg-white/90 text-[#0b2719] font-bold text-xs shadow-md cursor-pointer"
+                className="flex-1 py-2 rounded-xl bg-gradient-to-r from-[#187557] via-[#208b68] to-[#2BB688] hover:opacity-95 text-white font-bold text-xs shadow-md cursor-pointer"
               >
-                {isEn ? "Create Sanctuary" : "Buat Suaka"}
+                {t.islandsModal.createBtn}
               </button>
             </div>
           </form>
@@ -357,10 +322,10 @@ export function IslandSwitcherModal({ isOpen, onClose }: IslandSwitcherModalProp
               <button
                 type="button"
                 onClick={handleStartCreate}
-                className="w-full py-2.5 px-4 rounded-2xl bg-white/15 hover:bg-white/25 border border-white/25 text-white font-bold text-xs flex items-center justify-center gap-2 active:scale-[0.98] transition-all cursor-pointer shadow-xs"
+                className="w-full py-2.5 px-4 rounded-2xl bg-gradient-to-r from-[#187557] via-[#208b68] to-[#2BB688] hover:opacity-95 text-white font-bold text-xs flex items-center justify-center gap-2 active:scale-[0.98] transition-all cursor-pointer shadow-md shadow-[#187557]/20"
               >
                 <Plus className="w-4 h-4 stroke-[2.5]" />
-                <span>{isEn ? "Create New Sanctuary" : "Tambah Pulau Baru"}</span>
+                <span>{t.islandsModal.createNew}</span>
               </button>
             ) : (
               <button
@@ -372,11 +337,7 @@ export function IslandSwitcherModal({ isOpen, onClose }: IslandSwitcherModalProp
                 className="w-full py-2.5 px-4 rounded-2xl bg-gradient-to-r from-amber-400 to-amber-300 text-slate-950 font-bold text-xs flex items-center justify-center gap-2 active:scale-[0.98] transition-all cursor-pointer shadow-md"
               >
                 <Sparkles className="w-4 h-4 text-slate-950 fill-slate-950" />
-                <span>
-                  {isEn
-                    ? "Unlock up to 5 Islands (Rimba Pro)"
-                    : "Buka Hingga 5 Pulau (Rimba Pro)"}
-                </span>
+                <span>{t.islandsModal.unlockPro}</span>
               </button>
             )}
           </div>

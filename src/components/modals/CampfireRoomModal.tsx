@@ -177,11 +177,7 @@ export function CampfireRoomModal({
 
   return (
     <div
-      className="fixed inset-0 z-[100] h-[100dvh] w-full overflow-y-auto overscroll-contain no-scrollbar select-none antialiased font-urbanist text-[#0D3528] pointer-events-auto"
-      style={{
-        background:
-          "radial-gradient(130% 90% at 50% -5%, #38B28B 0%, #289874 34%, #1C7459 70%, #165643 100%)",
-      }}
+      className="fixed inset-0 z-[100] h-[100dvh] w-full overflow-y-auto overscroll-contain no-scrollbar select-none antialiased font-urbanist text-[#0D3528] pointer-events-auto bg-[#FAFAF7]"
       role="dialog"
       aria-modal="true"
     >
@@ -189,11 +185,11 @@ export function CampfireRoomModal({
         {/* HEADER NAV */}
         <div className="flex items-center justify-between py-1">
           <div className="flex items-center gap-2.5">
-            <h2 className="text-[23px] font-semibold tracking-normal text-white drop-shadow-xs flex items-center gap-2">
+            <h2 className="text-[23px] font-semibold tracking-normal text-[#0D3528] flex items-center gap-2">
               <span>{t.campfire.title}</span>
             </h2>
-            <span className="rounded-full bg-amber-400/25 border border-amber-300/40 px-3 py-0.5 text-[11.5px] font-medium text-amber-100 backdrop-blur-md flex items-center gap-1">
-              <Flame className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
+            <span className="rounded-full bg-amber-50 border border-amber-200/80 px-3 py-0.5 text-[11.5px] font-medium text-amber-800 flex items-center gap-1">
+              <Flame className="w-3.5 h-3.5 text-amber-600 fill-amber-600" />
               <span>{t.campfire.badge}</span>
             </span>
           </div>
@@ -205,7 +201,7 @@ export function CampfireRoomModal({
               hapticLight();
               onClose();
             }}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 border border-white/30 text-white shadow-sm backdrop-blur-md active:scale-90 transition-transform hover:bg-white/30 cursor-pointer"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0D3528]/5 border border-[#0D3528]/10 text-[#0D3528] shadow-xs active:scale-90 transition-transform hover:bg-[#0D3528]/10 cursor-pointer"
             aria-label={t.common.close}
           >
             <X className="h-4 w-4 stroke-[2]" />
@@ -281,7 +277,7 @@ export function CampfireRoomModal({
 
             {/* Participants List */}
             <div className="space-y-2">
-              <h4 className="text-[13.5px] font-semibold text-white drop-shadow-xs px-1">
+              <h4 className="text-[13.5px] font-semibold text-[#0D3528] px-1">
                 {t.campfire.participantsHeader.replace(
                   "{count}",
                   String(currentRoom.participants.length),
@@ -351,7 +347,7 @@ export function CampfireRoomModal({
                   hapticLight();
                   leaveRoom();
                 }}
-                className="w-full py-2.5 px-4 rounded-full text-white/80 hover:text-white font-medium text-[12px] active:scale-[0.98] transition-all cursor-pointer"
+                className="w-full py-2.5 px-4 rounded-full text-[#4C7567] hover:text-[#0D3528] font-medium text-[12px] active:scale-[0.98] transition-all cursor-pointer"
               >
                 {t.campfire.leaveRoomBtn}
               </button>
@@ -362,7 +358,7 @@ export function CampfireRoomModal({
           /* LOBBY CREATOR / JOINER                                   */
           /* ======================================================== */
           <div className="space-y-4 animate-in fade-in duration-200">
-            <div className="rounded-full p-1 border border-white/25 bg-white/20 backdrop-blur-md shadow-xs grid grid-cols-2 gap-1">
+            <div className="rounded-full p-1 border border-[#0D3528]/10 bg-[#0D3528]/5 shadow-xs grid grid-cols-2 gap-1">
               <button
                 type="button"
                 onClick={() => {
@@ -373,7 +369,7 @@ export function CampfireRoomModal({
                 className={`py-2 rounded-full text-[12px] transition-all cursor-pointer text-center ${
                   activeTab === "create"
                     ? "bg-white text-[#0D3528] shadow-sm font-semibold"
-                    : "text-emerald-50/80 hover:text-white font-medium"
+                    : "text-[#4C7567] hover:text-[#0D3528] font-medium"
                 }`}
               >
                 {t.campfire.tabCreate}
@@ -389,7 +385,7 @@ export function CampfireRoomModal({
                 className={`py-2 rounded-full text-[12px] transition-all cursor-pointer text-center ${
                   activeTab === "join"
                     ? "bg-white text-[#0D3528] shadow-sm font-semibold"
-                    : "text-emerald-50/80 hover:text-white font-medium"
+                    : "text-[#4C7567] hover:text-[#0D3528] font-medium"
                 }`}
               >
                 {t.campfire.tabJoin}

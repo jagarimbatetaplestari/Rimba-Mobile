@@ -47,6 +47,8 @@ export function BulldozerMarker({
   // Smoke particles state (ring buffer of 18 puffs)
   const smokePuffsRef = useRef<SmokePuff[]>([]);
   const lastSpawnTimeRef = useRef<number>(0);
+  const pointerDownRef = useRef<{ x: number; y: number; time: number } | null>(null);
+  const lastPointerTapTimeRef = useRef<number>(0);
 
   // Clone scene cleanly preserving textures and enabling PBR shadows
   const { clonedScene, clonedMaterials } = useMemo(() => {
@@ -242,7 +244,29 @@ export function BulldozerMarker({
       position={[bulldozer.position[0], bulldozer.position[1], bulldozer.position[2]]}
       rotation={[0, bulldozer.rotation, 0]}
       scale={[0.6, 0.6, 0.6]}
-      onClick={handleClick}
+      onPointerDown={(e) => {
+        const clientX = 'clientX' in e.nativeEvent ? (e.nativeEvent as PointerEvent).clientX : 0;
+        const clientY = 'clientY' in e.nativeEvent ? (e.nativeEvent as PointerEvent).clientY : 0;
+        pointerDownRef.current = { x: clientX, y: clientY, time: Date.now() };
+      }}
+      onPointerUp={(e) => {
+        if (!pointerDownRef.current) return;
+        const clientX = 'clientX' in e.nativeEvent ? (e.nativeEvent as PointerEvent).clientX : 0;
+        const clientY = 'clientY' in e.nativeEvent ? (e.nativeEvent as PointerEvent).clientY : 0;
+        const dist = Math.hypot(clientX - pointerDownRef.current.x, clientY - pointerDownRef.current.y);
+        const elapsed = Date.now() - pointerDownRef.current.time;
+        pointerDownRef.current = null;
+        if (dist < 18 && elapsed < 450) {
+          lastPointerTapTimeRef.current = Date.now();
+          handleClick(e);
+        }
+      }}
+      onClick={(e) => {
+        if (Date.now() - lastPointerTapTimeRef.current < 450) {
+          return;
+        }
+        handleClick(e);
+      }}
       onPointerOver={(e) => {
         e.stopPropagation();
         document.body.style.cursor = 'pointer';

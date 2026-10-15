@@ -322,11 +322,7 @@ export function MobileSettingsSheet({
       `}</style>
 
       <div
-        className="fixed inset-0 z-[100] h-[100dvh] w-full overflow-y-auto overscroll-contain no-scrollbar select-none antialiased font-urbanist text-[#0D3528] pointer-events-auto"
-        style={{
-          background:
-            "radial-gradient(130% 90% at 50% -5%, #38B28B 0%, #289874 34%, #1C7459 70%, #165643 100%)",
-        }}
+        className="fixed inset-0 z-[100] h-[100dvh] w-full overflow-y-auto overscroll-contain no-scrollbar select-none antialiased font-urbanist text-[#0D3528] pointer-events-auto bg-[#FAFAF7]"
         role="dialog"
         aria-modal="true"
       >
@@ -340,17 +336,17 @@ export function MobileSettingsSheet({
                   hapticLight();
                   setCurrentView("main");
                 }}
-                className="flex items-center gap-1.5 text-[15px] font-semibold text-white transition-colors cursor-pointer active:scale-95 py-1 drop-shadow-xs"
+                className="flex items-center gap-1.5 text-[15px] font-semibold text-[#0D3528] transition-colors cursor-pointer active:scale-95 py-1"
               >
                 <ChevronLeft className="w-5 h-5 stroke-[2]" />
                 <span>{t.settings.title}</span>
               </button>
             ) : (
               <div className="flex items-center gap-2.5">
-                <h2 className="text-[23px] font-semibold tracking-normal text-white drop-shadow-xs">
+                <h2 className="text-[23px] font-semibold tracking-normal text-[#0D3528]">
                   {t.settings.title}
                 </h2>
-                <span className="rounded-full bg-white/20 border border-white/25 px-3 py-0.5 text-[11.5px] font-medium text-emerald-50 backdrop-blur-md">
+                <span className="rounded-full bg-[#E4F4ED] border border-[#BCE5D3] px-3 py-0.5 text-[11.5px] font-medium text-[#14664D]">
                   {t.settings.subtitle}
                 </span>
               </div>
@@ -362,7 +358,7 @@ export function MobileSettingsSheet({
                 hapticLight();
                 onClose();
               }}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 border border-white/30 text-white shadow-sm backdrop-blur-md active:scale-90 transition-transform hover:bg-white/30 cursor-pointer"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0D3528]/5 border border-[#0D3528]/10 text-[#0D3528] shadow-xs active:scale-90 transition-transform hover:bg-[#0D3528]/10 cursor-pointer"
               aria-label={t.common.close}
             >
               <X className="h-4 w-4 stroke-[2]" />
@@ -375,7 +371,7 @@ export function MobileSettingsSheet({
                   0. BAHASA / LANGUAGE SWITCHER
                   ==================================================== */}
               <div className="space-y-1.5">
-                <p className="px-1 text-[12px] font-medium uppercase tracking-[0.12em] text-white/90 drop-shadow-xs flex items-center gap-1.5">
+                <p className="px-1 text-[12px] font-medium uppercase tracking-[0.12em] text-[#4C7567] flex items-center gap-1.5">
                   <Globe className="w-3.5 h-3.5" />
                   <span>{t.settings.languageSection}</span>
                 </p>
@@ -420,7 +416,7 @@ export function MobileSettingsSheet({
                   1. PROFIL & AKUN
                   ==================================================== */}
               <div className="space-y-1.5">
-                <p className="px-1 text-[12px] font-medium uppercase tracking-[0.12em] text-white/90 drop-shadow-xs">
+                <p className="px-1 text-[12px] font-medium uppercase tracking-[0.12em] text-[#4C7567]">
                   {t.settings.accountSection}
                 </p>
 
@@ -501,7 +497,7 @@ export function MobileSettingsSheet({
                   2. SUARA & GETARAN (AUDIO & HAPTICS)
                   ==================================================== */}
               <div className="space-y-2">
-                <p className="px-1 text-[12px] font-medium uppercase tracking-[0.12em] text-white/90 drop-shadow-xs">
+                <p className="px-1 text-[12px] font-medium uppercase tracking-[0.12em] text-[#4C7567]">
                   {t.settings.soundSection}
                 </p>
 
@@ -765,7 +761,7 @@ export function MobileSettingsSheet({
                   ==================================================== */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between px-1">
-                  <p className="text-[12px] font-medium uppercase tracking-[0.12em] text-white/90 drop-shadow-xs">
+                  <p className="text-[12px] font-medium uppercase tracking-[0.12em] text-[#4C7567]">
                     {lang === "en" ? "Island Theme & Biome" : "Tema Suaka (Bioma)"}
                   </p>
                   <span className="text-[11px] font-medium text-[#14664D] bg-[#E4F4ED] px-2.5 py-0.5 rounded-full border border-[#BCE5D3]">
@@ -862,7 +858,7 @@ export function MobileSettingsSheet({
                   ==================================================== */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between px-1">
-                  <p className="text-[12px] font-medium uppercase tracking-[0.12em] text-white/90 drop-shadow-xs">
+                  <p className="text-[12px] font-medium uppercase tracking-[0.12em] text-[#4C7567]">
                     {t.settings.graphicsSection}
                   </p>
                   <span className="text-[11px] font-medium text-[#14664D] bg-[#E4F4ED] px-2.5 py-0.5 rounded-full border border-[#BCE5D3]">
@@ -936,7 +932,7 @@ export function MobileSettingsSheet({
                   ==================================================== */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between px-1">
-                  <p className="text-[12px] font-medium uppercase tracking-[0.12em] text-white/90 drop-shadow-xs flex items-center gap-1.5">
+                  <p className="text-[12px] font-medium uppercase tracking-[0.12em] text-[#4C7567] flex items-center gap-1.5">
                     <ShieldCheck className="w-3.5 h-3.5" />
                     <span>{t.settings.permissionsSection}</span>
                   </p>
@@ -1142,7 +1138,7 @@ export function MobileSettingsSheet({
                   5. CADANGAN & PENYIMPANAN DATA (CLOUD & LOCAL STORAGE)
                   ==================================================== */}
               <div className="space-y-1.5">
-                <p className="px-1 text-[12px] font-medium uppercase tracking-[0.12em] text-white/90 drop-shadow-xs">
+                <p className="px-1 text-[12px] font-medium uppercase tracking-[0.12em] text-[#4C7567]">
                   {t.settings.backupRestore}
                 </p>
 
@@ -1211,7 +1207,7 @@ export function MobileSettingsSheet({
                   5. TENTANG & LEGAL (PRIVACY & TERMS)
                   ==================================================== */}
               <div className="space-y-1.5 pt-1">
-                <p className="px-1 text-[12px] font-medium uppercase tracking-[0.12em] text-white/90 drop-shadow-xs">
+                <p className="px-1 text-[12px] font-medium uppercase tracking-[0.12em] text-[#4C7567]">
                   {lang === "en" ? "About & Legal" : "Tentang & Legal"}
                 </p>
 

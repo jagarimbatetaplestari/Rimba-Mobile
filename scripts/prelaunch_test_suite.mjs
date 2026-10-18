@@ -516,7 +516,7 @@ assert(
   'MobileStatisticsModal dynamically labels category donut and computes center minutes accurately'
 );
 
-// 4. Mobile Profile Cloud Status Badge
+// 4. Mobile Profile Cloud Status Badge & ChangePasswordModal Integration
 const profileModalPath = path.join(projectRoot, 'src/components/modals/MobileProfileModal.tsx');
 assert(fs.existsSync(profileModalPath), 'MobileProfileModal.tsx exists');
 const profileModalContent = fs.readFileSync(profileModalPath, 'utf8');
@@ -524,6 +524,22 @@ assert(
   profileModalContent.includes('user && !user.isGuest') &&
     profileModalContent.includes('<span>Cloud</span>'),
   'MobileProfileModal displays Cloud sync status badge for authenticated users'
+);
+
+// 5. ChangePasswordModal & Guest Upgrade Integration
+const changePasswordModalPath = path.join(projectRoot, 'src/components/modals/ChangePasswordModal.tsx');
+assert(fs.existsSync(changePasswordModalPath), 'ChangePasswordModal.tsx exists');
+const changePasswordModalContent = fs.readFileSync(changePasswordModalPath, 'utf8');
+assert(
+  changePasswordModalContent.includes('upgradeGuestAccount') &&
+    changePasswordModalContent.includes('changePassword') &&
+    changePasswordModalContent.includes('getPasswordStrength'),
+  'ChangePasswordModal provides password strength metering and handles both guest upgrade and password update'
+);
+assert(
+  profileModalContent.includes('ChangePasswordModal') &&
+    profileModalContent.includes('setIsChangePasswordOpen(true)'),
+  'MobileProfileModal integrates ChangePasswordModal for guest upgrade and password management'
 );
 
 // ------------------------------------------------------------------
@@ -633,6 +649,11 @@ assert(
 assert(
   settingsSheetContent.includes('prefs.ambientMusicVolume ?? 50'),
   'MobileSettingsSheet ambient music slider fallback matches default preferences store volume (50%)'
+);
+assert(
+  settingsSheetContent.includes('ChangePasswordModal') &&
+    settingsSheetContent.includes('setShowChangePasswordModal(true)'),
+  'MobileSettingsSheet integrates ChangePasswordModal for guest upgrade and password update'
 );
 
 // 2. RestoreDataModal Verification

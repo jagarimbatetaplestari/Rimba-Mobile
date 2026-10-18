@@ -16,6 +16,7 @@ import { hapticLight, hapticSuccess, hapticWarning } from "@/lib/mobile/nativeBr
 import { AvatarPickerModal } from "@/components/modals/AvatarPickerModal";
 import { BadgesShowcaseModal } from "@/components/modals/BadgesShowcaseModal";
 import { RestoreDataModal } from "@/components/modals/RestoreDataModal";
+import { ChangePasswordModal } from "@/components/modals/ChangePasswordModal";
 import { RangerAvatar } from "@/components/ui/RangerAvatar";
 import { useTranslation, getLocalizedRangerTitle } from "@/lib/i18n/translations";
 import {
@@ -38,6 +39,7 @@ import {
   Trash2,
   AlertTriangle,
   Cloud,
+  KeyRound,
 } from "lucide-react";
 
 export type ProfileTab = "stats" | "profile";
@@ -65,6 +67,7 @@ export function MobileProfileModal({
   const [isAvatarPickerOpen, setIsAvatarPickerOpen] = useState(false);
   const [isBadgesOpen, setIsBadgesOpen] = useState(false);
   const [isRestoreOpen, setIsRestoreOpen] = useState(false);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameInput, setNameInput] = useState("");
@@ -546,6 +549,30 @@ export function MobileProfileModal({
               </button>
             </div>
 
+            {/* Account Upgrade or Password Management */}
+            <button
+              type="button"
+              onClick={() => {
+                hapticLight();
+                setIsChangePasswordOpen(true);
+              }}
+              className="w-full py-2.5 px-3 rounded-2xl bg-[#E4F4ED]/60 hover:bg-[#E4F4ED] border border-[#BCE5D3]/70 text-[12px] font-medium text-[#14664D] active:scale-[0.98] transition-all flex items-center justify-between shadow-2xs cursor-pointer"
+            >
+              <div className="flex items-center gap-2">
+                {user?.isGuest ? (
+                  <Sparkles className="w-3.5 h-3.5 text-amber-600 stroke-[2]" />
+                ) : (
+                  <KeyRound className="w-3.5 h-3.5 text-[#187557] stroke-[2]" />
+                )}
+                <span>
+                  {user?.isGuest
+                    ? (language === "en" ? "Register & Cloud Sync Account" : "Tautkan Akun & Cloud Sync")
+                    : (language === "en" ? "Change Account Password" : "Ganti Kata Sandi Akun")}
+                </span>
+              </div>
+              <ChevronRight className="w-3.5 h-3.5 text-[#14664D]/60" />
+            </button>
+
             <div className="grid grid-cols-2 gap-2.5 pt-1">
               <button
                 type="button"
@@ -690,6 +717,10 @@ export function MobileProfileModal({
       <RestoreDataModal
         isOpen={isRestoreOpen}
         onClose={() => setIsRestoreOpen(false)}
+      />
+      <ChangePasswordModal
+        isOpen={isChangePasswordOpen}
+        onClose={() => setIsChangePasswordOpen(false)}
       />
     </>
   );

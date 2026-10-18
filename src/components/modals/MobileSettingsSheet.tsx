@@ -32,6 +32,7 @@ import { RestoreDataModal } from "@/components/modals/RestoreDataModal";
 import { SnapshotsHistoryModal } from "@/components/modals/SnapshotsHistoryModal";
 import { LegalModal } from "@/components/modals/LegalModal";
 import { AvatarPickerModal } from "@/components/modals/AvatarPickerModal";
+import { ChangePasswordModal } from "@/components/modals/ChangePasswordModal";
 import { RangerAvatar } from "@/components/ui/RangerAvatar";
 import { uploadGameSaveToCloud } from "@/lib/supabase/cloudSync";
 import { useTranslation } from "@/lib/i18n/translations";
@@ -76,6 +77,7 @@ import {
   Sun,
   X,
   BookOpen,
+  KeyRound,
 } from "lucide-react";
 
 export interface MobileSettingsSheetProps {
@@ -120,6 +122,7 @@ export function MobileSettingsSheet({
   const [showLegalModal, setShowLegalModal] = useState(false);
   const [legalTab, setLegalTab] = useState<"privacy" | "terms">("privacy");
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
   const [notifPermState, setNotifPermState] = useState<"granted" | "denied" | "prompt">("prompt");
   const [testNotifSent, setTestNotifSent] = useState(false);
   const [isTestingNotif, setIsTestingNotif] = useState(false);
@@ -197,11 +200,7 @@ export function MobileSettingsSheet({
     if (!user || user.isGuest) {
       soundManager.playPop();
       hapticLight();
-      setSyncMessage(
-        lang === "en"
-          ? "Currently in Guest Mode. Sign in to enable Cloud Sync."
-          : "Akun masih mode tamu. Masuk untuk mengaktifkan cloud sync.",
-      );
+      setShowChangePasswordModal(true);
       return;
     }
     setIsSyncingCloud(true);
@@ -1419,6 +1418,34 @@ export function MobileSettingsSheet({
                 </button>
               </div>
 
+              {/* Aksi Akun & Keamanan */}
+              <button
+                type="button"
+                onClick={() => {
+                  hapticLight();
+                  soundManager.playPop();
+                  setShowChangePasswordModal(true);
+                }}
+                className="flex w-full items-center justify-between rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-4 text-left shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl transition-all active:scale-[0.98] cursor-pointer"
+              >
+                <div className="flex items-center gap-3 min-w-0 pr-2">
+                  <KeyRound className="h-4 w-4 text-[#187557] shrink-0 stroke-[1.8]" />
+                  <div>
+                    <p className="text-[13.5px] font-semibold text-[#0D3528]">
+                      {user?.isGuest
+                        ? (lang === "en" ? "Register / Link Account" : "Daftar / Tautkan Akun")
+                        : (lang === "en" ? "Change Password" : "Ganti Kata Sandi")}
+                    </p>
+                    <p className="text-[11.5px] text-[#4C7567] font-normal">
+                      {user?.isGuest
+                        ? (lang === "en" ? "Link email & password to enable Cloud Sync" : "Tautkan email & sandi untuk Cloud Sync")
+                        : (lang === "en" ? "Update your account security password" : "Perbarui kata sandi keamanan akun Anda")}
+                    </p>
+                  </div>
+                </div>
+                <ChevronRight className="h-4 w-4 text-[#4C7567] shrink-0" />
+              </button>
+
               {/* Aksi Backup & Restore */}
               <div className="space-y-2.5">
                 <button
@@ -1708,6 +1735,10 @@ export function MobileSettingsSheet({
           isOpen={showAvatarPicker}
           onClose={() => setShowAvatarPicker(false)}
           currentAvatarUrl={user?.avatarUrl || profile?.avatarUrl}
+        />
+        <ChangePasswordModal
+          isOpen={showChangePasswordModal}
+          onClose={() => setShowChangePasswordModal(false)}
         />
       </div>
     </>

@@ -181,11 +181,14 @@ export function getExpandableTiles(
  * Searches spirally / radially outward.
  */
 export function findEmptyTileNearCenter(
-  objects: WorldObject[],
+  objects: WorldObject[] = [],
   unlockedTiles?: Set<string>
 ): { grid_x: number; grid_y: number } | null {
   const size = GAME_CONFIG.grid.size;
-  const occupied = new Set(objects.map((o) => `${o.grid_x},${o.grid_y}`));
+  const safeObjects = Array.isArray(objects)
+    ? objects.filter((o) => o && typeof o.grid_x === 'number' && typeof o.grid_y === 'number')
+    : [];
+  const occupied = new Set(safeObjects.map((o) => `${o.grid_x},${o.grid_y}`));
 
   // Generate list of all grid coords sorted by distance to center (4.5, 4.5)
   const centerX = (size - 1) / 2;

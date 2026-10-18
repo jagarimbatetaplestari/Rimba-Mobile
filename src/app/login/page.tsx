@@ -7,7 +7,7 @@ import { useAuthStore } from "@/lib/auth/useAuthStore";
 import { useTranslation } from "@/lib/i18n/translations";
 import { soundManager } from "@/lib/audio/sounds";
 import { hapticLight, hapticMedium, hapticSuccess, hapticWarning } from "@/lib/mobile/nativeBridge";
-import { Mail, Lock, Eye, EyeOff, ArrowLeft, RefreshCw, CheckCircle2, ShieldCheck, User, KeyRound } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ArrowLeft, RefreshCw, CheckCircle2, ShieldCheck, KeyRound } from "lucide-react";
 import { Capacitor } from "@capacitor/core";
 import { supabase } from "@/lib/supabase/client";
 import { LegalModal } from "@/components/modals/LegalModal";
@@ -36,7 +36,6 @@ function WelcomeAuthPageContent() {
   } = useAuthStore();
 
   const [isSignUp, setIsSignUp] = useState(initialMode);
-  const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -125,10 +124,9 @@ function WelcomeAuthPageContent() {
       hapticMedium();
 
       if (isSignUp) {
-        // Alur Registrasi: Nama default diambil dari email prefix, diisi saat onboarding
+        // Alur Registrasi: Nama default diambil dari email prefix, dikustomisasi saat onboarding
         const fallbackName = cleanEmail.split("@")[0] || "Penjaga Rimba";
-        const finalName = displayName.trim() || fallbackName;
-        const result = await registerWithEmail(finalName, cleanEmail, cleanPassword);
+        const result = await registerWithEmail(fallbackName, cleanEmail, cleanPassword);
         if (result.success) {
           if (result.requiresOtp) {
             soundManager.playPop();
@@ -398,7 +396,7 @@ function WelcomeAuthPageContent() {
         <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-black/35 via-black/15 to-transparent" />
 
         {/* Soft Radial Scrim di Area Teks */}
-        <div className="absolute top-[48%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] h-[280px] rounded-full bg-[radial-gradient(ellipse_at_center,rgba(2,10,7,0.6)_0%,rgba(2,10,7,0.3)_50%,transparent_75%)] blur-2xl pointer-events-none" />
+        <div className="absolute top-[48%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[440px] h-[340px] rounded-full bg-[radial-gradient(ellipse_at_center,rgba(2,10,7,0.72)_0%,rgba(2,10,7,0.42)_55%,transparent_80%)] blur-2xl pointer-events-none" />
 
         {/* Smooth Bottom Scrim */}
         <div className="absolute inset-x-0 bottom-0 h-[50vh] bg-gradient-to-t from-black/85 via-black/45 via-45% to-transparent pointer-events-none" />
@@ -667,24 +665,6 @@ function WelcomeAuthPageContent() {
           /* STATE B: EMAIL & PASSWORD INPUT                           */
           /* ========================================================= */
           <form onSubmit={handleSubmit} className="w-full space-y-2.5">
-            {/* Ranger Display Name Capsule (Only during Sign Up) */}
-            {isSignUp && (
-              <div className="relative flex items-center px-4 py-3.5 rounded-2xl bg-black/25 hover:bg-black/30 focus-within:bg-black/35 backdrop-blur-md border border-white/[0.12] focus-within:border-white/35 shadow-[0_8px_24px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.2)] transition-all animate-in fade-in">
-                <User className="w-4 h-4 text-white/70 stroke-[1.8] flex-shrink-0 drop-shadow-sm" />
-                <input
-                  type="text"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  placeholder={t.auth.namePlaceholder}
-                  autoCapitalize="words"
-                  autoCorrect="off"
-                  spellCheck={false}
-                  autoComplete="name"
-                  className="w-full bg-transparent pl-3 pr-2 text-xs font-normal text-white placeholder-white/50 focus:outline-none drop-shadow-sm"
-                />
-              </div>
-            )}
-
             {/* Email Capsule */}
             <div className="relative flex items-center px-4 py-3.5 rounded-2xl bg-black/25 hover:bg-black/30 focus-within:bg-black/35 backdrop-blur-md border border-white/[0.12] focus-within:border-white/35 shadow-[0_8px_24px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.2)] transition-all">
               <Mail className="w-4 h-4 text-white/70 stroke-[1.8] flex-shrink-0 drop-shadow-sm" />
@@ -774,34 +754,6 @@ function WelcomeAuthPageContent() {
                 </span>
               )}
             </button>
-
-            {/* Terms Disclaimer on Sign Up */}
-            {isSignUp && (
-              <p className="text-[10px] text-white/50 pt-1 leading-relaxed text-center">
-                {t.auth.termsNoticePrefix}{" "}
-                <button
-                  type="button"
-                  onClick={() => {
-                    hapticLight();
-                    setLegalModalTab("terms");
-                  }}
-                  className="text-emerald-300 underline underline-offset-2 hover:text-white transition-colors cursor-pointer"
-                >
-                  {t.auth.termsLink}
-                </button>{" "}
-                &{" "}
-                <button
-                  type="button"
-                  onClick={() => {
-                    hapticLight();
-                    setLegalModalTab("privacy");
-                  }}
-                  className="text-emerald-300 underline underline-offset-2 hover:text-white transition-colors cursor-pointer"
-                >
-                  {t.auth.privacyLink}
-                </button>.
-              </p>
-            )}
           </form>
         )}
 

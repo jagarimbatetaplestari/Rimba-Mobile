@@ -366,62 +366,84 @@ export function MobileFocusCard({
   }, [activeSession, now]);
 
   const handleStart = async () => {
-    soundManager.playStart();
-    if (activeSoundscape !== "off") {
-      soundscapeManager.play(activeSoundscape);
-    }
-    const isStopwatch = selectedMinutes === 0;
-    const durationSec = devFastMode
-      ? GAME_CONFIG.focus.devFastDurationSec
-      : isStopwatch
-        ? 0
-        : selectedMinutes * 60;
+    try {
+      try {
+        soundManager.playStart();
+        if (activeSoundscape !== "off") {
+          soundscapeManager.play(activeSoundscape);
+        }
+      } catch (e) {
+        console.warn("[MobileFocusCard] Audio start error:", e);
+      }
 
-    // Contextual permission prompt on first focus (non-blocking for immediate start)
-    checkOrRequestNotificationPermission().catch(console.warn);
+      const isStopwatch = selectedMinutes === 0;
+      const durationSec = devFastMode
+        ? GAME_CONFIG.focus.devFastDurationSec
+        : isStopwatch
+          ? 0
+          : selectedMinutes * 60;
 
-    const expectedEndAt = new Date(
-      Date.now() + (isStopwatch ? 86400 : durationSec) * 1000,
-    );
-    const speciesCfg = TREE_SPECIES_CONFIG.find(
-      (s) => s.id === selectedSpecies,
-    );
+      // Contextual permission prompt on first focus (non-blocking for immediate start)
+      checkOrRequestNotificationPermission().catch(console.warn);
 
-    startFocus(
-      durationSec,
-      selectedTag,
-      isStrictMode,
-      selectedSpecies,
-      taskNote.trim() || undefined,
-    );
-
-    // Cinematic camera zoom toward sapling tile
-    const targetTile = findEmptyTileNearCenter(worldObjects, unlockedSet);
-    if (targetTile && typeof window !== "undefined") {
-      const saplingWorldPos = gridToWorld(
-        targetTile.grid_x,
-        targetTile.grid_y,
-        0.05,
+      const expectedEndAt = new Date(
+        Date.now() + (isStopwatch ? 86400 : durationSec) * 1000,
       );
-      window.dispatchEvent(
-        new CustomEvent("rimba:camera_focus_target", {
-          detail: { position: saplingWorldPos, distance: 7.0 },
-        }),
+      const speciesCfg = TREE_SPECIES_CONFIG.find(
+        (s) => s.id === selectedSpecies,
       );
-    }
 
-    if (!isStopwatch) {
-      scheduleFocusCompletionNotification({
-        expectedEndAt,
-        speciesName: translateSpecies(
-          selectedSpecies,
-          speciesCfg?.name || "Rimba Tree",
-        ),
-        durationMinutes: Math.round(durationSec / 60),
-      });
-    }
+      const cleanTaskNote =
+        typeof taskNote === "string" && taskNote.trim()
+          ? taskNote.trim()
+          : undefined;
 
-    setFocusSetup({ taskNote: "" });
+      startFocus(
+        durationSec,
+        selectedTag,
+        isStrictMode,
+        selectedSpecies,
+        cleanTaskNote,
+      );
+
+      // Cinematic camera zoom toward sapling tile
+      try {
+        const targetTile = findEmptyTileNearCenter(worldObjects, unlockedSet);
+        if (targetTile && typeof window !== "undefined") {
+          const saplingWorldPos = gridToWorld(
+            targetTile.grid_x,
+            targetTile.grid_y,
+            0.05,
+          );
+          if (Array.isArray(saplingWorldPos) && saplingWorldPos.length === 3) {
+            window.dispatchEvent(
+              new CustomEvent("rimba:camera_focus_target", {
+                detail: { position: saplingWorldPos, distance: 7.0 },
+              }),
+            );
+          }
+        }
+      } catch (e) {
+        console.warn("[MobileFocusCard] Camera focus dispatch error:", e);
+      }
+
+      if (!isStopwatch) {
+        scheduleFocusCompletionNotification({
+          expectedEndAt,
+          speciesName: translateSpecies(
+            selectedSpecies,
+            speciesCfg?.name || "Rimba Tree",
+          ),
+          durationMinutes: Math.round(durationSec / 60),
+        }).catch((err) => {
+          console.warn("[MobileFocusCard] Failed to schedule notification:", err);
+        });
+      }
+
+      setFocusSetup({ taskNote: "" });
+    } catch (err) {
+      console.error("[MobileFocusCard] Fatal startFocus error:", err);
+    }
   };
 
   const handleAbandon = (isWithinGrace = false) => {

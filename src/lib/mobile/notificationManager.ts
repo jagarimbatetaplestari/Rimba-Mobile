@@ -93,7 +93,6 @@ export async function scheduleFocusCompletionNotification(params: {
             title,
             body,
             schedule: { at: new Date(triggerMs) },
-            actionTypeId: 'OPEN_APP',
             extra: {
               type: 'focus_completed',
               speciesName,
@@ -150,7 +149,6 @@ export async function fireStrictWarningNotification(remainingSeconds: number = 1
             title,
             body,
             schedule: { at: new Date(Date.now() + 500) }, // Trigger immediately
-            actionTypeId: 'OPEN_APP',
             extra: {
               type: 'strict_warning',
             },
@@ -226,7 +224,6 @@ export async function scheduleDailyStreakReminder(
               repeats: true,
               every: 'day',
             },
-            actionTypeId: 'OPEN_APP',
             extra: {
               type: 'daily_reminder',
             },
@@ -281,7 +278,6 @@ export async function triggerTestNotification(): Promise<boolean> {
             title,
             body,
             schedule: { at: new Date(Date.now() + 3000) },
-            actionTypeId: 'OPEN_APP',
           },
         ],
       });

@@ -144,10 +144,10 @@ function CameraEventListener({
     const handleFocusTarget = (e: Event) => {
       const detail = (e as CustomEvent<{ position: [number, number, number]; distance?: number }>).detail;
       const controls = controlsRef.current;
-      if (!detail || !controls) return;
+      if (!detail || !detail.position || !Array.isArray(detail.position) || detail.position.length < 3 || !controls) return;
       onInteractionChange?.(true);
-      const targetVec = new THREE.Vector3(...detail.position);
-      const dist = detail.distance || 7.2;
+      const targetVec = new THREE.Vector3(detail.position[0], detail.position[1], detail.position[2]);
+      const dist = typeof detail.distance === 'number' && Number.isFinite(detail.distance) ? detail.distance : 7.2;
       const desiredCam = new THREE.Vector3(
         targetVec.x + dist * 0.7,
         targetVec.y + dist * 0.8,

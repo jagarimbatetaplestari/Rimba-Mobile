@@ -926,7 +926,9 @@ export const useGameStore = create<GameState>((set, get) => ({
     const finalTag = tag ?? focusSetup?.tag ?? 'Belajar';
     const finalSpecies = species ?? focusSetup?.species ?? 'oak';
     const finalStrictMode = strictMode ?? focusSetup?.strictMode ?? false;
-    const finalTaskNote = taskNote ?? (focusSetup?.taskNote?.trim() || undefined);
+    const cleanParamNote = typeof taskNote === 'string' && taskNote.trim() ? taskNote.trim() : undefined;
+    const cleanSetupNote = typeof focusSetup?.taskNote === 'string' && focusSetup.taskNote.trim() ? focusSetup.taskNote.trim() : undefined;
+    const finalTaskNote = cleanParamNote ?? cleanSetupNote;
 
     const isStopwatch =
       customDurationSec === 0 ||
@@ -941,8 +943,8 @@ export const useGameStore = create<GameState>((set, get) => ({
         ? (focusSetup.minutes === 0 ? 86400 : focusSetup.minutes * 60)
         : GAME_CONFIG.focus.defaultDurationSec;
 
-    const unlockedSet = getUnlockedTilesSet(saveData.world, saveData.world_objects);
-    const targetTile = findEmptyTileNearCenter(saveData.world_objects, unlockedSet);
+    const unlockedSet = getUnlockedTilesSet(saveData?.world, saveData?.world_objects || []);
+    const targetTile = findEmptyTileNearCenter(saveData?.world_objects || [], unlockedSet);
 
     const newSession = startFocusSession({
       durationSeconds: duration,

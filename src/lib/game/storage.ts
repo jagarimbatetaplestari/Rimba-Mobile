@@ -70,6 +70,7 @@ export function createInitialSaveData(): RimbaSaveData {
     streak_shields: 0,
     used_shield_dates: [],
     claimed_story_chapters: [],
+    claimed_wisdom_fragments: [],
     active_island_id: 'island_default',
     islands: [
       {
@@ -153,6 +154,7 @@ export function loadSaveData(): RimbaSaveData {
     parsed.streak_shields = typeof parsed.streak_shields === 'number' ? parsed.streak_shields : 0;
     parsed.used_shield_dates = parsed.used_shield_dates || [];
     parsed.claimed_story_chapters = parsed.claimed_story_chapters || [];
+    parsed.claimed_wisdom_fragments = parsed.claimed_wisdom_fragments || [];
 
     // Multi-island safe migration for existing users
     if (!parsed.islands || parsed.islands.length === 0) {

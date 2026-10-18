@@ -121,6 +121,10 @@ export function SanctuaryJournalModal({
   // Reflection editor state
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [editNoteText, setEditNoteText] = useState<string>("");
+  const [historyStatusFilter, setHistoryStatusFilter] = useState<
+    "all" | "completed" | "abandoned"
+  >("all");
+  const [notesOnlyFilter, setNotesOnlyFilter] = useState<boolean>(false);
 
   // Full-Screen Story Reader state
   const [isStoryReaderOpen, setIsStoryReaderOpen] = useState<boolean>(false);
@@ -221,16 +225,33 @@ export function SanctuaryJournalModal({
     return days;
   }, [analytics.activityMap, protectedDates, language]);
 
-  // Completed sessions sorted descending
-  const completedSessions = useMemo(() => {
+  // All recorded sessions (completed & abandoned) sorted descending
+  const allJournalSessions = useMemo(() => {
     return [...saveData.focus_sessions]
-      .filter((s) => s.status === "completed" && s.completed_at)
+      .filter(
+        (s) =>
+          (s.status === "completed" || s.status === "abandoned") &&
+          (s.completed_at || s.started_at),
+      )
       .sort(
         (a, b) =>
-          new Date(b.completed_at!).getTime() -
-          new Date(a.completed_at!).getTime(),
+          new Date(b.completed_at || b.started_at).getTime() -
+          new Date(a.completed_at || a.started_at).getTime(),
       );
   }, [saveData.focus_sessions]);
+
+  // Filtered by status and notes-only
+  const filteredSessions = useMemo(() => {
+    return allJournalSessions.filter((s) => {
+      if (historyStatusFilter !== "all" && s.status !== historyStatusFilter) {
+        return false;
+      }
+      if (notesOnlyFilter && (!s.task_note || !s.task_note.trim())) {
+        return false;
+      }
+      return true;
+    });
+  }, [allJournalSessions, historyStatusFilter, notesOnlyFilter]);
 
   // Grouped sessions into: Today, Yesterday, Earlier
   const groupedSessions = useMemo(() => {
@@ -239,12 +260,12 @@ export function SanctuaryJournalModal({
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStr = toLocalDateString(yesterday);
 
-    const todayList: typeof completedSessions = [];
-    const yesterdayList: typeof completedSessions = [];
-    const olderList: typeof completedSessions = [];
+    const todayList: typeof filteredSessions = [];
+    const yesterdayList: typeof filteredSessions = [];
+    const olderList: typeof filteredSessions = [];
 
-    completedSessions.forEach((s) => {
-      const sDateStr = toLocalDateString(s.completed_at!);
+    filteredSessions.forEach((s) => {
+      const sDateStr = toLocalDateString(s.completed_at || s.started_at);
       if (sDateStr === todayStr) {
         todayList.push(s);
       } else if (sDateStr === yesterdayStr) {
@@ -259,7 +280,7 @@ export function SanctuaryJournalModal({
       { label: t.journal.yesterday, items: yesterdayList },
       { label: t.journal.olderHistory, items: olderList },
     ].filter((g) => g.items.length > 0);
-  }, [completedSessions, t.journal]);
+  }, [filteredSessions, t.journal]);
 
   const handleClaimQuest = (questId: DailyQuestId) => {
     hapticMedium();
@@ -757,12 +778,62 @@ export function SanctuaryJournalModal({
                   </span>
                   <span className="text-[20px] font-semibold text-[#187557] mt-0.5 block tracking-normal tabular-nums">
                     {
-                      completedSessions.filter(
+                      allJournalSessions.filter(
                         (s) => s.task_note && s.task_note.trim(),
                       ).length
                     }
                   </span>
                 </div>
+              </div>
+
+              {/* Reflections Filter Bar */}
+              <div className="flex items-center justify-between gap-2 overflow-x-auto pb-1 px-0.5 no-scrollbar">
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {(
+                    [
+                      { id: "all", label: t.journal.filterAll },
+                      { id: "completed", label: t.journal.filterCompleted },
+                      { id: "abandoned", label: t.journal.filterAbandoned },
+                    ] as const
+                  ).map((pill) => {
+                    const isActive = historyStatusFilter === pill.id;
+                    return (
+                      <button
+                        key={pill.id}
+                        type="button"
+                        onClick={() => {
+                          soundManager.playPop();
+                          hapticLight();
+                          setHistoryStatusFilter(pill.id);
+                        }}
+                        className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer border ${
+                          isActive
+                            ? "bg-white text-[#0D3528] border-white/90 shadow-md shadow-[#0E3B2D]/15 scale-100"
+                            : "bg-white/20 hover:bg-white/30 text-white border-white/25 backdrop-blur-md"
+                        }`}
+                      >
+                        {pill.label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    soundManager.playPop();
+                    hapticLight();
+                    setNotesOnlyFilter((prev) => !prev);
+                  }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer border shrink-0 ${
+                    notesOnlyFilter
+                      ? "bg-white text-[#187557] border-white/90 shadow-md shadow-[#0E3B2D]/15 scale-100"
+                      : "bg-white/20 hover:bg-white/30 text-white border-white/25 backdrop-blur-md"
+                  }`}
+                >
+                  <Edit3 className="w-3 h-3 stroke-[2.2]" />
+                  <span>{t.journal.filterNotesOnly}</span>
+                </button>
               </div>
 
               {/* Timeline Groups */}
@@ -785,7 +856,9 @@ export function SanctuaryJournalModal({
 
                     <div className="space-y-2.5">
                       {group.items.map((session) => {
-                        const completedDate = new Date(session.completed_at!);
+                        const completedDate = new Date(
+                          session.completed_at || session.started_at,
+                        );
                         const timeStr = completedDate.toLocaleTimeString(
                           language === "en" ? "en-US" : "id-ID",
                           {
@@ -801,7 +874,21 @@ export function SanctuaryJournalModal({
                           species.id,
                           species.name,
                         );
-                        const duration = session.duration_minutes || 25;
+                        const duration =
+                          typeof session.duration_minutes === "number"
+                            ? session.duration_minutes
+                            : Math.max(
+                                1,
+                                Math.round(
+                                  (new Date(
+                                    session.completed_at ||
+                                      session.expected_end_at ||
+                                      Date.now(),
+                                  ).getTime() -
+                                    new Date(session.started_at).getTime()) /
+                                    60000,
+                                ),
+                              );
                         const isAbandoned = session.status === "abandoned";
                         const hasNote = Boolean(
                           session.task_note && session.task_note.trim(),

@@ -653,6 +653,25 @@ export const useGameStore = create<GameState>((set, get) => ({
       );
     }
 
+    // Pro Tier monthly Streak Shield auto-grant allowance (#44)
+    const currentMonthKey = new Date().toISOString().substring(0, 7);
+    const isProUser = Boolean(data.subscription?.isPro);
+    if (isProUser && data.last_monthly_shield_month !== currentMonthKey) {
+      if ((data.streak_shields || 0) < 2) {
+        const grantedShields = (data.streak_shields || 0) + 1;
+        data.streak_shields = grantedShields;
+        data.last_monthly_shield_month = currentMonthKey;
+        persistAndSyncSaveData(data);
+        get().notify(
+          '🛡️ Jatah Embun Pelindung bulanan Pro telah ditambahkan ke suakamu!',
+          'success'
+        );
+      } else {
+        data.last_monthly_shield_month = currentMonthKey;
+        persistAndSyncSaveData(data);
+      }
+    }
+
     // Auto-repair bulldozer coordinates if floating outside unlocked land
     if (data.world.bulldozer?.active) {
       const sanitized = sanitizeBulldozerPosition(
@@ -2489,10 +2508,22 @@ export const useGameStore = create<GameState>((set, get) => ({
       return o;
     });
 
+    const currentIslandId = saveData.active_island_id || 'island_default';
+    const updatedIslands = (saveData.islands || []).map((isl) => {
+      if (isl.id === currentIslandId) {
+        return {
+          ...isl,
+          world_objects: updatedObjects,
+        };
+      }
+      return isl;
+    });
+
     const updatedData: RimbaSaveData = {
       ...saveData,
       focus_sessions: updatedSessions,
       world_objects: updatedObjects,
+      islands: updatedIslands,
     };
     persistAndSyncSaveData(updatedData);
     set({ saveData: updatedData });
@@ -2574,8 +2605,12 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   claimWisdomFragment: (fragmentId) => {
     const { saveData } = get();
-    const claimed = new Set(saveData.claimed_story_chapters || []);
-    if (claimed.has(fragmentId)) {
+    // Support backward-compatible migration fallback if previously stored in claimed_story_chapters
+    const claimedWisdom = new Set([
+      ...(saveData.claimed_wisdom_fragments || []),
+      ...(saveData.claimed_story_chapters || []).filter((id) => id.startsWith('wisdom_')),
+    ]);
+    if (claimedWisdom.has(fragmentId)) {
       get().notify('Fragmen kebijaksanaan ini sudah pernah diserap!', 'info');
       return false;
     }
@@ -2588,7 +2623,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     const sessions = saveData.focus_sessions || [];
     const totalMinutes = sessions
       .filter((s) => s.status === 'completed' && s.completed_at)
-      .reduce((acc, s) => acc + (s.duration_minutes || 25), 0);
+      .reduce((acc, s) => {
+        const mins = typeof s.duration_minutes === 'number'
+          ? s.duration_minutes
+          : Math.max(1, Math.round((new Date(s.completed_at!).getTime() - new Date(s.started_at).getTime()) / 60000));
+        return acc + mins;
+      }, 0);
     const totalHours = totalMinutes / 60;
 
     if (totalHours < frag.hoursRequired) {
@@ -2596,11 +2636,11 @@ export const useGameStore = create<GameState>((set, get) => ({
       return false;
     }
 
-    const goldEntry = createLedgerEntry('gold', frag.rewardSoul, 'story_chapter_reward', fragmentId);
-    const xpEntry = createLedgerEntry('xp', frag.rewardXp, 'story_chapter_reward', fragmentId);
+    const goldEntry = createLedgerEntry('gold', frag.rewardSoul, 'wisdom_fragment_reward', fragmentId);
+    const xpEntry = createLedgerEntry('xp', frag.rewardXp, 'wisdom_fragment_reward', fragmentId);
     const updatedLedger = [...saveData.currency_ledger, goldEntry, xpEntry];
     const balances = calculateBalances(updatedLedger);
-    claimed.add(fragmentId);
+    claimedWisdom.add(fragmentId);
 
     const updatedData: RimbaSaveData = {
       ...saveData,
@@ -2610,7 +2650,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         xp: balances.xp,
       },
       currency_ledger: updatedLedger,
-      claimed_story_chapters: Array.from(claimed),
+      claimed_wisdom_fragments: Array.from(claimedWisdom),
     };
     persistAndSyncSaveData(updatedData);
     set({ saveData: updatedData });

@@ -300,6 +300,10 @@ export const translations = {
       allTraditions: "Semua",
       reflectionLabel: "Perenungan Batin",
       remainingHoursText: "Kurang {hours} jam lagi",
+      filterAll: "Semua",
+      filterCompleted: "Tuntas",
+      filterAbandoned: "Layu",
+      filterNotesOnly: "Ada Catatan",
     },
     stats: {
       title: "Statistik Fokus",
@@ -1043,6 +1047,10 @@ export const translations = {
       allTraditions: "All",
       reflectionLabel: "Mindful Reflection",
       remainingHoursText: "{hours} hrs remaining",
+      filterAll: "All",
+      filterCompleted: "Completed",
+      filterAbandoned: "Withered",
+      filterNotesOnly: "With Notes",
     },
     stats: {
       title: "Focus Stats",

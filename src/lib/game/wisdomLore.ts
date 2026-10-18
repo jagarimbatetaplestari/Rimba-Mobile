@@ -130,10 +130,18 @@ export function getWisdomProgress(saveData: RimbaSaveData) {
   const sessions = saveData.focus_sessions || [];
   const totalMinutes = sessions
     .filter((s) => s.status === 'completed' && s.completed_at)
-    .reduce((acc, s) => acc + (s.duration_minutes || 25), 0);
+    .reduce((acc, s) => {
+      const mins = typeof s.duration_minutes === 'number'
+        ? s.duration_minutes
+        : Math.max(1, Math.round((new Date(s.completed_at!).getTime() - new Date(s.started_at).getTime()) / 60000));
+      return acc + mins;
+    }, 0);
   const totalHours = totalMinutes / 60;
 
-  const claimedIds = new Set(saveData.claimed_story_chapters || []);
+  const claimedIds = new Set([
+    ...(saveData.claimed_wisdom_fragments || []),
+    ...(saveData.claimed_story_chapters || []).filter((id) => id.startsWith('wisdom_')),
+  ]);
 
   const fragments = WISDOM_FRAGMENTS.map((frag) => {
     const isUnlocked = totalHours >= frag.hoursRequired;

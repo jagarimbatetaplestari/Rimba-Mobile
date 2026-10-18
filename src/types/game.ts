@@ -209,6 +209,8 @@ export interface RimbaSaveData {
   streak_shields?: number;
   used_shield_dates?: string[];
   claimed_story_chapters?: string[];
+  claimed_wisdom_fragments?: string[];
+  last_monthly_shield_month?: string;
   active_biome?: BiomeType;
   auto_season_enabled?: boolean;
   active_island_id?: string;

@@ -186,7 +186,12 @@ export function evaluateAchievements(saveData: RimbaSaveData): {
 
   // 9. Total Focus Minutes
   const totalFocusMinutes = sessions.reduce(
-    (sum, s) => sum + (s.duration_minutes || 25),
+    (sum, s) => {
+      const mins = typeof s.duration_minutes === 'number'
+        ? s.duration_minutes
+        : Math.max(1, Math.round((new Date(s.completed_at || s.expected_end_at).getTime() - new Date(s.started_at).getTime()) / 60000));
+      return sum + mins;
+    },
     0
   );
 

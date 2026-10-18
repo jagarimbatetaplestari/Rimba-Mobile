@@ -717,7 +717,9 @@ export function MobileStatisticsModal({
                   </span>
                 </div>
                 <span className="text-[11px] font-medium text-[#187557] bg-[#E4F4ED] border border-[#BCE5D3] px-2.5 py-0.5 rounded-full">
-                  {t.stats.allTime}
+                  {Object.keys(periodStats.tagDistribution).length > 0
+                    ? periodStats.periodLabel
+                    : t.stats.allTime}
                 </span>
               </div>
 
@@ -782,10 +784,12 @@ export function MobileStatisticsModal({
                   {/* Donut Center Focus Text */}
                   <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
                     <span className="text-[19px] font-semibold text-[#0D3528] leading-none tabular-nums">
-                      {analytics.totalFocusMinutes}m
+                      {tagBreakdown.reduce((acc, t) => acc + t.minutes, 0)}m
                     </span>
                     <span className="text-[9px] uppercase tracking-wider text-[#4C7567] font-medium mt-1">
-                      Total
+                      {Object.keys(periodStats.tagDistribution).length > 0
+                        ? t.stats.focusBadge
+                        : "Total"}
                     </span>
                   </div>
                 </div>
@@ -928,7 +932,7 @@ export function MobileStatisticsModal({
                               }
                             }}
                             className={`aspect-square rounded-[6px] border transition-all duration-150 cursor-pointer hover:scale-110 ${bgClass} ${
-                              day.isToday ? "ring-2 " : ""
+                              day.isToday ? "ring-2 ring-[#187557] ring-offset-1" : ""
                             } ${isSelected ? "ring-2 ring-[#0D3528] scale-115" : ""}`}
                             title={`${day.label}: ${minutes}m`}
                           />

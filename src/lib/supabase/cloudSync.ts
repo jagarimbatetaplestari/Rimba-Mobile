@@ -183,7 +183,7 @@ export async function smartSyncOnLogin(userId: string): Promise<boolean> {
       const localObjects = localSave.world_objects || [];
       const cloudObjects = cloudSave.world_objects || [];
 
-      // Lossless merge: ensure guest focus sessions and island objects are never wiped
+      // Lossless merge: ensure guest focus sessions, island objects, archipelago, ledger, and lore are never wiped
       const sessionMap = new Map<string, (typeof localSessions)[0]>();
       cloudSessions.forEach((s) => sessionMap.set(s.id, s));
       localSessions.forEach((s) => sessionMap.set(s.id, s));
@@ -192,28 +192,76 @@ export async function smartSyncOnLogin(userId: string): Promise<boolean> {
       cloudObjects.forEach((o) => objectMap.set(o.id, o));
       localObjects.forEach((o) => objectMap.set(o.id, o));
 
+      // Merge currency ledger
+      const localLedger = localSave.currency_ledger || [];
+      const cloudLedger = cloudSave.currency_ledger || [];
+      const ledgerMap = new Map<string, (typeof localLedger)[0]>();
+      cloudLedger.forEach((entry) => ledgerMap.set(entry.id, entry));
+      localLedger.forEach((entry) => ledgerMap.set(entry.id, entry));
+
+      // Merge archipelago islands
+      const localIslands = localSave.islands || [];
+      const cloudIslands = cloudSave.islands || [];
+      const islandMap = new Map<string, (typeof localIslands)[0]>();
+      cloudIslands.forEach((isl) => islandMap.set(isl.id, isl));
+      localIslands.forEach((isl) => islandMap.set(isl.id, isl));
+
+      // Merge unlocked story chapters and wisdom fragments
+      const mergedChapters = Array.from(
+        new Set([
+          ...(cloudSave.claimed_story_chapters || []),
+          ...(localSave.claimed_story_chapters || []),
+        ])
+      );
+      const mergedWisdom = Array.from(
+        new Set([
+          ...(cloudSave.claimed_wisdom_fragments || []),
+          ...(localSave.claimed_wisdom_fragments || []),
+        ])
+      );
+
+      // Merge world unlocked tiles
+      const mergedUnlockedTiles = Array.from(
+        new Set([
+          ...(cloudSave.world?.unlocked_tiles || []),
+          ...(localSave.world?.unlocked_tiles || []),
+        ])
+      );
+
       const mergedSessions = Array.from(sessionMap.values());
       const mergedObjects = Array.from(objectMap.values());
+      const mergedLedger = Array.from(ledgerMap.values());
+      const mergedIslands = Array.from(islandMap.values());
 
-      if (localMins >= cloudMins && localSessions.length >= cloudSessions.length) {
-        const mergedSave: RimbaSaveData = {
-          ...localSave,
-          focus_sessions: mergedSessions,
-          world_objects: mergedObjects,
-        };
-        saveSaveData(mergedSave);
-        useGameStore.setState({ saveData: mergedSave });
-        await uploadGameSaveToCloud(mergedSave);
-      } else {
-        const mergedSave: RimbaSaveData = {
-          ...cloudSave,
-          focus_sessions: mergedSessions,
-          world_objects: mergedObjects.length > cloudObjects.length ? mergedObjects : cloudObjects,
-        };
-        saveSaveData(mergedSave);
-        useGameStore.setState({ saveData: mergedSave });
-        await uploadGameSaveToCloud(mergedSave);
-      }
+      const maxXp = Math.max(localSave.profile?.xp || 0, cloudSave.profile?.xp || 0);
+      const maxStreakShields = Math.max(localSave.streak_shields || 0, cloudSave.streak_shields || 0);
+      const hasMystery = Boolean(localSave.pioneer_reward_claimed || cloudSave.pioneer_reward_claimed);
+
+      const baseSave = localMins >= cloudMins ? localSave : cloudSave;
+
+      const mergedSave: RimbaSaveData = {
+        ...baseSave,
+        profile: {
+          ...baseSave.profile,
+          xp: maxXp,
+        },
+        streak_shields: maxStreakShields,
+        pioneer_reward_claimed: hasMystery,
+        focus_sessions: mergedSessions,
+        world_objects: mergedObjects,
+        currency_ledger: mergedLedger,
+        islands: mergedIslands.length > 0 ? mergedIslands : baseSave.islands,
+        claimed_story_chapters: mergedChapters,
+        claimed_wisdom_fragments: mergedWisdom,
+        world: {
+          ...baseSave.world,
+          unlocked_tiles: mergedUnlockedTiles.length > 0 ? mergedUnlockedTiles : baseSave.world?.unlocked_tiles,
+        },
+      };
+
+      saveSaveData(mergedSave);
+      useGameStore.setState({ saveData: mergedSave });
+      await uploadGameSaveToCloud(mergedSave);
     } else {
       // Belum ada save di cloud, unggah save lokal saat ini
       await uploadGameSaveToCloud(localSave);

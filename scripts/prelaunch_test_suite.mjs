@@ -467,6 +467,66 @@ assert(
 );
 
 // ------------------------------------------------------------------
+// SUITE 8: Profil, Statistik & Lossless Cloud Sync Integrity
+// ------------------------------------------------------------------
+console.log('\x1b[36m[SUITE 8] Profil, Statistik & Lossless Cloud Sync Integrity\x1b[0m');
+
+// 1. Lossless Multi-Device Merge in cloudSync.ts
+const cloudSyncPath = path.join(projectRoot, 'src/lib/supabase/cloudSync.ts');
+assert(fs.existsSync(cloudSyncPath), 'cloudSync.ts exists');
+const cloudSyncContent = fs.readFileSync(cloudSyncPath, 'utf8');
+assert(
+  cloudSyncContent.includes('mergedIslands') &&
+    cloudSyncContent.includes('mergedChapters') &&
+    cloudSyncContent.includes('mergedWisdom') &&
+    cloudSyncContent.includes('mergedLedger'),
+  'cloudSync smartSyncOnLogin executes deterministic field-level lossless merge (islands, story, wisdom, currency)'
+);
+assert(
+  cloudSyncContent.includes('Math.max(localSave.profile?.xp || 0, cloudSave.profile?.xp || 0)') &&
+    cloudSyncContent.includes('Math.max(localSave.streak_shields || 0, cloudSave.streak_shields || 0)'),
+  'cloudSync smartSyncOnLogin preserves highest accumulated XP and streak shield values'
+);
+
+// 2. Avatar Picker Upload Reliability & State Synchronization
+const avatarPickerPath = path.join(projectRoot, 'src/components/modals/AvatarPickerModal.tsx');
+assert(fs.existsSync(avatarPickerPath), 'AvatarPickerModal.tsx exists');
+const avatarPickerContent = fs.readFileSync(avatarPickerPath, 'utf8');
+assert(
+  avatarPickerContent.includes('disabled={isProcessing}') &&
+    avatarPickerContent.includes('setIsProcessing(false)'),
+  'AvatarPickerModal guards save button with isProcessing and resets state in canvas toBlob finally block'
+);
+assert(
+  avatarPickerContent.includes('setSelectedAvatar(currentAvatarUrl || "")'),
+  'AvatarPickerModal synchronizes selected avatar state on modal open'
+);
+
+// 3. Statistics Heatmap Styling & Dynamic Category Badge/Center
+const statsModalPath = path.join(projectRoot, 'src/components/modals/MobileStatisticsModal.tsx');
+assert(fs.existsSync(statsModalPath), 'MobileStatisticsModal.tsx exists');
+const statsModalContent = fs.readFileSync(statsModalPath, 'utf8');
+assert(
+  statsModalContent.includes('ring-[#187557] ring-offset-1'),
+  'MobileStatisticsModal applies distinct valid ring styling to today cell in heatmap'
+);
+assert(
+  statsModalContent.includes('periodStats.periodLabel') &&
+    statsModalContent.includes('tagBreakdown.reduce((acc, t) => acc + t.minutes, 0)'),
+  'MobileStatisticsModal dynamically labels category donut and computes center minutes accurately'
+);
+
+// 4. Mobile Profile Cloud Status Badge
+const profileModalPath = path.join(projectRoot, 'src/components/modals/MobileProfileModal.tsx');
+assert(fs.existsSync(profileModalPath), 'MobileProfileModal.tsx exists');
+const profileModalContent = fs.readFileSync(profileModalPath, 'utf8');
+assert(
+  profileModalContent.includes('user && !user.isGuest') &&
+    profileModalContent.includes('<span>Cloud</span>'),
+  'MobileProfileModal displays Cloud sync status badge for authenticated users'
+);
+
+// ------------------------------------------------------------------
 // SUMMARY REPORT
 // ------------------------------------------------------------------
 console.log('\n======================================================');

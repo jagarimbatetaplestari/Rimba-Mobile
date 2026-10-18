@@ -37,6 +37,7 @@ import {
   Trophy,
   Trash2,
   AlertTriangle,
+  Cloud,
 } from "lucide-react";
 
 export type ProfileTab = "stats" | "profile";
@@ -518,11 +519,17 @@ export function MobileProfileModal({
           {/* 5. DATA & AKUN */}
           <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/95 p-4 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-3">
             <div className="flex items-center justify-between px-1">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-[#187557] stroke-[1.8]" />
-                <span className="text-[12.5px] font-medium text-[#0D3528] truncate max-w-[200px]">
+              <div className="flex items-center gap-2 min-w-0">
+                <ShieldCheck className="w-4 h-4 text-[#187557] stroke-[1.8] shrink-0" />
+                <span className="text-[12.5px] font-medium text-[#0D3528] truncate max-w-[170px]">
                   {user?.email || t.common.localSave}
                 </span>
+                {user && !user.isGuest && (
+                  <span className="rounded-full bg-[#E4F4ED] border border-[#BCE5D3] px-2 py-0.5 text-[10px] font-medium text-[#14664D] flex items-center gap-1 shrink-0">
+                    <Cloud className="w-2.5 h-2.5 stroke-[2]" />
+                    <span>Cloud</span>
+                  </span>
+                )}
               </div>
               <button
                 type="button"

@@ -51,6 +51,13 @@ export function AvatarPickerModal({
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Sync selectedAvatar whenever modal opens or currentAvatarUrl changes
+  React.useEffect(() => {
+    if (isOpen) {
+      setSelectedAvatar(currentAvatarUrl || "");
+    }
+  }, [isOpen, currentAvatarUrl]);
+
   if (!isOpen) return null;
 
   const handleSelectPreset = (presetEmoji: string) => {
@@ -86,28 +93,39 @@ export function AvatarPickerModal({
           const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.82);
           setSelectedAvatar(compressedDataUrl);
 
-          // Coba unggah ke Supabase Storage jika akun terhubung
+          // Upload to Supabase Storage if user is signed in
           try {
             canvas.toBlob(
               async (blob) => {
                 if (blob) {
-                  const cloudUrl = await uploadAvatarFile(blob);
-                  if (cloudUrl) {
-                    setSelectedAvatar(cloudUrl);
+                  try {
+                    const cloudUrl = await uploadAvatarFile(blob);
+                    if (cloudUrl) {
+                      setSelectedAvatar(cloudUrl);
+                    }
+                  } catch (err) {
+                    console.warn("Avatar upload fallback to compressed data URL:", err);
+                  } finally {
+                    setIsProcessing(false);
                   }
+                } else {
+                  setIsProcessing(false);
                 }
               },
               "image/jpeg",
               0.82,
             );
           } catch {
-            // Tetap gunakan compressedDataUrl
+            setIsProcessing(false);
           }
+        } else {
+          setIsProcessing(false);
         }
-        setIsProcessing(false);
       };
+      img.onerror = () => setIsProcessing(false);
       img.src = event.target?.result as string;
     };
+    reader.onerror = () => setIsProcessing(false);
     reader.readAsDataURL(file);
   };
 
@@ -299,11 +317,18 @@ export function AvatarPickerModal({
           {/* Tombol Simpan */}
           <button
             type="button"
+            disabled={isProcessing}
             onClick={handleSave}
-            className="w-full py-3 rounded-full bg-[#187557] hover:bg-[#126046] text-white font-medium text-[13px] tracking-tight shadow-xs flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all cursor-pointer"
+            className="w-full py-3 rounded-full bg-[#187557] hover:bg-[#126046] disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium text-[13px] tracking-tight shadow-xs flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all cursor-pointer"
           >
-            <Check className="w-4 h-4 stroke-[2]" />
-            <span>{t.avatarPicker.useAvatarBtn}</span>
+            {isProcessing ? (
+              <span>{t.avatarPicker.compressing}</span>
+            ) : (
+              <>
+                <Check className="w-4 h-4 stroke-[2]" />
+                <span>{t.avatarPicker.useAvatarBtn}</span>
+              </>
+            )}
           </button>
         </div>
       </div>

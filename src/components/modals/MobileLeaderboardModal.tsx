@@ -1,15 +1,17 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useMemo } from "react";
 import { useGameStore } from "@/lib/game/useGameStore";
 import { calculateAnalytics } from "@/lib/game/analytics";
 import {
   generateLeaderboard,
   RANGER_HALL_OF_FAME_TIERS,
   RangerTier,
+  getNextRangerTier,
 } from "@/lib/game/community";
 import { hapticLight } from "@/lib/mobile/nativeBridge";
 import { useTranslation } from "@/lib/i18n/translations";
+import { RangerAvatar } from "@/components/ui/RangerAvatar";
 import {
   X,
   Flame,
@@ -33,7 +35,6 @@ export function MobileLeaderboardModal({
 }: MobileLeaderboardModalProps) {
   const { t, translateTier } = useTranslation();
   const saveData = useGameStore((state) => state.saveData);
-  const [activeTab, setActiveTab] = useState<"tiers" | "stats">("tiers");
 
   const sessions = saveData.focus_sessions || [];
   const analytics = useMemo(() => calculateAnalytics(sessions), [sessions]);
@@ -46,6 +47,13 @@ export function MobileLeaderboardModal({
   const totalMinutes = analytics.totalFocusMinutes;
   const activeTrees = currentUserEntry?.treesCount || 0;
 
+  const currentTier = useMemo(() => {
+    return (
+      RANGER_HALL_OF_FAME_TIERS.find((tier) => tier.name === currentUserEntry?.title) ||
+      RANGER_HALL_OF_FAME_TIERS[RANGER_HALL_OF_FAME_TIERS.length - 1]
+    );
+  }, [currentUserEntry?.title]);
+
   const currentUserTitle = useMemo(() => {
     if (!currentUserEntry?.title) return "";
     const matchingTier = RANGER_HALL_OF_FAME_TIERS.find(
@@ -53,6 +61,30 @@ export function MobileLeaderboardModal({
     );
     return matchingTier ? translateTier(matchingTier).name : currentUserEntry.title;
   }, [currentUserEntry?.title, translateTier]);
+
+  const nextTier = useMemo(() => {
+    return getNextRangerTier(currentTier);
+  }, [currentTier]);
+
+  const nextTierProgress = useMemo(() => {
+    if (!nextTier) return null;
+    const minMinutesNeeded = Math.max(0, nextTier.minMinutes - totalMinutes);
+    const minTreesNeeded = Math.max(0, nextTier.minTrees - activeTrees);
+
+    const minutesRatio =
+      nextTier.minMinutes > 0 ? Math.min(1, totalMinutes / nextTier.minMinutes) : 1;
+    const treesRatio =
+      nextTier.minTrees > 0 ? Math.min(1, activeTrees / nextTier.minTrees) : 1;
+    const progressPct = Math.round(((minutesRatio + treesRatio) / 2) * 100);
+
+    return {
+      nextTier,
+      translatedNextTier: translateTier(nextTier),
+      minMinutesNeeded,
+      minTreesNeeded,
+      progressPct: Math.min(progressPct, 99),
+    };
+  }, [nextTier, totalMinutes, activeTrees, translateTier]);
 
   if (!isOpen) return null;
 
@@ -101,9 +133,12 @@ export function MobileLeaderboardModal({
             <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3.5 min-w-0 pr-2">
-                  <div className="flex h-13 w-13 shrink-0 items-center justify-center rounded-full bg-[#E4F4ED] border-2 border-white text-2xl shadow-xs">
-                    {currentUserEntry.avatarEmoji}
-                  </div>
+                  <RangerAvatar
+                    avatarUrl={saveData.profile?.avatarUrl || currentUserEntry.avatarEmoji}
+                    name={currentUserEntry.rangerName}
+                    size="lg"
+                    borderClassName="border-2 border-white shadow-xs"
+                  />
 
                   <div className="min-w-0 text-left">
                     <div className="flex items-center gap-2">
@@ -148,6 +183,11 @@ export function MobileLeaderboardModal({
                   <div className="text-[20px] font-medium text-[#0D3528] tracking-normal">
                     {activeTrees}
                   </div>
+                  {saveData.islands && saveData.islands.length > 1 && (
+                    <span className="text-[9px] text-[#187557] font-medium">
+                      {t.ranks.archipelagoTotal}
+                    </span>
+                  )}
                 </div>
 
                 <div className="px-1 text-center">
@@ -163,6 +203,72 @@ export function MobileLeaderboardModal({
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* NEXT TIER MOTIVATION / PROGRESS CARD */}
+          {nextTierProgress ? (
+            <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-4 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-2.5">
+              <div className="flex items-center justify-between text-[12px]">
+                <div className="flex items-center gap-1.5 text-[#0D3528] font-semibold">
+                  <span className="text-base">{nextTierProgress.nextTier.badgeEmoji}</span>
+                  <span>
+                    {t.ranks.nextTierGoal}:{" "}
+                    <span className="text-[#187557] font-bold">
+                      {nextTierProgress.translatedNextTier.name}
+                    </span>
+                  </span>
+                </div>
+                <span className="text-[11px] font-semibold text-[#187557] bg-[#E4F4ED] border border-[#BCE5D3] px-2 py-0.5 rounded-full tabular-nums">
+                  {nextTierProgress.progressPct}%
+                </span>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="w-full h-2 rounded-full bg-[#0D3528]/10 overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-[#2BB688] to-[#1E8E69] rounded-full transition-all duration-300 shadow-xs"
+                  style={{ width: `${Math.min(nextTierProgress.progressPct, 100)}%` }}
+                />
+              </div>
+
+              <div className="flex items-center justify-between text-[11px] text-[#4C7567]">
+                <span>
+                  {nextTierProgress.minMinutesNeeded > 0 && nextTierProgress.minTreesNeeded > 0
+                    ? t.ranks.needMinutesAndTrees
+                        .replace("{minutes}", String(nextTierProgress.minMinutesNeeded))
+                        .replace("{trees}", String(nextTierProgress.minTreesNeeded))
+                    : nextTierProgress.minMinutesNeeded > 0
+                      ? t.ranks.needMinutesOnly.replace(
+                          "{minutes}",
+                          String(nextTierProgress.minMinutesNeeded),
+                        )
+                      : t.ranks.needTreesOnly.replace(
+                          "{trees}",
+                          String(nextTierProgress.minTreesNeeded),
+                        )}
+                </span>
+                <span className="text-[10px] text-[#187557] font-medium">
+                  {nextTierProgress.nextTier.minMinutes}m & {nextTierProgress.nextTier.minTrees}🌲
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-3xl border border-amber-300/60 bg-gradient-to-b from-amber-50/90 to-amber-100/80 p-4 shadow-lg shadow-amber-900/5 backdrop-blur-xl flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">👑</span>
+                <div>
+                  <p className="text-[13px] font-bold text-amber-900">
+                    {t.ranks.highestTierReached}
+                  </p>
+                  <p className="text-[11px] text-amber-800/80 font-normal">
+                    {currentUserTitle}
+                  </p>
+                </div>
+              </div>
+              <span className="text-[10.5px] font-bold text-amber-800 bg-white/80 border border-amber-300 px-2.5 py-1 rounded-full">
+                MAX RANK
+              </span>
             </div>
           )}
 

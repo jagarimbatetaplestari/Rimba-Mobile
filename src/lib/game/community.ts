@@ -6,6 +6,7 @@ export interface LeaderboardEntry {
   id: string;
   rangerName: string;
   avatarEmoji: string;
+  avatarUrl?: string;
   title: string;
   totalFocusMinutes: number;
   treesCount: number;
@@ -126,6 +127,27 @@ export function getNextRangerTier(currentTier: RangerTier): RangerTier | null {
 }
 
 /**
+ * Returns total active trees planted by the user.
+ * In archipelago multi-island mode, aggregates across all islands;
+ * otherwise calculates from active island world_objects.
+ */
+export function getTotalActiveTrees(saveData: RimbaSaveData): number {
+  if (saveData.islands && saveData.islands.length > 0) {
+    return saveData.islands.reduce(
+      (sum, isl) =>
+        sum +
+        (isl.world_objects || []).filter(
+          (o) => o.object_type === 'tree' && o.status === 'active'
+        ).length,
+      0
+    );
+  }
+  return (saveData.world_objects || []).filter(
+    (o) => o.object_type === 'tree' && o.status === 'active'
+  ).length;
+}
+
+/**
  * Generates leaderboard entries based strictly on actual player achievements.
  * Zero fake bot accounts or synthetic data.
  */
@@ -134,9 +156,7 @@ export function generateLeaderboard(
   analytics: AnalyticsSummary,
   _sortBy: 'focus' | 'streak' | 'trees' = 'focus'
 ): LeaderboardEntry[] {
-  const activeTrees = (saveData.world_objects || []).filter(
-    (o) => o.object_type === 'tree' && o.status === 'active'
-  ).length;
+  const activeTrees = getTotalActiveTrees(saveData);
 
   const tier = getCurrentRangerTier(analytics.totalFocusMinutes, activeTrees);
 
@@ -145,6 +165,7 @@ export function generateLeaderboard(
     id: 'user_current',
     rangerName: saveData.profile?.name || saveData.world?.name || 'Ranger Rimba',
     avatarEmoji: tier.badgeEmoji,
+    avatarUrl: saveData.profile?.avatarUrl,
     title: tier.name,
     totalFocusMinutes: analytics.totalFocusMinutes,
     treesCount: activeTrees,

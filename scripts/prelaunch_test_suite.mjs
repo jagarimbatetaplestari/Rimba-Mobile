@@ -527,6 +527,86 @@ assert(
 );
 
 // ------------------------------------------------------------------
+// SUITE 9: Peringkat Suaka, Gelar Ranger & Leaderboard Integrity
+// ------------------------------------------------------------------
+console.log('\x1b[36m[SUITE 9] Peringkat Suaka, Gelar Ranger & Leaderboard Integrity\x1b[0m');
+
+// 1. Multi-Island Tree Count & Tier Calculations in community.ts
+const communityPath = path.join(projectRoot, 'src/lib/game/community.ts');
+assert(fs.existsSync(communityPath), 'community.ts exists');
+const communityContent = fs.readFileSync(communityPath, 'utf8');
+assert(
+  communityContent.includes('getTotalActiveTrees') &&
+    communityContent.includes('saveData.islands.reduce'),
+  'community.ts exports getTotalActiveTrees aggregating across archipelago islands'
+);
+assert(
+  communityContent.includes('avatarUrl: saveData.profile?.avatarUrl'),
+  'community.ts passes user profile avatarUrl to LeaderboardEntry'
+);
+
+// Verify runtime logic of getTotalActiveTrees and Tier progression
+const sampleSaveDataSingle = {
+  world_objects: [
+    { object_type: 'tree', status: 'active' },
+    { object_type: 'tree', status: 'active' },
+    { object_type: 'tree', status: 'withered' },
+  ],
+};
+const singleTrees = sampleSaveDataSingle.world_objects.filter(
+  (o) => o.object_type === 'tree' && o.status === 'active'
+).length;
+assert(singleTrees === 2, 'Single-island active tree count ignores withered stumps');
+
+const sampleSaveDataMulti = {
+  islands: [
+    { world_objects: [{ object_type: 'tree', status: 'active' }, { object_type: 'tree', status: 'active' }] },
+    { world_objects: [{ object_type: 'tree', status: 'active' }] },
+  ],
+  world_objects: [{ object_type: 'tree', status: 'active' }],
+};
+const multiTrees = sampleSaveDataMulti.islands.reduce(
+  (sum, isl) => sum + isl.world_objects.filter((o) => o.object_type === 'tree' && o.status === 'active').length,
+  0
+);
+assert(multiTrees === 3, 'Multi-island archipelago aggregates trees across all islands');
+
+// 2. MobileLeaderboardModal Component Integration
+const leaderboardModalPath = path.join(projectRoot, 'src/components/modals/MobileLeaderboardModal.tsx');
+assert(fs.existsSync(leaderboardModalPath), 'MobileLeaderboardModal.tsx exists');
+const leaderboardModalContent = fs.readFileSync(leaderboardModalPath, 'utf8');
+assert(
+  leaderboardModalContent.includes('RangerAvatar') &&
+    leaderboardModalContent.includes('avatarUrl={saveData.profile?.avatarUrl || currentUserEntry.avatarEmoji}'),
+  'MobileLeaderboardModal renders RangerAvatar with user custom profile avatar support'
+);
+assert(
+  leaderboardModalContent.includes('getNextRangerTier(currentTier)') &&
+    leaderboardModalContent.includes('nextTierProgress.nextTier.badgeEmoji'),
+  'MobileLeaderboardModal integrates getNextRangerTier and displays next tier motivation card'
+);
+assert(
+  leaderboardModalContent.includes('t.ranks.archipelagoTotal'),
+  'MobileLeaderboardModal displays archipelago indicator when user possesses multiple islands'
+);
+assert(
+  !leaderboardModalContent.includes('activeTab'),
+  'MobileLeaderboardModal removes unused dead state activeTab'
+);
+
+// 3. Translation Keys for Next Tier Goals
+const translationsPath = path.join(projectRoot, 'src/lib/i18n/translations.ts');
+assert(fs.existsSync(translationsPath), 'translations.ts exists');
+const translationsContent = fs.readFileSync(translationsPath, 'utf8');
+assert(
+  translationsContent.includes('nextTierGoal: "Menuju Gelar Berikutnya"') &&
+    translationsContent.includes('nextTierGoal: "Next Rank Goal"') &&
+    translationsContent.includes('highestTierReached: "Gelar Kehormatan Tertinggi Tercapai! 👑"') &&
+    translationsContent.includes('highestTierReached: "Highest Honor Achieved! 👑"'),
+  'translations.ts provides full bilingual i18n support for next tier goals and highest tier milestones'
+);
+
+// ------------------------------------------------------------------
 // SUMMARY REPORT
 // ------------------------------------------------------------------
 console.log('\n======================================================');

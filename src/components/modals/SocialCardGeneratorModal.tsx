@@ -400,19 +400,20 @@ export function SocialCardGeneratorModal({
 
     if (!blob) return;
 
-    soundManager.playComplete();
-    hapticSuccess();
-
     const reader = new FileReader();
     reader.onloadend = async () => {
       const dataUrl = reader.result as string;
-      await shareOrSaveImage({
+      const success = await shareOrSaveImage({
         title: t.shareModal.downloadPng,
         text: `Rimba: ${t.shareModal.streakDays.replace("{count}", String(analytics.currentStreak))}`,
         dataUrl,
         fileName: `rimba_photocard_${Date.now()}.png`,
       });
-      notify(t.shareModal.iosSaveHint, "success");
+      if (success) {
+        soundManager.playComplete();
+        hapticSuccess();
+        notify(t.shareModal.iosSaveHint, "success");
+      }
     };
     reader.readAsDataURL(blob);
   };

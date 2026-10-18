@@ -382,12 +382,15 @@ function cropIslandFromCanvas(canvasEl: HTMLCanvasElement): string {
         reader.onerror = reject;
         reader.readAsDataURL(blob);
       });
-      await shareOrSaveImage({
+      const success = await shareOrSaveImage({
         title: "Rimba Sanctuary Card",
         text: "Share your mindful forest!",
         dataUrl,
         fileName: `rimba_${cardTheme}_${aspectRatio}_${Date.now()}.png`,
       });
+      if (success) {
+        hapticSuccess();
+      }
     } catch (err) {
       console.error("Share error:", err);
       notify(
@@ -412,17 +415,20 @@ function cropIslandFromCanvas(canvasEl: HTMLCanvasElement): string {
         reader.onerror = reject;
         reader.readAsDataURL(blob);
       });
-      await shareOrSaveImage({
+      const success = await shareOrSaveImage({
         title: "Rimba Sanctuary Card",
         text: "Save image to photos",
         dataUrl,
         fileName: `rimba_${cardTheme}_${aspectRatio}_${Date.now()}.png`,
       });
-      hapticSuccess();
-      notify(
-        language === "en" ? "Image saved to your library!" : "Gambar tersimpan ke galeri!",
-        "success"
-      );
+      if (success) {
+        soundManager.playComplete();
+        hapticSuccess();
+        notify(
+          language === "en" ? "Image saved to your library!" : "Gambar tersimpan ke galeri!",
+          "success"
+        );
+      }
     } catch (err) {
       console.error("Download error:", err);
       notify(

@@ -555,6 +555,7 @@ export const translations = {
       emptyDesc: "Abadikan kemajuan suaka kapan saja untuk menyimpan tata letak pulau yang bisa dipulihkan kembali nanti.",
       restoreBtn: "Pulihkan ke Kondisi Ini",
       treesCount: "{count} Pohon",
+      restoreSuccess: "Suaka berhasil dipulihkan dari snapshot! Cadangan kondisi sebelumnya telah disimpan.",
     },
     restoreModal: {
       title: "Pulihkan Data",
@@ -1317,6 +1318,7 @@ export const translations = {
       emptyDesc: "Capture your sanctuary progress anytime to save an island layout that you can restore later.",
       restoreBtn: "Restore to This State",
       treesCount: "{count} Trees",
+      restoreSuccess: "Sanctuary successfully restored from snapshot! Previous state auto-backup saved.",
     },
     restoreModal: {
       title: "Restore Data",

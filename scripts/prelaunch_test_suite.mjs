@@ -712,6 +712,70 @@ assert(
 );
 
 // ------------------------------------------------------------------
+// SUITE 12: Ekspor Snapshot, Kartu Sosial & Riwayat Snapshot Integrity
+// ------------------------------------------------------------------
+console.log('\x1b[36m[SUITE 12] Ekspor Snapshot, Kartu Sosial & Riwayat Snapshot Integrity\x1b[0m');
+
+// 1. share-cards types.ts drawRoundedRect Path Precision
+const shareCardTypesPath = path.join(projectRoot, 'src/components/modals/share-cards/types.ts');
+assert(fs.existsSync(shareCardTypesPath), 'share-cards/types.ts exists');
+const shareCardTypesContent = fs.readFileSync(shareCardTypesPath, 'utf8');
+assert(
+  shareCardTypesContent.includes('ctx.roundRect(x, y, w, h, r)') &&
+    shareCardTypesContent.includes('ctx.arcTo(x, y, x + w, y, r)'),
+  'share-cards types.ts drawRoundedRect implements modern roundRect with accurate top-left arc fallback'
+);
+
+// 2. nativeBridge.ts shareOrSaveImage Cancellation Guard
+const nativeBridgePath = path.join(projectRoot, 'src/lib/mobile/nativeBridge.ts');
+assert(fs.existsSync(nativeBridgePath), 'nativeBridge.ts exists');
+const nativeBridgeContent = fs.readFileSync(nativeBridgePath, 'utf8');
+assert(
+  nativeBridgeContent.includes("errMsg.includes('cancel') || errMsg.includes('abort')") &&
+    nativeBridgeContent.includes('return false;'),
+  'nativeBridge.ts shareOrSaveImage safely intercepts user cancellation to prevent unwanted browser downloads'
+);
+
+// 3. ShareSnapshotModal.tsx & SocialCardGeneratorModal.tsx Success Verification
+const shareModalPath = path.join(projectRoot, 'src/components/modals/ShareSnapshotModal.tsx');
+assert(fs.existsSync(shareModalPath), 'ShareSnapshotModal.tsx exists');
+const shareModalContent = fs.readFileSync(shareModalPath, 'utf8');
+assert(
+  shareModalContent.includes('const success = await shareOrSaveImage(') &&
+    shareModalContent.includes('if (success) {') &&
+    shareModalContent.includes('Gambar tersimpan ke galeri!'),
+  'ShareSnapshotModal.tsx guards download success toast and haptics behind shareOrSaveImage boolean return'
+);
+
+const socialGenModalPath = path.join(projectRoot, 'src/components/modals/SocialCardGeneratorModal.tsx');
+assert(fs.existsSync(socialGenModalPath), 'SocialCardGeneratorModal.tsx exists');
+const socialGenModalContent = fs.readFileSync(socialGenModalPath, 'utf8');
+assert(
+  socialGenModalContent.includes('const success = await shareOrSaveImage(') &&
+    socialGenModalContent.includes('if (success) {'),
+  'SocialCardGeneratorModal.tsx guards download success toast behind shareOrSaveImage boolean return'
+);
+
+// 4. SnapshotsHistoryModal.tsx Auto-Backup on Restore
+const snapshotHistoryModalPath = path.join(projectRoot, 'src/components/modals/SnapshotsHistoryModal.tsx');
+assert(fs.existsSync(snapshotHistoryModalPath), 'SnapshotsHistoryModal.tsx exists');
+const snapshotHistoryModalContent = fs.readFileSync(snapshotHistoryModalPath, 'utf8');
+assert(
+  snapshotHistoryModalContent.includes('createIslandSnapshot(') &&
+    snapshotHistoryModalContent.includes('Auto-Backup Sebelum Pulihkan Snapshot') &&
+    snapshotHistoryModalContent.includes('importSaveData(snap.data)') &&
+    snapshotHistoryModalContent.includes('t.snapshotsModal.restoreSuccess'),
+  'SnapshotsHistoryModal.tsx automatically captures auto-backup before restoring snapshot and displays confirmation toast'
+);
+
+// 5. Bilingual Translation for Snapshot Restore
+assert(
+  translationsContent.includes('restoreSuccess: "Suaka berhasil dipulihkan dari snapshot!') &&
+    translationsContent.includes('restoreSuccess: "Sanctuary successfully restored from snapshot!'),
+  'translations.ts provides full bilingual i18n support for snapshot restore confirmation toast'
+);
+
+// ------------------------------------------------------------------
 // SUMMARY REPORT
 // ------------------------------------------------------------------
 console.log('\n======================================================');

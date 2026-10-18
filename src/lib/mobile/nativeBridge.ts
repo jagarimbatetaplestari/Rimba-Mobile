@@ -256,6 +256,10 @@ export async function shareOrSaveImage({
       });
       return true;
     } catch (e) {
+      const errMsg = String((e as { message?: string })?.message || e).toLowerCase();
+      if (errMsg.includes('cancel') || errMsg.includes('abort')) {
+        return false;
+      }
       console.warn('Capacitor Filesystem/Share error, falling back:', e);
     }
   }
@@ -279,6 +283,10 @@ export async function shareOrSaveImage({
       return true;
     }
   } catch (e) {
+    const errMsg = String((e as { message?: string })?.message || e).toLowerCase();
+    if (errMsg.includes('cancel') || errMsg.includes('abort')) {
+      return false;
+    }
     console.warn('Web Share cancelled or fallback:', e);
   }
 

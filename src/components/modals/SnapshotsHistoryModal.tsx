@@ -36,6 +36,7 @@ export function SnapshotsHistoryModal({
   const { t, language } = useTranslation();
   const currentSaveData = useGameStore((state) => state.saveData);
   const importSaveData = useGameStore((state) => state.importSaveData);
+  const notify = useGameStore((state) => state.notify);
 
   const [snapshots, setSnapshots] = useState<IslandSnapshot[]>([]);
   const [isCreating, setIsCreating] = useState(false);
@@ -61,7 +62,19 @@ export function SnapshotsHistoryModal({
   const handleRestoreSnapshot = (snap: IslandSnapshot) => {
     soundManager.playComplete();
     hapticSuccess();
+    const isEn = language === "en";
+    createIslandSnapshot(
+      currentSaveData,
+      isEn ? "Auto-Backup Before Snapshot Restore" : "Auto-Backup Sebelum Pulihkan Snapshot"
+    );
     importSaveData(snap.data);
+    notify(
+      t.snapshotsModal.restoreSuccess ||
+        (isEn
+          ? "Sanctuary successfully restored from snapshot!"
+          : "Suaka berhasil dipulihkan dari snapshot!"),
+      "success"
+    );
     onClose();
   };
 

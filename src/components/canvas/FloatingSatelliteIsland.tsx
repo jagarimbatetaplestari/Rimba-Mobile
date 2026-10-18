@@ -301,6 +301,13 @@ export function FloatingSatelliteIsland() {
     ];
   }, []);
 
+  const clonedBlocks = useMemo(() => {
+    return islandTiles.map((pos) => ({
+      scene: blockScene.clone(true),
+      pos,
+    }));
+  }, [blockScene, islandTiles]);
+
   if (!isUnlocked) {
     return null;
   }
@@ -332,11 +339,11 @@ export function FloatingSatelliteIsland() {
         }}
       >
         {/* Hexagonal Modular Land Blocks */}
-        {islandTiles.map((pos, idx) => (
+        {clonedBlocks.map((item, idx) => (
           <primitive
             key={`celestial_block_${idx}`}
-            object={blockScene.clone(true)}
-            position={pos}
+            object={item.scene}
+            position={item.pos}
             scale={[1.0, 1.0, 1.0]}
           />
         ))}

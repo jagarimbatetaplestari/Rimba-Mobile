@@ -39,13 +39,17 @@ function ResponsiveCamera() {
   const unlockedCount = useGameStore(
     (state) => state.saveData.world.unlocked_tiles?.length || 9
   );
+  const isInitialMountRef = useRef(true);
 
   useEffect(() => {
     const isPortrait = size.width < size.height;
     if (camera instanceof THREE.PerspectiveCamera) {
       const cfg = getAdaptiveCameraConfig(unlockedCount, isPortrait);
       camera.fov = cfg.fov;
-      camera.position.copy(cfg.position);
+      if (isInitialMountRef.current) {
+        camera.position.copy(cfg.position);
+        isInitialMountRef.current = false;
+      }
       camera.updateProjectionMatrix();
     }
   }, [size.width, size.height, camera, unlockedCount]);
@@ -162,9 +166,11 @@ function CameraEventListener({
     };
 
     window.addEventListener('rimba:camera', handleCameraAction);
+    window.addEventListener('camera_action', handleCameraAction);
     window.addEventListener('rimba:camera_focus_target', handleFocusTarget);
     return () => {
       window.removeEventListener('rimba:camera', handleCameraAction);
+      window.removeEventListener('camera_action', handleCameraAction);
       window.removeEventListener('rimba:camera_focus_target', handleFocusTarget);
     };
   }, [camera, unlockedCount, onInteractionChange]);
@@ -355,6 +361,9 @@ export function Scene({ isPaused = false }: { isPaused?: boolean } = {}) {
         near: 0.1,
         far: 100,
       }}
+      onDoubleClick={() => {
+        window.dispatchEvent(new CustomEvent('rimba:camera', { detail: 'reset' }));
+      }}
       className="w-full h-full"
     >
       <ResponsiveCamera />
@@ -384,10 +393,10 @@ export function Scene({ isPaused = false }: { isPaused?: boolean } = {}) {
         shadow-mapSize={graphicsQuality === 'ultra' ? [1024, 1024] : [512, 512]}
         shadow-camera-near={0.5}
         shadow-camera-far={45}
-        shadow-camera-left={-7.5}
-        shadow-camera-right={7.5}
-        shadow-camera-top={7.5}
-        shadow-camera-bottom={-7.5}
+        shadow-camera-left={-10.5}
+        shadow-camera-right={10.5}
+        shadow-camera-top={10.5}
+        shadow-camera-bottom={-10.5}
         shadow-bias={-0.0004}
         shadow-normalBias={0.02}
       />

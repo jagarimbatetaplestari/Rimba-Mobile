@@ -706,7 +706,14 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (typeof window !== 'undefined') {
       localStorage.setItem('rimba_active_biome', biome);
     }
-    const updatedData = { ...saveData, active_biome: biome };
+    const currentIslandId = saveData.active_island_id || 'island_default';
+    const updatedIslands = (saveData.islands || []).map((isl) => {
+      if (isl.id === currentIslandId) {
+        return { ...isl, biome };
+      }
+      return isl;
+    });
+    const updatedData = { ...saveData, active_biome: biome, islands: updatedIslands };
     persistAndSyncSaveData(updatedData);
     set({ activeBiome: biome, saveData: updatedData });
     if (showToast && config) {
@@ -2066,6 +2073,10 @@ export const useGameStore = create<GameState>((set, get) => ({
       isExpandLandMode: false,
       relocatingObjectId: null,
     });
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('rimba:camera', { detail: 'reset' }));
+    }
 
     get().notify(
       isEn

@@ -164,8 +164,10 @@ export function IslandSwitcherModal({ isOpen, onClose }: IslandSwitcherModalProp
             {islands.map((isl) => {
               const isActive = isl.id === activeIslandId;
               const isEditing = editingIslandId === isl.id;
-              const biomeCfg = BIOME_CATALOG.find((b) => b.id === isl.biome);
-              const treeCount = isl.world_objects?.filter((o) => o.object_type === "tree")?.length || 0;
+              const currentBiome = isActive ? saveData.active_biome || isl.biome : isl.biome;
+              const biomeCfg = BIOME_CATALOG.find((b) => b.id === currentBiome);
+              const objectsToCount = isActive ? saveData.world_objects : isl.world_objects;
+              const treeCount = objectsToCount?.filter((o) => o.object_type === "tree")?.length || 0;
 
               return (
                 <div

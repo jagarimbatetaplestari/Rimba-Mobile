@@ -272,7 +272,7 @@ function cropIslandFromCanvas(canvasEl: HTMLCanvasElement): string {
     if (!isOpen) return;
 
     // 1. Immediately snap camera to standard default isometric perspective
-    window.dispatchEvent(new CustomEvent("camera_action", { detail: "snap_reset" }));
+    window.dispatchEvent(new CustomEvent("rimba:camera", { detail: "snap_reset" }));
 
     // 2. Allow render frame to complete, then capture and tight-crop the island
     const timer = setTimeout(() => {

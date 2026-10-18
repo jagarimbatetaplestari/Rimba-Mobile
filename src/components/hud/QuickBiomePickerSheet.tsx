@@ -69,8 +69,8 @@ export function QuickBiomePickerSheet({
       window.dispatchEvent(
         new CustomEvent("rimba:camera_focus_target", {
           detail: {
-            position: [11.5, 4.5, -9.0],
-            distance: 12.0,
+            position: [7.5, 0.55, -0.4],
+            distance: 7.0,
           },
         })
       );

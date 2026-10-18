@@ -531,13 +531,26 @@ export function InstancedGrass({ count: overrideCount }: InstancedGrassProps) {
     }
   }, [dummy, flowerData, activeBiome]);
 
+  const flowerGeometry = useMemo(() => new THREE.CircleGeometry(1, 6), []);
+  const flowerMaterial = useMemo(
+    () =>
+      new THREE.MeshStandardMaterial({
+        roughness: 0.65,
+        metalness: 0.0,
+        side: THREE.DoubleSide,
+      }),
+    []
+  );
+
   // Dispose GPU resources on unmount
   useEffect(() => {
     return () => {
       grassGeometry.dispose();
       grassMaterial.dispose();
+      flowerGeometry.dispose();
+      flowerMaterial.dispose();
     };
-  }, [grassGeometry, grassMaterial]);
+  }, [grassGeometry, grassMaterial, flowerGeometry, flowerMaterial]);
 
   // Drive GPU wind shader time uniform
   useFrame(({ clock }) => {
@@ -563,17 +576,10 @@ export function InstancedGrass({ count: overrideCount }: InstancedGrassProps) {
       {flowerData.length > 0 && (
         <instancedMesh
           ref={flowerRef}
-          args={[undefined, undefined, flowerData.length]}
+          args={[flowerGeometry, flowerMaterial, flowerData.length]}
           receiveShadow
           frustumCulled={false}
-        >
-          <circleGeometry args={[1, 6]} />
-          <meshStandardMaterial
-            roughness={0.65}
-            metalness={0.0}
-            side={THREE.DoubleSide}
-          />
-        </instancedMesh>
+        />
       )}
     </group>
   );

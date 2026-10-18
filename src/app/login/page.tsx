@@ -76,9 +76,9 @@ function WelcomeAuthPageContent() {
   // Redirect if already logged in (hanya jika tidak sedang di alur OTP atau Reset Password)
   useEffect(() => {
     if (user && !isOtpStep && forgotStep === "none") {
-      router.replace("/");
+      router.replace(isSignUp ? "/?onboarding=true" : "/");
     }
-  }, [user, router, isOtpStep, forgotStep]);
+  }, [user, router, isOtpStep, forgotStep, isSignUp]);
 
   // Resend cooldown timer
   useEffect(() => {

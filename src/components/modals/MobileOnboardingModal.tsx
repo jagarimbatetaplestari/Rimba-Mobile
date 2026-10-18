@@ -11,6 +11,7 @@ import {
   VolumeX,
 } from "lucide-react";
 import { useGameStore } from "@/lib/game/useGameStore";
+import { useAuthStore } from "@/lib/auth/useAuthStore";
 import { soundManager } from "@/lib/audio/sounds";
 import {
   musicPlayer,
@@ -22,6 +23,12 @@ import {
   hapticMedium,
   hapticSuccess,
 } from "@/lib/mobile/nativeBridge";
+import {
+  checkOrRequestNotificationPermission,
+  scheduleFocusCompletionNotification,
+} from "@/lib/mobile/notificationManager";
+import { usePreferencesStore } from "@/lib/settings/usePreferencesStore";
+import { findEmptyTileNearCenter, gridToWorld } from "@/lib/game/worldRules";
 import { useTranslation } from "@/lib/i18n/translations";
 
 interface MobileOnboardingModalProps {
@@ -62,7 +69,6 @@ const ONBOARDING_BACKGROUNDS = [
   },
 ];
 
-
 export function MobileOnboardingModal({
   isOpen,
   onComplete,
@@ -77,6 +83,7 @@ export function MobileOnboardingModal({
   const existingProfileName = useGameStore(
     (state) => state.saveData?.profile?.name || "",
   );
+  const authUser = useAuthStore((state) => state.user);
   const startFocus = useGameStore((state) => state.startFocus);
   const notify = useGameStore((state) => state.notify);
 
@@ -87,14 +94,33 @@ export function MobileOnboardingModal({
     "social",
   ]);
 
-  // Slide 2: Organic user name input
-  const [userName, setUserName] = useState<string>(existingProfileName);
+  // Slide 2: Organic user name input (initialize clean if dummy default)
+  const initialUserName = (() => {
+    if (
+      existingProfileName &&
+      existingProfileName !== "Ranger Rimba" &&
+      existingProfileName !== "Penjaga Rimba"
+    ) {
+      return existingProfileName;
+    }
+    if (
+      authUser?.name &&
+      authUser.name !== "Penjaga Rimba" &&
+      authUser.name !== "Ranger Rimba"
+    ) {
+      return authUser.name;
+    }
+    return "";
+  })();
+  const [userName, setUserName] = useState<string>(initialUserName);
 
   // Slide 3: Breathing phase synchronization
   const [breathPhase, setBreathPhase] = useState<"inhale" | "exhale">("inhale");
 
-  // Slide 5: Notification state
-  const [hasNotifPermission, setHasNotifPermission] = useState<boolean>(false);
+  // Slide 5: Notification state via native preferences store
+  const hasNotifPermission = usePreferencesStore(
+    (state) => state.hasNotificationPermission,
+  );
 
   // Slide 6: Starter intent index
   const [selectedIntentIndex, setSelectedIntentIndex] = useState<number>(0);
@@ -103,14 +129,6 @@ export function MobileOnboardingModal({
 
   // Music ambient state
   const [isMusicPlaying, setIsMusicPlaying] = useState<boolean>(false);
-
-  useEffect(() => {
-    if (typeof window !== "undefined" && "Notification" in window) {
-      if (Notification.permission === "granted") {
-        setHasNotifPermission(true);
-      }
-    }
-  }, []);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -159,7 +177,10 @@ export function MobileOnboardingModal({
   useEffect(() => {
     if (step !== 2) return;
     const interval = setInterval(() => {
-      setBreathPhase((prev) => (prev === "inhale" ? "exhale" : "inhale"));
+      setBreathPhase((prev) => {
+        hapticLight().catch(() => {});
+        return prev === "inhale" ? "exhale" : "inhale";
+      });
     }, 4500);
     return () => clearInterval(interval);
   }, [step]);
@@ -205,43 +226,89 @@ export function MobileOnboardingModal({
 
   const handleNextStep = () => {
     hapticLight();
-    if (step === 1 && userName.trim()) {
-      setProfileName(userName.trim());
+    if (step === 0) {
+      setDistractionSource(selectedDistractions.join(","));
+    } else if (step === 1 && userName.trim()) {
+      const cleanName = userName.trim();
+      setProfileName(cleanName);
+      useAuthStore.getState().updateProfile({ name: cleanName });
     }
     setStep((prev) => Math.min(5, prev + 1));
   };
 
   const handleRequestNotifications = async () => {
     hapticLight();
-    if (typeof window !== "undefined" && "Notification" in window) {
-      try {
-        const res = await Notification.requestPermission();
-        if (res === "granted") {
-          setHasNotifPermission(true);
-          notify(ob.notifPermSuccess, "success");
-        }
-      } catch {
-        // Ignore
+    try {
+      const granted = await checkOrRequestNotificationPermission();
+      if (granted) {
+        hapticSuccess();
+        notify(ob.notifPermSuccess, "success");
       }
+    } catch (err) {
+      console.warn(
+        "[MobileOnboardingModal] Failed requesting notification permission:",
+        err,
+      );
     }
   };
 
   const handleStartFirstSession = () => {
     hapticSuccess();
     soundManager.playStart();
-    if (userName.trim()) {
-      setProfileName(userName.trim());
+    const cleanName = userName.trim();
+    if (cleanName) {
+      setProfileName(cleanName);
+      useAuthStore.getState().updateProfile({ name: cleanName });
     }
     onComplete();
     const focusTag = lang === "en" ? "Focus" : "Fokus";
-    startFocus(10 * 60, focusTag, false, undefined, selectedIntent);
+    const durationSec = 10 * 60;
+    startFocus(durationSec, focusTag, false, undefined, selectedIntent);
+
+    // Schedule notification for first 10m session
+    const expectedEndAt = new Date(Date.now() + durationSec * 1000);
+    scheduleFocusCompletionNotification({
+      expectedEndAt,
+      speciesName: lang === "en" ? "Oak Tree" : "Pohon Ek",
+      durationMinutes: 10,
+    }).catch((err) => {
+      console.warn("[MobileOnboardingModal] Failed scheduling notif:", err);
+    });
+
+    // Cinematic camera zoom toward sapling tile
+    try {
+      const worldObjects = useGameStore.getState().saveData.world_objects || [];
+      const unlockedSet = new Set(
+        useGameStore.getState().saveData.world.unlocked_tiles,
+      );
+      const targetTile = findEmptyTileNearCenter(worldObjects, unlockedSet);
+      if (targetTile && typeof window !== "undefined") {
+        const saplingWorldPos = gridToWorld(
+          targetTile.grid_x,
+          targetTile.grid_y,
+          0.05,
+        );
+        if (Array.isArray(saplingWorldPos) && saplingWorldPos.length === 3) {
+          window.dispatchEvent(
+            new CustomEvent("rimba:camera_focus_target", {
+              detail: { position: saplingWorldPos, distance: 7.0 },
+            }),
+          );
+        }
+      }
+    } catch (e) {
+      console.warn("[MobileOnboardingModal] Camera focus dispatch error:", e);
+    }
+
     notify(ob.sessionStartedToast, "info");
   };
 
   const handleCompleteWithoutFocus = () => {
     hapticMedium();
-    if (userName.trim()) {
-      setProfileName(userName.trim());
+    const cleanName = userName.trim();
+    if (cleanName) {
+      setProfileName(cleanName);
+      useAuthStore.getState().updateProfile({ name: cleanName });
     }
     onComplete();
   };
@@ -256,7 +323,7 @@ export function MobileOnboardingModal({
           "var(--font-urbanist), 'Urbanist', -apple-system, BlinkMacSystemFont, sans-serif",
       }}
     >
-      {/* 1. Cinematic Background Layer Tanpa Bayangan Pekat */}
+      {/* 1. Cinematic Background Layer */}
       <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
         {ONBOARDING_BACKGROUNDS.map((bg) => (
           <div
@@ -278,7 +345,7 @@ export function MobileOnboardingModal({
         {/* Ambient Top Vignette Halus */}
         <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-black/40 to-transparent pointer-events-none" />
 
-        {/* Ambient Bawah Ringan (hanya cukup untuk kontras teks) */}
+        {/* Ambient Bawah Ringan */}
         <div className="absolute inset-x-0 bottom-0 h-[42vh] bg-gradient-to-t from-black/65 via-black/25 to-transparent pointer-events-none" />
       </div>
 
@@ -375,7 +442,7 @@ export function MobileOnboardingModal({
               </p>
             </div>
 
-            {/* Frosted Glass Tags Tanpa Shadow Berat */}
+            {/* Frosted Glass Tags */}
             <div className="flex flex-wrap gap-2 pt-1">
               {ob.slide0.tags.map((opt) => {
                 const active = selectedDistractions.includes(opt.id);
@@ -416,7 +483,13 @@ export function MobileOnboardingModal({
               </p>
             </div>
 
-            <div className="pt-2 pb-1 space-y-2">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleNextStep();
+              }}
+              className="pt-2 pb-1 space-y-2"
+            >
               <div className="relative border-b border-white/40 focus-within:border-white transition-colors pb-1.5">
                 <input
                   type="text"
@@ -426,12 +499,13 @@ export function MobileOnboardingModal({
                   className="w-full bg-transparent text-xl font-serif italic text-white placeholder-white/40 focus:outline-none tracking-wide"
                   maxLength={24}
                   autoComplete="name"
+                  enterKeyHint="done"
                 />
               </div>
               <p className="text-[11px] text-white/60 font-light">
                 {ob.slide1.hint}
               </p>
-            </div>
+            </form>
           </div>
         )}
 
@@ -532,9 +606,17 @@ export function MobileOnboardingModal({
               <button
                 type="button"
                 onClick={handleRequestNotifications}
-                className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-white/14 hover:bg-white/20 border border-white/25 text-xs text-white backdrop-blur-md transition-colors cursor-pointer"
+                className={`inline-flex items-center gap-2.5 px-4 py-2.5 rounded-full border text-xs backdrop-blur-md transition-colors cursor-pointer ${
+                  hasNotifPermission
+                    ? "bg-emerald-500/25 border-emerald-400/40 text-emerald-200"
+                    : "bg-white/14 hover:bg-white/20 border-white/25 text-white"
+                }`}
               >
-                <Bell className="w-3.5 h-3.5 text-white" />
+                {hasNotifPermission ? (
+                  <Check className="w-3.5 h-3.5 text-emerald-300 stroke-[2.5]" />
+                ) : (
+                  <Bell className="w-3.5 h-3.5 text-white" />
+                )}
                 <span>
                   {hasNotifPermission
                     ? ob.slide4.notifActive
@@ -596,7 +678,7 @@ export function MobileOnboardingModal({
         )}
       </div>
 
-      {/* 4. Bottom Control Deck (Jernih, Tanpa Shadow Kotak Hitam) */}
+      {/* 4. Bottom Control Deck */}
       <div className="relative z-10 w-full max-w-sm space-y-2 pt-1">
         {step < 5 && (
           <button

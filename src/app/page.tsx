@@ -309,7 +309,10 @@ export default function RimbaDioramaApp() {
       if (isAuthHydrated && authUser) {
         const urlParams = new URLSearchParams(window.location.search);
         const forceOnboarding = urlParams.get("onboarding") === "true";
-        const completed = localStorage.getItem("rimba_onboarding_completed");
+        const userKey = authUser.id ? `rimba_onboarding_completed_${authUser.id}` : null;
+        const userCompleted = userKey ? localStorage.getItem(userKey) : null;
+        const globalCompleted = localStorage.getItem("rimba_onboarding_completed");
+        const completed = userCompleted || (authUser.isGuest ? globalCompleted : null);
 
         if (forceOnboarding || !completed) {
           setIsOnboardingOpen(true);
@@ -1044,6 +1047,9 @@ export default function RimbaDioramaApp() {
           onComplete={() => {
             if (typeof window !== "undefined") {
               localStorage.setItem("rimba_onboarding_completed", "true");
+              if (authUser?.id) {
+                localStorage.setItem(`rimba_onboarding_completed_${authUser.id}`, "true");
+              }
               if (window.location.search.includes("onboarding=")) {
                 const url = new URL(window.location.href);
                 url.searchParams.delete("onboarding");

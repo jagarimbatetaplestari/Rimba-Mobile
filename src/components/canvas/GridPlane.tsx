@@ -19,6 +19,7 @@ import { canAfford } from '@/lib/game/economy';
 import { soundManager } from '@/lib/audio/sounds';
 import { getManifestItem } from '@/lib/game/assetManifest';
 import { hapticLight } from '@/lib/mobile/nativeBridge';
+import { useTranslation } from '@/lib/i18n/translations';
 
 const EMPTY_SEALED_TILES: string[] = [];
 
@@ -71,6 +72,7 @@ function GhostObjectMesh({
 }
 
 export function GridPlane() {
+  const { language } = useTranslation();
   const selectedTool = useGameStore((state) => state.selectedTool);
   const setSelectedTool = useGameStore((state) => state.setSelectedTool);
   const selectedCatalogItem = useGameStore((state) => state.selectedCatalogItem);
@@ -341,12 +343,31 @@ export function GridPlane() {
     if (now - lastExpandTimeRef.current < 750) return;
     lastExpandTimeRef.current = now;
 
+    if (unlockedSet.has(`${grid_x},${grid_y}`)) {
+      useGameStore
+        .getState()
+        .notify(
+          language === 'en'
+            ? 'This tile is already part of your sanctuary. Tap a glowing edge tile to expand.'
+            : 'Petak ini sudah menjadi bagian dari suakamu. Ketuk petak bercahaya di tepi pulau untuk memperluas.',
+          'info'
+        );
+      return;
+    }
+
     const isExpandable = canUnlockTile(grid_x, grid_y, unlockedSet);
     if (isExpandable) {
       const ok = unlockLandTile(grid_x, grid_y);
       if (ok) soundManager.playLevelUp();
     } else {
-      useGameStore.getState().notify('Hanya petak yang menempel langsung dengan pulau yang dapat dibuka!', 'error');
+      useGameStore
+        .getState()
+        .notify(
+          language === 'en'
+            ? 'Only tiles directly connected to your sanctuary island can be unlocked!'
+            : 'Hanya petak yang menempel langsung dengan pulau yang dapat dibuka!',
+          'error'
+        );
     }
   };
 

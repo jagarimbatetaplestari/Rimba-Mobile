@@ -211,6 +211,8 @@ export function NatureWorkshopSheet() {
       hapticLight();
       if (detail?.tab) {
         setActiveTab(detail.tab);
+      } else {
+        setIsExpandLandMode(false);
       }
       preloadAllManifestModels(activeCategory);
       setSelectedObject(null);

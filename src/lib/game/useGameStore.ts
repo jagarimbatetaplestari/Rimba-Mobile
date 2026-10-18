@@ -273,17 +273,29 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   unlockLandTile: (grid_x, grid_y) => {
     const { saveData } = get();
+    const lang = getStoreLang();
+    const isEn = lang === 'en';
     const unlockedSet = getUnlockedTilesSet(saveData.world, saveData.world_objects);
 
     if (!canUnlockTile(grid_x, grid_y, unlockedSet)) {
-      get().notify('Hanya bisa membuka petak yang bersinggungan langsung dengan lahan aktif!', 'error');
+      get().notify(
+        isEn
+          ? 'Can only unlock tiles directly connected to active land!'
+          : 'Hanya bisa membuka petak yang bersinggungan langsung dengan lahan aktif!',
+        'error'
+      );
       return false;
     }
 
     const zoneInfo = getLandExpansionZoneInfo(unlockedSet.size);
     const cost = zoneInfo.nextTileCost;
     if (!canAfford(saveData.currency_ledger, cost)) {
-      get().notify(`Soul tidak cukup! Membuka petak di ${zoneInfo.shortZoneName} butuh ${cost} Soul.`, 'error');
+      get().notify(
+        isEn
+          ? `Not enough Soul! Unlocking a tile in ${zoneInfo.shortZoneName} costs ${cost} Soul.`
+          : `Soul tidak cukup! Membuka petak di ${zoneInfo.shortZoneName} butuh ${cost} Soul.`,
+        'error'
+      );
       return false;
     }
 
@@ -302,15 +314,36 @@ export const useGameStore = create<GameState>((set, get) => ({
     const existingPioneer = new Set(saveData.pioneer_completed_ids || []);
     existingPioneer.add('expand_land');
 
+    const updatedLedger = [...saveData.currency_ledger, ledgerEntry];
+    const balances = calculateBalances(updatedLedger);
+    const updatedWorld = {
+      ...saveData.world,
+      unlocked_tiles: currentUnlocked,
+      last_expanded_tile: coordKey,
+    };
+
+    const currentIslandId = saveData.active_island_id || 'island_default';
+    const updatedIslands = (saveData.islands || []).map((isl) => {
+      if (isl.id === currentIslandId) {
+        return {
+          ...isl,
+          world: updatedWorld,
+        };
+      }
+      return isl;
+    });
+
     const updatedData: RimbaSaveData = {
       ...saveData,
-      world: {
-        ...saveData.world,
-        unlocked_tiles: currentUnlocked,
-        last_expanded_tile: coordKey,
+      profile: {
+        ...saveData.profile,
+        goldCached: balances.gold,
+        xp: balances.xp,
       },
-      currency_ledger: [...saveData.currency_ledger, ledgerEntry],
+      world: updatedWorld,
+      currency_ledger: updatedLedger,
       pioneer_completed_ids: Array.from(existingPioneer),
+      islands: updatedIslands,
     };
 
     persistAndSyncSaveData(updatedData);
@@ -318,22 +351,30 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     if (newCount === 25) {
       get().notify(
-        `🌊 Milestone 25 Petak (5×5)! Kamu memasuki Zona 2: Lembah Sungai! Jalur sungai & jembatan kini siap ditata.`,
+        isEn
+          ? '🌊 25 Tiles Milestone (5×5)! You entered Zone 2: River Valley! Rivers and bridges are ready.'
+          : '🌊 Milestone 25 Petak (5×5)! Kamu memasuki Zona 2: Lembah Sungai! Jalur sungai & jembatan kini siap ditata.',
         'success'
       );
     } else if (newCount === 49) {
       get().notify(
-        `👑 Milestone 49 Petak (7×7)! Kamu memasuki Zona 3: Rimba Raya! Area pesisir & pohon leluhur menanti.`,
+        isEn
+          ? '👑 49 Tiles Milestone (7×7)! You entered Zone 3: Rimba Sovereign! Coastal shores and ancient spirit trees await.'
+          : '👑 Milestone 49 Petak (7×7)! Kamu memasuki Zona 3: Rimba Raya! Area pesisir & pohon leluhur menanti.',
         'success'
       );
     } else if (newCount === 100) {
       get().notify(
-        `🏆 KEDAULATAN PENUH 10×10 (100 Petak)! Seluruh Pulau Rimba telah terbuka sempurna!`,
+        isEn
+          ? '🏆 FULL SOVEREIGNTY 10×10 (100 Tiles)! The entire Rimba Sanctuary is fully unlocked! 👑'
+          : '🏆 KEDAULATAN PENUH 10×10 (100 Petak)! Seluruh Pulau Rimba telah terbuka sempurna!',
         'success'
       );
     } else {
       get().notify(
-        `🌱 Petak (${grid_x},${grid_y}) bangkit dari air! (${newCount}/${zoneInfo.zoneTargetTiles} Petak ${zoneInfo.shortZoneName} • -${cost} Soul)`,
+        isEn
+          ? `🌱 Tile (${grid_x},${grid_y}) rises from the water! (${newCount}/${zoneInfo.zoneTargetTiles} Tiles • -${cost} Soul)`
+          : `🌱 Petak (${grid_x},${grid_y}) bangkit dari air! (${newCount}/${zoneInfo.zoneTargetTiles} Petak ${zoneInfo.shortZoneName} • -${cost} Soul)`,
         'success'
       );
     }
@@ -389,8 +430,12 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   cancelRelocation: () => {
     if (get().relocatingObjectId) {
-      set({ relocatingObjectId: null });
-      get().notify('Pemindahan objek dibatalkan.', 'info');
+      const isEn = getStoreLang() === 'en';
+      set({ relocatingObjectId: null, hoveredGridTile: null });
+      get().notify(
+        isEn ? 'Object relocation cancelled.' : 'Pemindahan objek dibatalkan.',
+        'info'
+      );
     }
   },
 
@@ -428,9 +473,21 @@ export const useGameStore = create<GameState>((set, get) => ({
       return obj;
     });
 
+    const currentIslandId = saveData.active_island_id || 'island_default';
+    const updatedIslands = (saveData.islands || []).map((isl) => {
+      if (isl.id === currentIslandId) {
+        return {
+          ...isl,
+          world_objects: updatedObjects,
+        };
+      }
+      return isl;
+    });
+
     const updatedData: RimbaSaveData = {
       ...saveData,
       world_objects: updatedObjects,
+      islands: updatedIslands,
     };
 
     persistAndSyncSaveData(updatedData);
@@ -475,11 +532,29 @@ export const useGameStore = create<GameState>((set, get) => ({
 
       const updatedObjects = saveData.world_objects.filter((o) => o.id !== objectId);
       const updatedLedger = [...saveData.currency_ledger, ledgerEntry];
+      const balances = calculateBalances(updatedLedger);
+
+      const currentIslandId = saveData.active_island_id || 'island_default';
+      const updatedIslands = (saveData.islands || []).map((isl) => {
+        if (isl.id === currentIslandId) {
+          return {
+            ...isl,
+            world_objects: updatedObjects,
+          };
+        }
+        return isl;
+      });
 
       const updatedData: RimbaSaveData = {
         ...saveData,
+        profile: {
+          ...saveData.profile,
+          goldCached: balances.gold,
+          xp: balances.xp,
+        },
         world_objects: updatedObjects,
         currency_ledger: updatedLedger,
+        islands: updatedIslands,
       };
 
       persistAndSyncSaveData(updatedData);
@@ -503,9 +578,22 @@ export const useGameStore = create<GameState>((set, get) => ({
       (target.status === 'reclaimed' || target.status === 'withered' || target.model_variant === 'nature_stump')
     ) {
       const updatedObjects = saveData.world_objects.filter((o) => o.id !== objectId);
+
+      const currentIslandId = saveData.active_island_id || 'island_default';
+      const updatedIslands = (saveData.islands || []).map((isl) => {
+        if (isl.id === currentIslandId) {
+          return {
+            ...isl,
+            world_objects: updatedObjects,
+          };
+        }
+        return isl;
+      });
+
       const updatedData: RimbaSaveData = {
         ...saveData,
         world_objects: updatedObjects,
+        islands: updatedIslands,
       };
 
       persistAndSyncSaveData(updatedData);
@@ -537,11 +625,29 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     const updatedObjects = saveData.world_objects.filter((o) => o.id !== objectId);
     const updatedLedger = [...saveData.currency_ledger, ledgerEntry];
+    const balances = calculateBalances(updatedLedger);
+
+    const currentIslandId = saveData.active_island_id || 'island_default';
+    const updatedIslands = (saveData.islands || []).map((isl) => {
+      if (isl.id === currentIslandId) {
+        return {
+          ...isl,
+          world_objects: updatedObjects,
+        };
+      }
+      return isl;
+    });
 
     const updatedData: RimbaSaveData = {
       ...saveData,
+      profile: {
+        ...saveData.profile,
+        goldCached: balances.gold,
+        xp: balances.xp,
+      },
       world_objects: updatedObjects,
       currency_ledger: updatedLedger,
+      islands: updatedIslands,
     };
 
     persistAndSyncSaveData(updatedData);
@@ -900,7 +1006,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   setSelectedCatalogItem: (item) => {
     if (!item) {
-      set({ selectedTool: null, selectedCatalogItem: null });
+      set({ selectedTool: null, selectedCatalogItem: null, hoveredGridTile: null });
     } else {
       set({
         selectedTool: item.type,
@@ -1645,16 +1751,35 @@ export const useGameStore = create<GameState>((set, get) => ({
     }
 
     const updatedLedger = [...saveData.currency_ledger, ledgerEntry];
+    const balances = calculateBalances(updatedLedger);
     const filteredObjects =
       existingObj && isBridge && isExistingRiver
         ? saveData.world_objects.filter((o) => o.id !== existingObj.id)
         : saveData.world_objects;
+    const finalObjects = [...filteredObjects, newObj];
+
+    const currentIslandId = saveData.active_island_id || 'island_default';
+    const updatedIslands = (saveData.islands || []).map((isl) => {
+      if (isl.id === currentIslandId) {
+        return {
+          ...isl,
+          world_objects: finalObjects,
+        };
+      }
+      return isl;
+    });
 
     const updatedData: RimbaSaveData = {
       ...saveData,
-      world_objects: [...filteredObjects, newObj],
+      profile: {
+        ...saveData.profile,
+        goldCached: balances.gold,
+        xp: balances.xp,
+      },
+      world_objects: finalObjects,
       currency_ledger: updatedLedger,
       pioneer_completed_ids: Array.from(pioneerSet),
+      islands: updatedIslands,
     };
 
     persistAndSyncSaveData(updatedData);
@@ -1665,14 +1790,20 @@ export const useGameStore = create<GameState>((set, get) => ({
       hoveredGridTile: null,
     });
 
+    const lang = getStoreLang();
+    const isEn = lang === 'en';
     if (isBridge && isExistingRiver) {
       get().notify(
-        `🌉 Jembatan Rimba terpasang di atas aliran sungai! (-${cost} Soul)`,
+        isEn
+          ? `🌉 Rimba Bridge installed over river stream! (-${cost} Soul)`
+          : `🌉 Jembatan Rimba terpasang di atas aliran sungai! (-${cost} Soul)`,
         'success'
       );
     } else {
       get().notify(
-        `🌿 ${item.name} berhasil ditempatkan! (-${cost} Soul)`,
+        isEn
+          ? `🌿 ${item.name} placed successfully! (-${cost} Soul)`
+          : `🌿 ${item.name} berhasil ditempatkan! (-${cost} Soul)`,
         'success'
       );
     }
@@ -1698,18 +1829,39 @@ export const useGameStore = create<GameState>((set, get) => ({
     );
 
     const updatedLedger = [...saveData.currency_ledger, result.ledgerEntry];
+    const balances = calculateBalances(updatedLedger);
     const pioneerSet = new Set(saveData.pioneer_completed_ids || []);
     pioneerSet.add('restore_stump');
 
+    const updatedWorld = {
+      ...saveData.world,
+      sealed_tiles: [],
+    };
+
+    const currentIslandId = saveData.active_island_id || 'island_default';
+    const updatedIslands = (saveData.islands || []).map((isl) => {
+      if (isl.id === currentIslandId) {
+        return {
+          ...isl,
+          world: updatedWorld,
+          world_objects: updatedObjects,
+        };
+      }
+      return isl;
+    });
+
     const updatedData: RimbaSaveData = {
       ...saveData,
-      world: {
-        ...saveData.world,
-        sealed_tiles: [],
+      profile: {
+        ...saveData.profile,
+        goldCached: balances.gold,
+        xp: balances.xp,
       },
+      world: updatedWorld,
       world_objects: updatedObjects,
       currency_ledger: updatedLedger,
       pioneer_completed_ids: Array.from(pioneerSet),
+      islands: updatedIslands,
     };
 
     persistAndSyncSaveData(updatedData);
@@ -1718,8 +1870,11 @@ export const useGameStore = create<GameState>((set, get) => ({
       selectedObject: result.updatedObject,
     });
 
+    const lang = getStoreLang();
     get().notify(
-      `🌿 Tunggul/Objek berhasil dipulihkan kembali segar & segel petak dibuka! (-${GAME_CONFIG.restore} Soul)`,
+      lang === 'en'
+        ? `🌿 Stump/Object restored fresh & tile seal removed! (-${GAME_CONFIG.restore} Soul)`
+        : `🌿 Tunggul/Objek berhasil dipulihkan kembali segar & segel petak dibuka! (-${GAME_CONFIG.restore} Soul)`,
       'success'
     );
     return true;
@@ -1742,11 +1897,30 @@ export const useGameStore = create<GameState>((set, get) => ({
       window.dispatchEvent(new CustomEvent('rimba:bulldozer_retreat'));
     }
 
+    const intermediateLedger = [...saveData.currency_ledger, result.ledgerEntry];
+    const balances = calculateBalances(intermediateLedger);
+    const currentIslandId = saveData.active_island_id || 'island_default';
+    const updatedIslands = (saveData.islands || []).map((isl) => {
+      if (isl.id === currentIslandId) {
+        return {
+          ...isl,
+          world_objects: result.updatedObjects,
+        };
+      }
+      return isl;
+    });
+
     // Immediately restore objects and record Soul deduction
     const intermediateData: RimbaSaveData = {
       ...saveData,
+      profile: {
+        ...saveData.profile,
+        goldCached: balances.gold,
+        xp: balances.xp,
+      },
       world_objects: result.updatedObjects,
-      currency_ledger: [...saveData.currency_ledger, result.ledgerEntry],
+      currency_ledger: intermediateLedger,
+      islands: updatedIslands,
     };
 
     persistAndSyncSaveData(intermediateData);
@@ -1755,21 +1929,35 @@ export const useGameStore = create<GameState>((set, get) => ({
       selectedObject: null,
     });
 
+    const lang = getStoreLang();
     get().notify(
-      `🛡️ Perisai energi suaka berhasil menghalau Bulldozer! Truk konstruksi mundur. (-${GAME_CONFIG.reclamation.bulldozer_mark_cost} Soul)`,
+      lang === 'en'
+        ? `🛡️ Sanctuary barrier repelled the Bulldozer! Construction truck retreated. (-${GAME_CONFIG.reclamation.bulldozer_mark_cost} Soul)`
+        : `🛡️ Perisai energi suaka berhasil menghalau Bulldozer! Truk konstruksi mundur. (-${GAME_CONFIG.reclamation.bulldozer_mark_cost} Soul)`,
       'success'
     );
 
     // Allow 1.4s retreat drive-off animation before unmounting bulldozer
     setTimeout(() => {
       const current = get().saveData;
+      const finalWorld = {
+        ...current.world,
+        ...result.updatedWorld,
+        bulldozer: null,
+      };
+      const finalIslands = (current.islands || []).map((isl) => {
+        if (isl.id === currentIslandId) {
+          return {
+            ...isl,
+            world: finalWorld,
+          };
+        }
+        return isl;
+      });
       const finalData: RimbaSaveData = {
         ...current,
-        world: {
-          ...current.world,
-          ...result.updatedWorld,
-          bulldozer: null,
-        },
+        world: finalWorld,
+        islands: finalIslands,
       };
       persistAndSyncSaveData(finalData);
       set({ saveData: finalData });

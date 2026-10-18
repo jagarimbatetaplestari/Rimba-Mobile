@@ -1301,6 +1301,13 @@ export function MobileFocusCard({
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse" />
                 </span>
               )}
+
+              {activeSession.campfire_room_code && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-200 bg-amber-500/25 border border-amber-300/40 px-2 py-0.5 rounded-full backdrop-blur-md">
+                  <Flame className="w-3 h-3 text-amber-300 fill-amber-300" />
+                  <span>{activeSession.campfire_room_code}</span>
+                </span>
+              )}
             </div>
 
             {/* Sisi Kanan: Unified Species & Tag Liquid Glass Pill */}

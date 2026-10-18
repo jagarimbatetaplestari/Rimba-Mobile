@@ -419,6 +419,54 @@ for (const asset of requiredAssets) {
 assert(allAssetsExist, 'All critical splash, onboarding, and app icon assets exist in public/');
 
 // ------------------------------------------------------------------
+// SUITE 7: Ruang Api Unggun & Campfire Synergy Integrity
+// ------------------------------------------------------------------
+console.log('\n\x1b[36m[SUITE 7] Ruang Api Unggun & Campfire Integrity\x1b[0m');
+
+// 1. Session Rules Campfire Synergy (+20% Soul & XP)
+const sessionRulesPath = path.join(projectRoot, 'src/lib/game/sessionRules.ts');
+assert(fs.existsSync(sessionRulesPath), 'sessionRules.ts exists');
+const sessionRulesContent = fs.readFileSync(sessionRulesPath, 'utf8');
+assert(
+  sessionRulesContent.includes('session.campfire_room_code') &&
+    sessionRulesContent.includes('Math.round(rewardGold * 1.2)') &&
+    sessionRulesContent.includes('Math.round(rewardXp * 1.2)'),
+  'Session completion correctly awards +20% Soul & XP bonus for campfire sessions'
+);
+
+// 2. Campfire Store Presence & Lifecycle Safeguards
+const campfireStorePath = path.join(projectRoot, 'src/lib/game/campfireStore.ts');
+assert(fs.existsSync(campfireStorePath), 'campfireStore.ts exists');
+const campfireStoreContent = fs.readFileSync(campfireStorePath, 'utf8');
+assert(
+  campfireStoreContent.includes('START_FOCUS') &&
+    campfireStoreContent.includes('MEMBER_LEFT') &&
+    campfireStoreContent.includes('ROOM_SEVERED') &&
+    campfireStoreContent.includes('ROOM_COMPLETED'),
+  'campfireStore handles full synchronization lifecycle (START_FOCUS, MEMBER_LEFT, ROOM_SEVERED, ROOM_COMPLETED)'
+);
+assert(
+  campfireStoreContent.includes('onRehydrateStorage') &&
+    campfireStoreContent.includes('isStale'),
+  'campfireStore implements onRehydrateStorage auto-clean for stale or ended rooms'
+);
+
+// 3. Campfire Room Code Normalization & Auto-Dismiss in Modal
+const campfireModalPath = path.join(projectRoot, 'src/components/modals/CampfireRoomModal.tsx');
+assert(fs.existsSync(campfireModalPath), 'CampfireRoomModal.tsx exists');
+const campfireModalContent = fs.readFileSync(campfireModalPath, 'utf8');
+assert(
+  campfireModalContent.includes('currentRoom.status === "active"') &&
+    campfireModalContent.includes('onClose()'),
+  'CampfireRoomModal automatically auto-dismisses when focus session starts'
+);
+assert(
+  campfireModalContent.includes('RIMBA-') &&
+    campfireModalContent.includes('raw = `RIMBA-${raw}`'),
+  'CampfireRoomModal automatically normalizes 3-digit inputs to RIMBA-XXX format'
+);
+
+// ------------------------------------------------------------------
 // SUMMARY REPORT
 // ------------------------------------------------------------------
 console.log('\n======================================================');

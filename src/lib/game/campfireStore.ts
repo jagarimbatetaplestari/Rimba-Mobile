@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase/client";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { soundManager } from "@/lib/audio/sounds";
 import { hapticSuccess, hapticWarning } from "@/lib/mobile/nativeBridge";
+import { useGameStore } from "@/lib/game/useGameStore";
 
 export type CampfireAnimal = "fox" | "bunny" | "koala" | "bird" | "bee";
 export type CampfireMode = "shared_destiny" | "gentle_circle";
@@ -139,40 +140,94 @@ export const useCampfireStore = create<CampfireState>()(
                 });
               });
 
-              if (remoteParticipants.length > 0) {
-                const current = get().currentRoom;
-                if (!current) return;
-                // Merge presence with local mock companion preserved if alone
-                const mergedMap = new Map<string, CampfireParticipant>();
-                current.participants.forEach((p) => mergedMap.set(p.id, p));
-                remoteParticipants.forEach((p) => mergedMap.set(p.id, p));
+              const current = get().currentRoom;
+              if (!current) return;
 
-                set({
-                  currentRoom: {
-                    ...current,
-                    participants: Array.from(mergedMap.values()),
-                  },
-                });
-              }
+              // Rebuild active presence map from authoritative remote presence while keeping host self
+              const presenceMap = new Map<string, CampfireParticipant>();
+              presenceMap.set(host.id, host);
+              remoteParticipants.forEach((p) => presenceMap.set(p.id, p));
+
+              set({
+                currentRoom: {
+                  ...current,
+                  participants: Array.from(presenceMap.values()),
+                },
+              });
+            })
+            .on("broadcast", { event: "MEMBER_LEFT" }, ({ payload }) => {
+              const current = get().currentRoom;
+              if (!current) return;
+              set({
+                currentRoom: {
+                  ...current,
+                  participants: current.participants.filter(
+                    (p) => p.id !== payload.memberId
+                  ),
+                },
+              });
             })
             .on("broadcast", { event: "START_FOCUS" }, ({ payload }) => {
               soundManager.playPop();
               hapticSuccess();
               const current = get().currentRoom;
               if (!current) return;
+              const durationMins = payload.durationMinutes || current.durationMinutes || 25;
+              const mode = payload.mode || current.mode;
+              const startedAt = payload.startedAt || new Date().toISOString();
+
               set({
                 currentRoom: {
                   ...current,
                   status: "active",
-                  startedAt: payload.startedAt || new Date().toISOString(),
-                  mode: payload.mode || current.mode,
-                  durationMinutes: payload.durationMinutes || current.durationMinutes,
+                  startedAt,
+                  mode,
+                  durationMinutes: durationMins,
                   participants: current.participants.map((p) => ({
                     ...p,
                     status: "focusing",
                   })),
                 },
               });
+
+              // Synchronize local focus session for participant if not active
+              try {
+                const gameStore = useGameStore.getState();
+                const active = gameStore.activeSession;
+                if (!active || active.status !== "active") {
+                  const companionNames = current.participants
+                    .filter((p) => p.id !== get().myParticipantId)
+                    .map((p) => p.name);
+                  const defaultNote = `Fokus Bareng (${current.code})`;
+
+                  gameStore.startFocus(
+                    durationMins * 60,
+                    "Fokus",
+                    false,
+                    "oak",
+                    defaultNote
+                  );
+
+                  const newActive = useGameStore.getState().activeSession;
+                  if (newActive) {
+                    useGameStore.setState({
+                      activeSession: {
+                        ...newActive,
+                        campfire_room_code: current.code,
+                        is_shared_destiny: mode === "shared_destiny",
+                        companions: companionNames,
+                      },
+                    });
+                  }
+
+                  gameStore.notify(
+                    "🌲 Sesi Fokus Bareng dimulai! Yuk jaga fokus bersama.",
+                    "success"
+                  );
+                }
+              } catch (e) {
+                console.warn("[campfireStore] Auto-start focus error:", e);
+              }
             })
             .on("broadcast", { event: "ROOM_SEVERED" }, ({ payload }) => {
               hapticWarning();
@@ -287,39 +342,94 @@ export const useCampfireStore = create<CampfireState>()(
                 });
               });
 
-              if (remoteParticipants.length > 0) {
-                const current = get().currentRoom;
-                if (!current) return;
-                const mergedMap = new Map<string, CampfireParticipant>();
-                current.participants.forEach((p) => mergedMap.set(p.id, p));
-                remoteParticipants.forEach((p) => mergedMap.set(p.id, p));
+              const current = get().currentRoom;
+              if (!current) return;
 
-                set({
-                  currentRoom: {
-                    ...current,
-                    participants: Array.from(mergedMap.values()),
-                  },
-                });
-              }
+              // Rebuild active presence map from authoritative remote presence while keeping self
+              const presenceMap = new Map<string, CampfireParticipant>();
+              presenceMap.set(selfParticipant.id, selfParticipant);
+              remoteParticipants.forEach((p) => presenceMap.set(p.id, p));
+
+              set({
+                currentRoom: {
+                  ...current,
+                  participants: Array.from(presenceMap.values()),
+                },
+              });
+            })
+            .on("broadcast", { event: "MEMBER_LEFT" }, ({ payload }) => {
+              const current = get().currentRoom;
+              if (!current) return;
+              set({
+                currentRoom: {
+                  ...current,
+                  participants: current.participants.filter(
+                    (p) => p.id !== payload.memberId
+                  ),
+                },
+              });
             })
             .on("broadcast", { event: "START_FOCUS" }, ({ payload }) => {
               soundManager.playPop();
               hapticSuccess();
               const current = get().currentRoom;
               if (!current) return;
+              const durationMins = payload.durationMinutes || current.durationMinutes || 25;
+              const mode = payload.mode || current.mode;
+              const startedAt = payload.startedAt || new Date().toISOString();
+
               set({
                 currentRoom: {
                   ...current,
                   status: "active",
-                  startedAt: payload.startedAt || new Date().toISOString(),
-                  mode: payload.mode || current.mode,
-                  durationMinutes: payload.durationMinutes || current.durationMinutes,
+                  startedAt,
+                  mode,
+                  durationMinutes: durationMins,
                   participants: current.participants.map((p) => ({
                     ...p,
                     status: "focusing",
                   })),
                 },
               });
+
+              // Synchronize local focus session for participant if not active
+              try {
+                const gameStore = useGameStore.getState();
+                const active = gameStore.activeSession;
+                if (!active || active.status !== "active") {
+                  const companionNames = current.participants
+                    .filter((p) => p.id !== get().myParticipantId)
+                    .map((p) => p.name);
+                  const defaultNote = `Fokus Bareng (${current.code})`;
+
+                  gameStore.startFocus(
+                    durationMins * 60,
+                    "Fokus",
+                    false,
+                    "oak",
+                    defaultNote
+                  );
+
+                  const newActive = useGameStore.getState().activeSession;
+                  if (newActive) {
+                    useGameStore.setState({
+                      activeSession: {
+                        ...newActive,
+                        campfire_room_code: current.code,
+                        is_shared_destiny: mode === "shared_destiny",
+                        companions: companionNames,
+                      },
+                    });
+                  }
+
+                  gameStore.notify(
+                    "🌲 Sesi Fokus Bareng dimulai! Yuk jaga fokus bersama.",
+                    "success"
+                  );
+                }
+              } catch (e) {
+                console.warn("[campfireStore] Auto-start focus error:", e);
+              }
             })
             .on("broadcast", { event: "ROOM_SEVERED" }, ({ payload }) => {
               hapticWarning();
@@ -427,7 +537,7 @@ export const useCampfireStore = create<CampfireState>()(
 
       abandonRoom: (abandonedByName) => {
         const current = get().currentRoom;
-        if (!current) return;
+        if (!current || current.status === "severed" || current.status === "completed") return;
 
         const myId = get().myParticipantId;
         const myName = abandonedByName || "Penjaga Suaka";
@@ -485,7 +595,7 @@ export const useCampfireStore = create<CampfireState>()(
 
       completeRoom: () => {
         const current = get().currentRoom;
-        if (!current) return;
+        if (!current || current.status === "completed") return;
 
         if (activeChannel) {
           try {
@@ -512,6 +622,16 @@ export const useCampfireStore = create<CampfireState>()(
       },
 
       leaveRoom: () => {
+        const myId = get().myParticipantId;
+        if (activeChannel && myId) {
+          try {
+            activeChannel.send({
+              type: "broadcast",
+              event: "MEMBER_LEFT",
+              payload: { memberId: myId },
+            });
+          } catch {}
+        }
         cleanupChannel();
         set({ currentRoom: null, myParticipantId: null, isRealtimeConnected: false });
       },
@@ -519,6 +639,18 @@ export const useCampfireStore = create<CampfireState>()(
     {
       name: "rimba_campfire_room",
       partialize: (state) => ({ currentRoom: state.currentRoom }),
+      onRehydrateStorage: () => (state) => {
+        if (!state || !state.currentRoom) return;
+        const room = state.currentRoom;
+        const isEnded = room.status === "completed" || room.status === "severed";
+        const startedMs = room.startedAt ? new Date(room.startedAt).getTime() : 0;
+        const isStale = startedMs > 0 && Date.now() - startedMs > 4 * 3600 * 1000;
+        if (isEnded || isStale) {
+          state.currentRoom = null;
+          state.myParticipantId = null;
+          state.isRealtimeConnected = false;
+        }
+      },
     }
   )
 );

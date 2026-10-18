@@ -2,7 +2,7 @@
 
 import React from "react";
 import { createPortal } from "react-dom";
-import { TreePine, AlertTriangle, ShieldCheck, CloudRain } from "lucide-react";
+import { TreePine, AlertTriangle, ShieldCheck, CloudRain, Flame } from "lucide-react";
 import { soundManager } from "@/lib/audio/sounds";
 import { hapticSuccess, hapticWarning } from "@/lib/mobile/nativeBridge";
 import { FocusSession } from "@/types/game";
@@ -23,7 +23,7 @@ export function AbandonConfirmModal({
   session,
   secondsRemaining,
 }: AbandonConfirmModalProps) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
 
   if (!isOpen || !session) return null;
 
@@ -90,6 +90,29 @@ export function AbandonConfirmModal({
             {t.abandon.subtitlePost}
           </p>
         </div>
+
+        {/* Campfire Warning Banner */}
+        {session.campfire_room_code && (
+          <div className="p-3 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-[11.5px] text-amber-950 font-medium flex items-start gap-2.5 text-left">
+            <Flame className="w-4 h-4 text-amber-600 fill-amber-500 shrink-0 mt-0.5" />
+            <div className="space-y-0.5 leading-snug">
+              <strong className="block text-amber-900 font-bold">
+                {session.is_shared_destiny
+                  ? (language === "en" ? "Team Commitment Active" : "Komitmen Bersama Aktif")
+                  : (language === "en" ? "Casual Group Focus" : "Fokus Bareng Santai")}
+              </strong>
+              <span>
+                {session.is_shared_destiny
+                  ? (language === "en"
+                      ? "Giving up will extinguish the campfire and wither trees for everyone in this room!"
+                      : "Menyerah sekarang akan memadamkan api unggun dan membuat pohon kawan lain ikut layu!")
+                  : (language === "en"
+                      ? "You will leave the circle. Your companions will keep focusing."
+                      : "Kamu akan meninggalkan lingkaran. Kawan lainnya tetap dapat melanjutkan fokus.")}
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Progress Card */}
         <div className="p-3.5 rounded-2xl bg-[#0D3528]/5 border border-[#0D3528]/10 text-left space-y-2">

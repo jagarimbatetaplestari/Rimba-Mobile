@@ -47,6 +47,7 @@ export function CampfireRoomModal({
   const startFocus = useGameStore((state) => state.startFocus);
 
   const currentRoom = useCampfireStore((state) => state.currentRoom);
+  const myParticipantId = useCampfireStore((state) => state.myParticipantId);
   const createRoom = useCampfireStore((state) => state.createRoom);
   const joinRoom = useCampfireStore((state) => state.joinRoom);
   const startRoomFocus = useCampfireStore((state) => state.startRoomFocus);
@@ -59,6 +60,13 @@ export function CampfireRoomModal({
     useState<CampfireMode>("shared_destiny");
   const [roomCodeInput, setRoomCodeInput] = useState<string>("");
   const [isCopied, setIsCopied] = useState<boolean>(false);
+
+  // Auto-dismiss modal when room enters active focus mode
+  React.useEffect(() => {
+    if (isOpen && currentRoom && currentRoom.status === "active") {
+      onClose();
+    }
+  }, [isOpen, currentRoom?.status, onClose]);
 
   if (!isOpen) return null;
 
@@ -79,16 +87,21 @@ export function CampfireRoomModal({
   };
 
   const handleJoin = () => {
-    if (!roomCodeInput.trim()) {
+    let raw = roomCodeInput.trim().toUpperCase();
+    if (!raw) {
       notify(t.campfire.toastEmptyCode, "error");
       return;
     }
+    // Auto-prefix RIMBA- if only 3 digits entered
+    if (/^\d{3}$/.test(raw)) {
+      raw = `RIMBA-${raw}`;
+    }
     soundManager.playPop();
     hapticMedium();
-    const ok = joinRoom(roomCodeInput, rangerName, selectedAnimal, "oak");
+    const ok = joinRoom(raw, rangerName, selectedAnimal, "oak");
     if (ok) {
       notify(
-        t.campfire.toastJoined.replace("{code}", roomCodeInput.toUpperCase()),
+        t.campfire.toastJoined.replace("{code}", raw),
         "success",
       );
       setRoomCodeInput("");
@@ -251,18 +264,32 @@ export function CampfireRoomModal({
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(245,158,11,0.25)_0%,transparent_70%)] animate-pulse" />
 
                 <div className="relative z-10 w-16 h-16 rounded-full bg-amber-500/20 border border-amber-400/40 flex items-center justify-center shadow-lg shadow-amber-500/20 my-1">
-                  <Flame className="w-9 h-9 text-amber-400 fill-amber-400 animate-bounce duration-1000" />
+                  <Flame
+                    className={`w-9 h-9 ${
+                      currentRoom.status === "severed"
+                        ? "text-slate-400 fill-slate-400 opacity-60"
+                        : "text-amber-400 fill-amber-400 animate-bounce duration-1000"
+                    }`}
+                  />
                 </div>
 
                 <p className="relative z-10 text-[13px] font-bold text-amber-200 mt-2">
                   {currentRoom.status === "active"
                     ? t.campfire.statusActive
-                    : t.campfire.statusWaiting}
+                    : currentRoom.status === "completed"
+                      ? (language === "en" ? "Session Completed!" : "Sesi Telah Selesai!")
+                      : currentRoom.status === "severed"
+                        ? (language === "en" ? "Campfire Extinguished" : "Api Unggun Telah Padam")
+                        : t.campfire.statusWaiting}
                 </p>
                 <p className="relative z-10 text-[11px] text-amber-200/70 font-medium">
-                  {t.campfire.roomMeta
-                    .replace("{mins}", String(currentRoom.durationMinutes))
-                    .replace("{count}", String(currentRoom.participants.length))}
+                  {currentRoom.status === "severed"
+                    ? (language === "en"
+                        ? `Room left by ${currentRoom.severedBy || "a companion"}`
+                        : `Ditinggalkan oleh ${currentRoom.severedBy || "seorang kawan"}`)
+                    : t.campfire.roomMeta
+                        .replace("{mins}", String(currentRoom.durationMinutes))
+                        .replace("{count}", String(currentRoom.participants.length))}
                 </p>
               </div>
 
@@ -326,31 +353,76 @@ export function CampfireRoomModal({
 
             {/* Action Buttons */}
             <div className="space-y-2 pt-2">
-              <button
-                type="button"
-                onClick={handleStartTogether}
-                className="w-full py-3.5 px-4 rounded-full bg-gradient-to-r from-[#187557] via-[#208b68] to-[#2BB688] hover:opacity-95 text-white font-bold text-[14px] shadow-lg shadow-[#187557]/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <Flame className="w-4 h-4 fill-white" />
-                <span>
-                  {t.campfire.startTogetherBtn.replace(
-                    "{mins}",
-                    String(currentRoom.durationMinutes),
-                  )}
-                </span>
-              </button>
+              {currentRoom.status === "completed" || currentRoom.status === "severed" ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    soundManager.playPop();
+                    hapticLight();
+                    leaveRoom();
+                  }}
+                  className="w-full py-3.5 px-4 rounded-full bg-gradient-to-r from-[#187557] via-[#208b68] to-[#2BB688] hover:opacity-95 text-white font-bold text-[14px] shadow-lg shadow-[#187557]/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Flame className="w-4 h-4 fill-white" />
+                  <span>
+                    {language === "en" ? "Create or Join New Room" : "Buat atau Gabung Ruang Baru"}
+                  </span>
+                </button>
+              ) : (
+                <>
+                  {(() => {
+                    const myParticipant = currentRoom.participants.find(
+                      (p) => p.id === myParticipantId
+                    );
+                    const isHost = myParticipant?.isHost ?? (currentRoom.participants[0]?.name === rangerName);
 
-              <button
-                type="button"
-                onClick={() => {
-                  soundManager.playPop();
-                  hapticLight();
-                  leaveRoom();
-                }}
-                className="w-full py-2.5 px-4 rounded-full text-[#4C7567] hover:text-[#0D3528] font-medium text-[12px] active:scale-[0.98] transition-all cursor-pointer"
-              >
-                {t.campfire.leaveRoomBtn}
-              </button>
+                    return (
+                      <button
+                        type="button"
+                        onClick={handleStartTogether}
+                        className={`w-full py-3.5 px-4 rounded-full font-bold text-[14px] shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                          isHost
+                            ? "bg-gradient-to-r from-[#187557] via-[#208b68] to-[#2BB688] hover:opacity-95 text-white shadow-[#187557]/20"
+                            : "bg-gradient-to-r from-emerald-700 via-emerald-800 to-teal-800 hover:opacity-95 text-white shadow-emerald-900/20"
+                        }`}
+                      >
+                        {isHost ? (
+                          <>
+                            <Flame className="w-4 h-4 fill-white" />
+                            <span>
+                              {t.campfire.startTogetherBtn.replace(
+                                "{mins}",
+                                String(currentRoom.durationMinutes),
+                              )}
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-4 h-4 text-emerald-300" />
+                            <span>
+                              {language === "en"
+                                ? `Ready! Start Focus (${currentRoom.durationMinutes}m)`
+                                : `Siap! Mulai Fokus Bareng (${currentRoom.durationMinutes}m)`}
+                            </span>
+                          </>
+                        )}
+                      </button>
+                    );
+                  })()}
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      soundManager.playPop();
+                      hapticLight();
+                      leaveRoom();
+                    }}
+                    className="w-full py-2.5 px-4 rounded-full text-[#4C7567] hover:text-[#0D3528] font-medium text-[12px] active:scale-[0.98] transition-all cursor-pointer"
+                  >
+                    {t.campfire.leaveRoomBtn}
+                  </button>
+                </>
+              )}
             </div>
           </div>
         ) : (

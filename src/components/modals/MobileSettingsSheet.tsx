@@ -75,6 +75,7 @@ import {
   ExternalLink,
   Sun,
   X,
+  BookOpen,
 } from "lucide-react";
 
 export interface MobileSettingsSheetProps {
@@ -1217,6 +1218,37 @@ export function MobileSettingsSheet({
                 </p>
 
                 <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-1.5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl divide-y divide-[#0D3528]/8">
+                  {/* Panduan Permainan */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      hapticLight();
+                      soundManager.playPop();
+                      onClose();
+                      if (typeof window !== "undefined") {
+                        window.dispatchEvent(new CustomEvent("rimba:open_guide"));
+                      }
+                    }}
+                    className="w-full flex items-center justify-between p-3 text-left hover:bg-black/5 rounded-2xl transition-all cursor-pointer"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-xl bg-[#E4F4ED] border border-[#BCE5D3] flex items-center justify-center text-[#187557]">
+                        <BookOpen className="w-4 h-4 stroke-[2]" />
+                      </div>
+                      <div>
+                        <p className="text-[13px] font-semibold text-[#0D3528]">
+                          {lang === "en" ? "How to Play Rimba" : "Panduan Permainan"}
+                        </p>
+                        <p className="text-[11px] text-[#4C7567] font-normal">
+                          {lang === "en"
+                            ? "Gameplay rules, strict mode & islands"
+                            : "Aturan fokus, mode ketat & perluasan pulau"}
+                        </p>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-[#4C7567]/70 stroke-[1.8]" />
+                  </button>
+
                   {/* Kebijakan Privasi */}
                   <button
                     type="button"

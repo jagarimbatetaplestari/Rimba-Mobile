@@ -396,6 +396,11 @@ export default function RimbaDioramaApp() {
       };
       window.addEventListener("rimba:open_paywall", handleOpenPaywall as EventListener);
 
+      const handleOpenGuide = () => {
+        setIsGameplayGuideOpen(true);
+      };
+      window.addEventListener("rimba:open_guide", handleOpenGuide);
+
       return () => {
         window.removeEventListener(
           "rimba:open_onboarding",
@@ -422,6 +427,7 @@ export default function RimbaDioramaApp() {
           "rimba:open_paywall",
           handleOpenPaywall as EventListener,
         );
+        window.removeEventListener("rimba:open_guide", handleOpenGuide);
       };
     }
   }, [isAuthHydrated, authUser]);

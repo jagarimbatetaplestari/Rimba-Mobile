@@ -776,6 +776,52 @@ assert(
 );
 
 // ------------------------------------------------------------------
+// SUITE 13: Panduan Permainan & Help Hub Integrity
+// ------------------------------------------------------------------
+console.log('\x1b[36m[SUITE 13] Panduan Permainan & Help Hub Integrity\x1b[0m');
+
+// 1. GameplayGuideModal Presence & 6 Chapters Verification
+const guideModalPath = path.join(projectRoot, 'src/components/modals/GameplayGuideModal.tsx');
+assert(fs.existsSync(guideModalPath), 'GameplayGuideModal.tsx exists');
+const guideModalContent = fs.readFileSync(guideModalPath, 'utf8');
+assert(
+  guideModalContent.includes('id: "focus"') &&
+    guideModalContent.includes('id: "expansion"') &&
+    guideModalContent.includes('id: "rivers"') &&
+    guideModalContent.includes('id: "wildlife"') &&
+    guideModalContent.includes('id: "bulldozer"') &&
+    guideModalContent.includes('id: "atmosphere"'),
+  'GameplayGuideModal contains all 6 core gameplay tutorial sections with bilingual tips'
+);
+
+// 2. Global Event Integration in page.tsx
+const pagePath = path.join(projectRoot, 'src/app/page.tsx');
+const pageContent = fs.readFileSync(pagePath, 'utf8');
+assert(
+  pageContent.includes('window.addEventListener("rimba:open_guide"') &&
+    pageContent.includes('window.removeEventListener("rimba:open_guide"'),
+  'page.tsx establishes and cleans up global event listener for rimba:open_guide'
+);
+
+// 3. Settings Sheet Integration
+assert(
+  settingsSheetContent.includes('rimba:open_guide') &&
+    settingsSheetContent.includes('How to Play Rimba') &&
+    settingsSheetContent.includes('Panduan Permainan'),
+  'MobileSettingsSheet renders dedicated Panduan Permainan action in About & Legal section'
+);
+
+// 4. Header HUD Integration
+const hudPath = path.join(projectRoot, 'src/components/hud/MobileHeaderHUD.tsx');
+assert(fs.existsSync(hudPath), 'MobileHeaderHUD.tsx exists');
+const hudContent = fs.readFileSync(hudPath, 'utf8');
+assert(
+  hudContent.includes('onOpenGuide') &&
+    hudContent.includes('menuGuide'),
+  'MobileHeaderHUD provides direct access to Gameplay Guide in settings dropdown'
+);
+
+// ------------------------------------------------------------------
 // SUMMARY REPORT
 // ------------------------------------------------------------------
 console.log('\n======================================================');

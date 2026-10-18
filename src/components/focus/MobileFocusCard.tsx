@@ -489,6 +489,16 @@ export function MobileFocusCard({
       const startMs = new Date(activeSession.started_at).getTime();
       const elapsedMs = Math.max(0, Date.now() - startMs);
       if (elapsedMs < 300000) {
+        const confirmEarly =
+          typeof window !== "undefined"
+            ? window.confirm(
+                language === "en"
+                  ? "Sessions under 5 minutes do not grow trees or grant rewards. Finish session anyway?"
+                  : "Sesi di bawah 5 menit tidak akan menumbuhkan pohon suaka atau memberi hadiah. Selesaikan sesi sekarang?",
+              )
+            : true;
+        if (!confirmEarly) return;
+
         cancelPendingFocusNotifications();
         soundscapeManager.stop();
         completeFocus();

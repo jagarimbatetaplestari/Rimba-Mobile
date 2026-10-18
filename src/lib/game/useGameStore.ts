@@ -63,6 +63,10 @@ import {
 } from './worldRules';
 import { createInitialSaveData, loadSaveData, saveSaveData } from './storage';
 import { requestScreenWakeLock, releaseScreenWakeLock } from '@/lib/mobile/nativeBridge';
+import {
+  cancelPendingFocusNotifications,
+  scheduleFocusCompletionNotification,
+} from '@/lib/mobile/notificationManager';
 import { syncProfileUpdate, scheduleDebouncedCloudSync } from '../supabase/cloudSync';
 import { soundscapeManager } from '@/lib/audio/soundscapes';
 import { usePreferencesStore } from '@/lib/settings/usePreferencesStore';
@@ -971,6 +975,10 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     persistAndSyncSaveData(updatedData);
     requestScreenWakeLock();
+    cancelPendingFocusNotifications();
+    try {
+      localStorage.removeItem('rimba_strict_left_at');
+    } catch {}
     set({
       saveData: updatedData,
       activeSession: newSession,
@@ -1212,6 +1220,10 @@ export const useGameStore = create<GameState>((set, get) => ({
       };
       persistAndSyncSaveData(updatedData);
       releaseScreenWakeLock();
+      cancelPendingFocusNotifications();
+      try {
+        localStorage.removeItem('rimba_strict_left_at');
+      } catch {}
       soundscapeManager.stop();
       set({
         saveData: updatedData,
@@ -1256,14 +1268,30 @@ export const useGameStore = create<GameState>((set, get) => ({
       });
     }
 
+    const currentIslandId = saveData.active_island_id || 'island_default';
+    const updatedIslands = (saveData.islands || []).map((isl) => {
+      if (isl.id === currentIslandId) {
+        return {
+          ...isl,
+          world_objects: updatedObjects,
+        };
+      }
+      return isl;
+    });
+
     const updatedData: RimbaSaveData = {
       ...saveData,
       focus_sessions: updatedSessions,
       world_objects: updatedObjects,
+      islands: updatedIslands,
     };
 
     persistAndSyncSaveData(updatedData);
     releaseScreenWakeLock();
+    cancelPendingFocusNotifications();
+    try {
+      localStorage.removeItem('rimba_strict_left_at');
+    } catch {}
     soundscapeManager.stop();
     scheduleDebouncedCloudSync();
     set({
@@ -1308,6 +1336,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     };
 
     persistAndSyncSaveData(updatedData);
+    releaseScreenWakeLock();
+    cancelPendingFocusNotifications();
     set({
       saveData: updatedData,
       activeSession: updatedSession,
@@ -1355,6 +1385,21 @@ export const useGameStore = create<GameState>((set, get) => ({
     };
 
     persistAndSyncSaveData(updatedData);
+    requestScreenWakeLock();
+
+    if (!updatedSession.is_stopwatch) {
+      const computedDuration =
+        updatedSession.duration_minutes ||
+        Math.max(1, Math.round((new Date(newExpectedEnd).getTime() - new Date(updatedSession.started_at).getTime()) / 60000));
+      scheduleFocusCompletionNotification({
+        expectedEndAt: new Date(newExpectedEnd),
+        speciesName: updatedSession.species || 'Pohon',
+        durationMinutes: computedDuration,
+      }).catch((err) => {
+        console.warn('[useGameStore] Failed to reschedule notification on resume:', err);
+      });
+    }
+
     set({
       saveData: updatedData,
       activeSession: updatedSession,
@@ -1448,6 +1493,19 @@ export const useGameStore = create<GameState>((set, get) => ({
       pioneerSet.add('strict_focus');
     }
 
+    const currentIslandId = saveData.active_island_id || 'island_default';
+    const updatedIslands = (saveData.islands || []).map((isl) => {
+      if (isl.id === currentIslandId) {
+        return {
+          ...isl,
+          world: finalWorld,
+          world_objects: finalObjects,
+          biome: isl.biome || saveData.active_biome || 'temperate',
+        };
+      }
+      return isl;
+    });
+
     const updatedData: RimbaSaveData = {
       ...saveData,
       world: finalWorld,
@@ -1456,10 +1514,15 @@ export const useGameStore = create<GameState>((set, get) => ({
       currency_ledger: updatedLedger,
       todos: updatedTodos,
       pioneer_completed_ids: Array.from(pioneerSet),
+      islands: updatedIslands,
     };
 
     persistAndSyncSaveData(updatedData);
     releaseScreenWakeLock();
+    cancelPendingFocusNotifications();
+    try {
+      localStorage.removeItem('rimba_strict_left_at');
+    } catch {}
     soundscapeManager.stop();
     scheduleDebouncedCloudSync();
     set({

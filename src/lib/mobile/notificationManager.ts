@@ -3,7 +3,6 @@
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { isNativeMobile } from './nativeBridge';
 import { usePreferencesStore } from '@/lib/settings/usePreferencesStore';
-import { useGameStore } from '@/lib/game/useGameStore';
 
 const FOCUS_COMPLETION_NOTIF_ID = 1001;
 const STRICT_WARNING_NOTIF_ID = 1002;

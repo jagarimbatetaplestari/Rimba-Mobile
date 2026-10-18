@@ -20,6 +20,25 @@ let gracePeriodStartTime = 0;
 export function setupBackgroundGuard(): () => void {
   if (typeof window === 'undefined') return () => {};
 
+  // Check if app was cold-booted/reloaded after abandoning Strict Mode
+  try {
+    const leftAtStr = localStorage.getItem('rimba_strict_left_at');
+    if (leftAtStr) {
+      localStorage.removeItem('rimba_strict_left_at');
+      const leftAt = parseInt(leftAtStr, 10);
+      const store = useGameStore.getState();
+      const active = store.activeSession;
+      if (active && active.strict_mode && !active.is_paused) {
+        const elapsed = Math.round((Date.now() - leftAt) / 1000);
+        if (elapsed >= 10) {
+          console.warn(`[BackgroundTimerGuard] App restarted after ${elapsed}s away in Strict Mode. Tree withered.`);
+          store.abandonFocus();
+          hapticWarning();
+        }
+      }
+    }
+  } catch {}
+
   const handleAppBackgrounded = () => {
     const store = useGameStore.getState();
     const active = store.activeSession;
@@ -34,6 +53,9 @@ export function setupBackgroundGuard(): () => void {
     if (active.strict_mode && !active.is_paused && !isFinished) {
       isGracePeriodActive = true;
       gracePeriodStartTime = Date.now();
+      try {
+        localStorage.setItem('rimba_strict_left_at', gracePeriodStartTime.toString());
+      } catch {}
 
       fireStrictWarningNotification(10);
 
@@ -47,6 +69,9 @@ export function setupBackgroundGuard(): () => void {
           hapticWarning();
         }
         isGracePeriodActive = false;
+        try {
+          localStorage.removeItem('rimba_strict_left_at');
+        } catch {}
       }, 10000); // 10 seconds grace period
     }
   };
@@ -60,12 +85,25 @@ export function setupBackgroundGuard(): () => void {
         gracePeriodTimeout = null;
       }
       isGracePeriodActive = false;
+      try {
+        localStorage.removeItem('rimba_strict_left_at');
+      } catch {}
       dismissStrictWarningNotification();
 
-      if (elapsed < 10) {
+      if (elapsed >= 10) {
+        console.warn(`[BackgroundTimerGuard] Strict mode failed. Returned after ${elapsed}s (grace period was 10s). Withered tree.`);
+        const store = useGameStore.getState();
+        store.abandonFocus();
+        hapticWarning();
+        return; // Halt immediately: tree withers, do NOT reward or complete session!
+      } else {
         hapticLight();
         console.log(`[BackgroundTimerGuard] Returned safely in ${elapsed}s. Tree saved.`);
       }
+    } else {
+      try {
+        localStorage.removeItem('rimba_strict_left_at');
+      } catch {}
     }
 
     // Reconcile focus timer: check if session finished while in background

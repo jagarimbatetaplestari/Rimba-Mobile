@@ -607,6 +607,55 @@ assert(
 );
 
 // ------------------------------------------------------------------
+// SUITE 10: Pengaturan Lengkap, Preferences & Cadangan Data Integrity
+// ------------------------------------------------------------------
+console.log('\x1b[36m[SUITE 10] Pengaturan Lengkap, Preferences & Cadangan Data Integrity\x1b[0m');
+
+// 1. MobileSettingsSheet Handlers & Visual Styling
+const settingsSheetPath = path.join(projectRoot, 'src/components/modals/MobileSettingsSheet.tsx');
+assert(fs.existsSync(settingsSheetPath), 'MobileSettingsSheet.tsx exists');
+const settingsSheetContent = fs.readFileSync(settingsSheetPath, 'utf8');
+assert(
+  settingsSheetContent.includes('calculateAnalytics(saveData?.focus_sessions || []).currentStreak') &&
+    settingsSheetContent.includes('scheduleDailyStreakReminder(prefs.dailyReminderTime || "20:00", currentStreak || 1)'),
+  'MobileSettingsSheet dynamically computes and passes actual streak count to scheduleDailyStreakReminder'
+);
+assert(
+  settingsSheetContent.includes('handleExecuteDeleteAccount = async ()') &&
+    settingsSheetContent.includes('await useAuthStore.getState().deleteAccountAndData()'),
+  'MobileSettingsSheet awaits async deleteAccountAndData before triggering page reload'
+);
+assert(
+  settingsSheetContent.includes('text-rose-700') &&
+    settingsSheetContent.includes('bg-rose-100 text-rose-900 border border-rose-300'),
+  'MobileSettingsSheet applies accessible high-contrast Danger Zone typography and valid badge styling'
+);
+assert(
+  settingsSheetContent.includes('prefs.ambientMusicVolume ?? 50'),
+  'MobileSettingsSheet ambient music slider fallback matches default preferences store volume (50%)'
+);
+
+// 2. RestoreDataModal Verification
+const restoreModalPath = path.join(projectRoot, 'src/components/modals/RestoreDataModal.tsx');
+assert(fs.existsSync(restoreModalPath), 'RestoreDataModal.tsx exists');
+const restoreModalContent = fs.readFileSync(restoreModalPath, 'utf8');
+assert(
+  restoreModalContent.includes('createIslandSnapshot') &&
+    restoreModalContent.includes('importSaveData(validation.data)'),
+  'RestoreDataModal creates auto-backup snapshot and invokes importSaveData safely'
+);
+
+// 3. LegalModal Verification
+const legalModalPath = path.join(projectRoot, 'src/components/modals/LegalModal.tsx');
+assert(fs.existsSync(legalModalPath), 'LegalModal.tsx exists');
+const legalModalContent = fs.readFileSync(legalModalPath, 'utf8');
+assert(
+  legalModalContent.includes('activeTab === "privacy"') &&
+    legalModalContent.includes('LEGAL_CONTENT[currentLang][activeTab]'),
+  'LegalModal renders bilingual legal documents with Privacy and Terms tab support'
+);
+
+// ------------------------------------------------------------------
 // SUMMARY REPORT
 // ------------------------------------------------------------------
 console.log('\n======================================================');

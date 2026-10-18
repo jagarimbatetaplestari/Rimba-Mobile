@@ -41,6 +41,7 @@ import {
   CELESTIAL_ISLAND_LEVEL_REQUIRED,
   detectRealWorldSeasonBiome,
 } from "@/lib/game/config";
+import { calculateAnalytics } from "@/lib/game/analytics";
 import { getLevelFromXp } from "@/lib/game/levelRules";
 import {
   Music,
@@ -237,7 +238,8 @@ export function MobileSettingsSheet({
     hapticLight();
     prefs.setNotifyDailyReminder(enabled);
     if (enabled) {
-      scheduleDailyStreakReminder(prefs.dailyReminderTime || "20:00", 1);
+      const currentStreak = calculateAnalytics(saveData?.focus_sessions || []).currentStreak;
+      scheduleDailyStreakReminder(prefs.dailyReminderTime || "20:00", currentStreak || 1);
     } else {
       cancelDailyStreakReminder();
     }
@@ -246,7 +248,8 @@ export function MobileSettingsSheet({
   const handleDailyReminderTimeChange = (time: string) => {
     prefs.setDailyReminderTime(time);
     if (prefs.notifyDailyReminder) {
-      scheduleDailyStreakReminder(time, 1);
+      const currentStreak = calculateAnalytics(saveData?.focus_sessions || []).currentStreak;
+      scheduleDailyStreakReminder(time, currentStreak || 1);
     }
   };
 
@@ -278,14 +281,14 @@ export function MobileSettingsSheet({
     }
   };
 
-  const handleExecuteDeleteAccount = () => {
+  const handleExecuteDeleteAccount = async () => {
     const validConfirm =
       deleteAccountInput.trim().toUpperCase() === "HAPUS" ||
       deleteAccountInput.trim().toUpperCase() === "DELETE";
     if (validConfirm) {
       soundManager.playError();
       hapticWarning();
-      useAuthStore.getState().deleteAccountAndData();
+      await useAuthStore.getState().deleteAccountAndData();
       useGameStore.getState().resetWorld();
       setIsDeleteAccountOpen(false);
       setDeleteAccountInput("");
@@ -620,7 +623,7 @@ export function MobileSettingsSheet({
                           type="range"
                           min="0"
                           max="100"
-                          value={prefs.ambientMusicVolume ?? 10}
+                          value={prefs.ambientMusicVolume ?? 50}
                           onChange={(e) => {
                             const val = Number(e.target.value);
                             prefs.setAmbientMusicVolume(val);
@@ -631,7 +634,7 @@ export function MobileSettingsSheet({
                         />
                       </div>
                       <span className="shrink-0 text-[10.5px] font-medium text-[#4C7567] tabular-nums">
-                        {prefs.ambientMusicVolume ?? 10}%
+                        {prefs.ambientMusicVolume ?? 50}%
                       </span>
                     </div>
                   </div>
@@ -1454,7 +1457,7 @@ export function MobileSettingsSheet({
 
               {/* Zona Bahaya */}
               <div className="pt-2 space-y-2.5">
-                <p className="px-1 text-[11px] font-medium uppercase tracking-[0.14em] text-rose-100 drop-shadow-xs">
+                <p className="px-1 text-[11px] font-bold uppercase tracking-[0.14em] text-rose-700">
                   {t.settings.dangerZone}
                 </p>
 
@@ -1478,7 +1481,7 @@ export function MobileSettingsSheet({
                       </p>
                     </div>
                   </div>
-                  <span className="text-[10.5px] font-medium px-2.5 py-0.5 rounded-full bg-red-200/80 text-red-900">
+                  <span className="text-[10.5px] font-semibold px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-900 border border-rose-200">
                     Reset
                   </span>
                 </button>
@@ -1490,7 +1493,7 @@ export function MobileSettingsSheet({
                     hapticWarning();
                     setIsDeleteAccountOpen(true);
                   }}
-                  className="flex w-full items-center justify-between rounded-3xl  bg-red-700/90 p-4 text-left transition-all active:scale-[0.98] cursor-pointer shadow-xs"
+                  className="flex w-full items-center justify-between rounded-3xl bg-red-700/90 p-4 text-left transition-all active:scale-[0.98] cursor-pointer shadow-xs"
                 >
                   <div className="flex items-center gap-3 min-w-0 pr-2">
                     <ShieldAlert className="h-4 w-4 text-white shrink-0 stroke-[1.8]" />
@@ -1503,7 +1506,7 @@ export function MobileSettingsSheet({
                       </p>
                     </div>
                   </div>
-                  <span className="text-[10.5px] font-semibold px-2.5 py-0.5 rounded-full bg-rose-200 text-red">
+                  <span className="text-[10.5px] font-semibold px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-900 border border-rose-300">
                     {t.settings.deleteBtn}
                   </span>
                 </button>

@@ -656,6 +656,62 @@ assert(
 );
 
 // ------------------------------------------------------------------
+// SUITE 11: Rimba Pro & Entitlements Integrity
+// ------------------------------------------------------------------
+console.log('\x1b[36m[SUITE 11] Rimba Pro & Entitlements Integrity\x1b[0m');
+
+// 1. RimbaProPaywallModal Presence & Active Pro Card Verification
+const paywallModalPath = path.join(projectRoot, 'src/components/modals/RimbaProPaywallModal.tsx');
+assert(fs.existsSync(paywallModalPath), 'RimbaProPaywallModal.tsx exists');
+const paywallModalContent = fs.readFileSync(paywallModalPath, 'utf8');
+assert(
+  paywallModalContent.includes('isPro && (') &&
+    paywallModalContent.includes('t.paywallModal.activeBadge') &&
+    paywallModalContent.includes('t.paywallModal.returnToSanctuary'),
+  'RimbaProPaywallModal implements Active Pro status card and return to sanctuary CTA when subscribed'
+);
+assert(
+  paywallModalContent.includes('import { LegalModal }') &&
+    paywallModalContent.includes('<LegalModal') &&
+    paywallModalContent.includes('setLegalModalTab'),
+  'RimbaProPaywallModal integrates in-app LegalModal for 100% offline Privacy & Terms review'
+);
+assert(
+  paywallModalContent.includes('t.paywallModal.restoreAlreadyActive') &&
+    paywallModalContent.includes('t.paywallModal.restoreSuccess'),
+  'RimbaProPaywallModal handles restore purchase with active status check and informative feedback'
+);
+
+// 2. backupManager Lossless Subscription & Island Preservation
+const backupManagerPath = path.join(projectRoot, 'src/lib/game/backupManager.ts');
+assert(fs.existsSync(backupManagerPath), 'backupManager.ts exists');
+const backupManagerContent = fs.readFileSync(backupManagerPath, 'utf8');
+assert(
+  backupManagerContent.includes('subscription: parsed.subscription') &&
+    backupManagerContent.includes('islands: Array.isArray(parsed.islands)') &&
+    backupManagerContent.includes('streak_shields: typeof parsed.streak_shields'),
+  'backupManager validateRimbaBackup preserves subscription, archipelago islands, and streak shields'
+);
+
+// 3. cloudSync Lossless Subscription Merge
+assert(
+  cloudSyncContent.includes('mergedSubscription') &&
+    cloudSyncContent.includes("localSub?.tier === 'pioneer_lifetime'") &&
+    cloudSyncContent.includes("cloudSub?.tier === 'pioneer_lifetime'") &&
+    cloudSyncContent.includes('subscription: mergedSubscription'),
+  'cloudSync smartSyncOnLogin executes lossless subscription merge preserving highest Pro/Lifetime status'
+);
+
+// 4. Bilingual Translation Completeness for Rimba Pro
+assert(
+  translationsContent.includes('proActiveTitle') &&
+    translationsContent.includes('realTreesPlantedCount') &&
+    translationsContent.includes('returnToSanctuary') &&
+    translationsContent.includes('restoreSuccess'),
+  'translations.ts provides full bilingual i18n support for Rimba Pro active states and restore feedback'
+);
+
+// ------------------------------------------------------------------
 // SUMMARY REPORT
 // ------------------------------------------------------------------
 console.log('\n======================================================');

@@ -97,6 +97,16 @@ export function validateRimbaBackup(raw: string | unknown): BackupValidationResu
       claimed_achievements: Array.isArray(parsed.claimed_achievements)
         ? parsed.claimed_achievements
         : [],
+      custom_tags: Array.isArray(parsed.custom_tags) ? parsed.custom_tags : [],
+      streak_shields: typeof parsed.streak_shields === 'number' ? parsed.streak_shields : 0,
+      used_shield_dates: Array.isArray(parsed.used_shield_dates) ? parsed.used_shield_dates : [],
+      claimed_story_chapters: Array.isArray(parsed.claimed_story_chapters) ? parsed.claimed_story_chapters : [],
+      claimed_wisdom_fragments: Array.isArray(parsed.claimed_wisdom_fragments) ? parsed.claimed_wisdom_fragments : [],
+      islands: Array.isArray(parsed.islands) && parsed.islands.length > 0 ? parsed.islands : undefined,
+      active_island_id: parsed.active_island_id || undefined,
+      active_biome: parsed.active_biome || 'meadow',
+      auto_season_enabled: parsed.auto_season_enabled ?? true,
+      subscription: parsed.subscription || undefined,
     };
 
     return {

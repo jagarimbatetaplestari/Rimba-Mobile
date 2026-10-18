@@ -239,6 +239,25 @@ export async function smartSyncOnLogin(userId: string): Promise<boolean> {
 
       const baseSave = localMins >= cloudMins ? localSave : cloudSave;
 
+      // Lossless subscription merge: preserve highest active Pro / Lifetime entitlement
+      const localSub = localSave.subscription;
+      const cloudSub = cloudSave.subscription;
+      let mergedSubscription = baseSave.subscription;
+
+      if (localSub?.tier === 'pioneer_lifetime') {
+        mergedSubscription = localSub;
+      } else if (cloudSub?.tier === 'pioneer_lifetime') {
+        mergedSubscription = cloudSub;
+      } else if (localSub?.isPro && !cloudSub?.isPro) {
+        mergedSubscription = localSub;
+      } else if (cloudSub?.isPro && !localSub?.isPro) {
+        mergedSubscription = cloudSub;
+      } else if (localSub?.isPro && cloudSub?.isPro) {
+        const localExp = localSub.expiresAt ? new Date(localSub.expiresAt).getTime() : 0;
+        const cloudExp = cloudSub.expiresAt ? new Date(cloudSub.expiresAt).getTime() : 0;
+        mergedSubscription = localExp >= cloudExp ? localSub : cloudSub;
+      }
+
       const mergedSave: RimbaSaveData = {
         ...baseSave,
         profile: {
@@ -257,6 +276,7 @@ export async function smartSyncOnLogin(userId: string): Promise<boolean> {
           ...baseSave.world,
           unlocked_tiles: mergedUnlockedTiles.length > 0 ? mergedUnlockedTiles : baseSave.world?.unlocked_tiles,
         },
+        subscription: mergedSubscription,
       };
 
       saveSaveData(mergedSave);

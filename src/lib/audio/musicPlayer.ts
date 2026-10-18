@@ -1,4 +1,5 @@
 import { mediaSessionManager } from './mediaSessionManager';
+import { usePreferencesStore } from '@/lib/settings/usePreferencesStore';
 
 export interface MusicTrack {
   id: string;
@@ -106,13 +107,23 @@ class MusicPlayerController {
         this.repeatMode = stored as MusicRepeatMode;
       }
       this.initAudio();
+
+      const unlock = () => {
+        if (this.audio && this.isPlaying && this.audio.paused) {
+          this.audio.play().catch(() => {});
+        }
+      };
+      window.addEventListener('pointerdown', unlock, { once: true, passive: true });
+      window.addEventListener('touchstart', unlock, { once: true, passive: true });
     }
   }
 
   private initAudio() {
     if (this.audio) return;
     this.audio = new Audio();
-    this.audio.volume = this.volume;
+    const prefs = typeof window !== 'undefined' ? usePreferencesStore.getState() : null;
+    const effectiveVol = prefs && prefs.masterAudioEnabled && prefs.ambientMusicEnabled && !this.isMuted ? this.volume : 0;
+    this.audio.volume = effectiveVol;
     this.audio.preload = 'metadata';
     this.audio.setAttribute('playsinline', 'true');
     this.audio.setAttribute('webkit-playsinline', 'true');
@@ -160,14 +171,14 @@ class MusicPlayerController {
   }
 
   private updateMediaSession(track: MusicTrack) {
-    mediaSessionManager.updateSession(
+    mediaSessionManager.updateMusicSession(
       {
-        type: 'music',
         title: track.title,
         artist: 'Rimba Nature & Lo-Fi',
         album: `${track.categoryLabel} Focus`,
-        isPlaying: this.isPlaying,
+        categoryLabel: track.categoryLabel,
       },
+      this.isPlaying,
       {
         onPlay: () => {
           if (!this.isPlaying) this.togglePlay();
@@ -185,7 +196,7 @@ class MusicPlayerController {
     if (this.currentTrack) {
       this.updateMediaSession(this.currentTrack);
     } else {
-      mediaSessionManager.clear();
+      mediaSessionManager.updateMusicSession(null, false);
     }
     if (typeof window !== 'undefined') {
       window.dispatchEvent(
@@ -227,6 +238,9 @@ class MusicPlayerController {
 
   playTrack(track: MusicTrack) {
     if (typeof window === 'undefined') return;
+    const prefs = usePreferencesStore.getState();
+    if (!prefs.masterAudioEnabled || !prefs.ambientMusicEnabled) return;
+
     this.initAudio();
     if (!this.audio) return;
 
@@ -234,9 +248,10 @@ class MusicPlayerController {
       return;
     }
 
+    const effectiveVol = (prefs.masterAudioEnabled && prefs.ambientMusicEnabled && !this.isMuted) ? this.volume : 0;
     this.currentTrack = track;
     this.audio.src = track.src;
-    this.audio.volume = this.isMuted ? 0 : this.volume;
+    this.audio.volume = effectiveVol;
 
     this.audio
       .play()
@@ -263,11 +278,20 @@ class MusicPlayerController {
       this.initAudio();
     }
 
+    const prefs = usePreferencesStore.getState();
+    if (!this.isPlaying && (!prefs.masterAudioEnabled || !prefs.ambientMusicEnabled)) {
+      return;
+    }
+
     if (this.isPlaying) {
       this.audio?.pause();
       this.isPlaying = false;
       this.notifyState();
     } else {
+      const effectiveVol = (prefs.masterAudioEnabled && prefs.ambientMusicEnabled && !this.isMuted) ? this.volume : 0;
+      if (this.audio) {
+        this.audio.volume = effectiveVol;
+      }
       this.audio
         ?.play()
         .then(() => {
@@ -302,16 +326,20 @@ class MusicPlayerController {
 
   setVolume(vol: number) {
     this.volume = Math.max(0, Math.min(1, vol));
+    const prefs = usePreferencesStore.getState();
+    const effectiveVol = (prefs.masterAudioEnabled && prefs.ambientMusicEnabled && !this.isMuted) ? this.volume : 0;
     if (this.audio) {
-      this.audio.volume = this.isMuted ? 0 : this.volume;
+      this.audio.volume = effectiveVol;
     }
     this.notifyState();
   }
 
   toggleMute(): boolean {
     this.isMuted = !this.isMuted;
+    const prefs = usePreferencesStore.getState();
+    const effectiveVol = (prefs.masterAudioEnabled && prefs.ambientMusicEnabled && !this.isMuted) ? this.volume : 0;
     if (this.audio) {
-      this.audio.volume = this.isMuted ? 0 : this.volume;
+      this.audio.volume = effectiveVol;
     }
     this.notifyState();
     return this.isMuted;
@@ -323,6 +351,7 @@ class MusicPlayerController {
       this.audio.currentTime = 0;
     }
     this.isPlaying = false;
+    mediaSessionManager.updateMusicSession(null, false);
     this.notifyState();
   }
 }

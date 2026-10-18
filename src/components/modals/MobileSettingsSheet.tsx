@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useAuthStore } from "@/lib/auth/useAuthStore";
 import { useGameStore } from "@/lib/game/useGameStore";
 import { soundManager } from "@/lib/audio/sounds";
+import { soundscapeManager } from "@/lib/audio/soundscapes";
 import { musicPlayer, RIMBA_PLAYLIST } from "@/lib/audio/musicPlayer";
 import { usePreferencesStore } from "@/lib/settings/usePreferencesStore";
 import {
@@ -530,6 +531,7 @@ export function MobileSettingsSheet({
                       prefs.setMasterAudioEnabled(next);
                       if (!next) {
                         musicPlayer.stop();
+                        soundscapeManager.stop();
                       } else {
                         if (prefs.ambientMusicEnabled) {
                           musicPlayer.setVolume(

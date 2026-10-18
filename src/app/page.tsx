@@ -34,7 +34,7 @@ import { MobileSettingsSheet } from "@/components/modals/MobileSettingsSheet";
 import { CampfireRoomModal } from "@/components/modals/CampfireRoomModal";
 import { IslandSwitcherModal } from "@/components/modals/IslandSwitcherModal";
 import { RimbaProPaywallModal } from "@/components/modals/RimbaProPaywallModal";
-import { syncMobileStatusBar } from "@/lib/mobile/nativeBridge";
+import { syncMobileStatusBar, initAppLifecycleListeners } from "@/lib/mobile/nativeBridge";
 import { setupBackgroundGuard } from "@/lib/mobile/backgroundTimerGuard";
 import { getDailyQuestStatus } from "@/lib/game/quests";
 import { evaluateAchievements } from "@/lib/game/achievements";
@@ -254,10 +254,13 @@ export default function RimbaDioramaApp() {
       console.warn("[Rimba] setupBackgroundGuard error:", err);
     }
 
+    const cleanupLifecycle = initAppLifecycleListeners();
+
     return () => {
       clearTimeout(safetyTimer);
       if (interval) clearInterval(interval);
       cleanupGuard();
+      cleanupLifecycle();
     };
   }, [init, checkReclamation]);
 

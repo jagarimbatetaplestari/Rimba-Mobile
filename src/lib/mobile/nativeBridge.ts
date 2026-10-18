@@ -1,11 +1,14 @@
 'use client';
 
 import { Capacitor } from '@capacitor/core';
+import { App } from '@capacitor/app';
 import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { Share } from '@capacitor/share';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { usePreferencesStore } from '@/lib/settings/usePreferencesStore';
+import { soundscapeManager } from '@/lib/audio/soundscapes';
+import { musicPlayer } from '@/lib/audio/musicPlayer';
 
 /**
  * Checks if the application is running inside a native mobile container (Capacitor iOS/Android)
@@ -292,4 +295,42 @@ export async function shareOrSaveImage({
     console.error('Download fallback failed:', e);
     return false;
   }
+}
+
+let wasSoundscapePlayingBeforeBackground = false;
+let wasMusicPlayingBeforeBackground = false;
+
+/**
+ * Native App lifecycle listener for background muting and state management
+ */
+export function initAppLifecycleListeners(): () => void {
+  if (typeof window === 'undefined') return () => {};
+
+  let cleanup = () => {};
+
+  if (isNativeMobile()) {
+    const listenerPromise = App.addListener('appStateChange', ({ isActive }) => {
+      const prefs = usePreferencesStore.getState();
+      if (!prefs.muteWhenBackgrounded) return;
+
+      if (!isActive) {
+        // App minimized / backgrounded
+        wasSoundscapePlayingBeforeBackground = soundscapeManager.getCurrentTrack() !== 'off';
+        wasMusicPlayingBeforeBackground = musicPlayer.getState().isPlaying;
+
+        if (wasSoundscapePlayingBeforeBackground) {
+          soundscapeManager.stop();
+        }
+        if (wasMusicPlayingBeforeBackground) {
+          musicPlayer.stop();
+        }
+      }
+    });
+
+    cleanup = () => {
+      listenerPromise.then((handle) => handle.remove()).catch(() => {});
+    };
+  }
+
+  return cleanup;
 }

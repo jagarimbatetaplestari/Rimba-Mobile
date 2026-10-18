@@ -1,23 +1,42 @@
 'use client';
 
-export interface ActiveMediaInfo {
-  type: 'music' | 'nature' | 'none';
+export interface ActiveMusicInfo {
   title: string;
   artist: string;
   album: string;
-  isPlaying: boolean;
+  categoryLabel?: string;
+}
+
+export interface ActiveNatureInfo {
+  id: string;
+  name: string;
+  icon: string;
+  description?: string;
+}
+
+export interface MusicHandlers {
+  onPlay?: () => void;
+  onPause?: () => void;
+  onNext?: () => void;
+  onPrev?: () => void;
+}
+
+export interface NatureHandlers {
+  onPlay?: () => void;
+  onPause?: () => void;
 }
 
 class MediaSessionManager {
   private keepAliveAudio: HTMLAudioElement | null = null;
   private isKeepAlivePlaying: boolean = false;
-  private currentInfo: ActiveMediaInfo = {
-    type: 'none',
-    title: 'Rimba Sanctuary',
-    artist: 'Rimba Mobile',
-    album: 'Suaka Hening',
-    isPlaying: false,
-  };
+
+  private activeMusic: ActiveMusicInfo | null = null;
+  private isMusicPlaying: boolean = false;
+  private musicHandlers?: MusicHandlers;
+
+  private activeNature: ActiveNatureInfo | null = null;
+  private isNaturePlaying: boolean = false;
+  private natureHandlers?: NatureHandlers;
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -32,7 +51,6 @@ class MediaSessionManager {
   private initKeepAlive() {
     if (this.keepAliveAudio) return;
     try {
-      // Audio hening base64 WAV 1 detik
       const silentWavBase64 =
         'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==';
       this.keepAliveAudio = new Audio(silentWavBase64);
@@ -52,9 +70,7 @@ class MediaSessionManager {
       .then(() => {
         this.isKeepAlivePlaying = true;
       })
-      .catch(() => {
-        // Autoplay policy fallback
-      });
+      .catch(() => {});
   }
 
   private stopKeepAlive() {
@@ -63,37 +79,72 @@ class MediaSessionManager {
     this.isKeepAlivePlaying = false;
   }
 
-  /**
-   * Memperbarui informasi yang muncul di Apple Lock Screen & Control Center
-   */
-  updateSession(info: ActiveMediaInfo, handlers?: {
-    onPlay?: () => void;
-    onPause?: () => void;
-    onNext?: () => void;
-    onPrev?: () => void;
-  }) {
+  updateMusicSession(
+    track: ActiveMusicInfo | null,
+    isPlaying: boolean,
+    handlers?: MusicHandlers
+  ) {
+    this.activeMusic = track;
+    this.isMusicPlaying = isPlaying;
+    if (handlers) this.musicHandlers = handlers;
+    this.renderSession();
+  }
+
+  updateNatureSession(
+    track: ActiveNatureInfo | null,
+    isPlaying: boolean,
+    handlers?: NatureHandlers
+  ) {
+    this.activeNature = track;
+    this.isNaturePlaying = isPlaying;
+    if (handlers) this.natureHandlers = handlers;
+    this.renderSession();
+  }
+
+  private renderSession() {
     if (typeof window === 'undefined' || !('mediaSession' in navigator)) return;
 
-    this.currentInfo = info;
+    const hasMusic = Boolean(this.activeMusic && this.isMusicPlaying);
+    const hasNature = Boolean(this.activeNature && this.isNaturePlaying);
 
-    if (!info.isPlaying || info.type === 'none') {
+    if (!hasMusic && !hasNature) {
       this.stopKeepAlive();
       navigator.mediaSession.playbackState = 'paused';
       return;
     }
 
-    // Jika nature soundscape aktif, hidupkan keepalive agar audio context tidak mati di background
-    if (info.type === 'nature') {
+    // Keepalive diperlukan agar Web Audio sintetis alam tidak dimatikan iOS saat layar terkunci
+    if (hasNature) {
       this.startKeepAlive();
     } else {
       this.stopKeepAlive();
     }
 
+    let title = 'Rimba Sanctuary';
+    let artist = 'Rimba Focus & Peace';
+    let album = 'Suaka Rimba';
+
+    if (hasMusic && hasNature) {
+      const nName = this.activeNature?.name.split(' ')[0] || 'Alam';
+      const nIcon = this.activeNature?.icon || '🌧️';
+      title = `${nIcon} ${nName} + ${this.activeMusic?.title}`;
+      artist = 'Rimba Nature & Lo-Fi Mix';
+      album = 'Dual-Track Sanctuary Mixer';
+    } else if (hasMusic) {
+      title = this.activeMusic?.title || 'Musik Fokus';
+      artist = 'Rimba Lo-Fi & Ambient';
+      album = this.activeMusic?.album || 'Rimba Sanctuary';
+    } else if (hasNature) {
+      title = `${this.activeNature?.icon || '🌲'} ${this.activeNature?.name}`;
+      artist = 'Rimba Nature Soundscape';
+      album = 'Suara Suaka Rimba';
+    }
+
     try {
       navigator.mediaSession.metadata = new MediaMetadata({
-        title: info.title,
-        artist: info.artist || 'Rimba Sanctuary',
-        album: info.album || 'Suara Alam & Hutan Rimba',
+        title,
+        artist,
+        album,
         artwork: [
           { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
@@ -102,19 +153,28 @@ class MediaSessionManager {
         ],
       });
 
-      navigator.mediaSession.playbackState = info.isPlaying ? 'playing' : 'paused';
+      navigator.mediaSession.playbackState = 'playing';
 
-      if (handlers?.onPlay) {
-        navigator.mediaSession.setActionHandler('play', handlers.onPlay);
+      navigator.mediaSession.setActionHandler('play', () => {
+        if (this.musicHandlers?.onPlay) this.musicHandlers.onPlay();
+        if (this.natureHandlers?.onPlay) this.natureHandlers.onPlay();
+      });
+
+      navigator.mediaSession.setActionHandler('pause', () => {
+        if (this.musicHandlers?.onPause) this.musicHandlers.onPause();
+        if (this.natureHandlers?.onPause) this.natureHandlers.onPause();
+      });
+
+      if (this.musicHandlers?.onNext) {
+        navigator.mediaSession.setActionHandler('nexttrack', this.musicHandlers.onNext);
+      } else {
+        navigator.mediaSession.setActionHandler('nexttrack', null);
       }
-      if (handlers?.onPause) {
-        navigator.mediaSession.setActionHandler('pause', handlers.onPause);
-      }
-      if (handlers?.onNext) {
-        navigator.mediaSession.setActionHandler('nexttrack', handlers.onNext);
-      }
-      if (handlers?.onPrev) {
-        navigator.mediaSession.setActionHandler('previoustrack', handlers.onPrev);
+
+      if (this.musicHandlers?.onPrev) {
+        navigator.mediaSession.setActionHandler('previoustrack', this.musicHandlers.onPrev);
+      } else {
+        navigator.mediaSession.setActionHandler('previoustrack', null);
       }
     } catch (err) {
       console.warn('[MediaSessionManager] Gagal update MediaSession:', err);
@@ -123,6 +183,10 @@ class MediaSessionManager {
 
   clear() {
     this.stopKeepAlive();
+    this.activeMusic = null;
+    this.isMusicPlaying = false;
+    this.activeNature = null;
+    this.isNaturePlaying = false;
     if (typeof window !== 'undefined' && 'mediaSession' in navigator) {
       navigator.mediaSession.playbackState = 'none';
     }

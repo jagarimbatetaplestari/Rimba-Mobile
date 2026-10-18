@@ -1,4 +1,5 @@
 import { mediaSessionManager } from './mediaSessionManager';
+import { usePreferencesStore } from '@/lib/settings/usePreferencesStore';
 
 export type SoundscapeType = 'rain' | 'wind' | 'river' | 'fire' | 'waves' | 'off';
 
@@ -50,8 +51,23 @@ class SoundscapeController {
   private activeNodes: (AudioNode | number)[] = [];
   private isMuted: boolean = false;
 
+  constructor() {
+    if (typeof window !== 'undefined') {
+      const unlock = () => {
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume().catch(() => {});
+        }
+      };
+      window.addEventListener('pointerdown', unlock, { once: true, passive: true });
+      window.addEventListener('touchstart', unlock, { once: true, passive: true });
+    }
+  }
+
   private getContext(): AudioContext | null {
     if (typeof window === 'undefined') return null;
+    const prefs = usePreferencesStore.getState();
+    if (!prefs.masterAudioEnabled) return null;
+
     if (!this.ctx) {
       const AudioCtx =
         window.AudioContext ||
@@ -71,21 +87,16 @@ class SoundscapeController {
 
   private updateMediaSession(track: SoundscapeType) {
     if (track === 'off') {
-      mediaSessionManager.clear();
+      mediaSessionManager.updateNatureSession(null, false);
       return;
     }
 
     const meta = SOUNDSCAPES_LIST.find((s) => s.id === track);
     if (!meta) return;
 
-    mediaSessionManager.updateSession(
-      {
-        type: 'nature',
-        title: `${meta.icon} ${meta.name}`,
-        artist: 'Rimba Nature Soundscape',
-        album: 'Suara Alam Suaka Rimba',
-        isPlaying: true,
-      },
+    mediaSessionManager.updateNatureSession(
+      meta,
+      true,
       {
         onPause: () => this.stop(),
         onPlay: () => this.play(track),
@@ -107,15 +118,18 @@ class SoundscapeController {
 
   setVolume(vol: number): void {
     this.volume = Math.max(0, Math.min(1, vol));
-    if (this.masterGain && this.ctx && !this.isMuted) {
-      this.masterGain.gain.setTargetAtTime(this.volume, this.ctx.currentTime, 0.05);
+    const prefs = usePreferencesStore.getState();
+    const effectiveVol = prefs.masterAudioEnabled && !this.isMuted ? this.volume : 0;
+    if (this.masterGain && this.ctx) {
+      this.masterGain.gain.setTargetAtTime(effectiveVol, this.ctx.currentTime, 0.05);
     }
   }
 
   toggleMute(): boolean {
     this.isMuted = !this.isMuted;
+    const prefs = usePreferencesStore.getState();
     if (this.masterGain && this.ctx) {
-      const target = this.isMuted ? 0 : this.volume;
+      const target = (this.isMuted || !prefs.masterAudioEnabled) ? 0 : this.volume;
       this.masterGain.gain.setTargetAtTime(target, this.ctx.currentTime, 0.05);
     }
     return this.isMuted;
@@ -138,7 +152,7 @@ class SoundscapeController {
     });
     this.activeNodes = [];
     this.currentTrack = 'off';
-    mediaSessionManager.clear();
+    mediaSessionManager.updateNatureSession(null, false);
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('rimba:soundscape_change', { detail: 'off' }));
     }
@@ -149,6 +163,9 @@ class SoundscapeController {
     this.stop();
 
     if (track === 'off') return;
+
+    const prefs = usePreferencesStore.getState();
+    if (!prefs.masterAudioEnabled) return;
 
     const ctx = this.getContext();
     if (!ctx || !this.masterGain) return;

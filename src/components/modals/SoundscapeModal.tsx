@@ -15,6 +15,7 @@ import {
 import { soundManager } from "@/lib/audio/sounds";
 import { hapticLight, hapticMedium } from "@/lib/mobile/nativeBridge";
 import { useTranslation } from "@/lib/i18n/translations";
+import { useEntitlements } from "@/lib/subscription/useEntitlements";
 import {
   X,
   Volume2,
@@ -29,6 +30,7 @@ import {
   Square,
   Repeat,
   Repeat1,
+  Sparkles,
 } from "lucide-react";
 
 interface SoundscapeModalProps {
@@ -41,6 +43,8 @@ type MusicFilterCategory = "all" | "jazz" | "chill" | "ambient";
 
 export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
   const { t, translateSoundscape, translateMusicTrack } = useTranslation();
+  const { entitlements, isPro, triggerPaywall } = useEntitlements();
+
   const [activeTab, setActiveTab] = useState<ActiveTab>("music");
   const [musicCategory, setMusicCategory] =
     useState<MusicFilterCategory>("all");
@@ -92,6 +96,10 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
       soundscapeManager.stop();
       setActiveNatureTrack("off");
     } else {
+      // If user is on Free tier and music is currently playing, pause music to adhere to 1-track limit
+      if (!entitlements.multiSoundscapeMixer && musicState.isPlaying) {
+        musicPlayer.stop();
+      }
       soundscapeManager.play(trackId);
       setActiveNatureTrack(trackId);
     }
@@ -113,12 +121,25 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
   const handleSelectMusicTrack = (track: MusicTrack) => {
     soundManager.playPop();
     hapticLight();
+    // If user is on Free tier and nature soundscape is playing, stop nature to adhere to 1-track limit
+    if (!entitlements.multiSoundscapeMixer && activeNatureTrack !== "off") {
+      soundscapeManager.stop();
+      setActiveNatureTrack("off");
+    }
     musicPlayer.playTrack(track);
   };
 
   const handleToggleMusicPlay = () => {
     soundManager.playPop();
     hapticMedium();
+    if (
+      !musicState.isPlaying &&
+      !entitlements.multiSoundscapeMixer &&
+      activeNatureTrack !== "off"
+    ) {
+      soundscapeManager.stop();
+      setActiveNatureTrack("off");
+    }
     musicPlayer.togglePlay();
   };
 
@@ -164,34 +185,42 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
     return track.category === musicCategory;
   });
 
+  const isDualMixActive = activeNatureTrack !== "off" && musicState.isPlaying;
+
   if (!isOpen) return null;
 
   return (
-    <>
-      {/* Tipografi Urbanist yang Halus & Modern */}
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700&display=swap');
-        .font-urbanist {
-          font-family: 'Urbanist', -apple-system, BlinkMacSystemFont, sans-serif !important;
-        }
-      `}</style>
+    <div
+      className="fixed inset-0 z-[100] h-[100dvh] w-full overflow-y-auto overscroll-contain no-scrollbar select-none antialiased text-[#0D3528] pointer-events-auto bg-[#FAFAF7]"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div className="w-full max-w-md mx-auto px-5 safe-modal-content space-y-4">
+        {/* HEADER NAV */}
+        <div className="flex items-center justify-between py-1">
+          <div className="flex items-center gap-2.5">
+            <h2 className="text-[23px] font-semibold tracking-normal text-[#0D3528]">
+              {t.audio.title}
+            </h2>
+            <span className="rounded-full bg-[#E4F4ED] border border-[#BCE5D3] px-3 py-0.5 text-[11.5px] font-medium text-[#14664D]">
+              {t.audio.badge}
+            </span>
+          </div>
 
-      <div
-        className="fixed inset-0 z-[100] h-[100dvh] w-full overflow-y-auto overscroll-contain no-scrollbar select-none antialiased font-urbanist text-[#0D3528] pointer-events-auto bg-[#FAFAF7]"
-        role="dialog"
-        aria-modal="true"
-      >
-        <div className="w-full max-w-md mx-auto px-5 safe-modal-content space-y-4">
-          {/* HEADER NAV */}
-          <div className="flex items-center justify-between py-1">
-            <div className="flex items-center gap-2.5">
-              <h2 className="text-[23px] font-semibold tracking-normal text-[#0D3528]">
-                {t.audio.title}
-              </h2>
-              <span className="rounded-full bg-[#E4F4ED] border border-[#BCE5D3] px-3 py-0.5 text-[11.5px] font-medium text-[#14664D]">
-                {t.audio.badge}
-              </span>
-            </div>
+          <div className="flex items-center gap-2">
+            {!isPro && (
+              <button
+                type="button"
+                onClick={() => {
+                  hapticLight();
+                  triggerPaywall("soundscape_mixer");
+                }}
+                className="rounded-full bg-amber-500/10 border border-amber-500/25 px-2.5 py-1 text-[10.5px] font-semibold text-amber-800 hover:bg-amber-500/20 active:scale-95 transition-all flex items-center gap-1 cursor-pointer"
+              >
+                <Sparkles className="w-3 h-3 text-amber-600 stroke-[2]" />
+                <span>Dual Mixer Pro</span>
+              </button>
+            )}
 
             <button
               type="button"
@@ -205,385 +234,404 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
               <X className="h-4 w-4 stroke-[2]" />
             </button>
           </div>
+        </div>
 
-          {/* SEGMENTED CONTROL SWITCH (Floating Capsule Glass) */}
-          <div className="rounded-full p-1 border border-[#0D3528]/10 bg-[#0D3528]/5 shadow-xs grid grid-cols-2 gap-1">
-            <button
-              type="button"
-              onClick={() => {
-                soundManager.playPop();
-                hapticLight();
-                setActiveTab("music");
-              }}
-              className={`py-2 px-3 rounded-full text-[12px] flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                activeTab === "music"
-                  ? "bg-white text-[#0D3528] shadow-sm font-semibold"
-                  : "text-[#4C7567] hover:text-[#0D3528] font-medium"
-              }`}
-            >
-              <Music2 className="w-3.5 h-3.5 stroke-[1.8]" />
-              <span>{t.audio.tabMusic}</span>
-              {musicState.isPlaying && (
-                <span className="w-2 h-2 rounded-full bg-[#187557] animate-pulse" />
-              )}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                soundManager.playPop();
-                hapticLight();
-                setActiveTab("nature");
-              }}
-              className={`py-2 px-3 rounded-full text-[12px] flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                activeTab === "nature"
-                  ? "bg-white text-[#0D3528] shadow-sm font-semibold"
-                  : "text-[#4C7567] hover:text-[#0D3528] font-medium"
-              }`}
-            >
-              <Wind className="w-3.5 h-3.5 stroke-[1.8]" />
-              <span>{t.audio.tabNature}</span>
-              {activeNatureTrack !== "off" && (
-                <span className="w-2 h-2 rounded-full bg-[#187557] animate-pulse" />
-              )}
-            </button>
-          </div>
-
-          {/* ====================================================
-              TAB 1: MUSIK LO-FI
-              ==================================================== */}
-          {activeTab === "music" && (
-            <div className="space-y-4 animate-in fade-in duration-200">
-              {/* Now Playing Bento Card */}
-              <div className="space-y-1.5">
-                <p className="px-1 text-[12px] font-medium uppercase tracking-[0.12em] text-[#4C7567]">
-                  {t.audio.nowPlaying}
+        {/* DUAL-TRACK MIXER STATUS BANNER (When both are active) */}
+        {isDualMixActive && (
+          <div className="rounded-3xl border border-[#187557]/30 bg-gradient-to-r from-[#E4F4ED] via-white to-[#E4F4ED] p-3.5 shadow-sm flex items-center justify-between text-xs animate-in fade-in duration-200">
+            <div className="flex items-center gap-2.5 min-w-0 pr-2">
+              <span className="text-lg shrink-0">🎛️</span>
+              <div className="min-w-0">
+                <p className="font-semibold text-[#0D3528] truncate">
+                  Dual-Track Soundscape Mixer
                 </p>
+                <p className="text-[11px] text-[#4C7567] truncate">
+                  Memadukan musik suaka & suasana alam secara harmonis
+                </p>
+              </div>
+            </div>
+            <span className="px-2.5 py-0.5 rounded-full bg-[#187557] text-white font-bold text-[10px] tracking-wide shrink-0">
+              PRO MIX
+            </span>
+          </div>
+        )}
 
-                <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-4 min-w-0 overflow-hidden">
-                  <div className="flex items-center justify-between min-w-0 gap-3">
-                    <div className="min-w-0 flex-1 text-left">
-                      <span className="text-[10px] font-semibold uppercase tracking-wider text-[#14664D] bg-[#E4F4ED] border border-[#BCE5D3] px-2 py-0.5 rounded-md inline-block">
-                        {musicState.currentTrack?.categoryLabel ||
-                          "Rimba Tunes"}
-                      </span>
-                      <span className="text-[15.5px] font-semibold text-[#0D3528] tracking-tight truncate block mt-1">
-                        {musicState.currentTrack
-                          ? translateMusicTrack(musicState.currentTrack)
-                          : t.audio.noTrack}
-                      </span>
-                    </div>
+        {/* SEGMENTED CONTROL SWITCH */}
+        <div className="rounded-full p-1 border border-[#0D3528]/10 bg-[#0D3528]/5 shadow-xs grid grid-cols-2 gap-1">
+          <button
+            type="button"
+            onClick={() => {
+              soundManager.playPop();
+              hapticLight();
+              setActiveTab("music");
+            }}
+            className={`py-2 px-3 rounded-full text-[12px] flex items-center justify-center gap-2 transition-all cursor-pointer ${
+              activeTab === "music"
+                ? "bg-white text-[#0D3528] shadow-sm font-semibold"
+                : "text-[#4C7567] hover:text-[#0D3528] font-medium"
+            }`}
+          >
+            <Music2 className="w-3.5 h-3.5 stroke-[1.8]" />
+            <span>{t.audio.tabMusic}</span>
+            {musicState.isPlaying && (
+              <span className="w-2 h-2 rounded-full bg-[#187557] animate-pulse" />
+            )}
+          </button>
 
-                    {/* Player Controls */}
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <button
-                        type="button"
-                        onClick={handleCycleRepeat}
-                        className={`h-8.5 w-8.5 rounded-full flex items-center justify-center transition-all active:scale-90 cursor-pointer relative ${
-                          musicState.repeatMode !== "off"
-                            ? "bg-[#E4F4ED] text-[#14664D] border border-[#BCE5D3] shadow-2xs"
-                            : "bg-[#0D3528]/5 hover:bg-[#0D3528]/10 text-[#4C7567]"
-                        }`}
-                        title={
-                          musicState.repeatMode === "one"
-                            ? t.audio.repeatOne
-                            : musicState.repeatMode === "all"
-                              ? t.audio.repeatAll
-                              : t.audio.repeatOff
-                        }
-                      >
-                        {musicState.repeatMode === "one" ? (
-                          <Repeat1 className="w-3.5 h-3.5 stroke-[2.2]" />
-                        ) : (
-                          <Repeat
-                            className={`w-3.5 h-3.5 ${
-                              musicState.repeatMode === "all"
-                                ? "stroke-[2.2]"
-                                : "stroke-[1.8] opacity-60"
-                            }`}
-                          />
-                        )}
-                      </button>
+          <button
+            type="button"
+            onClick={() => {
+              soundManager.playPop();
+              hapticLight();
+              setActiveTab("nature");
+            }}
+            className={`py-2 px-3 rounded-full text-[12px] flex items-center justify-center gap-2 transition-all cursor-pointer ${
+              activeTab === "nature"
+                ? "bg-white text-[#0D3528] shadow-sm font-semibold"
+                : "text-[#4C7567] hover:text-[#0D3528] font-medium"
+            }`}
+          >
+            <Wind className="w-3.5 h-3.5 stroke-[1.8]" />
+            <span>{t.audio.tabNature}</span>
+            {activeNatureTrack !== "off" && (
+              <span className="w-2 h-2 rounded-full bg-[#187557] animate-pulse" />
+            )}
+          </button>
+        </div>
 
-                      <button
-                        type="button"
-                        onClick={handleMusicPrev}
-                        className="h-8.5 w-8.5 rounded-full bg-[#0D3528]/5 hover:bg-[#0D3528]/10 text-[#0D3528] flex items-center justify-center transition-all active:scale-90 cursor-pointer"
-                        title={t.audio.prev}
-                      >
-                        <SkipBack className="w-3.5 h-3.5 fill-current" />
-                      </button>
+        {/* ====================================================
+            TAB 1: MUSIK LO-FI
+            ==================================================== */}
+        {activeTab === "music" && (
+          <div className="space-y-4 animate-in fade-in duration-200">
+            {/* Now Playing Bento Card */}
+            <div className="space-y-1.5">
+              <p className="px-1 text-[12px] font-medium uppercase tracking-[0.12em] text-[#4C7567]">
+                {t.audio.nowPlaying}
+              </p>
 
-                      <button
-                        type="button"
-                        onClick={handleToggleMusicPlay}
-                        className="h-10 w-10 rounded-full bg-[#187557] hover:bg-[#126046] text-white flex items-center justify-center shadow-xs active:scale-95 transition-all cursor-pointer"
-                        title={musicState.isPlaying ? t.audio.pause : t.audio.play}
-                      >
-                        {musicState.isPlaying ? (
-                          <Pause className="w-4 h-4 fill-current" />
-                        ) : (
-                          <Play className="w-4 h-4 fill-current translate-x-0.5" />
-                        )}
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={handleMusicNext}
-                        className="h-8.5 w-8.5 rounded-full bg-[#0D3528]/5 hover:bg-[#0D3528]/10 text-[#0D3528] flex items-center justify-center transition-all active:scale-90 cursor-pointer"
-                        title={t.audio.next}
-                      >
-                        <SkipForward className="w-3.5 h-3.5 fill-current" />
-                      </button>
-                    </div>
+              <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-4 min-w-0 overflow-hidden">
+                <div className="flex items-center justify-between min-w-0 gap-3">
+                  <div className="min-w-0 flex-1 text-left">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-[#14664D] bg-[#E4F4ED] border border-[#BCE5D3] px-2 py-0.5 rounded-md inline-block">
+                      {musicState.currentTrack?.categoryLabel || "Rimba Tunes"}
+                    </span>
+                    <span className="text-[15.5px] font-semibold text-[#0D3528] tracking-tight truncate block mt-1">
+                      {musicState.currentTrack
+                        ? translateMusicTrack(musicState.currentTrack)
+                        : t.audio.noTrack}
+                    </span>
                   </div>
 
-                  {/* Volume Slider */}
-                  <div className="flex items-center gap-2 pt-2 border-t border-[#0D3528]/8 w-full min-w-0 overflow-hidden">
+                  {/* Player Controls */}
+                  <div className="flex items-center gap-1.5 shrink-0">
                     <button
                       type="button"
-                      onClick={handleToggleMusicMute}
-                      className="text-[#4C7567] hover:text-[#0D3528] transition-colors shrink-0 cursor-pointer"
+                      onClick={handleCycleRepeat}
+                      className={`h-8.5 w-8.5 rounded-full flex items-center justify-center transition-all active:scale-90 cursor-pointer relative ${
+                        musicState.repeatMode !== "off"
+                          ? "bg-[#E4F4ED] text-[#14664D] border border-[#BCE5D3] shadow-2xs"
+                          : "bg-[#0D3528]/5 hover:bg-[#0D3528]/10 text-[#4C7567]"
+                      }`}
+                      title={
+                        musicState.repeatMode === "one"
+                          ? t.audio.repeatOne
+                          : musicState.repeatMode === "all"
+                            ? t.audio.repeatAll
+                            : t.audio.repeatOff
+                      }
                     >
-                      {musicState.isMuted ? (
-                        <VolumeX className="w-4 h-4 text-rose-600 stroke-[1.8]" />
+                      {musicState.repeatMode === "one" ? (
+                        <Repeat1 className="w-3.5 h-3.5 stroke-[2.2]" />
                       ) : (
-                        <Volume2 className="w-4 h-4 text-[#187557] stroke-[1.8]" />
+                        <Repeat
+                          className={`w-3.5 h-3.5 ${
+                            musicState.repeatMode === "all"
+                              ? "stroke-[2.2]"
+                              : "stroke-[1.8] opacity-60"
+                          }`}
+                        />
                       )}
                     </button>
 
-                    <div className="flex-1 min-w-0 flex items-center">
-                      <input
-                        type="range"
-                        min="0"
-                        max="1"
-                        step="0.02"
-                        value={musicState.isMuted ? 0 : musicState.volume}
-                        onChange={handleMusicVolumeChange}
-                        className="w-full min-w-0 h-1 accent-[#187557] bg-[#0D3528]/10 rounded-full cursor-pointer appearance-none"
-                        style={{ width: "100%", minWidth: 0 }}
-                      />
-                    </div>
+                    <button
+                      type="button"
+                      onClick={handleMusicPrev}
+                      className="h-8.5 w-8.5 rounded-full bg-[#0D3528]/5 hover:bg-[#0D3528]/10 text-[#0D3528] flex items-center justify-center transition-all active:scale-90 cursor-pointer"
+                      title={t.audio.prev}
+                    >
+                      <SkipBack className="w-3.5 h-3.5 fill-current" />
+                    </button>
 
-                    <span className="shrink-0 text-[11px] font-medium text-[#4C7567] tabular-nums w-8 text-right">
-                      {Math.round(
-                        (musicState.isMuted ? 0 : musicState.volume) * 100,
+                    <button
+                      type="button"
+                      onClick={handleToggleMusicPlay}
+                      className="h-10 w-10 rounded-full bg-[#187557] hover:bg-[#126046] text-white flex items-center justify-center shadow-xs active:scale-95 transition-all cursor-pointer"
+                      title={musicState.isPlaying ? t.audio.pause : t.audio.play}
+                    >
+                      {musicState.isPlaying ? (
+                        <Pause className="w-4 h-4 fill-current" />
+                      ) : (
+                        <Play className="w-4 h-4 fill-current translate-x-0.5" />
                       )}
-                      %
-                    </span>
-                  </div>
-                </div>
-              </div>
+                    </button>
 
-              {/* Playlist Section */}
-              <div className="space-y-2.5">
-                <div className="flex items-center justify-between px-1">
-                  <p className="text-[12px] font-medium uppercase tracking-[0.12em] text-[#4C7567]">
-                    {t.audio.playlist}
-                  </p>
-
-                  {/* Filter Pills */}
-                  <div className="flex items-center gap-1.5">
-                    {(
-                      [
-                        "all",
-                        "jazz",
-                        "chill",
-                        "ambient",
-                      ] as MusicFilterCategory[]
-                    ).map((cat) => (
-                      <button
-                        key={cat}
-                        type="button"
-                        onClick={() => {
-                          soundManager.playPop();
-                          hapticLight();
-                          setMusicCategory(cat);
-                        }}
-                        className={`px-3 py-0.5 rounded-full text-[11px] font-medium capitalize transition-all cursor-pointer ${
-                          musicCategory === cat
-                            ? "bg-[#187557] text-white shadow-xs"
-                            : "bg-[#0D3528]/5 text-[#4C7567] hover:bg-[#0D3528]/10 border border-[#0D3528]/10"
-                        }`}
-                      >
-                        {cat === "all" ? t.audio.filterAll : cat}
-                      </button>
-                    ))}
+                    <button
+                      type="button"
+                      onClick={handleMusicNext}
+                      className="h-8.5 w-8.5 rounded-full bg-[#0D3528]/5 hover:bg-[#0D3528]/10 text-[#0D3528] flex items-center justify-center transition-all active:scale-90 cursor-pointer"
+                      title={t.audio.next}
+                    >
+                      <SkipForward className="w-3.5 h-3.5 fill-current" />
+                    </button>
                   </div>
                 </div>
 
-                {/* Tracks List */}
-                <div className="space-y-2">
-                  {filteredPlaylist.map((track) => {
-                    const isCurrent = musicState.currentTrack?.id === track.id;
-                    const isTrackPlaying = isCurrent && musicState.isPlaying;
+                {/* Touch-Friendly Volume Slider */}
+                <div className="flex items-center gap-2 pt-2 border-t border-[#0D3528]/8 w-full min-w-0 overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={handleToggleMusicMute}
+                    className="text-[#4C7567] hover:text-[#0D3528] transition-colors shrink-0 cursor-pointer"
+                  >
+                    {musicState.isMuted ? (
+                      <VolumeX className="w-4 h-4 text-rose-600 stroke-[1.8]" />
+                    ) : (
+                      <Volume2 className="w-4 h-4 text-[#187557] stroke-[1.8]" />
+                    )}
+                  </button>
 
-                    return (
-                      <button
-                        key={track.id}
-                        type="button"
-                        onClick={() => handleSelectMusicTrack(track)}
-                        className={`w-full p-3.5 rounded-2xl flex items-center justify-between text-left transition-all active:scale-[0.98] cursor-pointer ${
-                          isCurrent
-                            ? "border border-[#187557]/40 bg-[#E4F4ED]/80 shadow-xs"
-                            : "border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 hover:bg-white shadow-sm"
-                        }`}
-                      >
-                        <div className="flex items-center gap-3 min-w-0 pr-2">
-                          <div
-                            className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-colors ${
-                              isCurrent
-                                ? "bg-[#187557] text-white"
-                                : "bg-[#0D3528]/5 text-[#0D3528]"
-                            }`}
-                          >
-                            {isTrackPlaying ? (
-                              <Volume2 className="w-4 h-4 animate-pulse stroke-[1.8]" />
-                            ) : (
-                              <Play className="w-3.5 h-3.5 fill-current translate-x-0.5" />
-                            )}
-                          </div>
+                  <div className="flex-1 min-w-0 flex items-center py-2">
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.02"
+                      value={musicState.isMuted ? 0 : musicState.volume}
+                      onChange={handleMusicVolumeChange}
+                      className="w-full min-w-0 h-2 accent-[#187557] bg-[#0D3528]/10 rounded-full cursor-pointer appearance-none touch-pan-x"
+                      style={{ width: "100%", minWidth: 0 }}
+                    />
+                  </div>
 
-                          <div className="min-w-0">
-                            <p
-                              className={`text-[13.5px] truncate tracking-tight ${
-                                isCurrent
-                                  ? "font-semibold text-[#0D3528]"
-                                  : "font-medium text-[#0D3528]"
-                              }`}
-                            >
-                              {translateMusicTrack(track)}
-                            </p>
-                            <p className="text-[11.5px] text-[#4C7567] truncate font-normal mt-0.5">
-                              Rimba Lo-Fi · {track.categoryLabel}
-                            </p>
-                          </div>
-                        </div>
-
-                        <span className="text-[11.5px] text-[#4C7567] shrink-0 tabular-nums font-normal">
-                          {track.durationEstimate}
-                        </span>
-                      </button>
-                    );
-                  })}
+                  <span className="shrink-0 text-[11px] font-medium text-[#4C7567] tabular-nums w-8 text-right">
+                    {Math.round(
+                      (musicState.isMuted ? 0 : musicState.volume) * 100,
+                    )}
+                    %
+                  </span>
                 </div>
               </div>
             </div>
-          )}
 
-          {/* ====================================================
-              TAB 2: SUARA ALAM
-              ==================================================== */}
-          {activeTab === "nature" && (
-            <div className="space-y-4 animate-in fade-in duration-200">
-              <div className="space-y-1.5">
-                <p className="px-1 text-[12px] font-medium uppercase tracking-[0.12em] text-[#4C7567]">
-                  {t.audio.chooseAtmosphere}
+            {/* Playlist Section */}
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between px-1">
+                <p className="text-[12px] font-medium uppercase tracking-[0.12em] text-[#4C7567]">
+                  {t.audio.playlist}
                 </p>
 
-                <div className="grid grid-cols-2 gap-3">
-                  {SOUNDSCAPES_LIST.map((sc) => {
-                    const trSc = translateSoundscape(sc);
-                    const isActive = activeNatureTrack === sc.id;
+                {/* Filter Pills */}
+                <div className="flex items-center gap-1.5">
+                  {(
+                    [
+                      "all",
+                      "jazz",
+                      "chill",
+                      "ambient",
+                    ] as MusicFilterCategory[]
+                  ).map((cat) => (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => {
+                        soundManager.playPop();
+                        hapticLight();
+                        setMusicCategory(cat);
+                      }}
+                      className={`px-3 py-0.5 rounded-full text-[11px] font-medium capitalize transition-all cursor-pointer ${
+                        musicCategory === cat
+                          ? "bg-[#187557] text-white shadow-xs"
+                          : "bg-[#0D3528]/5 text-[#4C7567] hover:bg-[#0D3528]/10 border border-[#0D3528]/10"
+                      }`}
+                    >
+                      {cat === "all" ? t.audio.filterAll : cat}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-                    return (
-                      <button
-                        key={sc.id}
-                        type="button"
-                        onClick={() => handleSelectNatureTrack(sc.id)}
-                        className={`p-4 rounded-3xl text-left flex flex-col justify-between transition-all active:scale-[0.98] cursor-pointer min-h-[104px] ${
-                          isActive
-                            ? "border border-[#187557]/40 bg-[#E4F4ED]/80 shadow-md"
-                            : "border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 hover:bg-white shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl"
-                        }`}
-                      >
-                        <div className="flex items-center justify-between w-full">
-                          <span className="text-2xl leading-none">
-                            {sc.icon}
-                          </span>
-                          {isActive && (
-                            <div className="h-5 w-5 rounded-full bg-[#187557] text-white flex items-center justify-center shadow-xs">
-                              <Check className="w-3 h-3 stroke-[2.5]" />
-                            </div>
+              {/* Tracks List */}
+              <div className="space-y-2">
+                {filteredPlaylist.map((track) => {
+                  const isCurrent = musicState.currentTrack?.id === track.id;
+                  const isTrackPlaying = isCurrent && musicState.isPlaying;
+
+                  return (
+                    <button
+                      key={track.id}
+                      type="button"
+                      onClick={() => handleSelectMusicTrack(track)}
+                      className={`w-full p-3.5 rounded-2xl flex items-center justify-between text-left transition-all active:scale-[0.98] cursor-pointer ${
+                        isCurrent
+                          ? "border border-[#187557]/40 bg-[#E4F4ED]/80 shadow-xs"
+                          : "border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 hover:bg-white shadow-sm"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 min-w-0 pr-2">
+                        <div
+                          className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-colors ${
+                            isCurrent
+                              ? "bg-[#187557] text-white"
+                              : "bg-[#0D3528]/5 text-[#0D3528]"
+                          }`}
+                        >
+                          {isTrackPlaying ? (
+                            <Volume2 className="w-4 h-4 animate-pulse stroke-[1.8]" />
+                          ) : (
+                            <Play className="w-3.5 h-3.5 fill-current translate-x-0.5" />
                           )}
                         </div>
 
-                        <div className="mt-2.5 min-w-0">
+                        <div className="min-w-0">
                           <p
-                            className={`text-[13.5px] truncate ${
-                              isActive
+                            className={`text-[13.5px] truncate tracking-tight ${
+                              isCurrent
                                 ? "font-semibold text-[#0D3528]"
                                 : "font-medium text-[#0D3528]"
                             }`}
                           >
-                            {trSc.name}
+                            {translateMusicTrack(track)}
                           </p>
-                          <p className="text-[11px] text-[#4C7567] leading-relaxed mt-0.5 line-clamp-2 font-normal">
-                            {trSc.description}
+                          <p className="text-[11.5px] text-[#4C7567] truncate font-normal mt-0.5">
+                            Rimba Lo-Fi · {track.categoryLabel}
                           </p>
                         </div>
-                      </button>
-                    );
-                  })}
+                      </div>
+
+                      <span className="text-[11.5px] text-[#4C7567] shrink-0 tabular-nums font-normal">
+                        {track.durationEstimate}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ====================================================
+            TAB 2: SUARA ALAM
+            ==================================================== */}
+        {activeTab === "nature" && (
+          <div className="space-y-4 animate-in fade-in duration-200">
+            <div className="space-y-1.5">
+              <p className="px-1 text-[12px] font-medium uppercase tracking-[0.12em] text-[#4C7567]">
+                {t.audio.chooseAtmosphere}
+              </p>
+
+              <div className="grid grid-cols-2 gap-3">
+                {SOUNDSCAPES_LIST.map((sc) => {
+                  const trSc = translateSoundscape(sc);
+                  const isActive = activeNatureTrack === sc.id;
+
+                  return (
+                    <button
+                      key={sc.id}
+                      type="button"
+                      onClick={() => handleSelectNatureTrack(sc.id)}
+                      className={`p-4 rounded-3xl text-left flex flex-col justify-between transition-all active:scale-[0.98] cursor-pointer min-h-[104px] ${
+                        isActive
+                          ? "border border-[#187557]/40 bg-[#E4F4ED]/80 shadow-md"
+                          : "border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 hover:bg-white shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <span className="text-2xl leading-none">
+                          {sc.icon}
+                        </span>
+                        {isActive && (
+                          <div className="h-5 w-5 rounded-full bg-[#187557] text-white flex items-center justify-center shadow-xs">
+                            <Check className="w-3 h-3 stroke-[2.5]" />
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="mt-2.5 min-w-0">
+                        <p
+                          className={`text-[13.5px] truncate ${
+                            isActive
+                              ? "font-semibold text-[#0D3528]"
+                              : "font-medium text-[#0D3528]"
+                          }`}
+                        >
+                          {trSc.name}
+                        </p>
+                        <p className="text-[11px] text-[#4C7567] leading-relaxed mt-0.5 line-clamp-2 font-normal">
+                          {trSc.description}
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Nature Volume Slider (Touch-Friendly) */}
+            {activeNatureTrack !== "off" && (
+              <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-4 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-2.5 min-w-0 overflow-hidden">
+                <div className="flex items-center justify-between text-[12.5px] font-semibold text-[#0D3528]">
+                  <span>{t.audio.natureVolume}</span>
+                  <span className="font-medium text-[#187557] tabular-nums">
+                    {Math.round((natureMuted ? 0 : natureVolume) * 100)}%
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2 w-full min-w-0 overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={handleToggleNatureMute}
+                    className="text-[#4C7567] hover:text-[#0D3528] transition-colors shrink-0 cursor-pointer"
+                  >
+                    {natureMuted ? (
+                      <VolumeX className="w-4 h-4 text-rose-600 stroke-[1.8]" />
+                    ) : (
+                      <Volume2 className="w-4 h-4 text-[#187557] stroke-[1.8]" />
+                    )}
+                  </button>
+
+                  <div className="flex-1 min-w-0 flex items-center py-2">
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.02"
+                      value={natureMuted ? 0 : natureVolume}
+                      onChange={handleNatureVolumeChange}
+                      className="w-full min-w-0 h-2 accent-[#187557] bg-[#0D3528]/10 rounded-full cursor-pointer appearance-none touch-pan-x"
+                      style={{ width: "100%", minWidth: 0 }}
+                    />
+                  </div>
                 </div>
               </div>
+            )}
+          </div>
+        )}
 
-              {/* Nature Volume Slider */}
-              {activeNatureTrack !== "off" && (
-                <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-4 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-2.5 min-w-0 overflow-hidden">
-                  <div className="flex items-center justify-between text-[12.5px] font-semibold text-[#0D3528]">
-                    <span>{t.audio.natureVolume}</span>
-                    <span className="font-medium text-[#187557] tabular-nums">
-                      {Math.round((natureMuted ? 0 : natureVolume) * 100)}%
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-2 w-full min-w-0 overflow-hidden">
-                    <button
-                      type="button"
-                      onClick={handleToggleNatureMute}
-                      className="text-[#4C7567] hover:text-[#0D3528] transition-colors shrink-0 cursor-pointer"
-                    >
-                      {natureMuted ? (
-                        <VolumeX className="w-4 h-4 text-rose-600 stroke-[1.8]" />
-                      ) : (
-                        <Volume2 className="w-4 h-4 text-[#187557] stroke-[1.8]" />
-                      )}
-                    </button>
-
-                    <div className="flex-1 min-w-0 flex items-center">
-                      <input
-                        type="range"
-                        min="0"
-                        max="1"
-                        step="0.02"
-                        value={natureMuted ? 0 : natureVolume}
-                        onChange={handleNatureVolumeChange}
-                        className="w-full min-w-0 h-1 accent-[#187557] bg-[#0D3528]/10 rounded-full cursor-pointer appearance-none"
-                        style={{ width: "100%", minWidth: 0 }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Global Stop All Audio Button */}
-          {(activeNatureTrack !== "off" || musicState.isPlaying) && (
-            <div className="pt-1">
-              <button
-                type="button"
-                onClick={handleStopAll}
-                className="w-full py-3 rounded-full flex items-center justify-center gap-2 text-[12px] font-medium text-rose-700 bg-rose-50 border border-rose-200/80 active:scale-[0.98] transition-all cursor-pointer shadow-xs"
-              >
-                <Square className="w-3.5 h-3.5 fill-current" />
-                <span>{t.audio.stopAll}</span>
-              </button>
-            </div>
-          )}
-        </div>
+        {/* Global Stop All Audio Button */}
+        {(activeNatureTrack !== "off" || musicState.isPlaying) && (
+          <div className="pt-1">
+            <button
+              type="button"
+              onClick={handleStopAll}
+              className="w-full py-3 rounded-full flex items-center justify-center gap-2 text-[12px] font-medium text-rose-700 bg-rose-50 border border-rose-200/80 active:scale-[0.98] transition-all cursor-pointer shadow-xs"
+            >
+              <Square className="w-3.5 h-3.5 fill-current" />
+              <span>{t.audio.stopAll}</span>
+            </button>
+          </div>
+        )}
       </div>
-    </>
+    </div>
   );
 }

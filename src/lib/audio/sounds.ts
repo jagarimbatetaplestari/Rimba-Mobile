@@ -5,6 +5,18 @@ import { usePreferencesStore } from '@/lib/settings/usePreferencesStore';
 class SoundController {
   private ctx: AudioContext | null = null;
 
+  constructor() {
+    if (typeof window !== 'undefined') {
+      const unlock = () => {
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume().catch(() => {});
+        }
+      };
+      window.addEventListener('pointerdown', unlock, { once: true, passive: true });
+      window.addEventListener('touchstart', unlock, { once: true, passive: true });
+    }
+  }
+
   private getVolumeScale(): number {
     if (typeof window === 'undefined') return 1;
     const prefs = usePreferencesStore.getState();

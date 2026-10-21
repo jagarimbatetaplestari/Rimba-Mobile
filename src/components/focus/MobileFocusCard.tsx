@@ -206,12 +206,11 @@ export function MobileFocusCard({
         const isFinished =
           !activeSession.is_stopwatch && Date.now() >= expectedEndMs - 1000;
 
-        // In normal mode (not strict) & not yet finished, show return overlay if away for >= 15 seconds
+        // In normal mode (not strict) & not yet finished, show return overlay if away for >= 5 seconds
         if (
-          elapsed >= 15 &&
+          elapsed >= 5 &&
           !activeSession.strict_mode &&
-          !isFinished &&
-          !activeSession.is_paused
+          !isFinished
         ) {
           setAwaySeconds(elapsed);
           setShowReturnOverlay(true);
@@ -1512,6 +1511,9 @@ export function MobileFocusCard({
         onResume={() => {
           setShowReturnOverlay(false);
           hapticLight();
+          if (activeSession && activeSession.is_paused) {
+            resumeFocus();
+          }
         }}
         onPause={() => {
           setShowReturnOverlay(false);

@@ -6,6 +6,8 @@ import { isNativeMobile, hapticLight, hapticSuccess, hapticWarning } from './nat
 import {
   fireStrictWarningNotification,
   dismissStrictWarningNotification,
+  fireFocusPausedNotification,
+  dismissFocusPausedNotification,
   cancelPendingFocusNotifications,
 } from './notificationManager';
 import { soundManager } from '@/lib/audio/sounds';
@@ -20,14 +22,15 @@ let gracePeriodStartTime = 0;
 export function setupBackgroundGuard(): () => void {
   if (typeof window === 'undefined') return () => {};
 
-  // Check if app was cold-booted/reloaded after abandoning Strict Mode
+  // 1. Check cold-boot recovery after app was killed or restarted
   try {
-    const leftAtStr = localStorage.getItem('rimba_strict_left_at');
-    if (leftAtStr) {
+    const strictLeftAtStr = localStorage.getItem('rimba_strict_left_at');
+    const store = useGameStore.getState();
+    const active = store.activeSession;
+
+    if (strictLeftAtStr) {
       localStorage.removeItem('rimba_strict_left_at');
-      const leftAt = parseInt(leftAtStr, 10);
-      const store = useGameStore.getState();
-      const active = store.activeSession;
+      const leftAt = parseInt(strictLeftAtStr, 10);
       if (active && active.strict_mode && !active.is_paused) {
         const elapsed = Math.round((Date.now() - leftAt) / 1000);
         if (elapsed >= 10) {
@@ -37,47 +40,75 @@ export function setupBackgroundGuard(): () => void {
         }
       }
     }
+
+    // Normal mode cold-boot: if app was force-closed while active, ensure it is paused
+    const normalLeftAtStr = localStorage.getItem('rimba_normal_left_at');
+    if (normalLeftAtStr) {
+      localStorage.removeItem('rimba_normal_left_at');
+      const currentActive = useGameStore.getState().activeSession;
+      if (currentActive && currentActive.status === 'active' && !currentActive.strict_mode && !currentActive.is_paused) {
+        console.log('[BackgroundTimerGuard] App restored after close in Normal Mode. Freezing timer in paused state.');
+        store.pauseFocus();
+      }
+    }
   } catch {}
 
   const handleAppBackgrounded = () => {
     const store = useGameStore.getState();
     const active = store.activeSession;
 
-    if (!active) return;
+    if (!active || active.status !== 'active') return;
 
-    // If Strict Mode is ON and session is still actively running, start 10s grace period
+    // Check if session is already completed or within 1s of completion
     const isFinished =
       !active.is_stopwatch &&
       Date.now() >= new Date(active.expected_end_at).getTime() - 1000;
 
-    if (active.strict_mode && !active.is_paused && !isFinished) {
-      isGracePeriodActive = true;
-      gracePeriodStartTime = Date.now();
-      try {
-        localStorage.setItem('rimba_strict_left_at', gracePeriodStartTime.toString());
-      } catch {}
+    if (isFinished) return;
 
-      fireStrictWarningNotification(10);
-
-      if (gracePeriodTimeout) clearTimeout(gracePeriodTimeout);
-
-      gracePeriodTimeout = setTimeout(() => {
-        const currentStore = useGameStore.getState();
-        if (currentStore.activeSession && isGracePeriodActive) {
-          console.warn('[BackgroundTimerGuard] Strict mode grace period expired. Withered tree.');
-          currentStore.abandonFocus();
-          hapticWarning();
-        }
-        isGracePeriodActive = false;
+    if (active.strict_mode) {
+      // STRICT MODE: 10-second grace period with urgent warning notification
+      if (!active.is_paused) {
+        isGracePeriodActive = true;
+        gracePeriodStartTime = Date.now();
         try {
-          localStorage.removeItem('rimba_strict_left_at');
+          localStorage.setItem('rimba_strict_left_at', gracePeriodStartTime.toString());
         } catch {}
-      }, 10000); // 10 seconds grace period
+
+        fireStrictWarningNotification(10);
+
+        if (gracePeriodTimeout) clearTimeout(gracePeriodTimeout);
+
+        gracePeriodTimeout = setTimeout(() => {
+          const currentStore = useGameStore.getState();
+          if (currentStore.activeSession && isGracePeriodActive) {
+            console.warn('[BackgroundTimerGuard] Strict mode grace period expired. Tree withered.');
+            currentStore.abandonFocus();
+            hapticWarning();
+          }
+          isGracePeriodActive = false;
+          try {
+            localStorage.removeItem('rimba_strict_left_at');
+          } catch {}
+        }, 10000); // 10 seconds grace period
+      }
+    } else {
+      // NORMAL MODE: Auto-pause session so timer freezes and doesn't run down in background
+      if (!active.is_paused) {
+        try {
+          localStorage.setItem('rimba_normal_left_at', Date.now().toString());
+        } catch {}
+        store.pauseFocus();
+        fireFocusPausedNotification();
+      }
     }
   };
 
   const handleAppResumed = () => {
-    // If returning from background, clear grace period
+    // Dismiss any active pause notification
+    dismissFocusPausedNotification();
+
+    // If returning from background in Strict Mode:
     if (isGracePeriodActive) {
       const elapsed = Math.round((Date.now() - gracePeriodStartTime) / 1000);
       if (gracePeriodTimeout) {
@@ -95,7 +126,7 @@ export function setupBackgroundGuard(): () => void {
         const store = useGameStore.getState();
         store.abandonFocus();
         hapticWarning();
-        return; // Halt immediately: tree withers, do NOT reward or complete session!
+        return;
       } else {
         hapticLight();
         console.log(`[BackgroundTimerGuard] Returned safely in ${elapsed}s. Tree saved.`);
@@ -106,25 +137,12 @@ export function setupBackgroundGuard(): () => void {
       } catch {}
     }
 
-    // Reconcile focus timer: check if session finished while in background
-    const store = useGameStore.getState();
-    const active = store.activeSession;
+    try {
+      localStorage.removeItem('rimba_normal_left_at');
+    } catch {}
 
-    if (active) {
-      const expectedEnd = new Date(active.expected_end_at).getTime();
-      const now = Date.now();
-
-      // Stopwatch sessions do not have a fixed end time and must never auto-complete on background resume
-      if (!active.is_stopwatch && now >= expectedEnd) {
-        console.log('[BackgroundTimerGuard] Session completed while in background. Harvesting tree.');
-        cancelPendingFocusNotifications();
-        const success = store.completeFocus();
-        if (success) {
-          soundManager.playComplete();
-          hapticSuccess();
-        }
-      }
-    }
+    // Note: Background auto-harvest has been intentionally removed.
+    // Trees must never be automatically harvested in background without user presence!
   };
 
   // 1. Native Capacitor App State listener

@@ -73,7 +73,7 @@ export function FocusReturnOverlay({
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/14 border border-white/25 text-emerald-100 text-[11px] font-semibold tracking-tight shadow-xs">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-300 stroke-[2.2]" />
             <span>
-              {language === "en" ? "Focus Kept Safe" : "Sesi Tetap Terjaga"}
+              {language === "en" ? "Focus Paused Automatically" : "Sesi Dijeda Otomatis"}
             </span>
           </div>
           <h2 className="text-xl font-bold tracking-tight text-white drop-shadow-xs">
@@ -86,15 +86,15 @@ export function FocusReturnOverlay({
               <>
                 You were away for{" "}
                 <b className="text-emerald-200">{formatAwayTime(awaySeconds)}</b>
-                . Your session is still active. Take a mindful breath and
-                continue.
+                . Your focus timer was paused to protect your mindful rhythm. Tap
+                below to continue!
               </>
             ) : (
               <>
                 Kamu sempat berada di luar suaka selama{" "}
                 <b className="text-emerald-200">{formatAwayTime(awaySeconds)}</b>
-                . Sesi fokusmu tetap berjalan aman. Tarik napas dan lanjutkan
-                ritmemu.
+                . Timer fokusmu telah dijeda otomatis agar waktumu tetap terjaga.
+                Ketuk di bawah untuk melanjutkan!
               </>
             )}
           </p>

@@ -996,6 +996,64 @@ assert(
 );
 
 // ------------------------------------------------------------------
+// SUITE 15: Background Focus Timer Guard & Auto-Pause Notification Integrity
+// ------------------------------------------------------------------
+console.log('\n[SUITE 15] Background Focus Timer Guard & Auto-Pause Notification Integrity');
+
+const notifMgrPath = path.join(projectRoot, 'src/lib/mobile/notificationManager.ts');
+assert(fs.existsSync(notifMgrPath), 'notificationManager.ts exists');
+const notifMgrContent = fs.readFileSync(notifMgrPath, 'utf8');
+
+assert(
+  notifMgrContent.includes('fireFocusPausedNotification') &&
+    notifMgrContent.includes('dismissFocusPausedNotification'),
+  'notificationManager.ts exports fireFocusPausedNotification and dismissFocusPausedNotification'
+);
+assert(
+  !notifMgrContent.includes('!prefs.notificationsEnabled || !prefs.notifyStreakWarning'),
+  'fireStrictWarningNotification does not incorrectly gate on notifyStreakWarning'
+);
+assert(
+  notifMgrContent.includes('FOCUS_PAUSED_NOTIF_ID = 1005'),
+  'FOCUS_PAUSED_NOTIF_ID is declared with unique notification ID'
+);
+
+const bgGuardPath = path.join(projectRoot, 'src/lib/mobile/backgroundTimerGuard.ts');
+assert(fs.existsSync(bgGuardPath), 'backgroundTimerGuard.ts exists');
+const bgGuardContent = fs.readFileSync(bgGuardPath, 'utf8');
+
+assert(
+  bgGuardContent.includes('store.pauseFocus()') &&
+    bgGuardContent.includes('fireFocusPausedNotification()'),
+  'backgroundTimerGuard automatically pauses normal mode session and fires pause notification when backgrounded'
+);
+assert(
+  !bgGuardContent.includes('Session completed while in background. Harvesting tree.'),
+  'backgroundTimerGuard eliminates background auto-harvest to prevent unattended reward exploitation'
+);
+assert(
+  bgGuardContent.includes('rimba_normal_left_at') &&
+    bgGuardContent.includes('rimba_strict_left_at'),
+  'backgroundTimerGuard persists both normal and strict mode background timestamps for cold-boot recovery'
+);
+
+const returnOverlayPath = path.join(projectRoot, 'src/components/focus/FocusReturnOverlay.tsx');
+assert(fs.existsSync(returnOverlayPath), 'FocusReturnOverlay.tsx exists');
+const returnOverlayContent = fs.readFileSync(returnOverlayPath, 'utf8');
+
+assert(
+  returnOverlayContent.includes('Focus Paused Automatically') ||
+    returnOverlayContent.includes('Sesi Dijeda Otomatis'),
+  'FocusReturnOverlay communicates clear auto-pause feedback upon returning to app'
+);
+
+assert(
+  focusCardContent.includes('if (activeSession && activeSession.is_paused)') &&
+    focusCardContent.includes('resumeFocus()'),
+  'MobileFocusCard onResume in FocusReturnOverlay resumes the paused focus session'
+);
+
+// ------------------------------------------------------------------
 // SUMMARY REPORT
 // ------------------------------------------------------------------
 console.log('\n======================================================');

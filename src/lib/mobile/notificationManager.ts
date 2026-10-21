@@ -8,6 +8,7 @@ const FOCUS_COMPLETION_NOTIF_ID = 1001;
 const STRICT_WARNING_NOTIF_ID = 1002;
 const DAILY_STREAK_NOTIF_ID = 1003;
 const TEST_NOTIF_ID = 1004;
+const FOCUS_PAUSED_NOTIF_ID = 1005;
 
 function getActiveLanguage(): 'id' | 'en' {
   if (typeof window === 'undefined') return 'id';
@@ -130,7 +131,7 @@ export async function fireStrictWarningNotification(remainingSeconds: number = 1
   if (typeof window === 'undefined') return;
 
   const prefs = usePreferencesStore.getState();
-  if (!prefs.notificationsEnabled || !prefs.notifyStreakWarning) return;
+  if (!prefs.notificationsEnabled) return;
 
   const lang = getActiveLanguage();
   const title = lang === 'en' ? '⚠️ Rimba Strict Mode Warning!' : '⚠️ Peringatan Mode Ketat Rimba!';
@@ -156,6 +157,60 @@ export async function fireStrictWarningNotification(remainingSeconds: number = 1
       });
     } catch (err) {
       console.warn('[NotificationManager] Failed to fire strict warning notification:', err);
+    }
+  }
+}
+
+/**
+ * Fires an immediate local notification when focus session is auto-paused in background
+ */
+export async function fireFocusPausedNotification(): Promise<void> {
+  if (typeof window === 'undefined') return;
+
+  const prefs = usePreferencesStore.getState();
+  if (!prefs.notificationsEnabled) return;
+
+  const lang = getActiveLanguage();
+  const title = lang === 'en' ? '⏸️ Focus Session Paused' : '⏸️ Sesi Fokus Dijeda';
+  const body =
+    lang === 'en'
+      ? 'You left Rimba. Your session has been paused to protect your progress. Tap to resume!'
+      : 'Kamu meninggalkan suaka Rimba. Sesi fokus dijeda agar waktumu tetap terjaga. Ketuk untuk melanjutkan!';
+
+  if (isNativeMobile()) {
+    try {
+      await LocalNotifications.schedule({
+        notifications: [
+          {
+            id: FOCUS_PAUSED_NOTIF_ID,
+            title,
+            body,
+            schedule: { at: new Date(Date.now() + 500) },
+            extra: {
+              type: 'focus_paused',
+            },
+          },
+        ],
+      });
+    } catch (err) {
+      console.warn('[NotificationManager] Failed to fire focus paused notification:', err);
+    }
+  }
+}
+
+/**
+ * Dismisses the focus paused notification
+ */
+export async function dismissFocusPausedNotification(): Promise<void> {
+  if (typeof window === 'undefined') return;
+
+  if (isNativeMobile()) {
+    try {
+      await LocalNotifications.cancel({
+        notifications: [{ id: FOCUS_PAUSED_NOTIF_ID }],
+      });
+    } catch {
+      // Ignore
     }
   }
 }

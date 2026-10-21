@@ -458,7 +458,7 @@ export function MobileHeaderHUD({
                   onClick={() => handleAction(onOpenCampfire)}
                   className={popoverItemButton}
                 >
-                  <Flame className="w-4 h-4 stroke-[2.2] shrink-0 text-amber-500 fill-amber-500/30" />
+                  <Flame className="w-4 h-4 stroke-[2.2] shrink-0 opacity-80 text-current" />
                   <span className="truncate">{t.hud.menuCampfire}</span>
                 </button>
 
@@ -478,7 +478,7 @@ export function MobileHeaderHUD({
                   onClick={() => handleAction(onOpenIslandSwitcher)}
                   className={popoverItemButton}
                 >
-                  <Palmtree className="w-4 h-4 stroke-[2.2] shrink-0 text-emerald-400" />
+                  <Palmtree className="w-4 h-4 stroke-[2.2] shrink-0 opacity-80 text-current" />
                   <span className="truncate flex-1 text-left">
                     {lang === "en" ? "Sanctuary Islands" : "Daftar Pulau"}
                   </span>
@@ -488,13 +488,16 @@ export function MobileHeaderHUD({
                 <button
                   type="button"
                   onClick={() => handleAction(onOpenPaywall)}
-                  className={`${popoverItemButton} text-amber-300 font-bold`}
+                  className={popoverItemButton}
                 >
-                  <Sparkles className="w-4 h-4 stroke-[2.2] shrink-0 fill-amber-400 text-amber-400" />
+                  <Sparkles className="w-4 h-4 stroke-[2.2] shrink-0 opacity-80 text-current" />
                   <span className="truncate flex-1 text-left">
                     {useGameStore.getState().saveData.subscription?.isPro
                       ? (lang === "en" ? "Rimba Pro Active" : "Rimba Pro (Aktif)")
                       : (lang === "en" ? "Upgrade to Pro" : "Langganan Pro")}
+                  </span>
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-black/10 dark:bg-white/15 uppercase">
+                    PRO
                   </span>
                 </button>
               </div>

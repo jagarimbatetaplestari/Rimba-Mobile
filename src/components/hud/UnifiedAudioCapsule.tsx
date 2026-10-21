@@ -12,7 +12,7 @@ import {
 } from "@/lib/audio/musicPlayer";
 import { soundManager } from "@/lib/audio/sounds";
 import { hapticLight } from "@/lib/mobile/nativeBridge";
-import { useTranslation } from "@/lib/i18n/translations";
+import { useTranslation, translateSoundscape, translateMusicTrack } from "@/lib/i18n/translations";
 import { Volume2, VolumeX, Music, Waves } from "lucide-react";
 
 export interface UnifiedAudioCapsuleProps {
@@ -113,16 +113,23 @@ export function UnifiedAudioCapsule({
   let displayTitle = "";
   let displayEmoji = "";
 
+  const localizedSoundscape = soundscapeMeta
+    ? translateSoundscape(soundscapeMeta, lang)
+    : null;
+  const localizedMusicTitle = musicState.currentTrack
+    ? translateMusicTrack(musicState.currentTrack, lang)
+    : null;
+
   if (isSoundscapeActive && isMusicActive) {
-    const sName = soundscapeMeta?.name.split(" ")[0] || "Alam";
+    const sName = localizedSoundscape?.name.split(" ")[0] || (lang === "en" ? "Nature" : "Alam");
     displayEmoji = soundscapeMeta?.icon || "🌧️";
-    displayTitle = `${sName} + ${musicState.currentTrack?.title || "Music"}`;
+    displayTitle = `${sName} + ${localizedMusicTitle || (lang === "en" ? "Music" : "Musik")}`;
   } else if (isSoundscapeActive) {
     displayEmoji = soundscapeMeta?.icon || "🍃";
-    displayTitle = soundscapeMeta?.name || (lang === "en" ? "Nature Sound" : "Suara Alam");
+    displayTitle = localizedSoundscape?.name || (lang === "en" ? "Nature Sound" : "Suara Alam");
   } else if (isMusicActive) {
     displayEmoji = "🎵";
-    displayTitle = musicState.currentTrack?.title || (lang === "en" ? "Focus Lo-Fi" : "Musik Fokus");
+    displayTitle = localizedMusicTitle || (lang === "en" ? "Focus Lo-Fi" : "Musik Fokus");
   }
 
   const glassStyle: React.CSSProperties = {

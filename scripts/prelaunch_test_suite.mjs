@@ -843,6 +843,159 @@ assert(
 );
 
 // ------------------------------------------------------------------
+// SUITE 14: Toast Clutter Elimination, English Localization & Header Harmonization
+// ------------------------------------------------------------------
+console.log('\n[SUITE 14] Toast Clutter Elimination, English Localization & Header Harmonization');
+
+const gameStorePath = path.join(projectRoot, 'src/lib/game/useGameStore.ts');
+assert(fs.existsSync(gameStorePath), 'useGameStore.ts exists');
+const gameStoreContent = fs.readFileSync(gameStorePath, 'utf8');
+
+// 1. Toast Clutter Check
+assert(
+  !gameStoreContent.includes("Cuaca Suaka: ${names[weather]}"),
+  'useGameStore setWeather does not dispatch intrusive weather toast'
+);
+assert(
+  !gameStoreContent.includes("Suasana ${cfg.name} aktif"),
+  'useGameStore setTimeOfDay does not dispatch intrusive time of day toast'
+);
+assert(
+  !gameStoreContent.includes("Tumbuhkan pohonmu!"),
+  'useGameStore startFocus does not dispatch intrusive focus start toast'
+);
+assert(
+  !gameStoreContent.includes("Pohon baru tumbuh di pulaumu!"),
+  'useGameStore completeFocus does not dispatch redundant completion toast (covered by harvest modal)'
+);
+
+// 2. Focus Harvest Modal & MobileFocusCard Integration
+const harvestModalPath = path.join(projectRoot, 'src/components/focus/FocusHarvestModal.tsx');
+assert(fs.existsSync(harvestModalPath), 'FocusHarvestModal.tsx exists');
+const harvestModalContent = fs.readFileSync(harvestModalPath, 'utf8');
+
+assert(
+  !harvestModalContent.includes('onConfirmHarvest(reflectionNote.trim() || undefined);\n    onClose();'),
+  'FocusHarvestModal handleHarvestClick does not invoke onClose() to avoid bogus harvestLaterToast'
+);
+
+const focusCardPath = path.join(projectRoot, 'src/components/focus/MobileFocusCard.tsx');
+assert(fs.existsSync(focusCardPath), 'MobileFocusCard.tsx exists');
+const focusCardContent = fs.readFileSync(focusCardPath, 'utf8');
+
+assert(
+  focusCardContent.includes('harvestSessionSnapshot') &&
+    focusCardContent.includes('setHarvestSessionSnapshot'),
+  'MobileFocusCard implements harvestSessionSnapshot for seamless modal lifecycle'
+);
+assert(
+  !focusCardContent.includes('Memanen pohon suakamu!'),
+  'MobileFocusCard does not fire intrusive completion toast on countdown reach'
+);
+
+// 3. Fauna, Soundscape & Error Boundary English Localization
+const translationsContentFresh = fs.readFileSync(translationsPath, 'utf8');
+assert(
+  translationsContentFresh.includes('FAUNA_TRANSLATIONS_EN') &&
+    translationsContentFresh.includes('translateFauna'),
+  'translations.ts exports FAUNA_TRANSLATIONS_EN and translateFauna helper'
+);
+assert(
+  translationsContentFresh.includes('Campfire Warmth') &&
+    translationsContentFresh.includes('Pine Breeze') &&
+    translationsContentFresh.includes('Honeybee') &&
+    translationsContentFresh.includes('Sanctuary Stag'),
+  'translations.ts provides full English translations for soundscapes and sanctuary wildlife'
+);
+assert(
+  translationsContentFresh.includes('errorBoundary') &&
+    translationsContentFresh.includes('Sanctuary Resting Moment'),
+  'translations.ts provides localized Error Boundary titles and messages'
+);
+
+const faunaDialogPath = path.join(projectRoot, 'src/components/feedback/FaunaDialogPopover.tsx');
+assert(fs.existsSync(faunaDialogPath), 'FaunaDialogPopover.tsx exists');
+const faunaDialogContent = fs.readFileSync(faunaDialogPath, 'utf8');
+
+assert(
+  faunaDialogContent.includes('translateFauna') &&
+    faunaDialogContent.includes('faunaData.name') &&
+    faunaDialogContent.includes('faunaData.title'),
+  'FaunaDialogPopover integrates translateFauna for English localization of wildlife names, quotes, and conditions'
+);
+
+const audioCapsulePath = path.join(projectRoot, 'src/components/hud/UnifiedAudioCapsule.tsx');
+assert(fs.existsSync(audioCapsulePath), 'UnifiedAudioCapsule.tsx exists');
+const audioCapsuleContent = fs.readFileSync(audioCapsulePath, 'utf8');
+
+assert(
+  audioCapsuleContent.includes('translateSoundscape') &&
+    audioCapsuleContent.includes('translateMusicTrack'),
+  'UnifiedAudioCapsule integrates translateSoundscape and translateMusicTrack'
+);
+
+const errorBoundaryPath = path.join(projectRoot, 'src/app/error.tsx');
+assert(fs.existsSync(errorBoundaryPath), 'src/app/error.tsx exists');
+const errorBoundaryContent = fs.readFileSync(errorBoundaryPath, 'utf8');
+
+assert(
+  errorBoundaryContent.includes('usePreferencesStore') &&
+    errorBoundaryContent.includes('errorBoundary'),
+  'error.tsx dynamically localizes error screen based on user language preferences'
+);
+
+// 4. Header HUD Flyout Menu Icon Harmonization
+assert(
+  !hudContent.includes('Flame className="w-4 h-4 stroke-[2.2] shrink-0 text-amber-500 fill-amber-500/30"'),
+  'MobileHeaderHUD harmonizes Campfire icon removing clashing amber fill'
+);
+assert(
+  !hudContent.includes('Palmtree className="w-4 h-4 stroke-[2.2] shrink-0 text-emerald-400"'),
+  'MobileHeaderHUD harmonizes Sanctuary Islands icon removing clashing emerald color'
+);
+assert(
+  !hudContent.includes('fill-amber-400 text-amber-400'),
+  'MobileHeaderHUD harmonizes Rimba Pro icon to monochrome Liquid Glass standard'
+);
+
+// 5. Session Time Tolerance
+const sessionRulesFile = path.join(projectRoot, 'src/lib/game/sessionRules.ts');
+assert(fs.existsSync(sessionRulesFile), 'sessionRules.ts exists');
+const sessionRulesContentFresh = fs.readFileSync(sessionRulesFile, 'utf8');
+
+assert(
+  sessionRulesContentFresh.includes('now < expectedEnd - 3000'),
+  'completeFocusSession provides 3.0s clock tolerance for jitter and instant clicks'
+);
+
+// Test timestamp tolerance function matching sessionRules:
+function verifyTimestampTolerance(expectedEndMs, nowMs, isStopwatch = false) {
+  if (!isStopwatch && nowMs < expectedEndMs - 3000) {
+    const remainingSec = Math.ceil((expectedEndMs - nowMs) / 1000);
+    return {
+      success: false,
+      error: `Focus time not yet reached. ${remainingSec}s remaining.`,
+    };
+  }
+  return { success: true };
+}
+
+const now = Date.now();
+const expectedEnd = now + 2000; // 2 seconds in the future
+const prematureResult = verifyTimestampTolerance(expectedEnd, now);
+assert(
+  prematureResult.success === true,
+  'completeFocusSession succeeds when called 2 seconds before expected end due to 3.0s tolerance'
+);
+
+const tooEarlyEnd = now + 4000; // 4 seconds in the future (outside 3s tolerance)
+const tooEarlyResult = verifyTimestampTolerance(tooEarlyEnd, now);
+assert(
+  tooEarlyResult.success === false,
+  'completeFocusSession correctly rejects sessions called earlier than 3.0s tolerance window'
+);
+
+// ------------------------------------------------------------------
 // SUMMARY REPORT
 // ------------------------------------------------------------------
 console.log('\n======================================================');

@@ -705,6 +705,12 @@ export const translations = {
       actionGreet: "Sapa Satwa",
       alreadyGreeted: "Sudah Disapa Hari Ini (Kembali lagi esok!)",
     },
+    errorBoundary: {
+      title: "Suaka Beristirahat Sejenak",
+      desc: "Ketenangan suakamu tetap aman tersimpan. Ketuk tombol di bawah untuk menyegarkan kembali taman fokusmu.",
+      retryBtn: "Coba Pulihkan Sesi",
+      reloadBtn: "Muat Ulang Seluruh Suaka",
+    },
     avatarPicker: {
       title: "Foto Profil",
       subtitle: "Pilih Maskot",
@@ -1468,6 +1474,12 @@ export const translations = {
       actionGreet: "Greet Wildlife",
       alreadyGreeted: "Already Greeted Today (Return tomorrow!)",
     },
+    errorBoundary: {
+      title: "Sanctuary Resting Moment",
+      desc: "Your sanctuary peace remains safely preserved. Tap the button below to refresh your focus garden.",
+      retryBtn: "Restore Session",
+      reloadBtn: "Reload Sanctuary",
+    },
     avatarPicker: {
       title: "Profile Avatar",
       subtitle: "Choose Mascot",
@@ -2161,6 +2173,181 @@ export function translateMusicTrack(
   return track.title;
 }
 
+export interface FaunaTranslationData {
+  name: string;
+  title: string;
+  description: string;
+  unlockConditionText: string;
+  greetingQuote: string;
+  sleepQuote?: string;
+}
+
+export const FAUNA_TRANSLATIONS_EN: Record<string, FaunaTranslationData> = {
+  bee: {
+    name: "Honeybee",
+    title: "Floral Harmonizer",
+    description: "Hardworking collector of sweet meadow nectar.",
+    unlockConditionText: "Requires 1+ flower or bush.",
+    greetingQuote: "Its cheerful buzz brings the sweet scent of fresh honey.",
+    sleepQuote: "Sleeping warmly nestled inside a flower blossom.",
+  },
+  butterfly: {
+    name: "Silk Butterfly",
+    title: "Petal Dancer",
+    description: "Aerial dancer bringing joyful vibrancy across blossoming meadows.",
+    unlockConditionText: "Requires 1+ blossoming flower in sanctuary.",
+    greetingQuote: "Its gentle fluttering wings warmly greet your day.",
+    sleepQuote: "Perched peacefully upon night flower petals.",
+  },
+  bird: {
+    name: "Songbird",
+    title: "Canopy Guardian",
+    description: "Melodic singer in the high treetops of the sanctuary.",
+    unlockConditionText: "Level 2+, 12+ tiles & 2+ trees.",
+    greetingQuote: "Its sweet birdsong refreshes your mindful focus.",
+    sleepQuote: "Resting quietly in its cozy treetop nest.",
+  },
+  rabbit: {
+    name: "Meadow Hare",
+    title: "Grassland Roamer",
+    description: "Nimble hopper across the wide lush meadows.",
+    unlockConditionText: "Level 1+ & 9+ sanctuary tiles.",
+    greetingQuote: "Its friendly nose twitches in cheerful welcome.",
+    sleepQuote: "Curled up fast asleep beneath soft meadow grass.",
+  },
+  fox: {
+    name: "Forest Fox",
+    title: "Warm Wanderer",
+    description: "Clever wanderer with a plush rust-red coat.",
+    unlockConditionText: "Level 3+, 16+ tiles & 2+ trees.",
+    greetingQuote: "Its bushy tail sways in a warm greeting.",
+    sleepQuote: "Curled up asleep hugging its fluffy tail.",
+  },
+  koala: {
+    name: "Sanctuary Koala",
+    title: "Canopy Calmer",
+    description: "Peaceful friend hugging shady sanctuary branches.",
+    unlockConditionText: "Level 2+, 1+ tree & 1+ focus session.",
+    greetingQuote: "Its serene gaze calms your thoughts and heart.",
+    sleepQuote: "Clasping a sturdy branch in peaceful dreams.",
+  },
+  mystic_stag: {
+    name: "Sanctuary Stag",
+    title: "Valley Guardian",
+    description: "Graceful guardian with majestic, radiant antlers.",
+    unlockConditionText: "Level 4+, 20+ tiles, 3+ trees & 2-day streak.",
+    greetingQuote: "Its elegant stride radiates deep sanctuary peace.",
+    sleepQuote: "Resting serenely under the gentle glow of moonlight.",
+  },
+  deer: {
+    name: "Sanctuary Stag",
+    title: "Valley Guardian",
+    description: "Graceful guardian with majestic, radiant antlers.",
+    unlockConditionText: "Level 4+, 20+ tiles, 3+ trees & 2-day streak.",
+    greetingQuote: "Its elegant stride radiates deep sanctuary peace.",
+    sleepQuote: "Resting serenely under the gentle glow of moonlight.",
+  },
+  elephant: {
+    name: "Sanctuary Elephant",
+    title: "Gentle Giant",
+    description: "Peaceful giant guarding the broad green plains.",
+    unlockConditionText: "Level 7+, 28+ open tiles & 4+ trees.",
+    greetingQuote: "Its trunk waves cheerfully to welcome your presence.",
+    sleepQuote: "Sound asleep resting peacefully upon open meadows.",
+  },
+  tiger: {
+    name: "Thicket Tiger",
+    title: "Rimba Warden",
+    description: "Dignified wanderer strolling through shaded brush.",
+    unlockConditionText: "Level 8+, 28+ tiles, 4+ trees & 3+ rocks/bushes.",
+    greetingQuote: "Its stately stride embodies the quiet dignity of the wild.",
+    sleepQuote: "Softly purring fast asleep in cool green shade.",
+  },
+  polar: {
+    name: "Polar Bear",
+    title: "Snow Prince",
+    description: "Warm white wanderer of icy sanctuary lands.",
+    unlockConditionText: "Level 4+, 16+ tiles & Snowy Biome active.",
+    greetingQuote: "Its warm breath softens the crisp winter air.",
+    sleepQuote: "Curled up cozy under a peaceful blanket of snow.",
+  },
+  panda: {
+    name: "Zen Panda",
+    title: "Peace Seeker",
+    description: "Playful lover of lush bamboo gardens and serene days.",
+    unlockConditionText: "Level 5+, 20+ tiles, 3+ trees & 2+ plants.",
+    greetingQuote: "Sitting comfortably savoring the gentle sanctuary breeze.",
+    sleepQuote: "Happily sprawled out asleep in the grassy meadow.",
+  },
+  monkey: {
+    name: "Playful Monkey",
+    title: "Canopy Gymnast",
+    description: "Cheery and agile acrobat swinging through tall branches.",
+    unlockConditionText: "Level 3+, 16+ tiles & 3+ lush trees.",
+    greetingQuote: "Swinging happily from a branch to say hello.",
+    sleepQuote: "Safely resting leaned against high sturdy boughs.",
+  },
+  lion: {
+    name: "Savanna Lion",
+    title: "Majestic Guardian",
+    description: "Stately protector overseeing peaceful savanna realms.",
+    unlockConditionText: "Level 9+, 32+ open tiles & 60+ focus minutes.",
+    greetingQuote: "Its warm, steady gaze watches over the entire sanctuary.",
+    sleepQuote: "Sleeping majestically beneath a canopy of stars.",
+  },
+  hog: {
+    name: "Wild Boar",
+    title: "Earth Explorer",
+    description: "Steadfast forager fond of mossy rocks and rich earth.",
+    unlockConditionText: "Level 4+, 18+ tiles & 2+ rocks/bushes.",
+    greetingQuote: "Its friendly snout sniffs the fresh woodland soil.",
+    sleepQuote: "Curled up peacefully beside sanctuary boulders.",
+  },
+  giraffe: {
+    name: "Savanna Giraffe",
+    title: "Horizon Watcher",
+    description: "Gentle tall companion admiring high leafy treetops.",
+    unlockConditionText: "Level 6+, 24+ open tiles & 4+ trees.",
+    greetingQuote: "Gracefully bowing its neck in gentle greeting.",
+    sleepQuote: "Folding its long neck in deep, tranquil slumber.",
+  },
+  fish: {
+    name: "Stream Koi",
+    title: "Current Dancer",
+    description: "Graceful swimmer darting through crystal-clear waters.",
+    unlockConditionText: "Level 2+, 14+ tiles & 2+ river tiles.",
+    greetingQuote: "A flick of its tail ripples through crystal waters.",
+    sleepQuote: "Floating serenely daydreaming in calm evening ripples.",
+  },
+  cat: {
+    name: "Campfire Cat",
+    title: "Tent Guardian",
+    description: "Faithful companion of cozy sanctuary campfires.",
+    unlockConditionText: "Level 2+, 12+ tiles & Camping Tent.",
+    greetingQuote: "Purring affectionately and rubbing against your side.",
+    sleepQuote: "Curled up in a round ball purring near the campfire.",
+  },
+  beaver: {
+    name: "River Beaver",
+    title: "Shoreline Architect",
+    description: "Clever diver crafting peaceful riverbank retreats.",
+    unlockConditionText: "Level 4+, 18+ tiles, 2+ rivers & 2+ trees.",
+    greetingQuote: "A playful slap of its tail greets you from the water.",
+    sleepQuote: "Drifting off to sleep floating softly along the stream.",
+  },
+};
+
+export function translateFauna(
+  speciesId: string,
+  fallback: FaunaTranslationData,
+  lang: AppLanguage,
+): FaunaTranslationData {
+  if (lang === "en" && FAUNA_TRANSLATIONS_EN[speciesId]) {
+    return FAUNA_TRANSLATIONS_EN[speciesId];
+  }
+  return fallback;
+}
+
 export function useTranslation() {
   const language = usePreferencesStore((state) => state.language) || "id";
   const setLanguage = usePreferencesStore((state) => state.setLanguage);
@@ -2197,5 +2384,7 @@ export function useTranslation() {
       translateMusicTrack(track, language as AppLanguage),
     translateCatalogItem: (item: { id: string; name: string; description?: string }) =>
       translateCatalogItem(item, language as AppLanguage),
+    translateFauna: (speciesId: string, fallback: FaunaTranslationData) =>
+      translateFauna(speciesId, fallback, language as AppLanguage),
   };
 }

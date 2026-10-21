@@ -166,6 +166,8 @@ export function MobileFocusCard({
 
   // Harvest celebration modal & Ambient soundscape popover
   const [showHarvestModal, setShowHarvestModal] = useState<boolean>(false);
+  const [harvestSessionSnapshot, setHarvestSessionSnapshot] =
+    useState<FocusSession | null>(null);
   const [showWitherModal, setShowWitherModal] = useState<boolean>(false);
   const [witheredSessionSnapshot, setWitheredSessionSnapshot] =
     useState<FocusSession | null>(null);
@@ -258,6 +260,9 @@ export function MobileFocusCard({
       setActiveSoundscape(track);
     };
     const handleHarvestEvt = () => {
+      if (activeSession) {
+        setHarvestSessionSnapshot(activeSession);
+      }
       setShowHarvestModal(true);
     };
     const handleAbandonEvt = () => {
@@ -341,14 +346,7 @@ export function MobileFocusCard({
         hasChimedRef.current = activeSession.id;
         soundManager.playComplete();
         soundscapeManager.stop();
-        useGameStore
-          .getState()
-          .notify(
-            language === "en"
-              ? "🌱 Focus session complete! Harvesting your sanctuary tree!"
-              : "🌱 Waktu fokus selesai! Memanen pohon suakamu!",
-            "success",
-          );
+        setHarvestSessionSnapshot(activeSession);
         setShowHarvestModal(true);
         setZenMode(false);
       }
@@ -506,6 +504,7 @@ export function MobileFocusCard({
       }
     }
     soundscapeManager.stop();
+    setHarvestSessionSnapshot(activeSession);
     setShowHarvestModal(true);
   };
 
@@ -520,6 +519,7 @@ export function MobileFocusCard({
       soundManager.playComplete();
       hapticSuccess();
       setShowHarvestModal(false);
+      setHarvestSessionSnapshot(null);
     }
   };
 
@@ -1178,8 +1178,11 @@ export function MobileFocusCard({
         {showHarvestModal && (
           <FocusHarvestModal
             isOpen={showHarvestModal}
-            onClose={() => setShowHarvestModal(false)}
-            session={activeSession}
+            onClose={() => {
+              setShowHarvestModal(false);
+              setHarvestSessionSnapshot(null);
+            }}
+            session={activeSession || harvestSessionSnapshot}
             onConfirmHarvest={handleConfirmHarvest}
           />
         )}
@@ -1495,9 +1498,10 @@ export function MobileFocusCard({
           isOpen={showHarvestModal}
           onClose={() => {
             setShowHarvestModal(false);
+            setHarvestSessionSnapshot(null);
             useGameStore.getState().notify(t.harvest.harvestLaterToast, "info");
           }}
-          session={activeSession}
+          session={activeSession || harvestSessionSnapshot}
           onConfirmHarvest={handleConfirmHarvest}
         />
       )}

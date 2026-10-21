@@ -131,7 +131,6 @@ export function FocusHarvestModal({
     soundManager.playPlace();
     hapticSuccess();
     onConfirmHarvest(reflectionNote.trim() || undefined);
-    onClose();
   };
 
   const handleShareClick = async () => {

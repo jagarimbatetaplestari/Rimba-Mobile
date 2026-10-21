@@ -172,8 +172,8 @@ export function completeFocusSession(
   }
 
   // 2. Strict timestamp verification
-  // Small 1.5s tolerance for clock jitter/rounding
-  if (!session.is_stopwatch && now < expectedEnd - 1500) {
+  // 3.0s tolerance for clock jitter/rounding and instant user click
+  if (!session.is_stopwatch && now < expectedEnd - 3000) {
     const remainingSec = Math.ceil((expectedEnd - now) / 1000);
     return {
       success: false,

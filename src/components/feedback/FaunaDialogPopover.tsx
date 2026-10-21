@@ -9,7 +9,7 @@ import { useTranslation } from "@/lib/i18n/translations";
 import { X, Sparkles, Heart, CheckCircle2 } from "lucide-react";
 
 export function FaunaDialogPopover() {
-  const { t } = useTranslation();
+  const { t, translateFauna } = useTranslation();
   const selectedFauna = useGameStore((state) => state.selectedFauna);
   const setSelectedFauna = useGameStore((state) => state.setSelectedFauna);
   const saveData = useGameStore((state) => state.saveData);
@@ -35,6 +35,7 @@ export function FaunaDialogPopover() {
   const config = FAUNA_CONFIG[selectedFauna];
   if (!config) return null;
 
+  const faunaData = translateFauna(selectedFauna, config);
   const canGreet = canGreetFauna(selectedFauna, saveData);
 
   const handleGreet = () => {
@@ -95,7 +96,7 @@ export function FaunaDialogPopover() {
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
                 <h3 className="font-bold text-sm tracking-tight text-white truncate drop-shadow-xs">
-                  {config.name}
+                  {faunaData.name}
                 </h3>
                 <span
                   className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border backdrop-blur-md ${
@@ -108,7 +109,7 @@ export function FaunaDialogPopover() {
                 </span>
               </div>
               <p className="text-[11px] text-white/70 font-medium truncate mt-0.5">
-                {config.title}
+                {faunaData.title}
               </p>
             </div>
           </div>
@@ -127,17 +128,17 @@ export function FaunaDialogPopover() {
         <div className="p-3 rounded-2xl bg-white/12 border border-white/20 mb-2.5 relative z-10 backdrop-blur-md">
           <p className="text-[12px] leading-relaxed text-white/95 font-medium tracking-tight">
             {isNight
-              ? config.sleepQuote
-                ? `“💤 ${config.sleepQuote}”`
-                : t.faunaDialog.defaultSleepQuote.replace("{name}", config.name)
-              : `“${config.greetingQuote}”`}
+              ? faunaData.sleepQuote
+                ? `“💤 ${faunaData.sleepQuote}”`
+                : t.faunaDialog.defaultSleepQuote.replace("{name}", faunaData.name)
+              : `“${faunaData.greetingQuote}”`}
           </p>
         </div>
 
         {/* Compact Habitat Note */}
         <div className="flex items-center gap-1.5 text-[10.5px] text-white/70 mb-3 px-1 relative z-10">
           <Sparkles className="w-3 h-3 text-amber-300 shrink-0" />
-          <span className="truncate">{config.unlockConditionText}</span>
+          <span className="truncate">{faunaData.unlockConditionText}</span>
         </div>
 
         {/* Action Button */}

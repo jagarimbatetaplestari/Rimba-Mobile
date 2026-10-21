@@ -3,6 +3,8 @@
 import React, { useEffect } from 'react';
 import { RefreshCw, Compass } from 'lucide-react';
 import { hapticLight } from '@/lib/mobile/nativeBridge';
+import { usePreferencesStore } from '@/lib/settings/usePreferencesStore';
+import { translations } from '@/lib/i18n/translations';
 
 export default function GlobalError({
   error,
@@ -11,6 +13,9 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const language = usePreferencesStore((s) => s.language) || 'id';
+  const t = translations[language]?.errorBoundary || translations.id.errorBoundary;
+
   useEffect(() => {
     // Log error for diagnostics
     console.error('[Rimba Sanctuary Error Boundary]:', error);
@@ -50,12 +55,12 @@ export default function GlobalError({
 
         {/* Title */}
         <h2 className="text-xl font-bold tracking-tight text-white mb-2">
-          Suaka Beristirahat Sejenak
+          {t.title}
         </h2>
 
         {/* Description */}
         <p className="text-sm text-emerald-100/70 leading-relaxed mb-6">
-          Ketenangan suakamu tetap aman tersimpan. Ketuk tombol di bawah untuk menyegarkan kembali taman fokusmu.
+          {t.desc}
         </p>
 
         {/* Action Buttons */}
@@ -65,14 +70,14 @@ export default function GlobalError({
             className="w-full py-3.5 px-5 rounded-2xl bg-[#E8B84B] hover:bg-[#D4A338] active:scale-[0.98] text-[#0A261E] font-semibold text-sm shadow-lg flex items-center justify-center gap-2 transition-all cursor-pointer"
           >
             <RefreshCw className="w-4 h-4" />
-            Coba Pulihkan Sesi
+            {t.retryBtn}
           </button>
 
           <button
             onClick={handleReload}
             className="w-full py-3 px-5 rounded-2xl bg-white/5 hover:bg-white/10 active:scale-[0.98] text-white/80 text-xs font-medium border border-white/10 transition-all cursor-pointer"
           >
-            Muat Ulang Seluruh Suaka
+            {t.reloadBtn}
           </button>
         </div>
       </div>

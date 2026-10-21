@@ -908,8 +908,6 @@ export const useGameStore = create<GameState>((set, get) => ({
       localStorage.setItem('rimba_time_of_day', time);
     }
     set({ timeOfDay: time, isTimeAuto: false });
-    const cfg = ATMOSPHERE_CONFIG[time];
-    get().notify(`${cfg.icon} Suasana ${cfg.name} aktif`, 'info');
   },
 
   toggleTimeOfDay: () => {
@@ -919,8 +917,6 @@ export const useGameStore = create<GameState>((set, get) => ({
       localStorage.setItem('rimba_time_of_day', next);
     }
     set({ timeOfDay: next, isTimeAuto: false });
-    const cfg = ATMOSPHERE_CONFIG[next];
-    get().notify(`${cfg.icon} Suasana ${cfg.name} aktif`, 'info');
   },
 
   setAutoTime: (enabled) => {
@@ -931,10 +927,6 @@ export const useGameStore = create<GameState>((set, get) => ({
     }
     const detected = detectLocalTimeOfDay();
     set({ timeOfDay: enabled ? detected : get().timeOfDay, isTimeAuto: enabled });
-    if (enabled) {
-      const cfg = ATMOSPHERE_CONFIG[detected];
-      get().notify(`🕒 Mode Waktu Otomatis Aktif (${cfg.icon} ${cfg.name})`, 'info');
-    }
   },
 
   setWeather: (weather) => {
@@ -942,12 +934,6 @@ export const useGameStore = create<GameState>((set, get) => ({
       localStorage.setItem('rimba_weather', weather);
     }
     set({ weather, isWeatherAuto: false });
-    const names: Record<WeatherType, string> = {
-      clear: '☀️ Cerah Alami',
-      rain: '🌧️ Hujan Suaka',
-      mist: '🌫️ Kabut Pegunungan',
-    };
-    get().notify(`Cuaca Suaka: ${names[weather]}`, 'info');
   },
 
   toggleWeather: () => {
@@ -957,12 +943,6 @@ export const useGameStore = create<GameState>((set, get) => ({
       localStorage.setItem('rimba_weather', next);
     }
     set({ weather: next, isWeatherAuto: false });
-    const names: Record<WeatherType, string> = {
-      clear: '☀️ Cerah Alami',
-      rain: '🌧️ Hujan Suaka',
-      mist: '🌫️ Kabut Pegunungan',
-    };
-    get().notify(`Cuaca Suaka: ${names[next]}`, 'info');
   },
 
   setAutoWeather: (enabled) => {
@@ -974,9 +954,6 @@ export const useGameStore = create<GameState>((set, get) => ({
     const timeOfDay = get().timeOfDay;
     const autoWeather: WeatherType = timeOfDay === 'night' ? 'mist' : 'clear';
     set({ weather: enabled ? autoWeather : get().weather, isWeatherAuto: enabled });
-    if (enabled) {
-      get().notify('🍃 Cuaca Alami (Otomatis) Aktif', 'info');
-    }
   },
 
   setDevFastMode: (enabled) => {
@@ -1114,28 +1091,6 @@ export const useGameStore = create<GameState>((set, get) => ({
       relocatingObjectId: null,
       isTabBlurred: false,
     });
-
-    const mins = Math.max(1, Math.round(duration / 60));
-    const modeLabel = strictMode
-      ? (lang === 'en' ? ' [Strict Mode 🔥]' : ' [Mode Ketat 🔥]')
-      : '';
-    const localizedTag = lang === 'en' ? (TAG_TRANSLATIONS_EN[finalTag] || finalTag) : finalTag;
-    const taskLabel = newSession.task_note ? ` — "${newSession.task_note}"` : '';
-    if (isStopwatch) {
-      get().notify(
-        lang === 'en'
-          ? `Focus session for ${localizedTag} started (Stopwatch Mode ⏱️)${modeLabel}${taskLabel}. Flow freely!`
-          : `Sesi fokus ${finalTag} dimulai (Mode Stopwatch ⏱️)${modeLabel}${taskLabel}. Fokus mengalir bebas!`,
-        'info'
-      );
-    } else {
-      get().notify(
-        lang === 'en'
-          ? `Focus session for ${localizedTag} started (${mins} mins)${modeLabel}${taskLabel}. Grow your sanctuary!`
-          : `Sesi fokus ${finalTag} dimulai (${mins} menit)${modeLabel}${taskLabel}. Tumbuhkan pohonmu!`,
-        'info'
-      );
-    }
   },
 
   updateActiveSessionMeta: (updates) => {
@@ -1656,20 +1611,13 @@ export const useGameStore = create<GameState>((set, get) => ({
       isZenMode: false,
     });
 
-    const earnedGold = result.rewardGold ?? 0;
-    const earnedXp = result.rewardXp ?? 0;
-
     if (activeSession.is_stopwatch && !result.newWorldObject) {
+      const isEn = getStoreLang() === 'en';
       get().notify(
-        '⏱️ Sesi durasi bebas diselesaikan. Sesi di bawah 5 menit tidak menumbuhkan pohon suaka atau memberi Soul/XP.',
+        isEn
+          ? '⏱️ Open-ended session ended. Sessions under 5 minutes do not grow trees or award Soul/XP.'
+          : '⏱️ Sesi durasi bebas diselesaikan. Sesi di bawah 5 menit tidak menumbuhkan pohon suaka atau memberi Soul/XP.',
         'info'
-      );
-    } else {
-      get().notify(
-        chasedBulldozer
-          ? `🎉 Fokus tuntas! Ketekunanmu menghalau kru Bulldozer & membuka segel petak pulau! (+${earnedGold} Soul & +${earnedXp} XP)`
-          : `🎉 Fokus selesai! Kamu meraih +${earnedGold} Soul & +${earnedXp} XP. Pohon baru tumbuh di pulaumu!`,
-        'success'
       );
     }
     return true;

@@ -17,7 +17,7 @@ permissions:
 jobs:
   deploy-appstore:
     name: Build & Upload to App Store Connect
-    runs-on: macos-15
+    runs-on: macos-latest
     timeout-minutes: 60
 
     steps:

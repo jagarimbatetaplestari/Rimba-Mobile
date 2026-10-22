@@ -251,7 +251,7 @@ jobs:
           ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID || 'c32ee50b-c9f8-4532-898e-4c793cac57f6' }}
         run: |
           echo "Starting upload to App Store Connect via xcrun altool..."
-          xcrun altool --upload-package build/App.ipa --type ios --apiKey "$KEY_ID" --apiIssuer "$ISSUER_ID"
+          xcrun altool --upload-app -f build/App.ipa -t ios --apiKey "$KEY_ID" --apiIssuer "$ISSUER_ID" --show-progress
           echo "Upload to App Store Connect / TestFlight completed successfully!"
 
       - name: Clean up Temporary Keychain & Keys

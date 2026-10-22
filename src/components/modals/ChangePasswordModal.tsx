@@ -29,7 +29,7 @@ export function ChangePasswordModal({
   onClose,
 }: ChangePasswordModalProps) {
   const { t, language } = useTranslation();
-  const { user, changePassword, upgradeGuestAccount } = useAuthStore();
+  const { user, changePassword, upgradeGuestAccount, upgradeGuestWithApple } = useAuthStore();
   const isGuest = user?.isGuest ?? true;
 
   const [oldPassword, setOldPassword] = useState("");
@@ -44,6 +44,7 @@ export function ChangePasswordModal({
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmittingApple, setIsSubmittingApple] = useState(false);
 
   if (!isOpen) return null;
 
@@ -168,6 +169,44 @@ export function ChangePasswordModal({
               : "Gagal mengubah kata sandi."),
         );
       }
+    }
+  };
+
+  const handleAppleUpgrade = async () => {
+    soundManager.playPop();
+    hapticLight();
+    setErrorMessage("");
+    setSuccessMessage("");
+    setIsSubmittingApple(true);
+    try {
+      const res = await upgradeGuestWithApple();
+      if (!res.success) {
+        if (
+          res.error &&
+          !res.error.includes("dibatalkan") &&
+          !res.error.includes("canceled") &&
+          !res.error.includes("cancelled")
+        ) {
+          setErrorMessage(res.error);
+          hapticWarning();
+        }
+        return;
+      }
+      soundManager.playComplete();
+      hapticSuccess();
+      setSuccessMessage(
+        language === "en"
+          ? "Account successfully linked with Apple ID!"
+          : "Akun suaka berhasil ditautkan ke Apple ID!",
+      );
+      setTimeout(() => {
+        onClose();
+      }, 1200);
+    } catch (err: any) {
+      setErrorMessage(err?.message || "Gagal menautkan dengan Apple ID.");
+      hapticWarning();
+    } finally {
+      setIsSubmittingApple(false);
     }
   };
 
@@ -415,6 +454,26 @@ export function ChangePasswordModal({
                     : (language === "en" ? "Update Password" : "Perbarui Kata Sandi")}
               </span>
             </button>
+
+            {isGuest && (
+              <div className="w-full flex flex-col items-center mt-3 pt-3 border-t border-[#0D3528]/10">
+                <button
+                  type="button"
+                  onClick={handleAppleUpgrade}
+                  disabled={isSubmitting || isSubmittingApple}
+                  className="w-full py-2.5 rounded-full bg-black hover:bg-neutral-800 text-white font-medium text-[12px] flex items-center justify-center gap-2 active:scale-[0.98] transition-all cursor-pointer shadow-xs disabled:opacity-50"
+                >
+                  <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 170 170">
+                    <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.7-3.04-7.58-7.73-11.65-14.06-5.99-9.13-10.8-19.46-14.42-30.98-3.62-11.53-5.43-22.38-5.43-32.55 0-14.76 3.7-26.68 11.1-35.76 7.4-9.08 16.7-13.68 27.9-13.8 5.43 0 11.1 1.34 17.02 4.02 5.92 2.68 9.77 4.08 11.56 4.19 1.68-.11 5.66-1.57 11.95-4.39 6.28-2.82 11.83-4.14 16.64-3.97 12.51.64 22.42 5.37 29.74 14.18-10.97 6.64-16.32 15.71-16.06 27.22.25 9.07 3.73 16.74 10.45 23 6.72 6.27 14.65 9.87 23.8 10.81-2.02 6.3-4.56 12.87-7.64 19.71zm-28.72-108.97c0 7.37-2.65 14.12-7.95 20.26-5.3 6.13-11.75 9.77-19.34 10.92-.45-1.12-.67-2.35-.67-3.69 0-7.14 2.82-13.94 8.46-20.4 5.64-6.46 12.16-10.15 19.5-11.08z"/>
+                  </svg>
+                  <span>
+                    {isSubmittingApple
+                      ? (language === "en" ? "Connecting to Apple..." : "Menghubungkan ke Apple...")
+                      : (language === "en" ? "Link with Apple ID" : "Tautkan dengan Apple ID")}
+                  </span>
+                </button>
+              </div>
+            )}
           </form>
         </div>
       </div>

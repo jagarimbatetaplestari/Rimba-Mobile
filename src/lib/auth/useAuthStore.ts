@@ -36,6 +36,8 @@ interface AuthState {
   verifyRecoveryOtpAndSetPassword: (email: string, token: string, newPass: string) => Promise<AuthResult>;
   updateRecoveredPassword: (newPass: string) => Promise<AuthResult>;
   loginWithOAuth: (provider: 'google' | 'github' | 'apple') => Promise<boolean>;
+  loginWithApple: () => Promise<AuthResult>;
+  upgradeGuestWithApple: () => Promise<AuthResult>;
   updateProfile: (updates: { name?: string; avatarUrl?: string; bio?: string }) => void;
   uploadAvatarFile: (file: File | Blob) => Promise<string | null>;
   changePassword: (oldPass: string, newPass: string) => Promise<{ success: boolean; error?: string }>;
@@ -490,6 +492,122 @@ export const useAuthStore = create<AuthState>()(
           set({ isLoading: false });
           return false;
         }
+      },
+
+      loginWithApple: async (): Promise<AuthResult> => {
+        set({ isLoading: true });
+        try {
+          const isNativeIOS =
+            typeof window !== 'undefined' &&
+            Capacitor.isNativePlatform() &&
+            Capacitor.getPlatform() === 'ios';
+
+          if (isNativeIOS) {
+            // 1. Native iOS Apple Sign In Dialog via Activity / Modal
+            const { SignInWithApple } = await import('@capacitor-community/apple-sign-in');
+            const res = await SignInWithApple.authorize({
+              clientId: 'com.syntheticae.rimba',
+              redirectURI: 'https://rkljugrrscmqopeuwtpd.supabase.co/auth/v1/callback',
+              scopes: 'email name',
+            });
+
+            if (!res.response || !res.response.identityToken) {
+              set({ isLoading: false });
+              return { success: false, error: 'Tidak menerima token otentikasi dari Apple.' };
+            }
+
+            // 2. Kirim Apple JWT ke Supabase Auth
+            const { data, error } = await supabase.auth.signInWithIdToken({
+              provider: 'apple',
+              token: res.response.identityToken,
+            });
+
+            if (error) {
+              set({ isLoading: false });
+              return { success: false, error: error.message };
+            }
+
+            if (data.user) {
+              const userId = data.user.id;
+              // Apple hanya mengirim nama pada login pertama kali
+              const fullName = [res.response.givenName, res.response.familyName]
+                .filter(Boolean)
+                .join(' ')
+                .trim();
+
+              if (fullName) {
+                try {
+                  await supabase.from('profiles').upsert({
+                    id: userId,
+                    display_name: fullName,
+                    updated_at: new Date().toISOString(),
+                  });
+                } catch (profileErr) {
+                  console.warn('Gagal menyimpan nama profil dari Apple:', profileErr);
+                }
+              }
+
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', userId)
+                .maybeSingle();
+
+              const displayName =
+                profile?.display_name ||
+                fullName ||
+                data.user.user_metadata?.display_name ||
+                data.user.email?.split('@')[0] ||
+                'Ranger Rimba';
+
+              const userObj: AuthUser = {
+                id: userId,
+                email: data.user.email || '',
+                name: displayName,
+                bio: profile?.bio || 'Penjaga Hutan Suaka',
+                avatarUrl: profile?.avatar_url || '🦌',
+                isGuest: false,
+                createdAt: data.user.created_at || new Date().toISOString(),
+              };
+
+              set({ user: userObj, isLoading: false });
+              await smartSyncOnLogin(userId);
+              return { success: true };
+            }
+
+            set({ isLoading: false });
+            return { success: false, error: 'Gagal membuat sesi pengguna Apple.' };
+          } else {
+            // Web / Localhost Fallback
+            const { error } = await supabase.auth.signInWithOAuth({
+              provider: 'apple',
+              options: {
+                redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/` : undefined,
+              },
+            });
+            if (error) {
+              set({ isLoading: false });
+              return { success: false, error: error.message };
+            }
+            set({ isLoading: false });
+            return { success: true };
+          }
+        } catch (err: any) {
+          set({ isLoading: false });
+          if (
+            err?.code === '1001' ||
+            err?.message?.includes('canceled') ||
+            err?.message?.includes('cancelled')
+          ) {
+            return { success: false, error: 'Otorisasi Apple dibatalkan.' };
+          }
+          return { success: false, error: err?.message || 'Gagal masuk dengan Apple ID.' };
+        }
+      },
+
+      upgradeGuestWithApple: async (): Promise<AuthResult> => {
+        // Upgrade akun tamu ke Apple ID resmi dengan mempertahankan progres lokal
+        return await get().loginWithApple();
       },
 
       updateProfile: (updates) => {

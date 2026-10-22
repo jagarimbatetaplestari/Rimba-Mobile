@@ -20,6 +20,7 @@
     "test:prelaunch": "node scripts/prelaunch_test_suite.mjs"
   },
   "dependencies": {
+    "@capacitor-community/apple-sign-in": "^6.0.0",
     "@capacitor/android": "^6.2.2",
     "@capacitor/app": "^6.0.3",
     "@capacitor/core": "^6.2.2",

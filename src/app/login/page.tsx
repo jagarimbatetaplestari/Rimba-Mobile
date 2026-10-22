@@ -32,6 +32,7 @@ function WelcomeAuthPageContent() {
     verifyRecoveryOtpAndSetPassword,
     updateRecoveredPassword,
     loginAsGuest,
+    loginWithApple,
     isLoading,
   } = useAuthStore();
 
@@ -49,6 +50,7 @@ function WelcomeAuthPageContent() {
   const [newPassword, setNewPassword] = useState("");
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [isSubmittingReset, setIsSubmittingReset] = useState(false);
+  const [isSubmittingApple, setIsSubmittingApple] = useState(false);
 
   // OTP Verification state
   const [isOtpStep, setIsOtpStep] = useState(false);
@@ -361,6 +363,38 @@ function WelcomeAuthPageContent() {
       soundManager.playError();
       hapticWarning();
       setErrorMsg(err?.message || t.auth.networkError);
+    }
+  };
+
+  const handleAppleSignIn = async () => {
+    soundManager.playPop();
+    hapticMedium();
+    setErrorMsg("");
+    setSuccessMsg("");
+    setIsSubmittingApple(true);
+    try {
+      const res = await loginWithApple();
+      if (!res.success) {
+        if (
+          res.error &&
+          !res.error.includes("dibatalkan") &&
+          !res.error.includes("canceled") &&
+          !res.error.includes("cancelled")
+        ) {
+          setErrorMsg(res.error);
+          hapticWarning();
+        }
+        return;
+      }
+      soundManager.playComplete();
+      hapticSuccess();
+      router.push("/?welcome=true");
+    } catch (err: any) {
+      soundManager.playError();
+      hapticWarning();
+      setErrorMsg(err?.message || t.auth.networkError);
+    } finally {
+      setIsSubmittingApple(false);
     }
   };
 
@@ -755,6 +789,42 @@ function WelcomeAuthPageContent() {
               )}
             </button>
           </form>
+        )}
+
+        {/* Divider & Sign in with Apple (App Store Guideline 4.8) */}
+        {!isOtpStep && forgotStep === "none" && (
+          <div className="w-full flex flex-col items-center">
+            <div className="w-full flex items-center justify-between gap-3 my-2.5">
+              <div className="h-px flex-1 bg-white/15" />
+              <span className="text-[10px] uppercase tracking-wider text-white/45 font-light">
+                {t.auth.orDivider || "atau"}
+              </span>
+              <div className="h-px flex-1 bg-white/15" />
+            </div>
+
+            <button
+              type="button"
+              onClick={handleAppleSignIn}
+              disabled={isLoading || isSubmittingApple}
+              className="group relative w-full py-3.5 px-6 rounded-full font-medium text-xs text-white bg-black/60 hover:bg-black/75 active:bg-black/85 backdrop-blur-xl border border-white/20 shadow-[0_8px_24px_rgba(0,0,0,0.35),inset_0_1px_1px_rgba(255,255,255,0.25)] transition-all active:scale-[0.98] flex items-center justify-center gap-2.5 overflow-hidden cursor-pointer disabled:opacity-50"
+            >
+              {isSubmittingApple ? (
+                <span className="flex items-center gap-2 animate-pulse font-light">
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  <span>{t.auth.connecting}</span>
+                </span>
+              ) : (
+                <>
+                  <svg className="w-4 h-4 fill-current drop-shadow-sm" viewBox="0 0 170 170">
+                    <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.7-3.04-7.58-7.73-11.65-14.06-5.99-9.13-10.8-19.46-14.42-30.98-3.62-11.53-5.43-22.38-5.43-32.55 0-14.76 3.7-26.68 11.1-35.76 7.4-9.08 16.7-13.68 27.9-13.8 5.43 0 11.1 1.34 17.02 4.02 5.92 2.68 9.77 4.08 11.56 4.19 1.68-.11 5.66-1.57 11.95-4.39 6.28-2.82 11.83-4.14 16.64-3.97 12.51.64 22.42 5.37 29.74 14.18-10.97 6.64-16.32 15.71-16.06 27.22.25 9.07 3.73 16.74 10.45 23 6.72 6.27 14.65 9.87 23.8 10.81-2.02 6.3-4.56 12.87-7.64 19.71zm-28.72-108.97c0 7.37-2.65 14.12-7.95 20.26-5.3 6.13-11.75 9.77-19.34 10.92-.45-1.12-.67-2.35-.67-3.69 0-7.14 2.82-13.94 8.46-20.4 5.64-6.46 12.16-10.15 19.5-11.08z"/>
+                  </svg>
+                  <span className="tracking-wide font-medium drop-shadow-sm">
+                    {t.auth.signInWithApple}
+                  </span>
+                </>
+              )}
+            </button>
+          </div>
         )}
 
         {/* Consolidated Navigation & Clear Guest Mode Pill */}

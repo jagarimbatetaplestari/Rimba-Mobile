@@ -2,6 +2,7 @@
 
 import { RimbaSaveData } from '@/types/game';
 import { calculateBalances } from './economy';
+import { assertBackupStructure, MAX_BACKUP_BYTES } from './backupSchema';
 import { calculateAnalytics } from './analytics';
 import { isNativeMobile } from '@/lib/mobile/nativeBridge';
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
@@ -43,7 +44,11 @@ export interface IslandSnapshot {
  */
 export function validateRimbaBackup(raw: string | unknown): BackupValidationResult {
   try {
+    if (typeof raw === 'string' && (raw.length > MAX_BACKUP_BYTES || new TextEncoder().encode(raw).byteLength > MAX_BACKUP_BYTES)) {
+      return { isValid: false, error: 'Ukuran cadangan maksimal 20 MiB.' };
+    }
     const parsed: Partial<RimbaSaveData> = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    assertBackupStructure(parsed);
 
     if (!parsed || typeof parsed !== 'object') {
       return { isValid: false, error: 'Berkas tidak berformat JSON yang valid.' };

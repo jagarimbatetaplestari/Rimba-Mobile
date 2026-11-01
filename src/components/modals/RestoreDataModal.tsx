@@ -7,6 +7,7 @@ import {
   BackupValidationResult,
   createIslandSnapshot,
 } from "@/lib/game/backupManager";
+import { MAX_BACKUP_BYTES } from '@/lib/game/backupSchema';
 import { soundManager } from "@/lib/audio/sounds";
 import {
   hapticLight,
@@ -55,6 +56,14 @@ export function RestoreDataModal({ isOpen, onClose }: RestoreDataModalProps) {
     soundManager.playPop();
     hapticLight();
 
+    if (file.size > MAX_BACKUP_BYTES) {
+      setValidation({ isValid: false, error: language === 'en'
+        ? 'Backup files must be 20 MiB or smaller.' : 'Ukuran cadangan maksimal 20 MiB.' });
+      setIsProcessing(false);
+      soundManager.playError();
+      hapticWarning();
+      return;
+    }
     const reader = new FileReader();
     reader.onload = (event) => {
       const content = event.target?.result as string;

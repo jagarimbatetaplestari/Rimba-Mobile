@@ -260,23 +260,31 @@ export function MobileSettingsSheet({
       soundManager.playError();
       hapticWarning();
 
-      createIslandSnapshot(
-        saveData,
-        `Snapshot Before Reset (${new Date().toLocaleDateString(lang === "en" ? "en-US" : "id-ID")})`,
-      );
+      try {
+        createIslandSnapshot(
+          saveData,
+          `Snapshot Before Reset (${new Date().toLocaleDateString(lang === "en" ? "en-US" : "id-ID")})`,
+        );
 
-      const initial = createInitialSaveData();
-      const preserved = {
-        ...initial,
-        focus_sessions: saveData.focus_sessions || [],
-      };
-      saveSaveData(preserved);
-      useGameStore.setState({
-        saveData: preserved,
-        activeSession: null,
-        selectedTool: null,
-      });
+        const initial = createInitialSaveData();
+        const preserved = {
+          ...initial,
+          focus_sessions: saveData.focus_sessions || [],
+        };
+        saveSaveData(preserved);
+        useGameStore.setState({
+          saveData: preserved,
+          activeSession: null,
+          selectedTool: null,
+        });
 
+      } catch {
+        useGameStore.getState().notify(
+          lang === 'en' ? 'Backup or reset could not be saved. Current progress was kept.' : 'Cadangan atau reset belum tersimpan. Progres saat ini dipertahankan.',
+          'error'
+        );
+        return;
+      }
       setIsResetConfirmOpen(false);
       setConfirmInput("");
       onClose();

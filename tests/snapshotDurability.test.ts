@@ -1,0 +1,13 @@
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { createIslandSnapshot, getIslandSnapshots, deleteIslandSnapshot } from '../src/lib/game/backupManager';
+import { createInitialSaveData } from '../src/lib/game/storage';
+const key='rimba_island_snapshots';
+let items:Map<string,string>,storage:{getItem:ReturnType<typeof vi.fn>;setItem:ReturnType<typeof vi.fn>};
+beforeEach(()=>{items=new Map();storage={getItem:vi.fn((k:string)=>items.get(k)??null),setItem:vi.fn((k:string,v:string)=>{items.set(k,v);})};vi.stubGlobal('window',{});vi.stubGlobal('localStorage',storage);});
+afterEach(()=>vi.unstubAllGlobals());
+it('does not overwrite malformed snapshot history during creation',()=>{items.set(key,'{broken-history');expect(()=>createIslandSnapshot(createInitialSaveData())).toThrow();expect(items.get(key)).toBe('{broken-history');expect(storage.setItem).not.toHaveBeenCalled();});
+it('reports an unavailable history instead of treating it as empty',()=>{storage.getItem.mockImplementation(()=>{throw new Error('Storage denied');});expect(()=>getIslandSnapshots()).toThrow();});
+it('does not claim snapshot creation succeeded or evict history on quota failure',()=>{const first=createIslandSnapshot(createInitialSaveData(),'First');const original=items.get(key);storage.setItem.mockClear();storage.setItem.mockImplementation(()=>{throw new DOMException('full','QuotaExceededError');});expect(()=>createIslandSnapshot(createInitialSaveData(),'Second')).toThrow();expect(items.get(key)).toBe(original);expect(JSON.parse(original!)[0].id).toBe(first.id);expect(storage.setItem).toHaveBeenCalledTimes(1);});
+it('does not claim deletion succeeded after a failed write',()=>{const first=createIslandSnapshot(createInitialSaveData());const original=items.get(key);storage.setItem.mockImplementation(()=>{throw new Error('Storage denied');});expect(()=>deleteIslandSnapshot(first.id)).toThrow();expect(items.get(key)).toBe(original);});
+it('returns the new snapshot only after its bytes are durable',()=>{const snapshot=createIslandSnapshot(createInitialSaveData(),'Test');expect(JSON.parse(items.get(key)!)[0]).toEqual(snapshot);});
+it('refuses an invalid history container without overwriting it',()=>{items.set(key,'{}');expect(()=>getIslandSnapshots()).toThrow();expect(storage.setItem).not.toHaveBeenCalled();});

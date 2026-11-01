@@ -209,9 +209,10 @@ export function getIslandSnapshots(): IslandSnapshot[] {
     const raw = localStorage.getItem(SNAPSHOTS_STORAGE_KEY);
     if (!raw) return [];
     const list = JSON.parse(raw);
-    return Array.isArray(list) ? list : [];
+    if (!Array.isArray(list)) throw new Error('Invalid snapshot history');
+    return list;
   } catch {
-    return [];
+    throw new Error('Riwayat cadangan belum dapat dibaca. Data asli dipertahankan.');
   }
 }
 
@@ -249,16 +250,11 @@ export function createIslandSnapshot(
   };
 
   const updated = [newSnapshot, ...existing].slice(0, 8);
-  while (updated.length > 0) {
-    try {
-      localStorage.setItem(SNAPSHOTS_STORAGE_KEY, JSON.stringify(updated));
-      break;
-    } catch (err) {
-      console.warn('[BackupManager] LocalStorage quota exceeded, evicting oldest snapshot to free space...', err);
-      updated.pop();
-    }
+  try {
+    localStorage.setItem(SNAPSHOTS_STORAGE_KEY, JSON.stringify(updated));
+  } catch {
+    throw new Error('Cadangan belum tersimpan. Periksa ruang penyimpanan dan coba lagi.');
   }
-
   return newSnapshot;
 }
 
@@ -272,7 +268,7 @@ export function deleteIslandSnapshot(snapshotId: string): IslandSnapshot[] {
   try {
     localStorage.setItem(SNAPSHOTS_STORAGE_KEY, JSON.stringify(filtered));
   } catch {
-    // Ignore storage error
+    throw new Error('Perubahan cadangan belum tersimpan. Silakan coba lagi.');
   }
   return filtered;
 }

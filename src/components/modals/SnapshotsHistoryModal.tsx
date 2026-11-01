@@ -44,30 +44,44 @@ export function SnapshotsHistoryModal({
 
   useEffect(() => {
     if (isOpen) {
-      setSnapshots(getIslandSnapshots());
+      try {
+        setSnapshots(getIslandSnapshots());
+      } catch {
+        setSnapshots([]);
+        notify(language === 'en' ? 'Snapshot history could not be read. Original data was kept.' : 'Riwayat cadangan belum dapat dibaca. Data asli dipertahankan.', 'error');
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, language, notify]);
 
   if (!isOpen) return null;
 
   const handleCreateSnapshot = () => {
-    soundManager.playPop();
-    hapticSuccess();
-    createIslandSnapshot(currentSaveData, newTitle);
-    setSnapshots(getIslandSnapshots());
-    setIsCreating(false);
-    setNewTitle("");
+    try {
+        createIslandSnapshot(currentSaveData, newTitle);
+        setSnapshots(getIslandSnapshots());
+        setIsCreating(false);
+        setNewTitle("");
+        soundManager.playPop();
+        hapticSuccess();
+    } catch {
+      notify(language === 'en' ? 'Snapshot was not saved. Check device storage and try again.' : 'Cadangan belum tersimpan. Periksa penyimpanan dan coba lagi.', 'error');
+    }
   };
 
   const handleRestoreSnapshot = (snap: IslandSnapshot) => {
-    soundManager.playComplete();
-    hapticSuccess();
-    const isEn = language === "en";
+const isEn = language === "en";
+    try {
     createIslandSnapshot(
       currentSaveData,
       isEn ? "Auto-Backup Before Snapshot Restore" : "Auto-Backup Sebelum Pulihkan Snapshot"
     );
+    } catch {
+      notify(language === 'en' ? 'Backup failed. Restore was cancelled.' : 'Cadangan gagal. Pemulihan dibatalkan.', 'error');
+      return;
+    }
     if (!importSaveData(snap.data)) return;
+    soundManager.playComplete();
+    hapticSuccess();
     notify(
       t.snapshotsModal.restoreSuccess ||
         (isEn
@@ -82,8 +96,12 @@ export function SnapshotsHistoryModal({
     e.stopPropagation();
     soundManager.playPop();
     hapticLight();
-    const updated = deleteIslandSnapshot(id);
-    setSnapshots(updated);
+    try {
+      const updated = deleteIslandSnapshot(id);
+      setSnapshots(updated);
+    } catch {
+      notify(language === 'en' ? 'Snapshot deletion was not saved. Try again.' : 'Penghapusan cadangan belum tersimpan. Coba lagi.', 'error');
+    }
   };
 
   const formatDate = (isoStr: string) => {

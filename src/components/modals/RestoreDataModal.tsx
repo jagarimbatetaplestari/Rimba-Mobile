@@ -83,17 +83,26 @@ export function RestoreDataModal({ isOpen, onClose }: RestoreDataModalProps) {
   const handleConfirmRestore = () => {
     if (!validation?.isValid || !validation.data) return;
 
+    try {
+      if (autoBackupCurrent) {
+        createIslandSnapshot(
+          currentSaveData,
+          `Auto-Backup (${new Date().toLocaleTimeString(language === "en" ? "en-US" : "id-ID", { hour: "2-digit", minute: "2-digit" })})`,
+        );
+      }
+
+      if (!importSaveData(validation.data)) return;
+    } catch {
+      useGameStore.getState().notify(
+        language === 'en'
+          ? 'Backup could not be saved. Restore was cancelled; current progress is unchanged.'
+          : 'Cadangan belum tersimpan. Pemulihan dibatalkan; progres saat ini tetap utuh.',
+        'error'
+      );
+      return;
+    }
     soundManager.playComplete();
     hapticSuccess();
-
-    if (autoBackupCurrent) {
-      createIslandSnapshot(
-        currentSaveData,
-        `Auto-Backup (${new Date().toLocaleTimeString(language === "en" ? "en-US" : "id-ID", { hour: "2-digit", minute: "2-digit" })})`,
-      );
-    }
-
-    if (!importSaveData(validation.data)) return;
     onClose();
   };
 

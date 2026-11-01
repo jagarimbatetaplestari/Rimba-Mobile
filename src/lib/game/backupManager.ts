@@ -49,7 +49,7 @@ export function validateRimbaBackup(raw: string | unknown): BackupValidationResu
       return { isValid: false, error: 'Berkas tidak berformat JSON yang valid.' };
     }
 
-    if (!parsed.profile || !parsed.world || !Array.isArray(parsed.world_objects)) {
+    if (parsed.version !== 1 || !parsed.profile || !parsed.world || !Array.isArray(parsed.world_objects)) {
       return {
         isValid: false,
         error: 'Struktur data tidak lengkap. Komponen profile, world, atau objek pulau hilang.',
@@ -60,6 +60,14 @@ export function validateRimbaBackup(raw: string | unknown): BackupValidationResu
     const worldObjects = Array.isArray(parsed.world_objects) ? parsed.world_objects : [];
     const ledger = Array.isArray(parsed.currency_ledger) ? parsed.currency_ledger : [];
 
+    const ledgerIds = new Set<string>();
+    for (const entry of ledger) {
+      if (!entry || typeof entry.id !== 'string' || !entry.id || ledgerIds.has(entry.id) ||
+        !Number.isFinite(entry.amount) || !['gold', 'xp'].includes(entry.currency)) {
+        return { isValid: false, error: 'Ledger tidak valid atau memiliki ID duplikat.' };
+      }
+      ledgerIds.add(entry.id);
+    }
     const balances = calculateBalances(ledger);
     const analytics = calculateAnalytics(sessions);
 
@@ -67,18 +75,19 @@ export function validateRimbaBackup(raw: string | unknown): BackupValidationResu
       (o) => o.object_type === 'tree' && o.status === 'active'
     ).length;
 
-    const currentXp = parsed.profile.xp ?? balances.xp;
-    const currentGold = parsed.profile.goldCached ?? balances.gold;
+    const currentXp = balances.xp;
+    const currentGold = balances.gold;
     const level = Math.floor(currentXp / 100) + 1;
 
     const validatedData: RimbaSaveData = {
-      version: parsed.version || 1,
+      version: 1,
       profile: {
-        id: parsed.profile.id || 'local-user',
+        id: 'local-user',
         xp: currentXp,
         goldCached: currentGold,
       },
       world: {
+        ...parsed.world,
         id: parsed.world.id || 'world_imported',
         name: parsed.world.name || 'Suaka Rimba',
         last_focus_completed_at: parsed.world.last_focus_completed_at || null,
@@ -108,7 +117,11 @@ export function validateRimbaBackup(raw: string | unknown): BackupValidationResu
       active_island_id: parsed.active_island_id || undefined,
       active_biome: parsed.active_biome || 'meadow',
       auto_season_enabled: parsed.auto_season_enabled ?? true,
-      subscription: parsed.subscription || undefined,
+      pioneer_completed_ids: Array.isArray(parsed.pioneer_completed_ids) ? parsed.pioneer_completed_ids : [],
+      pioneer_reward_claimed: parsed.pioneer_reward_claimed === true,
+      distraction_source: typeof parsed.distraction_source === 'string' ? parsed.distraction_source : undefined,
+      last_monthly_shield_month: typeof parsed.last_monthly_shield_month === 'string' ? parsed.last_monthly_shield_month : undefined,
+      subscription: undefined,
     };
 
     return {
@@ -137,14 +150,14 @@ export function validateRimbaBackup(raw: string | unknown): BackupValidationResu
  * Downloads or shares the current save data as a formatted JSON backup
  * Supports native iOS/Android Capacitor Share Sheet + Web Blob fallback
  */
-export async function downloadSaveDataBackup(saveData: RimbaSaveData): Promise<void> {
+export async function downloadSaveDataBackup(saveData: RimbaSaveData | string): Promise<void> {
   if (typeof window === 'undefined') return;
 
   const now = new Date();
   const dateStr = now.toISOString().slice(0, 10);
   const timeStr = `${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
   const fileName = `rimba_suaka_backup_${dateStr}_${timeStr}.json`;
-  const jsonContent = JSON.stringify(saveData, null, 2);
+  const jsonContent = typeof saveData === 'string' ? saveData : JSON.stringify(saveData, null, 2);
 
   if (isNativeMobile()) {
     try {

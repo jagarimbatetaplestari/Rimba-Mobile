@@ -49,3 +49,12 @@ describe('cloud sync account isolation', () => {
     expect(await smartSyncOnLogin('a')).toBe(true); expect(m.upsert.mock.calls[0][0].user_id).toBe('a');
   });
 });
+
+it('never grants Pro from the cloud game-save payload',async()=>{
+  const free={tier:'free',status:'none',isPro:false};
+  Object.assign(m.save,{subscription:free});
+  m.read.mockImplementation(async(table:string)=>({data:table==='game_saves'?{save_data:{...m.save,subscription:{tier:'pioneer_lifetime',status:'lifetime',isPro:true}},updated_at:'2026-11-01'}:null,error:null}));
+  expect(await smartSyncOnLogin('a')).toBe(true);
+  expect(m.persist.mock.calls[0][0].subscription).toEqual(free);
+  Object.assign(m.save,{subscription:undefined});
+});

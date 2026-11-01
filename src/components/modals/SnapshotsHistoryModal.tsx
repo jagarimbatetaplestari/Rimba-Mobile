@@ -67,7 +67,7 @@ export function SnapshotsHistoryModal({
       currentSaveData,
       isEn ? "Auto-Backup Before Snapshot Restore" : "Auto-Backup Sebelum Pulihkan Snapshot"
     );
-    importSaveData(snap.data);
+    if (!importSaveData(snap.data)) return;
     notify(
       t.snapshotsModal.restoreSuccess ||
         (isEn

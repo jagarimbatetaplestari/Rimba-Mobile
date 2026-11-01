@@ -700,24 +700,24 @@ assert(
   'Paywall source smoke: restore requests the store and provides feedback (SDK behavior tested separately)'
 );
 
-// 2. backupManager Lossless Subscription & Island Preservation
+// 2. Backup trust-boundary source smoke (behavior is covered by Vitest)
 const backupManagerPath = path.join(projectRoot, 'src/lib/game/backupManager.ts');
 assert(fs.existsSync(backupManagerPath), 'backupManager.ts exists');
 const backupManagerContent = fs.readFileSync(backupManagerPath, 'utf8');
 assert(
-  backupManagerContent.includes('subscription: parsed.subscription') &&
+  backupManagerContent.includes('subscription: undefined') &&
     backupManagerContent.includes('islands: Array.isArray(parsed.islands)') &&
     backupManagerContent.includes('streak_shields: typeof parsed.streak_shields'),
-  'backupManager validateRimbaBackup preserves subscription, archipelago islands, and streak shields'
+  'backupManager excludes untrusted purchase rights while preserving islands and streak shields'
 );
 
-// 3. cloudSync Lossless Subscription Merge
+// 3. Cloud game payload is not evidence of a store purchase (source smoke only)
 assert(
   cloudSyncContent.includes('mergedSubscription') &&
-    cloudSyncContent.includes("localSub?.tier === 'pioneer_lifetime'") &&
-    cloudSyncContent.includes("cloudSub?.tier === 'pioneer_lifetime'") &&
+    cloudSyncContent.includes("const mergedSubscription = localSave.subscription") &&
+    !cloudSyncContent.includes("mergedSubscription = cloudSub") &&
     cloudSyncContent.includes('subscription: mergedSubscription'),
-  'cloudSync smartSyncOnLogin executes lossless subscription merge preserving highest Pro/Lifetime status'
+  'cloudSync keeps current entitlement instead of granting Pro from cloud game payload'
 );
 
 // 4. Bilingual Translation Completeness for Rimba Pro

@@ -103,7 +103,7 @@ export function createInitialSaveData(): RimbaSaveData {
 }
 
 /**
- * Loads save data from localStorage with fallback and schema validation.
+ * Loads validated progress. Unreadable data must be recovered, never silently reset.
  */
 export function loadSaveData(): RimbaSaveData {
   if (typeof window === 'undefined') {
@@ -119,11 +119,11 @@ export function loadSaveData(): RimbaSaveData {
     }
 
     const parsed: RimbaSaveData = JSON.parse(raw);
-    if (!parsed || parsed.version !== 1) {
-      console.warn('Unknown save data version or corrupt save. Resetting to initial seed.');
-      const initial = createInitialSaveData();
-      saveSaveData(initial);
-      return initial;
+    if (!parsed || parsed.version !== 1 || !parsed.profile || !parsed.world ||
+      !Array.isArray(parsed.currency_ledger) || !Array.isArray(parsed.focus_sessions) ||
+      !Array.isArray(parsed.world_objects) || parsed.currency_ledger.some(entry =>
+        !entry || !Number.isFinite(entry.amount) || !['gold', 'xp'].includes(entry.currency))) {
+      throw new Error('Save data is damaged or uses an unsupported version.');
     }
 
     // Normalize collections to guarantee safe references
@@ -191,14 +191,13 @@ export function loadSaveData(): RimbaSaveData {
     parsed.profile.xp = balances.xp;
 
     return parsed;
-  } catch (err) {
-    console.error('Failed to load save data:', err);
-    return createInitialSaveData();
+  } catch {
+    throw new Error('Progres lokal belum dapat dibaca. Data asli dipertahankan; jangan hapus data aplikasi.');
   }
 }
 
 /**
- * Saves game state to localStorage with pure data cloning and QuotaExceededError resilience.
+ * Writes a cloned save atomically. Storage failure is surfaced without pruning history.
  */
 export function saveSaveData(data: RimbaSaveData): void {
   if (typeof window === 'undefined') return;
@@ -216,32 +215,8 @@ export function saveSaveData(data: RimbaSaveData): void {
     };
 
     localStorage.setItem(GAME_CONFIG.storageKey, JSON.stringify(safeData));
-  } catch (err: unknown) {
-    const isQuotaError =
-      err instanceof DOMException &&
-      (err.name === 'QuotaExceededError' || err.code === 22 || err.code === 1014);
-
-    if (isQuotaError) {
-      console.warn('LocalStorage quota exceeded. Pruning older focus sessions (keeping last 100) and retrying...');
-      try {
-        const balances = calculateBalances(data.currency_ledger);
-        const prunedSessions = (data.focus_sessions || []).slice(-100);
-        const prunedData: RimbaSaveData = {
-          ...data,
-          focus_sessions: prunedSessions,
-          profile: {
-            ...data.profile,
-            goldCached: balances.gold,
-            xp: balances.xp,
-          },
-        };
-        localStorage.setItem(GAME_CONFIG.storageKey, JSON.stringify(prunedData));
-        return;
-      } catch (retryErr) {
-        console.error('Failed to save even after pruning sessions:', retryErr);
-      }
-    }
-    console.error('Failed to write save data to localStorage:', err);
+  } catch {
+    // Never discard history or claim a write succeeded after storage failure.
+    throw new Error('Progres belum tersimpan. Periksa ruang penyimpanan dan coba lagi.');
   }
 }
-

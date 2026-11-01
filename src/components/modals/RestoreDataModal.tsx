@@ -93,7 +93,7 @@ export function RestoreDataModal({ isOpen, onClose }: RestoreDataModalProps) {
       );
     }
 
-    importSaveData(validation.data);
+    if (!importSaveData(validation.data)) return;
     onClose();
   };
 

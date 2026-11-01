@@ -15,6 +15,7 @@ import {
   IslandSlot,
 } from '@/types/game';
 import { UserSubscription } from '@/types/subscription';
+import { validateRimbaBackup } from './backupManager';
 import {
   BUILD_CATALOG,
   CatalogItem,
@@ -85,7 +86,17 @@ function getStoreLang(): 'id' | 'en' {
  * Persists game save data to localStorage and schedules debounced cloud synchronization to Supabase.
  */
 function persistAndSyncSaveData(data: RimbaSaveData): void {
-  saveSaveData(data);
+  try {
+    saveSaveData(data);
+  } catch (error) {
+    useGameStore.getState().notify(
+      getStoreLang() === 'en'
+        ? 'Progress could not be saved. Check device storage and try again.'
+        : 'Progres belum tersimpan. Periksa ruang penyimpanan dan coba lagi.',
+      'error'
+    );
+    throw error;
+  }
   scheduleDebouncedCloudSync();
 }
 
@@ -2217,9 +2228,25 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   importSaveData: (newData: RimbaSaveData) => {
     try {
-      persistAndSyncSaveData(newData);
+      if (get().activeSession?.status === 'active') {
+        get().notify('Selesaikan atau batalkan sesi fokus sebelum memulihkan cadangan.', 'error');
+        return false;
+      }
+      const validated = validateRimbaBackup(newData);
+      if (!validated.isValid || !validated.data) {
+        get().notify(validated.error || 'Berkas cadangan tidak valid.', 'error');
+        return false;
+      }
+      const current = get().saveData;
+      const restored: RimbaSaveData = {
+        ...validated.data,
+        profile: { ...current.profile, xp: validated.data.profile.xp, goldCached: validated.data.profile.goldCached },
+        // Backups/snapshots are progress only. Store verification owns purchase rights.
+        subscription: current.subscription,
+      };
+      persistAndSyncSaveData(restored);
       set({
-        saveData: newData,
+        saveData: restored,
         activeSession: null,
         selectedTool: null,
         selectedCatalogItem: null,

@@ -1,0 +1,13 @@
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { GAME_CONFIG } from '../src/lib/game/config';
+import { createInitialSaveData, loadSaveData, saveSaveData } from '../src/lib/game/storage';
+let items:Map<string,string>;
+let storage:{getItem:ReturnType<typeof vi.fn>;setItem:ReturnType<typeof vi.fn>};
+beforeEach(()=>{items=new Map();storage={getItem:vi.fn((key:string)=>items.get(key)??null),setItem:vi.fn((key:string,value:string)=>{items.set(key,value);})};vi.stubGlobal('window',{});vi.stubGlobal('localStorage',storage);});
+afterEach(()=>vi.unstubAllGlobals());
+it('retains malformed JSON and refuses to replace it with an empty island',()=>{items.set(GAME_CONFIG.storageKey,'{broken-save');expect(()=>loadSaveData()).toThrow();expect(items.get(GAME_CONFIG.storageKey)).toBe('{broken-save');expect(storage.setItem).not.toHaveBeenCalled();});
+it('retains a future schema rather than resetting it',()=>{const raw=JSON.stringify({...createInitialSaveData(),version:2});items.set(GAME_CONFIG.storageKey,raw);expect(()=>loadSaveData()).toThrow();expect(items.get(GAME_CONFIG.storageKey)).toBe(raw);expect(storage.setItem).not.toHaveBeenCalled();});
+it('refuses unreadable storage rather than reporting a new game',()=>{storage.getItem.mockImplementation(()=>{throw new Error('Access denied');});expect(()=>loadSaveData()).toThrow();expect(storage.setItem).not.toHaveBeenCalled();});
+it('refuses malformed core save collections',()=>{items.set(GAME_CONFIG.storageKey,JSON.stringify({...createInitialSaveData(),currency_ledger:{}}));expect(()=>loadSaveData()).toThrow();expect(storage.setItem).not.toHaveBeenCalled();});
+it('reports quota failure without pruning focus history or replacing the last durable save',()=>{items.set(GAME_CONFIG.storageKey,'previous-durable-save');storage.setItem.mockImplementation(()=>{throw new DOMException('full','QuotaExceededError');});const data=createInitialSaveData();data.focus_sessions=Array.from({length:150},(_,i)=>({id:String(i),status:'completed'} as never));expect(()=>saveSaveData(data)).toThrow();expect(storage.setItem).toHaveBeenCalledTimes(1);expect(data.focus_sessions).toHaveLength(150);expect(items.get(GAME_CONFIG.storageKey)).toBe('previous-durable-save');});
+it('loads a valid save and recomputes balances without mutating durable contents',()=>{const data=createInitialSaveData();data.profile.xp=9999;const raw=JSON.stringify(data);items.set(GAME_CONFIG.storageKey,raw);expect(loadSaveData().profile.xp).toBe(50);expect(items.get(GAME_CONFIG.storageKey)).toBe(raw);});

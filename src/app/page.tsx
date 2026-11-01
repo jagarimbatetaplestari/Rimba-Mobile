@@ -54,6 +54,8 @@ export default function RimbaDioramaApp() {
   const router = useRouter();
   const authUser = useAuthStore((state) => state.user);
   const [isAuthHydrated, setIsAuthHydrated] = useState(false);
+  const [needsSaveRecovery, setNeedsSaveRecovery] = useState(false);
+  const [recoveryExportError, setRecoveryExportError] = useState(false);
 
   const init = useGameStore((state) => state.init);
   const checkReclamation = useGameStore((state) => state.checkReclamation);
@@ -225,7 +227,8 @@ export default function RimbaDioramaApp() {
       useAuthStore.getState().initAuth();
     } catch (err) {
       console.error("[Rimba] Failed during init():", err);
-      useGameStore.setState({ isInitialized: true });
+      setNeedsSaveRecovery(true);
+      return;
     }
 
     const safetyTimer = setTimeout(() => {
@@ -594,6 +597,33 @@ export default function RimbaDioramaApp() {
   }, [isAnyModalOrSheetOpen]);
 
   // Prevent flashing main island or onboarding before redirecting unauthenticated user to /login
+  if (needsSaveRecovery) {
+    const isEn = appLanguage === 'en';
+    return (
+      <main className="fixed inset-0 z-[200] flex items-center justify-center bg-[#051F18] p-6 text-[#FAFAF7]">
+        <section role="alert" className="w-full max-w-md space-y-5 rounded-3xl border border-white/15 bg-[#0A261E] p-7">
+          <h1 className="text-xl font-semibold">{isEn ? 'Your progress needs recovery' : 'Progres perlu dipulihkan'}</h1>
+          <p className="text-sm leading-relaxed text-emerald-100/80">
+            {isEn
+              ? 'Rimba could not read your saved progress. The original data has been kept. Do not reinstall or clear app data. Export a copy and contact support for recovery.'
+              : 'Rimba belum dapat membaca progres tersimpan. Data asli dipertahankan. Jangan reinstall atau hapus data aplikasi. Ekspor salinan dan hubungi dukungan untuk pemulihan.'}
+          </p>
+          <button className="w-full rounded-2xl bg-[#E8B84B] px-4 py-3 font-semibold text-[#0A261E]" onClick={async () => {
+            setRecoveryExportError(false);
+            try {
+              const raw = localStorage.getItem(GAME_CONFIG.storageKey);
+              if (!raw) throw new Error('Save unavailable');
+              const { downloadSaveDataBackup } = await import('@/lib/game/backupManager');
+              await downloadSaveDataBackup(raw);
+            } catch { setRecoveryExportError(true); }
+          }}>{isEn ? 'Export original data' : 'Ekspor data asli'}</button>
+          {recoveryExportError && <p className="text-sm">{isEn ? 'Export is unavailable. Keep app data and contact support.' : 'Ekspor belum tersedia. Pertahankan data aplikasi dan hubungi dukungan.'}</p>}
+          <button className="w-full rounded-2xl border border-white/20 px-4 py-3" onClick={() => window.location.reload()}>{isEn ? 'Try again' : 'Coba lagi'}</button>
+          <a className="block break-all text-sm underline" href="mailto:jagarimba.tetaplestari@gmail.com">jagarimba.tetaplestari@gmail.com</a>
+        </section>
+      </main>
+    );
+  }
   if (!isAuthHydrated || !authUser) {
     return <div className="fixed inset-0 h-[100dvh] w-full bg-[#040D08]" />;
   }

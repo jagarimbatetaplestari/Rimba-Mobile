@@ -107,3 +107,23 @@ Current verification: 52/52 Vitest, mobile typecheck and npm run build passed af
 - Ruling: stable completion IDs apply to new candidate completions — required by the spec's reward-once invariant — cost: historical rewards with old random IDs and general cross-device conflicts still need Task5 reconciliation; this is not full sync correctness or server anti-cheat.
 - Fresh verification:121/121 Vitest, typecheck,157/157 prelaunch smoke/mock assertions and npm run build passed. Paused/background/native device behavior still needs acceptance on the release candidate.
 - App Store Connect session restored by user. Group22533477 Rimba Pro now has en-US and id display names. Monthly6829362346 price schedule created from IDR29000 with Apple conversions; en-US/id display names/descriptions saved; availability148/175 excludes all27EU countries and automatic future territories remains OFF. Annual/lifetime draft prices, metadata and availability still pending; exact IDR179000/349000 points confirmed via paginated API reads. No review submitted.
+
+## Store catalog pricing and localization verification
+
+- Group22533477 has en-US/id Rimba Pro localizations, confirmed by API.
+- Monthly6829362346 saved IDR29000, annual6829362411 IDR179000, lifetime6829362449 IDR349000; exact price points verified from current schedules. Lifetime base territory IDN; Apple conversion schedules created for other storefronts.
+- All three products have en-US and id display names/descriptions,148 current territories,0 of27EU territories, and availableInNewTerritories=false, verified from API territory lists. Annual has only UPFRONT payment plan; monthly-with12-month-commitment remains unconfigured.
+- Correction to earlier checkpoint: initial subscription setup UI displayed future-territory checkbox OFF but Apple persisted true. Reopened each subscription's availability editor, explicitly turned it off and verified false using subscriptionPlanAvailabilities. Do not infer persisted state from the initial form alone.
+- App-level distribution is still being checked separately; product-level exclusions alone do not restrict app downloads. Review screenshots and purchase/restore device acceptance are not complete, and no item was added/submitted for review.
+
+## App listing and snapshot durability checkpoint
+
+- Resumed after limit; browser again reports disabled. Continued independent Apple API and local-code work without circumventing browser permissions.
+- App-level API confirms availableInNewTerritories=false and exactly148/175 territories available, excluding exactly27EU members. This setting persisted despite the interrupted UI session; no duplicate update was needed.
+- Draft app version1.0 now has en-US/id descriptions, keywords and promotional text. Both app-info locales now have subtitles and the verified public privacy URL. All writes verified with API read-back; pre-change metadata backed up privately under Temp. STORE_LISTING.json is the reviewable public copy. No real-tree claims, no review submission.
+- Catalog still MISSING_METADATA for all three products: review screenshots/native acceptance and other final review requirements remain pending. No newer App Store binary than original build3; unsigned simulator CI is not a TestFlight delivery.
+- Latest prior CI41274041763 for a23af77 passed, including iPhone+iPad compile after focus fixes.
+- Snapshot durability:5 failures reproduced before changes;6 tests now pass. Invalid/unreadable history is retained rather than treated as empty. Snapshot creation/deletion reports write failure and never evicts additional old snapshots just to hide quota errors. The existing normal8-snapshot retention policy is unchanged.
+- All snapshot callers now handle errors; restore/reset aborts before replacing current progress if the requested backup is not durable. User sees ID/EN errors; successful restore feedback happens only after successful import. History remains in local storage if unreadable. Complete owner isolation and export/recovery for malformed snapshot history are still Task5 follow-up.
+- Fresh verification before final formatting:127/127 Vitest, typecheck,157/157 prelaunch checks and npm run build passed. Rerun focused checks after final feedback/formatting edits. No real account or production data was modified for these tests.
+- Final feedback/formatting follow-up verified: typecheck and16 focused backup/snapshot tests passed; final npm run build exited0. Diff whitespace check clean. Snapshot UI visual QA is still pending browser access restoration.

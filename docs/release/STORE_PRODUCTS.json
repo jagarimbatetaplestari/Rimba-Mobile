@@ -4,17 +4,55 @@
   "monthly": {
     "id": "6829362346",
     "productId": "rimba_pro_monthly",
-    "targetIdr": 29000
+    "targetIdr": 29000,
+    "pricePointId": "eyJzIjoiNjgyOTM2MjM0NiIsInQiOiJJRE4iLCJwIjoiMTAwNTQifQ"
   },
   "annual": {
     "id": "6829362411",
     "productId": "rimba_pro_annual",
-    "targetIdr": 179000
+    "targetIdr": 179000,
+    "pricePointId": "eyJzIjoiNjgyOTM2MjQxMSIsInQiOiJJRE4iLCJwIjoiMTAyMTYifQ"
   },
   "lifetime": {
     "id": "6829362449",
     "productId": "rimba_pioneer_lifetime",
-    "targetIdr": 349000
+    "targetIdr": 349000,
+    "pricePointId": "eyJzIjoiNjgyOTM2MjQ0OSIsInQiOiJJRE4iLCJwIjoiMTAyODEifQ"
   },
-  "status": "Draft products only; price schedules, localization, availability and review screenshots pending."
+  "status": "Draft price schedules, en-US/id localizations, and 148 non-EU territories verified via API. Review screenshots, purchase acceptance and submission remain pending.",
+  "locales": [
+    "en-US",
+    "id"
+  ],
+  "availableTerritoryCount": 148,
+  "excludedEuTerritories": [
+    "AUT",
+    "BEL",
+    "BGR",
+    "HRV",
+    "CYP",
+    "CZE",
+    "DNK",
+    "EST",
+    "FIN",
+    "FRA",
+    "DEU",
+    "GRC",
+    "HUN",
+    "IRL",
+    "ITA",
+    "LVA",
+    "LTU",
+    "LUX",
+    "MLT",
+    "NLD",
+    "POL",
+    "PRT",
+    "ROU",
+    "SVK",
+    "SVN",
+    "ESP",
+    "SWE"
+  ],
+  "availableInNewTerritories": false
 }

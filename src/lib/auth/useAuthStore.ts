@@ -5,6 +5,7 @@ import { persist } from 'zustand/middleware';
 import { Capacitor } from '@capacitor/core';
 import { generateCryptographicNoncePair } from './nonce';
 import { supabase } from '../supabase/client';
+import { syncJournalKey } from '../supabase/syncJournal';
 import { smartSyncOnLogin, invalidateCloudSyncSession } from '../supabase/cloudSync';
 import { loadSaveData, getActiveSaveOwner, selectSaveOwner, saveStorageKey } from '../game/storage';
 import { useGameStore } from '../game/useGameStore';
@@ -830,7 +831,12 @@ export const useAuthStore = create<AuthState>()(
         }
 
         if (typeof window !== 'undefined') {
-          localStorage.removeItem(saveStorageKey(currentUser.isGuest ? 'guest' : currentUser.id));
+          const owner = currentUser.isGuest ? 'guest' : currentUser.id;
+          localStorage.removeItem(saveStorageKey(owner));
+          localStorage.removeItem(syncJournalKey(owner));
+          localStorage.removeItem('rimba_progress_choice:' + encodeURIComponent(owner) + ':legacy');
+          localStorage.removeItem('rimba_progress_choice:' + encodeURIComponent(owner) + ':guest');
+          localStorage.removeItem('rimba_apple_fullname_' + currentUser.id);
           localStorage.removeItem('rimba_island_snapshots:owner:' + encodeURIComponent(currentUser.isGuest ? 'guest' : currentUser.id));
         }
         // 2. Clear client state and sign out

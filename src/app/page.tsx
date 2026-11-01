@@ -31,6 +31,7 @@ import {
 } from "@/components/modals/MobileProfileModal";
 import { MobileStatisticsModal } from "@/components/modals/MobileStatisticsModal";
 import { MobileLeaderboardModal } from "@/components/modals/MobileLeaderboardModal";
+import { CloudSyncNotice } from '@/components/feedback/CloudSyncNotice';
 import { ProgressMigrationModal } from '@/components/modals/ProgressMigrationModal';
 import { MobileSettingsSheet } from "@/components/modals/MobileSettingsSheet";
 import { CampfireRoomModal } from "@/components/modals/CampfireRoomModal";
@@ -57,6 +58,7 @@ export default function RimbaDioramaApp() {
   const authUser = useAuthStore((state) => state.user);
   const ownershipError = useAuthStore((state) => state.ownershipError);
   const [isAuthHydrated, setIsAuthHydrated] = useState(false);
+  const [progressMigrationOpen,setProgressMigrationOpen] = useState(true);
   const [needsSaveRecovery, setNeedsSaveRecovery] = useState(false);
   const [recoveryExportError, setRecoveryExportError] = useState(false);
 
@@ -637,7 +639,8 @@ export default function RimbaDioramaApp() {
     <main
       className={`fixed inset-0 w-full h-[100dvh] overflow-hidden overscroll-none select-none font-sans antialiased transition-colors duration-1000 ${mainThemeClass}`}
     >
-      <ProgressMigrationModal key={authUser.isGuest ? 'guest' : authUser.id} owner={authUser.isGuest ? 'guest' : authUser.id} />
+      <ProgressMigrationModal key={authUser.isGuest ? 'guest' : authUser.id} owner={authUser.isGuest ? 'guest' : authUser.id} onBlockingChange={setProgressMigrationOpen} />
+      <CloudSyncNotice blocked={progressMigrationOpen} />
       {/* ====================================================
           MODERN AMBIENT HORIZON BACKDROP (Zero-Jank GPU Accelerated)
           ==================================================== */}

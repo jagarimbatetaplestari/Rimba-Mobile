@@ -2,10 +2,12 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 vi.mock('../src/lib/audio/musicPlayer',()=>({musicPlayer:{stop:vi.fn()}}));
 const m = vi.hoisted(() => ({ session: null as any, initialNullEvent: false }));
 vi.mock('../src/lib/supabase/client', () => ({ supabase: {
+  functions:{invoke:async()=>({data:{deleted:true,appleRevoked:false},error:null})},
   auth: {
     signInWithPassword: async ({email}: any) => { const user={id:email.split('@')[0],email}; m.session={user}; return {data:{user,session:m.session},error:null}; },
     onAuthStateChange: (callback:any)=>{if(m.initialNullEvent)queueMicrotask(()=>callback('INITIAL_SESSION',null));},
     getSession: async () => ({data:{session:m.session},error:null}),
+    getUser: async()=>({data:{user:{...m.session?.user,identities:[{provider:'email'}]}},error:null}),
     signOut: async () => { m.session=null; return {error:null}; },
   },
   from: () => ({select: () => ({eq: () => ({maybeSingle: async () => ({data:null,error:null})})}),upsert: async()=>({error:null})}),
@@ -60,4 +62,11 @@ it('does not store a late snapshot from A inside B history',async()=>{
   await logIn('b');expect(getIslandSnapshots()).toEqual([]);
   expect(()=>createIslandSnapshot(a,'Late A snapshot')).toThrow();
   await logIn('a');expect(getIslandSnapshots().map(s=>s.title)).toEqual(['A snapshot']);
+});
+
+it('clears the deleted account outbox while retaining another account journal',async()=>{
+ await logIn('a');const {syncJournalKey}=await import('../src/lib/supabase/syncJournal');
+ items.set(syncJournalKey('a'),'private queued A progress');items.set(syncJournalKey('b'),'private queued B progress');
+ await useAuthStore.getState().deleteAccountAndData();
+ expect(items.has(syncJournalKey('a'))).toBe(false);expect(items.get(syncJournalKey('b'))).toBe('private queued B progress');
 });

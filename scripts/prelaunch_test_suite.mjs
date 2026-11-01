@@ -468,21 +468,19 @@ assert(
 // ------------------------------------------------------------------
 console.log('\x1b[36m[SUITE 8] Profil, Statistik & Lossless Cloud Sync Integrity\x1b[0m');
 
-// 1. Lossless Multi-Device Merge in cloudSync.ts
+// 1. Revision-aware whole-copy sync (behavior verified by cloudSyncV2/PostgreSQL tests)
 const cloudSyncPath = path.join(projectRoot, 'src/lib/supabase/cloudSync.ts');
 assert(fs.existsSync(cloudSyncPath), 'cloudSync.ts exists');
 const cloudSyncContent = fs.readFileSync(cloudSyncPath, 'utf8');
 assert(
-  cloudSyncContent.includes('mergedIslands') &&
-    cloudSyncContent.includes('mergedChapters') &&
-    cloudSyncContent.includes('mergedWisdom') &&
-    cloudSyncContent.includes('mergedLedger'),
-  'cloudSync smartSyncOnLogin executes deterministic field-level lossless merge (islands, story, wisdom, currency)'
+  cloudSyncContent.includes("supabase.rpc('commit_game_save_v2'") &&
+    cloudSyncContent.includes('p_expected_owner:owner') && cloudSyncContent.includes('p_expected_revision:pending.baseRevision'),
+  'cloudSync writes through owner/revision-aware RPC instead of blind overwrite'
 );
 assert(
-  cloudSyncContent.includes('Math.max(localSave.profile?.xp || 0, cloudSave.profile?.xp || 0)') &&
-    cloudSyncContent.includes('Math.max(localSave.streak_shields || 0, cloudSave.streak_shields || 0)'),
-  'cloudSync smartSyncOnLogin preserves highest accumulated XP and streak shield values'
+  cloudSyncContent.includes('resolveCloudConflict') && cloudSyncContent.includes('createIslandSnapshot(current') &&
+    !cloudSyncContent.includes('mergedLedger') && !cloudSyncContent.includes('Math.max(localSave.profile'),
+  'cloudSync preserves conflict copies for explicit choice rather than union/max merging'
 );
 
 // 2. Avatar Picker Upload Reliability & State Synchronization
@@ -713,10 +711,8 @@ assert(
 
 // 3. Cloud game payload is not evidence of a store purchase (source smoke only)
 assert(
-  cloudSyncContent.includes('mergedSubscription') &&
-    cloudSyncContent.includes("const mergedSubscription = localSave.subscription") &&
-    !cloudSyncContent.includes("mergedSubscription = cloudSub") &&
-    cloudSyncContent.includes('subscription: mergedSubscription'),
+  cloudSyncContent.includes('validateRimbaBackup(data.save_data)') &&
+    cloudSyncContent.includes('subscription:current.subscription'),
   'cloudSync keeps current entitlement instead of granting Pro from cloud game payload'
 );
 

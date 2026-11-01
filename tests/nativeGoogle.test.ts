@@ -1,4 +1,5 @@
 import { beforeEach, afterEach, expect, it, vi } from 'vitest';
+vi.mock('../src/lib/mobile/nativeBridge',()=>({isNativeMobile:()=>true}));
 const m=vi.hoisted(()=>({initialize:vi.fn(),logout:vi.fn(),login:vi.fn(),token:vi.fn(),oauth:vi.fn(),currentId:'a'}));
 vi.mock('@capacitor/core',()=>({Capacitor:{isNativePlatform:()=>true,getPlatform:()=> 'ios'}}));
 vi.mock('@capgo/capacitor-social-login',()=>({SocialLogin:{initialize:m.initialize,logout:m.logout,login:m.login}}));

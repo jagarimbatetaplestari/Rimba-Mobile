@@ -1,340 +1,203 @@
+import { create } from 'zustand';
 import { supabase } from './client';
 import { RimbaSaveData } from '@/types/game';
 import { useAuthStore } from '../auth/useAuthStore';
 import { useGameStore } from '../game/useGameStore';
 import { saveSaveData } from '../game/storage';
+import { validateRimbaBackup, createIslandSnapshot } from '../game/backupManager';
+import { canonicalProgress, progressHash, hasMeaningfulProgress, reconcileProgress,
+  readSyncJournal, writeSyncJournal, SyncJournal, PendingSaveCommit } from './syncJournal';
 
+export interface CloudConflict { owner:string; cloudSave:RimbaSaveData|null; revision:number|null; updatedAt:string|null; }
 export interface CloudSyncStatus {
-  isSyncing: boolean;
-  lastSyncedAt: string | null;
-  error: string | null;
+  isSyncing:boolean; lastSyncedAt:string|null; error:string|null;
+  phase:'idle'|'syncing'|'pending'|'synced'|'offline'|'conflict'|'error';
+  conflict:CloudConflict|null; showConflict:boolean;
 }
-
-let syncTimeout: NodeJS.Timeout | null = null;
-let lastSyncedTimestamp: string | null = null;
-let accountRevision = 0;
-
-// Invalidate work across logout, account switches, and A -> B -> A transitions.
-let accountWatcherStarted = false;
-function watchAccountChanges() {
-  if (accountWatcherStarted) return;
-  accountWatcherStarted = true;
-  useAuthStore.subscribe((state, previous) => {
-    if (state.user?.id !== previous.user?.id || state.user?.isGuest !== previous.user?.isGuest) {
-      invalidateCloudSyncSession();
-    }
+export const useCloudSyncStatus=create<CloudSyncStatus>(()=>({isSyncing:false,lastSyncedAt:null,error:null,phase:'idle',conflict:null,showConflict:false}));
+let syncTimeout:NodeJS.Timeout|null=null;
+let lastSyncedTimestamp:string|null=null;
+let accountRevision=0;
+let accountWatcherStarted=false;
+const queues=new Map<string,Promise<boolean>>();
+function watchAccountChanges(){
+  if(accountWatcherStarted)return;accountWatcherStarted=true;
+  useAuthStore.subscribe((state,previous)=>{
+    if(state.user?.id!==previous.user?.id||state.user?.isGuest!==previous.user?.isGuest)invalidateCloudSyncSession();
   });
 }
-
-export function invalidateCloudSyncSession(): void {
-  accountRevision += 1;
-  lastSyncedTimestamp = null;
-  if (syncTimeout) clearTimeout(syncTimeout);
-  syncTimeout = null;
+export function invalidateCloudSyncSession():void {
+  accountRevision++;lastSyncedTimestamp=null;
+  if(syncTimeout)clearTimeout(syncTimeout);syncTimeout=null;
+  useCloudSyncStatus.setState({isSyncing:false,lastSyncedAt:null,error:null,phase:'idle',conflict:null,showConflict:false});
 }
-
-function isCurrentAccount(userId: string, revision: number): boolean {
-  const user = useAuthStore.getState().user;
-  return revision === accountRevision && user?.id === userId && !user.isGuest;
+function isCurrentAccount(owner:string,generation:number):boolean {
+  const user=useAuthStore.getState().user;
+  return generation===accountRevision&&user?.id===owner&&!user.isGuest;
 }
-
-export function getLastSyncedAt(): string | null {
-  return lastSyncedTimestamp;
+function status(owner:string,generation:number,patch:Partial<CloudSyncStatus>){
+  if(isCurrentAccount(owner,generation))useCloudSyncStatus.setState(patch);
 }
-
-/**
- * Menyelaraskan profil user lokal (useGameStore dan useAuthStore) dan mengunggahnya ke Supabase jika login.
- */
-export async function syncProfileUpdate(updates: {
-  name?: string;
-  avatarUrl?: string;
-  bio?: string;
-}) {
-  const authStore = useAuthStore.getState();
-  const gameStore = useGameStore.getState();
-  const currentUser = authStore.user;
-
-  // 1. Selaraskan Auth Store
-  authStore.updateProfile(updates);
-
-  // 2. Selaraskan Game Store
-  const currentSave = gameStore.saveData;
-  const updatedProfile = {
-    ...currentSave.profile,
-    ...(updates.name ? { name: updates.name.trim() } : {}),
-    ...(updates.avatarUrl !== undefined ? { avatarUrl: updates.avatarUrl } : {}),
-    ...(updates.bio !== undefined ? { bio: updates.bio.trim() } : {}),
-  };
-
-  const updatedSaveData: RimbaSaveData = {
-    ...currentSave,
-    profile: updatedProfile,
-    world: {
-      ...currentSave.world,
-      ...(updates.name ? { name: `Suaka ${updates.name.trim()}` } : {}),
-    },
-  };
-
-  saveSaveData(updatedSaveData);
-  useGameStore.setState({ saveData: updatedSaveData });
-
-  // 3. Jika user login ke Supabase (bukan guest), kirim ke cloud
-  if (currentUser && !currentUser.isGuest) {
-    try {
-      await supabase
-        .from('profiles')
-        .update({
-          display_name: updatedProfile.name,
-          avatar_url: updatedProfile.avatarUrl,
-          bio: updatedProfile.bio,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', currentUser.id);
-    } catch (err) {
-      console.warn('Gagal sync profil ke Supabase:', err);
+export function getLastSyncedAt():string|null{return lastSyncedTimestamp;}
+function synced(owner:string,generation:number){
+  if(!isCurrentAccount(owner,generation))return;
+  lastSyncedTimestamp=new Date().toISOString();
+  status(owner,generation,{isSyncing:false,lastSyncedAt:lastSyncedTimestamp,error:null,phase:'synced',conflict:null,showConflict:false});
+}
+export async function syncProfileUpdate(updates:{name?:string;avatarUrl?:string;bio?:string}){
+  const auth=useAuthStore.getState(),current=useGameStore.getState().saveData;
+  const owner=auth.user&&!auth.user.isGuest?auth.user.id:'guest';
+  if(current.storage_owner!==owner)throw new Error('Account changed. Try again.');
+  auth.updateProfile(updates);
+  const profile={...current.profile,...(updates.name?{name:updates.name.trim()}:{}),
+    ...(updates.avatarUrl!==undefined?{avatarUrl:updates.avatarUrl}:{}),...(updates.bio!==undefined?{bio:updates.bio.trim()}: {})};
+  const updated={...current,profile,world:{...current.world,...(updates.name?{name:`Suaka ${updates.name.trim()}`}:{})}};
+  saveSaveData(updated,owner);useGameStore.setState({saveData:updated});
+  if(auth.user&&!auth.user.isGuest){
+    const {error}=await supabase.from('profiles').update({display_name:profile.name,avatar_url:profile.avatarUrl,bio:profile.bio,updated_at:new Date().toISOString()}).eq('id',auth.user.id);
+    if(error)throw new Error('Profile sync failed. Local progress was kept.');
+  }
+}
+export async function fetchCloudGameSave(owner:string):Promise<{saveData:RimbaSaveData|null;updatedAt:string|null;revision:number|null;failed:boolean}>{
+  try{
+    const {data,error}=await supabase.from('game_saves').select('save_data,updated_at,revision').eq('user_id',owner).maybeSingle();
+    if(error)return {saveData:null,updatedAt:null,revision:null,failed:true};
+    if(!data)return {saveData:null,updatedAt:null,revision:null,failed:false};
+    const checked=validateRimbaBackup(data.save_data);
+    if(!checked.isValid||!checked.data||!Number.isSafeInteger(data.revision)||data.revision<0)return {saveData:null,updatedAt:null,revision:null,failed:true};
+    return {saveData:checked.data,updatedAt:data.updated_at,revision:data.revision,failed:false};
+  }catch{return {saveData:null,updatedAt:null,revision:null,failed:true};}
+}
+async function markConflict(owner:string,generation:number,journal:SyncJournal,cloud?:Awaited<ReturnType<typeof fetchCloudGameSave>>){
+  if(!isCurrentAccount(owner,generation))return;
+  writeSyncJournal(owner,{...journal,blocked:true});
+  const remote=cloud??await fetchCloudGameSave(owner);
+  if(!isCurrentAccount(owner,generation))return;
+  status(owner,generation,{isSyncing:false,phase:remote.failed?'offline':'conflict',error:remote.failed?'Cloud copy could not be read. Local progress was kept.':null,
+    conflict:remote.failed?null:{owner,cloudSave:remote.saveData,revision:remote.revision,updatedAt:remote.updatedAt},showConflict:!remote.failed});
+}
+async function flushPending(owner:string,generation:number,journal:SyncJournal):Promise<SyncJournal|null>{
+  const pending=journal.pending;
+  if(!pending||!isCurrentAccount(owner,generation))return null;
+  const {data,error}=await supabase.rpc('commit_game_save_v2',{p_expected_owner:owner,p_expected_revision:pending.baseRevision,
+    p_mutation_id:pending.id,p_save_data:JSON.parse(pending.payload)});
+  if(!isCurrentAccount(owner,generation))return null;
+  if(error){status(owner,generation,{isSyncing:false,phase:'offline',error:'Cloud sync is unavailable. Progress and the pending request were kept.'});return null;}
+  if(data?.committed!==true){await markConflict(owner,generation,journal);return null;}
+  if(!Number.isSafeInteger(data.revision)||data.revision<1)throw new Error('Invalid sync acknowledgement');
+  const acknowledged={...journal,initialized:true,revision:data.revision,baseline:pending.hash,pending:null,blocked:false};
+  writeSyncJournal(owner,acknowledged);return acknowledged;
+}
+function requestId():string{
+  const bytes=crypto.getRandomValues(new Uint8Array(16));bytes[6]=(bytes[6]&15)|64;bytes[8]=(bytes[8]&63)|128;
+  const hex=Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');
+  return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
+}
+async function uploadOwned(owner:string,generation:number):Promise<boolean>{
+  if(!isCurrentAccount(owner,generation))return false;
+  try{
+    let journal=readSyncJournal(owner);
+    if(!journal.initialized||journal.blocked)return false;
+    status(owner,generation,{isSyncing:true,phase:'syncing',error:null});
+    if(journal.pending){const result=await flushPending(owner,generation,journal);if(!result)return false;journal=result;}
+    if(!isCurrentAccount(owner,generation))return false;
+    const current=useGameStore.getState().saveData;
+    if(current.storage_owner!==owner)return false;
+    const payload=canonicalProgress(current),hash=await progressHash(payload);
+    if(!isCurrentAccount(owner,generation))return false;
+    if(hash===journal.baseline){
+      if(canonicalProgress(useGameStore.getState().saveData)!==payload){status(owner,generation,{isSyncing:false,phase:'pending'});scheduleDebouncedCloudSync();return false;}
+      synced(owner,generation);return true;
     }
-  }
+    const pending:PendingSaveCommit={id:requestId(),baseRevision:journal.revision,payload,hash};
+    journal={...journal,pending};writeSyncJournal(owner,journal); // Must be durable before issuing the request.
+    const result=await flushPending(owner,generation,journal);if(!result)return false;
+    const latest=useGameStore.getState().saveData;
+    if(!isCurrentAccount(owner,generation))return false;
+    if(canonicalProgress(latest)!==payload){status(owner,generation,{isSyncing:false,phase:'pending'});scheduleDebouncedCloudSync();return false;}
+    synced(owner,generation);return true;
+  }catch{status(owner,generation,{isSyncing:false,phase:'error',error:'Sync could not finish. Local progress and original sync data were kept.'});return false;}
 }
-
-/**
- * Mengunggah data suaka (game_saves) ke Supabase.
- */
-export async function uploadGameSaveToCloud(
-  saveData: RimbaSaveData,
-  expectedUserId?: string,
-  expectedRevision?: number
-): Promise<boolean> {
-  watchAccountChanges();
-  const revision = expectedRevision ?? accountRevision;
-  const currentUser = useAuthStore.getState().user;
-  if (!currentUser || currentUser.isGuest || !isCurrentAccount(expectedUserId ?? currentUser.id, revision)) return false;
-
-  if (saveData.storage_owner !== currentUser.id) return false;
-  try {
-    const { error } = await supabase.from('game_saves').upsert(
-      {
-        user_id: currentUser.id,
-        save_version: saveData.version || 1,
-        save_data: saveData,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'user_id' }
-    );
-
-    if (error) {
-      console.warn('Error saat mengunggah save ke cloud:', error.message);
-      return false;
+function queueOwner(owner:string,operation:()=>Promise<boolean>):Promise<boolean>{
+  const run=(queues.get(owner)??Promise.resolve(false)).catch(()=>false).then(operation);
+  queues.set(owner,run);void run.finally(()=>{if(queues.get(owner)===run)queues.delete(owner);});return run;
+}
+export async function uploadGameSaveToCloud(saveData:RimbaSaveData,expectedUserId?:string,expectedRevision?:number):Promise<boolean>{
+  watchAccountChanges();const user=useAuthStore.getState().user,generation=expectedRevision??accountRevision;
+  if(!user||user.isGuest||saveData.storage_owner!==user.id||!isCurrentAccount(expectedUserId??user.id,generation))return false;
+  const owner=user.id;
+  return queueOwner(owner,()=>uploadOwned(owner,generation));
+}
+function applyCloudSave(owner:string,cloud:RimbaSaveData){
+  const current=useGameStore.getState().saveData;
+  if(current.storage_owner!==owner)throw new Error('Account changed');
+  const restored={...cloud,storage_owner:owner,profile:{...current.profile,xp:cloud.profile.xp,goldCached:cloud.profile.goldCached},subscription:current.subscription};
+  saveSaveData(restored,owner);
+  useGameStore.setState({saveData:restored,activeSession:restored.focus_sessions.find(s=>s.status==='active')||null,
+    activeBiome:restored.active_biome||'meadow',selectedObject:null,selectedCatalogItem:null,selectedTool:null});
+}
+export function smartSyncOnLogin(owner:string):Promise<boolean>{
+  watchAccountChanges();const generation=accountRevision;
+  return queueOwner(owner,()=>reconcileOwned(owner,generation));
+}
+async function reconcileOwned(owner:string,generation:number):Promise<boolean>{
+  if(!isCurrentAccount(owner,generation)||useGameStore.getState().saveData.storage_owner!==owner)return false;
+  try{
+    let journal=readSyncJournal(owner);
+    // Retry an uncertain request verbatim before treating its remote acknowledgement as a conflict.
+    if(journal.pending&&!journal.blocked){
+      const result=await flushPending(owner,generation,journal);if(!result)return false;journal=result;
     }
-
-    if (!isCurrentAccount(currentUser.id, revision)) return false;
-    lastSyncedTimestamp = new Date().toISOString();
-    return true;
-  } catch (err) {
-    console.warn('Network error saat upload cloud save:', err);
-    return false;
-  }
+    const {data:profile,error:profileError}=await supabase.from('profiles').select('id,display_name,avatar_url,bio').eq('id',owner).maybeSingle();
+    if(!isCurrentAccount(owner,generation)||profileError)return false;
+    if(profile)useAuthStore.getState().updateProfile({name:profile.display_name,avatarUrl:profile.avatar_url,bio:profile.bio});
+    const cloud=await fetchCloudGameSave(owner);
+    if(!isCurrentAccount(owner,generation))return false;
+    if(cloud.failed){status(owner,generation,{isSyncing:false,phase:'offline',error:'Cloud copy could not be read. Local progress was kept.'});return false;}
+    const current=useGameStore.getState().saveData;
+    const localPayload=canonicalProgress(current),remotePayload=cloud.saveData?canonicalProgress(cloud.saveData):null;
+    const localHash=await progressHash(localPayload),remoteHash=remotePayload?await progressHash(remotePayload):null;
+    if(!isCurrentAccount(owner,generation))return false;
+    if(canonicalProgress(useGameStore.getState().saveData)!==localPayload){scheduleDebouncedCloudSync();return false;}
+    const action=useGameStore.getState().activeSession?.status==='active'&&localHash!==remoteHash
+      ?'conflict':reconcileProgress(localHash,remoteHash,journal,hasMeaningfulProgress(current));
+    if(action==='conflict'){await markConflict(owner,generation,journal,cloud);return false;}
+    if(action==='adopt_cloud'&&cloud.saveData)applyCloudSave(owner,cloud.saveData);
+    journal={...journal,initialized:true,revision:cloud.revision,baseline:remoteHash,pending:null,blocked:false};
+    writeSyncJournal(owner,journal);
+    if(action==='upload_local')return await uploadOwned(owner,generation);
+    synced(owner,generation);return true;
+  }catch{status(owner,generation,{isSyncing:false,phase:'error',error:'Sync could not finish. Original progress and sync data were kept.'});return false;}
 }
-
-/**
- * Mengambil data suaka dari Supabase untuk user tertentu.
- */
-export async function fetchCloudGameSave(userId: string): Promise<{
-  saveData: RimbaSaveData | null;
-  updatedAt: string | null;
-  failed: boolean;
-}> {
-  try {
-    const { data, error } = await supabase
-      .from('game_saves')
-      .select('save_data, updated_at')
-      .eq('user_id', userId)
-      .maybeSingle();
-
-    if (error) return { saveData: null, updatedAt: null, failed: true };
-    if (!data) return { saveData: null, updatedAt: null, failed: false };
-
-    return {
-      saveData: data.save_data as RimbaSaveData,
-      updatedAt: data.updated_at,
-      failed: false,
-    };
-  } catch (err) {
-    console.warn('Error fetching cloud save:', err);
-    return { saveData: null, updatedAt: null, failed: true };
-  }
+export function resolveCloudConflict(choice:'local'|'cloud'):Promise<boolean>{
+  const conflict=useCloudSyncStatus.getState().conflict;if(!conflict)return Promise.resolve(false);
+  const generation=accountRevision;
+  return queueOwner(conflict.owner,()=>resolveOwnedConflict(choice,conflict,generation));
 }
-
-/**
- * Smart Sync saat Login:
- * Membandingkan data lokal vs data di Cloud untuk mencegah progress hilang.
- */
-export async function smartSyncOnLogin(userId: string): Promise<boolean> {
-  watchAccountChanges();
-  const revision = accountRevision;
-  if (!isCurrentAccount(userId, revision) || useGameStore.getState().saveData.storage_owner !== userId) return false;
-  try {
-    // 1. Ambil profil dari Supabase
-    const { data: cloudProfile, error: profileError } = await supabase
-      .from('profiles')
-      .select('id, display_name, avatar_url, bio')
-      .eq('id', userId)
-      .maybeSingle();
-
-    if (!isCurrentAccount(userId, revision) || profileError) return false;
-
-    if (cloudProfile) {
-      // Sinkronkan data profil ke kedua store
-      useAuthStore.getState().updateProfile({
-        name: cloudProfile.display_name,
-        avatarUrl: cloudProfile.avatar_url,
-        bio: cloudProfile.bio,
-      });
-
-      const currentSave = useGameStore.getState().saveData;
-      const updatedSave: RimbaSaveData = {
-        ...currentSave,
-        profile: {
-          ...currentSave.profile,
-          name: cloudProfile.display_name,
-          avatarUrl: cloudProfile.avatar_url,
-          bio: cloudProfile.bio,
-        },
-      };
-      saveSaveData(updatedSave);
-      useGameStore.setState({ saveData: updatedSave });
-    }
-
-    // 2. Ambil game save dari Supabase
-    const { saveData: cloudSave, failed } = await fetchCloudGameSave(userId);
-    if (!isCurrentAccount(userId, revision) || failed) return false;
-    const localSave = useGameStore.getState().saveData;
-
-    if (cloudSave) {
-      const localSessions = localSave.focus_sessions || [];
-      const cloudSessions = cloudSave.focus_sessions || [];
-
-      const localMins = localSessions
-        .filter((s) => s.status === 'completed')
-        .reduce((acc, s) => acc + (s.duration_minutes || 25), 0);
-      const cloudMins = cloudSessions
-        .filter((s) => s.status === 'completed')
-        .reduce((acc, s) => acc + (s.duration_minutes || 25), 0);
-
-      const localObjects = localSave.world_objects || [];
-      const cloudObjects = cloudSave.world_objects || [];
-
-      // Lossless merge: ensure guest focus sessions, island objects, archipelago, ledger, and lore are never wiped
-      const sessionMap = new Map<string, (typeof localSessions)[0]>();
-      cloudSessions.forEach((s) => sessionMap.set(s.id, s));
-      localSessions.forEach((s) => sessionMap.set(s.id, s));
-
-      const objectMap = new Map<string, (typeof localObjects)[0]>();
-      cloudObjects.forEach((o) => objectMap.set(o.id, o));
-      localObjects.forEach((o) => objectMap.set(o.id, o));
-
-      // Merge currency ledger
-      const localLedger = localSave.currency_ledger || [];
-      const cloudLedger = cloudSave.currency_ledger || [];
-      const ledgerMap = new Map<string, (typeof localLedger)[0]>();
-      cloudLedger.forEach((entry) => ledgerMap.set(entry.id, entry));
-      localLedger.forEach((entry) => ledgerMap.set(entry.id, entry));
-
-      // Merge archipelago islands
-      const localIslands = localSave.islands || [];
-      const cloudIslands = cloudSave.islands || [];
-      const islandMap = new Map<string, (typeof localIslands)[0]>();
-      cloudIslands.forEach((isl) => islandMap.set(isl.id, isl));
-      localIslands.forEach((isl) => islandMap.set(isl.id, isl));
-
-      // Merge unlocked story chapters and wisdom fragments
-      const mergedChapters = Array.from(
-        new Set([
-          ...(cloudSave.claimed_story_chapters || []),
-          ...(localSave.claimed_story_chapters || []),
-        ])
-      );
-      const mergedWisdom = Array.from(
-        new Set([
-          ...(cloudSave.claimed_wisdom_fragments || []),
-          ...(localSave.claimed_wisdom_fragments || []),
-        ])
-      );
-
-      // Merge world unlocked tiles
-      const mergedUnlockedTiles = Array.from(
-        new Set([
-          ...(cloudSave.world?.unlocked_tiles || []),
-          ...(localSave.world?.unlocked_tiles || []),
-        ])
-      );
-
-      const mergedSessions = Array.from(sessionMap.values());
-      const mergedObjects = Array.from(objectMap.values());
-      const mergedLedger = Array.from(ledgerMap.values());
-      const mergedIslands = Array.from(islandMap.values());
-
-      const maxXp = Math.max(localSave.profile?.xp || 0, cloudSave.profile?.xp || 0);
-      const maxStreakShields = Math.max(localSave.streak_shields || 0, cloudSave.streak_shields || 0);
-      const hasMystery = Boolean(localSave.pioneer_reward_claimed || cloudSave.pioneer_reward_claimed);
-
-      const baseSave = localMins >= cloudMins ? localSave : cloudSave;
-
-      // Game saves are client-writable progress, never evidence of a purchase.
-      const mergedSubscription = localSave.subscription;
-
-      const mergedSave: RimbaSaveData = {
-        ...baseSave,
-        storage_owner: userId,
-        profile: {
-          ...baseSave.profile,
-          xp: maxXp,
-        },
-        streak_shields: maxStreakShields,
-        pioneer_reward_claimed: hasMystery,
-        focus_sessions: mergedSessions,
-        world_objects: mergedObjects,
-        currency_ledger: mergedLedger,
-        islands: mergedIslands.length > 0 ? mergedIslands : baseSave.islands,
-        claimed_story_chapters: mergedChapters,
-        claimed_wisdom_fragments: mergedWisdom,
-        world: {
-          ...baseSave.world,
-          unlocked_tiles: mergedUnlockedTiles.length > 0 ? mergedUnlockedTiles : baseSave.world?.unlocked_tiles,
-        },
-        subscription: mergedSubscription,
-      };
-
-      saveSaveData(mergedSave);
-      useGameStore.setState({ saveData: mergedSave });
-      return await uploadGameSaveToCloud(mergedSave, userId, revision);
-    } else {
-      // Belum ada save di cloud, unggah save lokal saat ini
-      return await uploadGameSaveToCloud(localSave, userId, revision);
-    }
-
-  } catch (err) {
-    console.warn('Gagal menjalankan smartSyncOnLogin:', err);
-    return false;
-  }
+async function resolveOwnedConflict(choice:'local'|'cloud',conflict:CloudConflict,generation:number):Promise<boolean>{
+  const owner=conflict.owner;
+  if(!isCurrentAccount(owner,generation))return false;
+  try{
+    const cloud=await fetchCloudGameSave(owner);
+    if(!isCurrentAccount(owner,generation)||cloud.failed)return false;
+    if(cloud.revision!==conflict.revision){await markConflict(owner,generation,readSyncJournal(owner),cloud);return false;}
+    const current=useGameStore.getState().saveData;
+    if(choice==='cloud'&&(!cloud.saveData||useGameStore.getState().activeSession?.status==='active'))return false;
+    createIslandSnapshot(current,'Before choosing a cloud conflict copy');
+    if(cloud.saveData)createIslandSnapshot({...cloud.saveData,storage_owner:owner},'Cloud copy before conflict resolution');
+    const remoteHash=cloud.saveData?await progressHash(canonicalProgress(cloud.saveData)):null;
+    if(!isCurrentAccount(owner,generation))return false;
+    if(useGameStore.getState().saveData!==current){status(owner,generation,{error:'Progress changed. Review both copies again.'});return false;}
+    if(choice==='cloud'&&cloud.saveData)applyCloudSave(owner,cloud.saveData);
+    writeSyncJournal(owner,{version:1,initialized:true,revision:cloud.revision,baseline:remoteHash,pending:null,blocked:false});
+    status(owner,generation,{conflict:null,showConflict:false,error:null});
+    if(choice==='local')return await uploadOwned(owner,generation);
+    synced(owner,generation);return true;
+  }catch{status(owner,generation,{isSyncing:false,error:'Conflict could not be resolved. Keep your data; available snapshots are retained.'});return false;}
 }
-
-/**
- * Debounced Auto-Sync: Memanggil uploadGameSaveToCloud secara efisien tanpa membebani server
- */
-export function scheduleDebouncedCloudSync() {
-  watchAccountChanges();
-  const currentUser = useAuthStore.getState().user;
-  if (!currentUser || currentUser.isGuest) return;
-
-  if (syncTimeout) {
-    clearTimeout(syncTimeout);
-  }
-
-  const revision = accountRevision;
-  syncTimeout = setTimeout(() => {
-    syncTimeout = null;
-    if (!isCurrentAccount(currentUser.id, revision)) return;
-    const saveData = useGameStore.getState().saveData;
-    void uploadGameSaveToCloud(saveData, currentUser.id, revision);
-  }, 4000);
+export function scheduleDebouncedCloudSync(){
+  watchAccountChanges();const user=useAuthStore.getState().user;if(!user||user.isGuest)return;
+  if(syncTimeout)clearTimeout(syncTimeout);const generation=accountRevision;
+  syncTimeout=setTimeout(()=>{syncTimeout=null;if(!isCurrentAccount(user.id,generation))return;
+    void uploadGameSaveToCloud(useGameStore.getState().saveData,user.id,generation);},4000);
 }

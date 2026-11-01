@@ -7,21 +7,23 @@ import { getProgressMigration, rememberProgressChoice, ProgressMigration } from 
 import { createIslandSnapshot, downloadSaveDataBackup } from '@/lib/game/backupManager';
 import { usePreferencesStore } from '@/lib/settings/usePreferencesStore';
 
-export function ProgressMigrationModal({ owner }: { owner: string }) {
+export function ProgressMigrationModal({ owner,onBlockingChange }: { owner: string; onBlockingChange:(value:boolean)=>void }) {
   const isEn = usePreferencesStore(s => s.language) === 'en';
   const activeSession = useGameStore(s => s.activeSession);
   const [source,setSource] = useState<ProgressMigration | null>(null);
   const [error,setError] = useState('');
   const [busy,setBusy] = useState(false);
+  const [checking,setChecking] = useState(true);
   const dialog = useRef<HTMLDialogElement>(null);
   useEffect(() => {
     let current=true;
-    setSource(null);setError('');
-    void getProgressMigration(owner).then(value=>{if(current)setSource(value);}).catch(()=>{
-      if(current)setError(isEn?'Device progress could not be checked. Keep app data and try again.':'Progres perangkat belum dapat diperiksa. Pertahankan data aplikasi dan coba lagi.');
+    setSource(null);setError('');setChecking(true);
+    void getProgressMigration(owner).then(value=>{if(current){setSource(value);setChecking(false);}}).catch(()=>{
+      if(current){setChecking(false);setError(isEn?'Device progress could not be checked. Keep app data and try again.':'Progres perangkat belum dapat diperiksa. Pertahankan data aplikasi dan coba lagi.');}
     });
     return ()=>{current=false;};
   },[owner,isEn]);
+  useEffect(()=>{onBlockingChange(checking||!!source||!!error);},[checking,source,error,onBlockingChange]);
   useEffect(()=>{if((source||error)&&dialog.current&&!dialog.current.open)dialog.current.showModal();},[source,error]);
   const currentOwner = () => {
     const user=useAuthStore.getState().user;

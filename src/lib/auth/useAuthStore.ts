@@ -70,6 +70,7 @@ const RIMBA_LOCAL_STORAGE_KEYS = [
 
 let authStateListenerRegistered = false;
 let authSessionRevision = 0;
+export function getAuthSessionRevision(): number { return authSessionRevision; }
 let lastSyncedUserId: string | null = null;
 
 function purgeAllRimbaLocalStorage(keepPreferences = false) {

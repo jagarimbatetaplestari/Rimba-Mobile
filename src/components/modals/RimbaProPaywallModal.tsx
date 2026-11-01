@@ -5,7 +5,7 @@ import { useGameStore } from "@/lib/game/useGameStore";
 import { useTranslation } from "@/lib/i18n/translations";
 import { soundManager } from "@/lib/audio/sounds";
 import { hapticLight, hapticSuccess, hapticWarning } from "@/lib/mobile/nativeBridge";
-import { purchaseSubscriptionTier, restoreStoreKitPurchases, getStoreProducts } from "@/lib/subscription/revenueCatService";
+import { purchaseSubscriptionTier, restoreStoreKitPurchases, getStoreProducts, isStoreResultCurrent } from "@/lib/subscription/revenueCatService";
 import { SUBSCRIPTION_PACKAGES, SubscriptionTier } from "@/types/subscription";
 import { useEntitlements } from "@/lib/subscription/useEntitlements";
 import { LegalModal } from "@/components/modals/LegalModal";
@@ -100,6 +100,7 @@ export function RimbaProPaywallModal({
         );
         return;
       }
+      if(!isStoreResultCurrent(res))return;
       updateSubscription(res.subscription);
       soundManager.playComplete();
       hapticSuccess();
@@ -117,6 +118,7 @@ export function RimbaProPaywallModal({
     try {
       const res = await restoreStoreKitPurchases(isEn);
       if (res.success && res.subscription) {
+        if(!isStoreResultCurrent(res))return;
         updateSubscription(res.subscription);
         soundManager.playComplete();
         hapticSuccess();

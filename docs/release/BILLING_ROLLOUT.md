@@ -1,8 +1,8 @@
-# Server billing verification rollout (prepared, not deployed)
+# Server billing verification rollout (deployed; device acceptance pending)
 
 RevenueCat project f860c3d3, App Store app app25d76d4a53, entitlement rimba_pro. Default offering ofrng77d9984a86 now maps monthly/annual/lifetime packages to the three existing Apple products. The app uses its own paywall; no hosted RevenueCat paywall or web purchase link is required.
 
-## Proposed server deployment
+## Server deployment contract
 
 - Migration 20261101102757_trusted_billing_state.sql creates owner-scoped billing cache and webhook receipts. It grants no client writes and no anonymous reads. Sandbox cache never promotes the production user_subscriptions mirror. Existing saves are untouched.
 - reconcile-subscription verifies the caller using Supabase Auth and ignores any body user_id/isPro. It fetches current RevenueCat subscriber state using the existing Rimba public SDK API key directly from the server and commits through a per-owner/environment lease.
@@ -21,3 +21,5 @@ reconcile-subscription can keep gateway JWT verification in addition to its Auth
 Test authenticated email account, wrong/missing webhook header, TEST event, duplicate event, expired lease, foreign account read denial, and no grant on API failure. Use disposable sandbox accounts for monthly/annual/lifetime, pending/cancel/restore, renewal/refund/transfer and offline scenarios. Do not use human purchase/account deletion for automated tests. Native TestFlight acceptance remains mandatory.
 
 Official references checked: https://www.revenuecat.com/docs/api-v1/customer-info-model and https://www.revenuecat.com/docs/integrations/webhooks .
+
+Deployment2026-11-01: owner approved; migration applied, secrets saved, both functions deployed, and RevenueCat webhook whintgr3a8fff9c76 TEST returned200. Missing-secret webhook request returns401. NativeCI d043190 passed. Client integration now uses backend verification for purchase/Restore and native-verified24hour offline refresh; device acceptance is still pending.

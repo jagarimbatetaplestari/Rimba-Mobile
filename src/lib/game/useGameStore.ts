@@ -2506,7 +2506,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       ...saveData,
       subscription: updatedSub,
     };
-    persistAndSyncSaveData(updatedData);
+    // Rights are revalidated from native/server evidence, not from editable save JSON.
     set({ saveData: updatedData });
   },
 

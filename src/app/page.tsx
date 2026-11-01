@@ -31,6 +31,7 @@ import {
 } from "@/components/modals/MobileProfileModal";
 import { MobileStatisticsModal } from "@/components/modals/MobileStatisticsModal";
 import { MobileLeaderboardModal } from "@/components/modals/MobileLeaderboardModal";
+import { useSubscriptionRefresh } from '@/lib/subscription/useSubscriptionRefresh';
 import { CloudSyncNotice } from '@/components/feedback/CloudSyncNotice';
 import { ProgressMigrationModal } from '@/components/modals/ProgressMigrationModal';
 import { MobileSettingsSheet } from "@/components/modals/MobileSettingsSheet";
@@ -65,6 +66,7 @@ export default function RimbaDioramaApp() {
   const init = useGameStore((state) => state.init);
   const checkReclamation = useGameStore((state) => state.checkReclamation);
   const isInitialized = useGameStore((state) => state.isInitialized);
+  useSubscriptionRefresh(isInitialized);
   const activeSession = useGameStore((state) => state.activeSession);
   const isTimeAuto = useGameStore((state) => state.isTimeAuto);
   const isZenMode = useGameStore((state) => state.isZenMode);

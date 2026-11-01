@@ -35,3 +35,8 @@ describe('owner-bound durable saves', () => {
     expect(items.get(GAME_CONFIG.storageKey)).toBe(raw);
   });
 });
+it('does not restore paid access from an editable saved game',()=>{
+ const save=createInitialSaveData();save.subscription={...save.subscription!,isPro:true,tier:'pioneer_lifetime',status:'lifetime',expiresAt:null};write(save,'a');
+ expect(read('a').subscription?.isPro).toBe(false);
+ expect(JSON.parse(items.get(GAME_CONFIG.storageKey+':owner:a')!).subscription.isPro).toBe(true);
+});

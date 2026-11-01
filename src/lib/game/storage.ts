@@ -175,18 +175,8 @@ export function loadSaveData(ownerId: string | undefined = activeSaveOwner): Rim
       parsed.active_island_id = parsed.active_island_id || parsed.islands[0].id;
     }
 
-    if (!parsed.subscription) {
-      parsed.subscription = {
-        tier: 'free',
-        status: 'none',
-        isPro: false,
-        expiresAt: null,
-        originalPurchaseDate: new Date().toISOString(),
-        store: 'promo',
-        realTreesPledged: 0,
-        pioneerBadge: false,
-      };
-    }
+    // Editable save JSON is never a purchase receipt. Native/backend verification restores rights.
+    parsed.subscription = createInitialSaveData().subscription;
 
     // Refresh cached gold/xp from ledger to guarantee accuracy
     const balances = calculateBalances(parsed.currency_ledger);

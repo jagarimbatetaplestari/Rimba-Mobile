@@ -57,5 +57,14 @@
 	<string>Rimba memerlukan izin untuk menyimpan gambar dan kartu suaka Anda ke galeri foto.</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>Google Sign-In</string>
+			<key>CFBundleURLSchemes</key>
+			<array><string>com.googleusercontent.apps.475693230434-pd36p3isodu8jo7tem4tgjja8rm5u61b</string></array>
+		</dict>
+	</array>
 </dict>
 </plist>

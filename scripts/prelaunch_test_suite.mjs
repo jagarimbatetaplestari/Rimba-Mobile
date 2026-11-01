@@ -695,9 +695,9 @@ assert(
   'RimbaProPaywallModal integrates in-app LegalModal for 100% offline Privacy & Terms review'
 );
 assert(
-  paywallModalContent.includes('t.paywallModal.restoreAlreadyActive') &&
+  paywallModalContent.includes('await restoreStoreKitPurchases(isEn)') &&
     paywallModalContent.includes('t.paywallModal.restoreSuccess'),
-  'RimbaProPaywallModal handles restore purchase with active status check and informative feedback'
+  'Paywall source smoke: restore requests the store and provides feedback (SDK behavior tested separately)'
 );
 
 // 2. backupManager Lossless Subscription & Island Preservation

@@ -1,0 +1,82 @@
+name: Verify Rimba iOS candidate
+
+on:
+  push:
+    branches: [fix/rimba-release-readiness]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rimba-ios-verify-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-ios:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    env:
+      NEXT_PUBLIC_GOOGLE_IOS_CLIENT_ID: ${{ vars.NEXT_PUBLIC_GOOGLE_IOS_CLIENT_ID || '475693230434-pd36p3isodu8jo7tem4tgjja8rm5u61b.apps.googleusercontent.com' }}
+      NEXT_PUBLIC_GOOGLE_WEB_CLIENT_ID: ${{ vars.NEXT_PUBLIC_GOOGLE_WEB_CLIENT_ID || '475693230434-du494aucdevbi7d8gn4v71tse9clhh86.apps.googleusercontent.com' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Check types and production regressions
+        run: |
+          npm run typecheck
+          npm test
+          npm run test:prelaunch
+      - name: Build static app
+        run: npm run build
+      - name: Sync native plugins and install Pods
+        run: npx cap sync ios
+      - name: Verify native toolchain
+        run: |
+          xcodebuild -version
+          SDK_VERSION=$(xcrun --sdk iphonesimulator --show-sdk-version)
+          SDK_MAJOR=${SDK_VERSION%%.*}
+          test "$SDK_MAJOR" -ge 26
+          EXPECTED_SCHEME="com.googleusercontent.apps.${NEXT_PUBLIC_GOOGLE_IOS_CLIENT_ID%.apps.googleusercontent.com}"
+          ACTUAL_SCHEME=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleURLTypes:0:CFBundleURLSchemes:0' ios/App/App/Info.plist)
+          test "$ACTUAL_SCHEME" = "$EXPECTED_SCHEME"
+      - name: Compile iPhone and iPad simulator app without signing
+        run: |
+          set -o pipefail
+          mkdir -p build
+          xcodebuild build \
+            -workspace ios/App/App.xcworkspace \
+            -scheme App \
+            -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build/simulator \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
+            | tee build/simulator-build.log
+          APP=build/simulator/Build/Products/Debug-iphonesimulator/App.app
+          test -d "$APP"
+          plutil -convert json -o - "$APP/Info.plist" | node -e '
+            let input = "";
+            process.stdin.on("data", chunk => input += chunk);
+            process.stdin.on("end", () => {
+              const families = JSON.parse(input).UIDeviceFamily;
+              if (!families?.includes(1) || !families?.includes(2)) throw new Error("iPhone+iPad support is required");
+              console.log("Verified iPhone and iPad device families");
+            });
+          '
+          find "$APP" -name PrivacyInfo.xcprivacy -print
+          ditto -c -k --keepParent "$APP" build/Rimba-Simulator.app.zip
+      - name: Save simulator candidate and compile logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Rimba-iOS-Verification-${{ github.run_number }}
+          path: |
+            build/Rimba-Simulator.app.zip
+            build/simulator-build.log
+          if-no-files-found: warn
+          retention-days: 7

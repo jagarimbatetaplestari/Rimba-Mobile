@@ -104,15 +104,6 @@ function resetInMemoryGameStateCleanly() {
   }
 }
 
-async function importOptionalPlugin(moduleName: string): Promise<any> {
-  try {
-    const dynamicImporter = new Function('m', 'return import(m)');
-    return await dynamicImporter(moduleName);
-  } catch {
-    return null;
-  }
-}
-
 async function buildAuthUserFromSupabase(
   supaUser: {
     id: string;
@@ -639,100 +630,42 @@ export const useAuthStore = create<AuthState>()(
       loginWithGoogle: async (): Promise<AuthResult> => {
         set({ isLoading: true });
         try {
-          const isNative = typeof window !== 'undefined' && Capacitor.isNativePlatform();
-
-          if (isNative) {
-            // Coba gunakan plugin native Google Auth jika sudah terpasang di proyek Capacitor
-            const googleAuthModule =
-              (await importOptionalPlugin('@southdevs/capacitor-google-auth')) ||
-              (await importOptionalPlugin('@codetrix-studio/capacitor-google-auth'));
-
-            const GoogleAuth = googleAuthModule?.GoogleAuth;
-            if (GoogleAuth && typeof GoogleAuth.signIn === 'function') {
-              try {
-                const googleUser = await GoogleAuth.signIn();
-                const idToken =
-                  googleUser?.authentication?.idToken || googleUser?.idToken || null;
-
-                if (idToken) {
-                  const { data, error } = await supabase.auth.signInWithIdToken({
-                    provider: 'google',
-                    token: idToken,
-                  });
-
-                  if (error) {
-                    set({ isLoading: false });
-                    return { success: false, error: error.message };
-                  }
-
-                  if (data.user) {
-                    const userId = data.user.id;
-                    const displayName =
-                      googleUser?.name ||
-                      googleUser?.givenName ||
-                      data.user.user_metadata?.full_name ||
-                      data.user.email?.split('@')[0] ||
-                      'Ranger Rimba';
-
-                    try {
-                      await supabase.from('profiles').upsert({
-                        id: userId,
-                        display_name: displayName,
-                        avatar_url: googleUser?.imageUrl || data.user.user_metadata?.avatar_url || '🦌',
-                        updated_at: new Date().toISOString(),
-                      });
-                    } catch {
-                      // ignore profile upsert error
-                    }
-
-                    const userObj = await buildAuthUserFromSupabase(data.user, displayName);
-                    set({ user: userObj, isLoading: false });
-                    lastSyncedUserId = userId;
-                    await smartSyncOnLogin(userId);
-                    return { success: true };
-                  }
-                }
-              } catch (nativeGoogleErr: any) {
-                const nativeMsg = String(nativeGoogleErr?.message || nativeGoogleErr || '').toLowerCase();
-                if (
-                  nativeMsg.includes('cancel') ||
-                  nativeMsg.includes('12501') ||
-                  nativeMsg.includes('popup_closed')
-                ) {
-                  set({ isLoading: false });
-                  return { success: false, error: 'Otorisasi Google dibatalkan.' };
-                }
-                console.warn('Native GoogleAuth fallback to OAuth PKCE:', nativeGoogleErr);
-              }
+          if (Capacitor.isNativePlatform()) {
+            const iosClientId = process.env.NEXT_PUBLIC_GOOGLE_IOS_CLIENT_ID;
+            const webClientId = process.env.NEXT_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+            if (!iosClientId || !webClientId) throw new Error('Google Sign-In belum tersedia. Silakan coba lagi nanti.');
+            const { SocialLogin } = await import('@capgo/capacitor-social-login');
+            await SocialLogin.initialize({ google: { iOSClientId: iosClientId, iOSServerClientId: webClientId, webClientId, mode: 'online' } });
+            // Clear the SDK's cached Google choice so a new login can choose a different account.
+            await SocialLogin.logout({ provider: 'google' });
+            const login = await SocialLogin.login({ provider: 'google', options: { scopes: ['email', 'profile'], forcePrompt: true } });
+            if (login.provider !== 'google' || login.result.responseType !== 'online' || !login.result.idToken) {
+              throw new Error('Google belum memberikan token identitas yang valid.');
             }
+            const { data, error } = await supabase.auth.signInWithIdToken({ provider: 'google', token: login.result.idToken });
+            if (error) throw error;
+            if (!data.user || !data.session || data.session.user.id !== data.user.id) {
+              throw new Error('Sesi Google belum dapat diverifikasi. Silakan coba lagi.');
+            }
+            const userObj = await buildAuthUserFromSupabase(data.user, login.result.profile.name || undefined);
+            const { data: current } = await supabase.auth.getSession();
+            if (current.session?.user.id !== data.user.id) throw new Error('Sesi akun berubah. Silakan masuk kembali.');
+            set({ user: userObj, isLoading: false });
+            const synced = await smartSyncOnLogin(data.user.id);
+            if (synced && get().user?.id === data.user.id) lastSyncedUserId = data.user.id;
+            return { success: true };
           }
-
-          // Fallback universal: Supabase OAuth (mendukung Web & Capacitor in-app browser redirect)
-          const redirectTo =
-            typeof window !== 'undefined' ? `${window.location.origin}/` : undefined;
 
           const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
-            options: {
-              redirectTo,
-              queryParams: {
-                access_type: 'offline',
-                prompt: 'select_account',
-              },
-            },
+            options: { redirectTo: typeof window !== 'undefined' ? window.location.origin + '/' : undefined, queryParams: { prompt: 'select_account' } },
           });
-
-          if (error) {
-            set({ isLoading: false });
-            return { success: false, error: error.message };
-          }
-
+          if (error) throw error;
           set({ isLoading: false });
           return { success: true };
         } catch (err: any) {
           set({ isLoading: false });
-          const msg = String(err?.message || err || '').toLowerCase();
-          if (msg.includes('cancel')) {
+          if (/cancel/i.test(String(err?.message || '')) || ['12501', '-5'].includes(String(err?.code))) {
             return { success: false, error: 'Otorisasi Google dibatalkan.' };
           }
           return { success: false, error: err?.message || 'Gagal masuk dengan Google.' };

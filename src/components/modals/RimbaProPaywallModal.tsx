@@ -115,13 +115,6 @@ export function RimbaProPaywallModal({
     hapticLight();
     setIsProcessing(true);
     try {
-      if (isPro) {
-        soundManager.playComplete();
-        hapticSuccess();
-        notify(t.paywallModal.restoreAlreadyActive, "info");
-        onClose();
-        return;
-      }
       const res = await restoreStoreKitPurchases(isEn);
       if (res.success && res.subscription) {
         updateSubscription(res.subscription);

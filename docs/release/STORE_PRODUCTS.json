@@ -1,0 +1,20 @@
+{
+  "appId": "6825621183",
+  "groupId": "22533477",
+  "monthly": {
+    "id": "6829362346",
+    "productId": "rimba_pro_monthly",
+    "targetIdr": 29000
+  },
+  "annual": {
+    "id": "6829362411",
+    "productId": "rimba_pro_annual",
+    "targetIdr": 179000
+  },
+  "lifetime": {
+    "id": "6829362449",
+    "productId": "rimba_pioneer_lifetime",
+    "targetIdr": 349000
+  },
+  "status": "Draft products only; price schedules, localization, availability and review screenshots pending."
+}

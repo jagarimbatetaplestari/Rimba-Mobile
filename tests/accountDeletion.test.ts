@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({ rpc: vi.fn(), signOut: vi.fn(), reset: vi.fn() }));
 vi.mock('../src/lib/supabase/client', () => ({ supabase: { rpc: mocks.rpc, auth: { signOut: mocks.signOut } } }));
-vi.mock('../src/lib/supabase/cloudSync', () => ({ smartSyncOnLogin: vi.fn() }));
+vi.mock('../src/lib/supabase/cloudSync', () => ({ invalidateCloudSyncSession: vi.fn(), smartSyncOnLogin: vi.fn() }));
 vi.mock('../src/lib/game/storage', () => ({ createInitialSaveData: () => ({ active_biome: 'meadow' }) }));
 vi.mock('../src/lib/game/useGameStore', () => ({ useGameStore: { setState: mocks.reset } }));
 import { useAuthStore } from '../src/lib/auth/useAuthStore';

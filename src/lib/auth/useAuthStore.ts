@@ -3,8 +3,9 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Capacitor } from '@capacitor/core';
+import { generateCryptographicNoncePair } from './nonce';
 import { supabase } from '../supabase/client';
-import { smartSyncOnLogin } from '../supabase/cloudSync';
+import { smartSyncOnLogin, invalidateCloudSyncSession } from '../supabase/cloudSync';
 import { createInitialSaveData } from '../game/storage';
 import { useGameStore } from '../game/useGameStore';
 
@@ -66,6 +67,7 @@ const RIMBA_LOCAL_STORAGE_KEYS = [
 ];
 
 let authStateListenerRegistered = false;
+let authSessionRevision = 0;
 let lastSyncedUserId: string | null = null;
 
 function purgeAllRimbaLocalStorage(keepPreferences = false) {
@@ -102,29 +104,6 @@ function resetInMemoryGameStateCleanly() {
   }
 }
 
-async function generateCryptographicNoncePair(): Promise<{ rawNonce: string; hashedNonce: string }> {
-  const randomBytes = new Uint8Array(32);
-  if (typeof window !== 'undefined' && window.crypto?.getRandomValues) {
-    window.crypto.getRandomValues(randomBytes);
-  } else {
-    for (let i = 0; i < 32; i++) randomBytes[i] = Math.floor(Math.random() * 256);
-  }
-  const charset = '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._';
-  const rawNonce = Array.from(randomBytes)
-    .map((b) => charset[b % charset.length])
-    .join('');
-
-  if (typeof window !== 'undefined' && window.crypto?.subtle) {
-    const encoder = new TextEncoder();
-    const hashBuffer = await window.crypto.subtle.digest('SHA-256', encoder.encode(rawNonce));
-    const hashedNonce = Array.from(new Uint8Array(hashBuffer))
-      .map((b) => b.toString(16).padStart(2, '0'))
-      .join('');
-    return { rawNonce, hashedNonce };
-  }
-  return { rawNonce, hashedNonce: rawNonce };
-}
-
 async function importOptionalPlugin(moduleName: string): Promise<any> {
   try {
     const dynamicImporter = new Function('m', 'return import(m)');
@@ -148,7 +127,7 @@ async function buildAuthUserFromSupabase(
   try {
     const { data } = await supabase
       .from('profiles')
-      .select('*')
+      .select('id, display_name, avatar_url, bio')
       .eq('id', userId)
       .maybeSingle();
     profile = data;
@@ -157,7 +136,7 @@ async function buildAuthUserFromSupabase(
   }
 
   const cachedAppleName =
-    typeof window !== 'undefined' ? localStorage.getItem('rimba_apple_fullname_cache') || '' : '';
+    typeof window !== 'undefined' ? localStorage.getItem(`rimba_apple_fullname_${userId}`) || '' : '';
 
   const displayName =
     profile?.display_name ||
@@ -194,37 +173,52 @@ export const useAuthStore = create<AuthState>()(
       userPasswordHash: undefined,
 
       initAuth: async () => {
+        const restoreSession = async (
+          supaUser: Parameters<typeof buildAuthUserFromSupabase>[0],
+          revision: number
+        ) => {
+          if (revision !== authSessionRevision) return;
+          const userObj = await buildAuthUserFromSupabase(supaUser);
+          if (revision !== authSessionRevision) return;
+          set({ user: userObj, isLoading: false });
+          if (lastSyncedUserId !== supaUser.id) {
+            const synced = await smartSyncOnLogin(supaUser.id);
+            if (synced && revision === authSessionRevision) lastSyncedUserId = supaUser.id;
+          }
+        };
         try {
           if (!authStateListenerRegistered) {
             authStateListenerRegistered = true;
-            supabase.auth.onAuthStateChange(async (event, session) => {
-              if (
-                (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') &&
-                session?.user
-              ) {
-                const userObj = await buildAuthUserFromSupabase(session.user);
-                set({ user: userObj, isLoading: false });
-                if (lastSyncedUserId !== session.user.id) {
-                  lastSyncedUserId = session.user.id;
-                  await smartSyncOnLogin(session.user.id);
-                }
-              } else if (event === 'SIGNED_OUT') {
+            // Supabase holds its auth lock while notifying listeners. Never await
+            // another Supabase operation inside this callback.
+            supabase.auth.onAuthStateChange((event, session) => {
+              const revision = ++authSessionRevision;
+              if (event === 'SIGNED_OUT' || session?.user?.id !== get().user?.id) {
+                invalidateCloudSyncSession();
+              }
+              if (event === 'SIGNED_OUT') {
                 lastSyncedUserId = null;
+                set({ user: null, isLoading: false });
+              } else if (session?.user) {
+                const supaUser = session.user;
+                setTimeout(() => {
+                  void restoreSession(supaUser, revision).catch((err) => {
+                    console.warn('Gagal memulihkan sesi Supabase:', err);
+                  });
+                }, 0);
               }
             });
           }
 
-          const {
-            data: { session },
-          } = await supabase.auth.getSession();
+          const revision = authSessionRevision;
+          const { data: { session }, error } = await supabase.auth.getSession();
+          if (revision !== authSessionRevision) return;
+          if (error) throw error;
           if (session?.user) {
-            const userId = session.user.id;
-            const userObj = await buildAuthUserFromSupabase(session.user);
-            set({ user: userObj });
-            if (lastSyncedUserId !== userId) {
-              lastSyncedUserId = userId;
-              await smartSyncOnLogin(userId);
-            }
+            await restoreSession(session.user, revision);
+          } else if (get().user && !get().user?.isGuest) {
+            // A persisted profile alone is not an authenticated session.
+            set({ user: null, isLoading: false });
           }
         } catch (err) {
           console.warn('Gagal memuat sesi Supabase:', err);
@@ -566,14 +560,6 @@ export const useAuthStore = create<AuthState>()(
               .join(' ')
               .trim();
 
-            if (fullName && typeof window !== 'undefined') {
-              try {
-                localStorage.setItem('rimba_apple_fullname_cache', fullName);
-              } catch {
-                // ignore
-              }
-            }
-
             const { data, error } = await supabase.auth.signInWithIdToken({
               provider: 'apple',
               token: res.response.identityToken,
@@ -587,10 +573,13 @@ export const useAuthStore = create<AuthState>()(
 
             if (data.user) {
               const userId = data.user.id;
+              if (fullName && typeof window !== 'undefined') {
+                try { localStorage.setItem(`rimba_apple_fullname_${userId}`, fullName); } catch { /* profile remains available in cloud */ }
+              }
               const effectiveName =
                 fullName ||
                 (typeof window !== 'undefined'
-                  ? localStorage.getItem('rimba_apple_fullname_cache') || ''
+                  ? localStorage.getItem(`rimba_apple_fullname_${userId}`) || ''
                   : '');
 
               if (effectiveName) {

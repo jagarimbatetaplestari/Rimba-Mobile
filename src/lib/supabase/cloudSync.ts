@@ -12,6 +12,31 @@ export interface CloudSyncStatus {
 
 let syncTimeout: NodeJS.Timeout | null = null;
 let lastSyncedTimestamp: string | null = null;
+let accountRevision = 0;
+
+// Invalidate work across logout, account switches, and A -> B -> A transitions.
+let accountWatcherStarted = false;
+function watchAccountChanges() {
+  if (accountWatcherStarted) return;
+  accountWatcherStarted = true;
+  useAuthStore.subscribe((state, previous) => {
+    if (state.user?.id !== previous.user?.id || state.user?.isGuest !== previous.user?.isGuest) {
+      invalidateCloudSyncSession();
+    }
+  });
+}
+
+export function invalidateCloudSyncSession(): void {
+  accountRevision += 1;
+  lastSyncedTimestamp = null;
+  if (syncTimeout) clearTimeout(syncTimeout);
+  syncTimeout = null;
+}
+
+function isCurrentAccount(userId: string, revision: number): boolean {
+  const user = useAuthStore.getState().user;
+  return revision === accountRevision && user?.id === userId && !user.isGuest;
+}
 
 export function getLastSyncedAt(): string | null {
   return lastSyncedTimestamp;
@@ -74,9 +99,15 @@ export async function syncProfileUpdate(updates: {
 /**
  * Mengunggah data suaka (game_saves) ke Supabase.
  */
-export async function uploadGameSaveToCloud(saveData: RimbaSaveData): Promise<boolean> {
+export async function uploadGameSaveToCloud(
+  saveData: RimbaSaveData,
+  expectedUserId?: string,
+  expectedRevision?: number
+): Promise<boolean> {
+  watchAccountChanges();
+  const revision = expectedRevision ?? accountRevision;
   const currentUser = useAuthStore.getState().user;
-  if (!currentUser || currentUser.isGuest) return false;
+  if (!currentUser || currentUser.isGuest || !isCurrentAccount(expectedUserId ?? currentUser.id, revision)) return false;
 
   try {
     const { error } = await supabase.from('game_saves').upsert(
@@ -94,6 +125,7 @@ export async function uploadGameSaveToCloud(saveData: RimbaSaveData): Promise<bo
       return false;
     }
 
+    if (!isCurrentAccount(currentUser.id, revision)) return false;
     lastSyncedTimestamp = new Date().toISOString();
     return true;
   } catch (err) {
@@ -108,6 +140,7 @@ export async function uploadGameSaveToCloud(saveData: RimbaSaveData): Promise<bo
 export async function fetchCloudGameSave(userId: string): Promise<{
   saveData: RimbaSaveData | null;
   updatedAt: string | null;
+  failed: boolean;
 }> {
   try {
     const { data, error } = await supabase
@@ -116,17 +149,17 @@ export async function fetchCloudGameSave(userId: string): Promise<{
       .eq('user_id', userId)
       .maybeSingle();
 
-    if (error || !data) {
-      return { saveData: null, updatedAt: null };
-    }
+    if (error) return { saveData: null, updatedAt: null, failed: true };
+    if (!data) return { saveData: null, updatedAt: null, failed: false };
 
     return {
       saveData: data.save_data as RimbaSaveData,
       updatedAt: data.updated_at,
+      failed: false,
     };
   } catch (err) {
     console.warn('Error fetching cloud save:', err);
-    return { saveData: null, updatedAt: null };
+    return { saveData: null, updatedAt: null, failed: true };
   }
 }
 
@@ -135,13 +168,18 @@ export async function fetchCloudGameSave(userId: string): Promise<{
  * Membandingkan data lokal vs data di Cloud untuk mencegah progress hilang.
  */
 export async function smartSyncOnLogin(userId: string): Promise<boolean> {
+  watchAccountChanges();
+  const revision = accountRevision;
+  if (!isCurrentAccount(userId, revision)) return false;
   try {
     // 1. Ambil profil dari Supabase
-    const { data: cloudProfile } = await supabase
+    const { data: cloudProfile, error: profileError } = await supabase
       .from('profiles')
-      .select('*')
+      .select('id, display_name, avatar_url, bio')
       .eq('id', userId)
       .maybeSingle();
+
+    if (!isCurrentAccount(userId, revision) || profileError) return false;
 
     if (cloudProfile) {
       // Sinkronkan data profil ke kedua store
@@ -166,7 +204,8 @@ export async function smartSyncOnLogin(userId: string): Promise<boolean> {
     }
 
     // 2. Ambil game save dari Supabase
-    const { saveData: cloudSave, updatedAt: cloudUpdatedAt } = await fetchCloudGameSave(userId);
+    const { saveData: cloudSave, failed } = await fetchCloudGameSave(userId);
+    if (!isCurrentAccount(userId, revision) || failed) return false;
     const localSave = useGameStore.getState().saveData;
 
     if (cloudSave) {
@@ -281,14 +320,12 @@ export async function smartSyncOnLogin(userId: string): Promise<boolean> {
 
       saveSaveData(mergedSave);
       useGameStore.setState({ saveData: mergedSave });
-      await uploadGameSaveToCloud(mergedSave);
+      return await uploadGameSaveToCloud(mergedSave, userId, revision);
     } else {
       // Belum ada save di cloud, unggah save lokal saat ini
-      await uploadGameSaveToCloud(localSave);
+      return await uploadGameSaveToCloud(localSave, userId, revision);
     }
 
-    lastSyncedTimestamp = new Date().toISOString();
-    return true;
   } catch (err) {
     console.warn('Gagal menjalankan smartSyncOnLogin:', err);
     return false;
@@ -299,6 +336,7 @@ export async function smartSyncOnLogin(userId: string): Promise<boolean> {
  * Debounced Auto-Sync: Memanggil uploadGameSaveToCloud secara efisien tanpa membebani server
  */
 export function scheduleDebouncedCloudSync() {
+  watchAccountChanges();
   const currentUser = useAuthStore.getState().user;
   if (!currentUser || currentUser.isGuest) return;
 
@@ -306,8 +344,11 @@ export function scheduleDebouncedCloudSync() {
     clearTimeout(syncTimeout);
   }
 
+  const revision = accountRevision;
   syncTimeout = setTimeout(() => {
+    syncTimeout = null;
+    if (!isCurrentAccount(currentUser.id, revision)) return;
     const saveData = useGameStore.getState().saveData;
-    uploadGameSaveToCloud(saveData);
+    void uploadGameSaveToCloud(saveData, currentUser.id, revision);
   }, 4000);
 }

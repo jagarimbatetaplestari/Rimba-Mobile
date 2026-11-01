@@ -79,7 +79,7 @@ export function MobileProfileModal({
 
   const handleExecuteDeleteAccount = async () => {
     const inputUpper = deleteConfirmInput.trim().toUpperCase();
-    if (inputUpper !== "DELETE" && inputUpper !== "HAPUS") return;
+    if (isDeleting || (inputUpper !== "DELETE" && inputUpper !== "HAPUS")) return;
     setIsDeleting(true);
     hapticWarning();
     try {
@@ -89,6 +89,13 @@ export function MobileProfileModal({
       onClose();
       window.location.replace("/login");
     } catch {
+      notify(
+        language === "en"
+          ? "Account deletion could not be completed. Your local progress has been kept. Please try again."
+          : "Penghapusan akun belum selesai. Progres lokal tetap disimpan. Silakan coba lagi.",
+        "error"
+      );
+    } finally {
       setIsDeleting(false);
     }
   };

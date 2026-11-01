@@ -117,6 +117,7 @@ export function MobileSettingsSheet({
   const [confirmInput, setConfirmInput] = useState("");
   const [isDeleteAccountOpen, setIsDeleteAccountOpen] = useState(false);
   const [deleteAccountInput, setDeleteAccountInput] = useState("");
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [isSyncingCloud, setIsSyncingCloud] = useState(false);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [showLegalModal, setShowLegalModal] = useState(false);
@@ -283,20 +284,25 @@ export function MobileSettingsSheet({
   };
 
   const handleExecuteDeleteAccount = async () => {
-    const validConfirm =
-      deleteAccountInput.trim().toUpperCase() === "HAPUS" ||
-      deleteAccountInput.trim().toUpperCase() === "DELETE";
-    if (validConfirm) {
-      soundManager.playError();
-      hapticWarning();
+    const confirmation = deleteAccountInput.trim().toUpperCase();
+    if (isDeletingAccount || !["HAPUS", "DELETE"].includes(confirmation)) return;
+    setIsDeletingAccount(true);
+    hapticWarning();
+    try {
       await useAuthStore.getState().deleteAccountAndData();
-      useGameStore.getState().resetWorld();
       setIsDeleteAccountOpen(false);
       setDeleteAccountInput("");
       onClose();
-      if (typeof window !== "undefined") {
-        window.location.reload();
-      }
+      window.location.replace("/login");
+    } catch {
+      useGameStore.getState().notify(
+        lang === "en"
+          ? "Account deletion could not be completed. Your local progress has been kept. Please try again."
+          : "Penghapusan akun belum selesai. Progres lokal tetap disimpan. Silakan coba lagi.",
+        "error"
+      );
+    } finally {
+      setIsDeletingAccount(false);
     }
   };
 
@@ -1642,7 +1648,7 @@ export function MobileSettingsSheet({
         {isDeleteAccountOpen && (
           <div
             onClick={(e) => {
-              if (e.target === e.currentTarget) {
+              if (e.target === e.currentTarget && !isDeletingAccount) {
                 setIsDeleteAccountOpen(false);
                 setDeleteAccountInput("");
               }
@@ -1681,6 +1687,7 @@ export function MobileSettingsSheet({
               <input
                 type="text"
                 value={deleteAccountInput}
+                disabled={isDeletingAccount}
                 onChange={(e) => setDeleteAccountInput(e.target.value)}
                 placeholder={lang === "en" ? "DELETE" : "HAPUS"}
                 className="w-full px-3 py-2 rounded-xl bg-[#0D3528]/5 border border-rose-300 text-rose-700 font-semibold text-center text-xs tracking-widest focus:outline-none focus:border-rose-600 uppercase"
@@ -1701,12 +1708,12 @@ export function MobileSettingsSheet({
                   type="button"
                   onClick={handleExecuteDeleteAccount}
                   disabled={
-                    deleteAccountInput.trim().toUpperCase() !== "HAPUS" &&
-                    deleteAccountInput.trim().toUpperCase() !== "DELETE"
+                    isDeletingAccount || (deleteAccountInput.trim().toUpperCase() !== "HAPUS" &&
+                    deleteAccountInput.trim().toUpperCase() !== "DELETE")
                   }
                   className="py-2.5 rounded-full bg-rose-600 hover:bg-rose-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium text-xs active:scale-95 transition-all shadow-xs cursor-pointer"
                 >
-                  {lang === "en" ? "Delete All" : "Hapus Semua"}
+                  {isDeletingAccount ? (lang === "en" ? "Deleting…" : "Menghapus…") : (lang === "en" ? "Delete All" : "Hapus Semua")}
                 </button>
               </div>
             </div>

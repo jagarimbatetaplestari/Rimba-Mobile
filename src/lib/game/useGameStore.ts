@@ -14,7 +14,7 @@ import {
   BiomeType,
   IslandSlot,
 } from '@/types/game';
-import { UserSubscription, SubscriptionTier } from '@/types/subscription';
+import { UserSubscription } from '@/types/subscription';
 import {
   BUILD_CATALOG,
   CatalogItem,
@@ -216,7 +216,6 @@ interface GameState {
   renameIsland: (islandId: string, name: string) => void;
   deleteIsland: (islandId: string) => boolean;
   updateSubscription: (sub: Partial<UserSubscription>) => void;
-  grantProForTesting: (tier?: SubscriptionTier) => void;
   dismissNotification: () => void;
   notify: (message: string, type?: NotificationState['type']) => void;
 }
@@ -2481,28 +2480,6 @@ export const useGameStore = create<GameState>((set, get) => ({
     };
     persistAndSyncSaveData(updatedData);
     set({ saveData: updatedData });
-  },
-
-  grantProForTesting: (tier: SubscriptionTier = 'pro_annual') => {
-    const { updateSubscription, notify } = get();
-    const isEn = getStoreLang() === 'en';
-    updateSubscription({
-      tier,
-      isPro: true,
-      status: 'active',
-      expiresAt: tier === 'pioneer_lifetime' ? null : new Date(Date.now() + 365 * 86400 * 1000).toISOString(),
-      pioneerBadge: tier === 'pioneer_lifetime',
-      realTreesPledged: tier === 'pioneer_lifetime' ? 2 : tier === 'pro_annual' ? 1 : 0,
-      treeCertificateId: `RMB-TEST-${Math.floor(1000 + Math.random() * 9000)}`,
-      treeLocation: 'Hutan Konservasi Mangrove Trimulyo, Jawa Tengah',
-      treeCoordinates: [-6.9538, 110.4285],
-    });
-    notify(
-      isEn
-        ? `👑 Rimba Pro (${tier}) activated for testing!`
-        : `👑 Rimba Pro (${tier}) berhasil diaktifkan untuk pengujian!`,
-      'success'
-    );
   },
 
   addTodo: (text, tag) => {

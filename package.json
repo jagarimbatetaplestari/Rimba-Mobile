@@ -34,6 +34,7 @@
     "@capacitor/status-bar": "^6.0.3",
     "@react-three/drei": "^9.114.0",
     "@react-three/fiber": "^8.17.10",
+    "@revenuecat/purchases-capacitor": "8.0.0",
     "@supabase/supabase-js": "^2.117.3",
     "canvas-confetti": "^1.9.4",
     "clsx": "^2.1.1",
@@ -48,6 +49,7 @@
   },
   "devDependencies": {
     "@capacitor/cli": "^6.1.2",
+    "@electric-sql/pglite": "0.5.14",
     "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^20.17.0",
     "@types/react": "^18.3.11",

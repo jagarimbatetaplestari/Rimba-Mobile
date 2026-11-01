@@ -15,11 +15,9 @@ export function useEntitlements(): Entitlements & {
   pioneerBadge: boolean;
   treeCertificateId?: string;
   triggerPaywall: (source: PaywallGateSource) => void;
-  grantProForTesting: (tier?: SubscriptionTier) => void;
 } {
   const subscription = useGameStore((state) => state.saveData.subscription);
   const islandsCount = useGameStore((state) => (state.saveData.islands || []).length || 1);
-  const grantProForTesting = useGameStore((state) => state.grantProForTesting);
 
   const isExpired = Boolean(
     subscription?.expiresAt &&
@@ -70,10 +68,9 @@ export function useEntitlements(): Entitlements & {
     canUseProSocialTemplates: isPro,
     hasUnlimitedJournalHistory: isPro,
     canExportCsv: isPro,
-    realTreesPledged: subscription?.realTreesPledged || 0,
+    realTreesPledged: 0,
     pioneerBadge: subscription?.pioneerBadge || false,
-    treeCertificateId: subscription?.treeCertificateId,
+    treeCertificateId: undefined,
     triggerPaywall,
-    grantProForTesting,
   };
 }

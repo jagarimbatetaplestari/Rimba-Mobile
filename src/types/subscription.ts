@@ -10,7 +10,7 @@ export interface UserSubscription {
   originalPurchaseDate: string;
   store: SubscriptionStore;
   productId?: string;
-  realTreesPledged: number; // Jumlah pohon nyata yang terdaftar atas nama user
+  realTreesPledged: number; // Legacy field; real-tree benefits are disabled for this release.
   pioneerBadge: boolean;
   treeCertificateId?: string;
   treeLocation?: string;
@@ -45,7 +45,7 @@ export const SUBSCRIPTION_PACKAGES = {
     priceUsd: 14.99,
     priceFormattedUsd: '$14.99',
     period: 'annual',
-    realTreesIncluded: 1,
+    realTreesIncluded: 0,
     isPopular: true,
   },
   lifetime: {
@@ -56,7 +56,7 @@ export const SUBSCRIPTION_PACKAGES = {
     priceUsd: 29.99,
     priceFormattedUsd: '$29.99',
     period: 'lifetime',
-    realTreesIncluded: 2,
+    realTreesIncluded: 0,
     badge: 'Perintis Suaka (Pioneer)',
   },
 } as const;

@@ -1,297 +1,281 @@
-export interface LegalSection {
-  id: string;
-  title: string;
-  content: string[];
-}
-
-export interface LegalDocument {
-  title: string;
-  lastUpdated: string;
-  summary: string;
-  sections: LegalSection[];
-}
-
-export const LEGAL_CONTENT: Record<
-  "id" | "en",
-  { privacy: LegalDocument; terms: LegalDocument }
-> = {
-  id: {
-    privacy: {
-      title: "Kebijakan Privasi",
-      lastUpdated: "12 Oktober 2026",
-      summary:
-        "Rimba menjunjung tinggi kedaulatan privasi Anda dengan arsitektur Local-First. Data pulau dan sesi fokus Anda tersimpan secara lokal di perangkat Anda dan tidak pernah diperjualbelikan kepada pihak ketiga atau pengiklan.",
-      sections: [
+export interface LegalSection { id: string; title: string; content: string[]; }
+export interface LegalDocument { title: string; lastUpdated: string; summary: string; sections: LegalSection[]; }
+export const SUPPORT_EMAIL = "jagarimba.tetaplestari@gmail.com";
+export const LEGAL_CONTENT: Record<'id' | 'en', { privacy: LegalDocument; terms: LegalDocument }> = {
+  "id": {
+    "privacy": {
+      "title": "Kebijakan Privasi",
+      "lastUpdated": "1 November 2026",
+      "summary": "Rimba menyimpan progres di perangkat dan menyinkronkannya ke cloud saat Anda masuk. Kebijakan ini menjelaskan akun, profil komunitas, pembelian, dan pilihan penghapusan data Anda.",
+      "sections": [
         {
-          id: "prinsip-utama",
-          title: "1. Prinsip Utama & Arsitektur Local-First",
-          content: [
-            "Rimba dirancang sebagai suaka fokus pribadi yang mengedepankan kedaulatan data pengguna.",
-            "Secara default, seluruh data perkembangan pulau suaka, riwayat sesi fokus, catatan jurnal, dan preferensi disimpan langsung di penyimpanan lokal perangkat Anda (Local Storage / IndexedDB).",
-            "Kami menganut prinsip minimasi data: kami hanya memproses data yang benar-benar esensial untuk mendukung pengalaman fokus, pemulihan suaka, dan gamifikasi produktivitas Anda.",
-          ],
+          "id": "data",
+          "title": "1. Data yang Diproses",
+          "content": [
+            "• Akun: ID pengguna, nama, email, dan informasi autentikasi yang diberikan saat masuk melalui email, Apple, atau Google. Kami tidak menerima kata sandi akun Apple atau Google Anda.",
+            "• Progres: Durasi, waktu, mode dan status sesi fokus; tugas, tag, jurnal, tata letak pulau, objek, Soul/XP, pencapaian dan preferensi. Data ini disimpan lokal dan dapat disinkronkan sebagai save akun.",
+            "• Profil dan komunitas: Nama tampilan, bio, avatar/foto yang Anda pilih, statistik serta informasi kehadiran/sesi ketika memakai fitur komunitas.",
+            "• Pembelian dan operasi layanan: ID pengguna aplikasi, produk, transaksi, status langganan, pemulihan pembelian, informasi platform/perangkat, dan log teknis yang diperlukan oleh penyedia layanan. Apple atau Google memproses pembayaran; Rimba tidak menerima nomor kartu pembayaran Anda."
+          ]
         },
         {
-          id: "data-yang-dikumpulkan",
-          title: "2. Data yang Kami Kumpulkan",
-          content: [
-            "• Data Sesi Fokus: Durasi fokus, jenis mode (Timer, Stopwatch, atau Pomodoro), status keberhasilan sesi, timestamp waktu mulai dan selesai, serta kategori aktivitas.",
-            "• Data Pulau Suaka: Tata letak petak grid 3D, tanaman dan pohon yang ditanam, koin Soul yang diperoleh, ekspansi lahan, dan status objek alam.",
-            "• Data Akun (Jika Mendaftar): Alamat email dan nama tampilan yang Anda berikan saat membuat akun untuk keperluan otentikasi. Jika Anda memilih Mode Tamu (Guest Mode), tidak ada informasi pengenal pribadi yang disimpan di server.",
-            "• Preferensi Aplikasi: Pengaturan kualitas grafis (Eco, Balanced, Ultra), volume efek suara dan soundscape, notifikasi pengingat harian lokal, dan preferensi haptik.",
-          ],
+          "id": "purpose",
+          "title": "2. Tujuan dan Sinkronisasi",
+          "content": [
+            "Kami memproses data untuk autentikasi, menyimpan dan memulihkan progres, menghitung statistik fokus, menyediakan fitur sosial, memverifikasi akses Pro, serta menangani dukungan dan penyalahgunaan.",
+            "Saat masuk dengan akun, aplikasi dapat menyinkronkan progres secara otomatis melalui Supabase. Mode tamu menyimpan progres di perangkat; penggunaan fitur jaringan tetap dapat mengirimkan data yang diperlukan untuk fitur tersebut.",
+            "Kami tidak menjual data pribadi atau menggunakannya untuk penargetan iklan lintas aplikasi."
+          ]
         },
         {
-          id: "penggunaan-data",
-          title: "3. Cara Kami Menggunakan Data",
-          content: [
-            "Menghitung metrik produktivitas harian dan mingguan serta menghasilkan cerita refleksi fokus (Focus Lore & Sanctuary Review).",
-            "Menyinkronkan progres pulau Anda ke awan (Cloud Sync melalui Supabase) secara terenkripsi hanya jika Anda masuk dengan akun terdaftar dan mengaktifkan sinkronisasi.",
-            "Menampilkan statistik papan peringkat (Leaderboard) regional secara anonim atau samaran jika Anda memilih berpartisipasi.",
-            "Kami TIDAK menggunakan data Anda untuk penargetan iklan, profil komersial, atau penjualan kepada pialang data mana pun. Rimba bebas dari pelacak iklan pihak ketiga.",
-          ],
+          "id": "public",
+          "title": "3. Data yang Terlihat oleh Orang Lain",
+          "content": [
+            "Nama tampilan, bio, avatar dan statistik yang ditampilkan pada papan peringkat atau sesi bersama dapat dilihat peserta atau pengguna lain. Email akun bukan bagian dari profil publik yang dimaksudkan untuk ditampilkan.",
+            "Avatar yang diunggah menggunakan URL publik; siapa pun yang memiliki URL dapat mengaksesnya. Hindari memasukkan informasi sensitif ke profil, nama ruangan atau konten yang dibagikan."
+          ]
         },
         {
-          id: "penyimpanan-keamanan",
-          title: "4. Penyimpanan, Keamanan & Sinkronisasi",
-          content: [
-            "Data lokal Anda berada di bawah kendali penuh perangkat Anda.",
-            "Jika Anda menggunakan fitur sinkronisasi akun awan, seluruh transmisi data diamankan menggunakan protokol enkripsi standar industri (HTTPS / TLS 1.3).",
-            "Penyimpanan database awan dilindungi dengan kebijakan Row-Level Security (RLS), memastikan bahwa hanya akun Anda yang memiliki hak akses membaca dan menulis data pulau Anda.",
-          ],
+          "id": "providers",
+          "title": "4. Penyedia Layanan",
+          "content": [
+            "Supabase menyediakan autentikasi, database, penyimpanan avatar dan Realtime. Apple dan Google memproses login sesuai metode yang Anda pilih.",
+            "RevenueCat memproses identitas pengguna aplikasi serta data pembelian/langganan untuk memverifikasi akses Pro dan pemulihan pembelian. App Store atau Google Play menangani transaksi dan pengelolaan tagihan.",
+            "Penyedia hosting/CDN serta layanan font dapat menerima informasi koneksi seperti alamat IP dan permintaan teknis. Pemrosesan dan lokasi penyimpanan mengikuti konfigurasi serta kebijakan masing-masing penyedia; data dapat diproses di luar negara Anda."
+          ]
         },
         {
-          id: "hak-kedaulatan-pengguna",
-          title: "5. Hak Pengguna & Penghapusan Akun Permanen",
-          content: [
-            "• Hak Ekspor Data (Cadangan Mandiri): Anda berhak mengunduh seluruh berkas data suaka Anda dalam format JSON kapan saja melalui menu Pengaturan > Cadangan & Pemulihan.",
-            "• Hak Reset Pulau: Anda dapat mereset tata letak pulau kapan saja tanpa menghapus riwayat sesi fokus.",
-            "• Hak Penghapusan Akun & Data (Apple Guideline 5.1.1): Anda berhak menghapus akun Anda beserta seluruh data pulau dan riwayat sesi fokus secara permanen dan seketika melalui tombol 'Hapus Akun & Data Suaka' di menu Pengaturan. Tindakan ini bersifat ireversibel dan langsung membersihkan data dari perangkat dan server.",
-          ],
+          "id": "security",
+          "title": "5. Penyimpanan dan Keamanan",
+          "content": [
+            "Data lokal memakai penyimpanan aplikasi/peramban. Menghapus aplikasi, membersihkan penyimpanan, kerusakan perangkat atau kegagalan save dapat memengaruhi data yang belum dicadangkan.",
+            "Komunikasi cloud menggunakan HTTPS/TLS dan kontrol akses server. Sinkronisasi bukan enkripsi end-to-end: operator layanan dan penyedia yang berwenang dapat memproses data untuk menjalankan layanan. Tidak ada sistem yang dapat menjamin keamanan mutlak."
+          ]
         },
         {
-          id: "notifikasi-perangkat",
-          title: "6. Izin & Notifikasi Perangkat",
-          content: [
-            "Rimba dapat meminta izin notifikasi lokal semata-mata untuk mengingatkan Anda ketika sesi fokus selesai atau mengingatkan jadwal fokus harian yang Anda atur sendiri.",
-            "Notifikasi ini dijadwalkan secara lokal di perangkat Anda tanpa mengirimkan push notification tracking dari server eksternal.",
-          ],
+          "id": "deletion",
+          "title": "6. Retensi, Ekspor dan Penghapusan",
+          "content": [
+            "Data akun disimpan selama diperlukan untuk menyediakan layanan atau sampai penghapusan akun diproses. Catatan yang wajib disimpan untuk kewajiban hukum, keamanan atau transaksi dapat mengikuti retensi penyedia terkait.",
+            "Ekspor JSON tersedia melalui Cadangan & Pemulihan. Berkas yang sudah Anda ekspor atau bagikan berada di luar kendali penghapusan jarak jauh Rimba.",
+            "Gunakan Pengaturan atau Profil → Hapus Akun & Data Suaka untuk menghapus akun. Kegagalan jaringan/server harus diselesaikan sebelum penghapusan dinyatakan berhasil. Jika tidak dapat masuk, hubungi email dukungan; kami perlu memverifikasi kepemilikan akun.",
+            "Penghapusan akun tidak otomatis membatalkan langganan App Store/Google Play. Kelola atau batalkan langganan melalui pengaturan toko sebelum menghapus akun."
+          ]
         },
         {
-          id: "kontak-layanan",
-          title: "7. Hubungi Kami",
-          content: [
-            "Jika Anda memiliki pertanyaan, masukan, atau permohonan terkait data pribadi Anda di Rimba, silakan hubungi tim kami melalui email resmi:",
-            "Email resmi: halo@rimba.app atau melalui repositori resmi Jagat Rimba Tetap Lestari.",
-          ],
+          "id": "permissions",
+          "title": "7. Izin Perangkat",
+          "content": [
+            "Notifikasi digunakan untuk pengingat fokus lokal. Foto/kamera atau pemilih berkas hanya digunakan saat Anda memilih avatar atau mengimpor/mengekspor data. Anda dapat mengelola izin melalui pengaturan perangkat."
+          ]
         },
-      ],
+        {
+          "id": "contact",
+          "title": "8. Kontak dan Pembaruan",
+          "content": [
+            "Untuk dukungan, privasi, penghapusan akun, atau laporan konten: jagarimba.tetaplestari@gmail.com.",
+            "Kebijakan diperbarui bila praktik data berubah; tanggal terbaru ditampilkan di atas."
+          ]
+        }
+      ]
     },
-    terms: {
-      title: "Syarat & Ketentuan Layanan",
-      lastUpdated: "12 Oktober 2026",
-      summary:
-        "Syarat dan ketentuan ini mengatur penggunaan aplikasi Rimba. Rimba adalah alat bantu produktivitas dan suaka fokus digital yang ditujukan untuk menumbuhkan kebiasaan kerja mendalam secara mindful.",
-      sections: [
+    "terms": {
+      "title": "Syarat & Ketentuan Layanan",
+      "lastUpdated": "1 November 2026",
+      "summary": "Rimba adalah alat produktivitas dengan timer fokus, audio alam dan suaka digital. Ketentuan ini menjelaskan penggunaan fitur gratis, Pro, aset virtual dan akun.",
+      "sections": [
         {
-          id: "penerimaan-ketentuan",
-          title: "1. Penerimaan Ketentuan",
-          content: [
-            "Dengan mengunduh, mengakses, atau menggunakan aplikasi Rimba, Anda menyatakan bahwa Anda telah membaca, memahami, dan menyetujui untuk terikat oleh Syarat dan Ketentuan ini.",
-            "Jika Anda tidak menyetujui ketentuan ini, Anda dipersilakan untuk tidak menggunakan aplikasi atau menghapus aplikasi dari perangkat Anda.",
-          ],
+          "id": "service",
+          "title": "1. Penggunaan Layanan",
+          "content": [
+            "Gunakan layanan secara sah dan jaga keamanan akun Anda. Mode tamu menyimpan progres lokal; akun diperlukan untuk fitur cloud tertentu. Rimba bukan layanan medis atau jaminan peningkatan produktivitas."
+          ]
         },
         {
-          id: "tujuan-layanan",
-          title: "2. Deskripsi Layanan",
-          content: [
-            "Rimba menyediakan platform gamifikasi fokus, timer produktivitas (Pomodoro, Stopwatch, Countdown), soundscape audio bertema alam, serta diorama pulau 3D yang bertumbuh seiring waktu fokus pengguna.",
-            "Layanan ini dirancang untuk tujuan produktivitas pribadi, kesehatan digital (digital wellbeing), dan sarana meditasi kerja mendalam.",
-          ],
+          "id": "virtual",
+          "title": "2. Aset Digital",
+          "content": [
+            "Pohon, pulau, Soul, XP dan hadiah merupakan aset virtual tanpa nilai tukar uang. Pembelian Pro pada rilis ini tidak mendanai atau menjanjikan penanaman pohon nyata, donasi konservasi, lokasi pohon, maupun sertifikat lingkungan."
+          ]
         },
         {
-          id: "aset-virtual",
-          title: "3. Aset Virtual & Mata Uang Dalam Game (Soul)",
-          content: [
-            "Pohon, tanaman, objek dekorasi alam, ekspansi petak pulau, dan 'Soul' (koin dalam game) merupakan aset virtual murni.",
-            "Semua aset virtual diperoleh sebagai apresiasi atas dedikasi waktu fokus nyata Anda.",
-            "Aset virtual ini TIDAK memiliki nilai moneter di dunia nyata, tidak dapat diperjualbelikan, ditransfer antar akun, atau ditukarkan dengan uang sungguhan dalam bentuk apa pun.",
-          ],
+          "id": "purchases",
+          "title": "3. Rimba Pro dan Pembelian",
+          "content": [
+            "Pro tersedia sebagai langganan bulanan, tahunan, atau pembelian lifetime satu kali. Fitur, harga lokal, periode dan total pembayaran ditampilkan oleh toko sebelum konfirmasi.",
+            "Langganan bulanan/tahunan diperpanjang otomatis kecuali dibatalkan melalui App Store/Google Play. Pembatalan menghentikan perpanjangan berikutnya; akses yang telah dibayar mengikuti periode dan status transaksi yang berlaku. Lifetime adalah akses satu kali selama layanan/fitur tersebut tersedia, bukan janji bahwa layanan akan beroperasi selamanya.",
+            "Gunakan Pulihkan Pembelian dengan akun toko yang membeli. Penghapusan akun atau aplikasi tidak membatalkan tagihan. Pengembalian dana dan pembatalan mengikuti prosedur toko serta hak konsumen yang berlaku. Untuk Apple: https://apps.apple.com/account/subscriptions.",
+            "Penggunaan aplikasi Apple tunduk juga pada Apple Standard EULA: https://www.apple.com/legal/internet-services/itunes/dev/stdeula/."
+          ]
         },
         {
-          id: "tanggung-jawab-akun",
-          title: "4. Akun & Keamanan Pengguna",
-          content: [
-            "Anda dapat menggunakan Rimba dalam Mode Tamu (Guest) tanpa registrasi, atau mendaftar menggunakan alamat email untuk menikmati sinkronisasi lintas perangkat.",
-            "Anda bertanggung jawab penuh untuk menjaga kerahasiaan kata sandi akun Anda.",
-            "Anda dilarang menggunakan skrip otomatis, bot, emulator manipulasi waktu, atau eksploitasi kode untuk memanipulasi durasi sesi fokus atau posisi papan peringkat.",
-          ],
+          "id": "community",
+          "title": "4. Akun dan Konten Komunitas",
+          "content": [
+            "Jangan membagikan konten ilegal, pelecehan, ancaman, ujaran kebencian, spam, informasi pribadi orang lain tanpa izin atau materi yang melanggar hak. Jangan memanipulasi timer, hadiah, keanggotaan ruangan atau peringkat.",
+            "Anda tetap memiliki konten yang Anda berikan dan mengizinkan pemrosesan/penampilannya sejauh diperlukan untuk menyediakan fitur yang Anda gunakan. Konten atau akses yang melanggar dapat dibatasi. Laporkan masalah melalui email dukungan."
+          ]
         },
         {
-          id: "hak-kekayaan-intelektual",
-          title: "5. Hak Kekayaan Intelektual",
-          content: [
-            "Seluruh hak cipta, merek dagang, desain antarmuka, model 3D diorama, ilustrasi narasi bab cerita (Story Lore), rekaman audio soundscape, dan kode sumber aplikasi Rimba adalah milik pengembang Rimba dan dilindungi oleh undang-undang hak kekayaan intelektual.",
-            "Pengguna dilarang merekayasa balik (reverse engineer), mendistribusikan ulang, atau mengeksploitasi aset media Rimba untuk kepentingan komersial tanpa izin tertulis.",
-          ],
+          "id": "rights",
+          "title": "5. Hak Kekayaan Intelektual",
+          "content": [
+            "Kode, merek dan aset Rimba dimiliki pengembang atau pemberi lisensinya. Penggunaan aplikasi tidak memberikan hak untuk menjual atau mendistribusikan ulang aset; hak yang diberikan lisensi pihak ketiga tetap berlaku."
+          ]
         },
         {
-          id: "penafian-tanggung-jawab",
-          title: "6. Penafian & Batasan Tanggung Jawab",
-          content: [
-            "Aplikasi Rimba disediakan atas dasar 'sebagaimana adanya' (as-is) dan 'sebagaimana tersedia' (as-available).",
-            "Meskipun kami berupaya memastikan keakuratan timer dan kestabilan aplikasi, penghitungan timer di latar belakang dapat dipengaruhi oleh optimasi baterai dan kebijakan sleep sistem operasi perangkat Anda.",
-            "Rimba bukan pengganti saran medis profesional untuk penanganan gangguan perhatian klinis, insomnia, atau kondisi kesehatan lainnya.",
-          ],
+          "id": "reliability",
+          "title": "6. Ketersediaan dan Data",
+          "content": [
+            "Timer latar belakang dipengaruhi kebijakan sistem operasi. Buat cadangan sebelum tindakan penting. Kami mengupayakan layanan yang andal tetapi tidak menjamin layanan tanpa gangguan atau pemulihan semua data. Hak wajib konsumen tetap berlaku."
+          ]
         },
         {
-          id: "perubahan-layanan",
-          title: "7. Pembaruan & Perubahan Ketentuan",
-          content: [
-            "Kami dapat memperbarui Syarat dan Ketentuan ini dari waktu ke waktu untuk mencerminkan fitur baru atau perubahan regulasi hukum.",
-            "Perubahan akan berlaku efektif setelah dipublikasikan di dalam aplikasi dengan tanggal pembaruan terbaru.",
-          ],
-        },
-      ],
-    },
+          "id": "contact",
+          "title": "7. Kontak dan Perubahan",
+          "content": [
+            "Hubungi jagarimba.tetaplestari@gmail.com untuk bantuan, laporan konten atau pertanyaan ketentuan. Perubahan material akan ditampilkan dengan tanggal pembaruan."
+          ]
+        }
+      ]
+    }
   },
-  en: {
-    privacy: {
-      title: "Privacy Policy",
-      lastUpdated: "October 12, 2026",
-      summary:
-        "Rimba respects and safeguards your privacy sovereignty with an offline-first architecture. Your focus history and sanctuary island data remain locally on your device and are never sold to advertisers or third parties.",
-      sections: [
+  "en": {
+    "privacy": {
+      "title": "Privacy Policy",
+      "lastUpdated": "November 1, 2026",
+      "summary": "Rimba stores progress on your device and syncs it to the cloud when you sign in. This policy covers accounts, community profiles, purchases, and your deletion choices.",
+      "sections": [
         {
-          id: "core-principles",
-          title: "1. Core Principles & Offline-First Design",
-          content: [
-            "Rimba is architected as a personal focus sanctuary that champions user data sovereignty.",
-            "By default, all island growth data, focus sessions, reflection journals, and settings are stored locally on your device (Local Storage / IndexedDB).",
-            "We adhere to strict data minimization: we only process what is strictly essential for your gamified focus and sanctuary restoration experience.",
-          ],
+          "id": "data",
+          "title": "1. Data We Process",
+          "content": [
+            "• Account: User ID, name, email and authentication information provided through email, Apple or Google sign-in. We do not receive your Apple or Google account password.",
+            "• Progress: Focus session duration, timestamps, mode and status; tasks, tags, journals, island layout, objects, Soul/XP, achievements and preferences. This is stored locally and may be synced as an account save.",
+            "• Profile and community: Display name, bio, avatar/photo you choose, statistics and presence/session information when using community features.",
+            "• Purchases and operations: App user ID, products, transactions, subscription status, purchase restoration, platform/device information, and technical logs needed by service providers. Apple or Google handles payment; Rimba does not receive your payment card number."
+          ]
         },
         {
-          id: "data-we-collect",
-          title: "2. Information We Collect",
-          content: [
-            "• Focus Session Data: Duration, timer mode (Timer, Stopwatch, or Pomodoro), session success outcome, start and completion timestamps, and category tags.",
-            "• Sanctuary Island Data: 3D grid layouts, planted flora and trees, earned Soul currency, unlocked land expansions, and environmental object placements.",
-            "• Account Information (If Registered): Email address and display name provided during registration for authentication purposes. In Guest Mode, zero personally identifiable information is stored on our servers.",
-            "• App Preferences: Graphic quality presets (Eco, Balanced, Ultra), soundscape and SFX volume levels, local daily reminder schedules, and haptic feedback toggles.",
-          ],
+          "id": "purpose",
+          "title": "2. Purposes and Sync",
+          "content": [
+            "We use data to authenticate accounts, save and restore progress, calculate focus statistics, provide social features, verify Pro access, and handle support or abuse.",
+            "When you sign in, the app may automatically sync progress through Supabase. Guest progress is stored on-device; using network features may still transmit information required for those features.",
+            "We do not sell personal data or use it for cross-app advertising targeting."
+          ]
         },
         {
-          id: "how-we-use-data",
-          title: "3. How We Use Information",
-          content: [
-            "To calculate daily and weekly productivity metrics and generate reflective focus summaries (Focus Lore & Sanctuary Review).",
-            "To securely synchronize your sanctuary progress to the cloud (via Supabase) solely when you log in with a registered account and choose to sync.",
-            "To display regional leaderboards anonymously or using your chosen display handle if you opt in.",
-            "We NEVER sell, monetize, or share your data with advertisers or data brokers. Rimba is entirely free of commercial ad trackers.",
-          ],
+          "id": "public",
+          "title": "3. Information Visible to Others",
+          "content": [
+            "Display names, bios, avatars and statistics shown in leaderboards or shared sessions may be visible to participants or other users. Account email is not intended to be part of the public profile.",
+            "Uploaded avatars use public URLs; anyone with the URL can access them. Avoid sensitive information in profiles, room names or shared content."
+          ]
         },
         {
-          id: "storage-security",
-          title: "4. Data Storage, Security & Sync",
-          content: [
-            "Your local data remains under your full control on your personal device.",
-            "When cloud sync is utilized, all data transmissions are protected via modern encryption standards (HTTPS / TLS 1.3).",
-            "Cloud database tables are secured with Row-Level Security (RLS) policies, ensuring only your verified account can read or modify your sanctuary data.",
-          ],
+          "id": "providers",
+          "title": "4. Service Providers",
+          "content": [
+            "Supabase provides authentication, database, avatar storage and Realtime. Apple and Google process sign-in according to your chosen method.",
+            "RevenueCat processes app user identity and purchase/subscription information to verify Pro access and restore purchases. App Store or Google Play handles transactions and billing management.",
+            "Hosting/CDN and font providers may receive connection information such as IP addresses and technical requests. Processing and storage locations depend on provider configuration and policies; data may be processed outside your country."
+          ]
         },
         {
-          id: "user-rights-deletion",
-          title: "5. User Rights & Account Deletion (Apple 5.1.1)",
-          content: [
-            "• Data Export Right: You can download a complete backup of your sanctuary data in JSON format at any time via Settings > Backup & Restore.",
-            "• Island Reset Right: You may reset your 3D island layout whenever desired without wiping your historical focus sessions.",
-            "• Permanent Account Deletion (Apple Guideline 5.1.1): You can permanently erase your account, all cloud backups, and local sanctuary data instantly via the 'Delete Account & Sanctuary Data' option in Settings. This process is irreversible.",
-          ],
+          "id": "security",
+          "title": "5. Storage and Security",
+          "content": [
+            "Local data uses app/browser storage. Uninstalling the app, clearing storage, device damage or failed saves can affect data that has not been backed up.",
+            "Cloud communication uses HTTPS/TLS and server access controls. Sync is not end-to-end encrypted: authorized operators and providers can process data to run the service. No system can guarantee absolute security."
+          ]
         },
         {
-          id: "device-permissions",
-          title: "6. Device Permissions & Notifications",
-          content: [
-            "Rimba may request local notification permissions strictly to notify you when a focus session concludes or to trigger your scheduled daily focus reminder.",
-            "These notifications are scheduled on-device without remote tracking payloads.",
-          ],
+          "id": "deletion",
+          "title": "6. Retention, Export and Deletion",
+          "content": [
+            "Account data is retained as needed to provide the service or until account deletion is processed. Records required for legal, security or transaction obligations may follow applicable provider retention.",
+            "JSON export is available under Backup & Restore. Files you export or share remain outside Rimba remote deletion control.",
+            "Use Settings or Profile → Delete Account & Sanctuary Data to delete your account. Network/server failures must be resolved before deletion is confirmed. If you cannot sign in, contact support; we must verify account ownership.",
+            "Deleting an account does not automatically cancel App Store/Google Play subscriptions. Manage or cancel them through store settings before deleting your account."
+          ]
         },
         {
-          id: "contact-us",
-          title: "7. Contact Us",
-          content: [
-            "If you have questions, feedback, or data requests regarding Rimba, please reach out via our official communication channels:",
-            "Official email: halo@rimba.app or through the Jagat Rimba Tetap Lestari repository.",
-          ],
+          "id": "permissions",
+          "title": "7. Device Permissions",
+          "content": [
+            "Notifications provide local focus reminders. Photos/camera or file pickers are used when you choose an avatar or import/export data. Manage permissions in your device settings."
+          ]
         },
-      ],
+        {
+          "id": "contact",
+          "title": "8. Contact and Updates",
+          "content": [
+            "For support, privacy, account deletion or content reports: jagarimba.tetaplestari@gmail.com.",
+            "We update this policy when data practices change; the latest date appears above."
+          ]
+        }
+      ]
     },
-    terms: {
-      title: "Terms of Service",
-      lastUpdated: "October 12, 2026",
-      summary:
-        "These terms govern your use of the Rimba mobile application. Rimba is a mindful productivity tool and digital sanctuary designed to foster deep work habits.",
-      sections: [
+    "terms": {
+      "title": "Terms of Service",
+      "lastUpdated": "November 1, 2026",
+      "summary": "Rimba is a productivity tool with focus timers, nature audio and a digital sanctuary. These terms cover free features, Pro, virtual items and accounts.",
+      "sections": [
         {
-          id: "acceptance-of-terms",
-          title: "1. Acceptance of Terms",
-          content: [
-            "By downloading, accessing, or using Rimba, you agree to be bound by these Terms of Service.",
-            "If you do not agree to these terms, please discontinue using Rimba and remove the application from your device.",
-          ],
+          "id": "service",
+          "title": "1. Using Rimba",
+          "content": [
+            "Use the service lawfully and protect your account credentials. Guest mode stores progress locally; an account is required for some cloud features. Rimba is not medical care or a guarantee of productivity improvements."
+          ]
         },
         {
-          id: "description-of-service",
-          title: "2. Description of Service",
-          content: [
-            "Rimba provides a gamified focus platform featuring flexible timers (Pomodoro, Stopwatch, Countdown), natural soundscapes, and an interactive 3D diorama island that prospers with your focus habits.",
-            "The service is intended for personal productivity, mindfulness, and digital wellbeing.",
-          ],
+          "id": "virtual",
+          "title": "2. Digital Items",
+          "content": [
+            "Trees, islands, Soul, XP and rewards are virtual items without cash redemption value. Pro purchases in this release do not fund or promise real-tree planting, conservation donations, tree locations or environmental certificates."
+          ]
         },
         {
-          id: "virtual-assets",
-          title: "3. Virtual Items & In-Game Currency (Soul)",
-          content: [
-            "Trees, botanical ornaments, land tiles, and 'Soul' tokens are purely virtual in-game items awarded for your focused time.",
-            "Virtual items have zero real-world monetary value, cannot be redeemed for fiat currency, and cannot be traded outside the application.",
-          ],
+          "id": "purchases",
+          "title": "3. Rimba Pro and Purchases",
+          "content": [
+            "Pro is offered as monthly or annual subscriptions, or a one-time lifetime purchase. The store displays features, local pricing, period and total charge before confirmation.",
+            "Monthly/annual subscriptions renew automatically unless canceled through App Store/Google Play. Cancellation stops the next renewal; paid access follows the applicable period and transaction status. Lifetime is one-time access while the service/features remain available, not a promise of perpetual service operation.",
+            "Use Restore Purchases with the store account that made the purchase. Deleting an account or app does not cancel billing. Refunds and cancellations follow store procedures and applicable consumer rights. For Apple: https://apps.apple.com/account/subscriptions.",
+            "Apple app use is also subject to the Apple Standard EULA: https://www.apple.com/legal/internet-services/itunes/dev/stdeula/."
+          ]
         },
         {
-          id: "user-accounts",
-          title: "4. User Accounts & Fair Use",
-          content: [
-            "You may use Rimba anonymously in Guest Mode, or register with an email address to enable multi-device cloud synchronization.",
-            "You are responsible for maintaining the confidentiality of your login credentials.",
-            "You agree not to employ automated bots, time-tampering utilities, or exploits to fabricate focus durations or manipulate leaderboard standings.",
-          ],
+          "id": "community",
+          "title": "4. Accounts and Community Content",
+          "content": [
+            "Do not share illegal content, harassment, threats, hate speech, spam, private information about others without permission, or infringing material. Do not manipulate timers, rewards, room membership or rankings.",
+            "You retain ownership of your content and permit its processing/display as needed for features you use. Violating content or access may be restricted. Report issues through support email."
+          ]
         },
         {
-          id: "intellectual-property",
-          title: "5. Intellectual Property",
-          content: [
-            "All visual artwork, 3D diorama models, original soundscapes, narrative story lore, and source code are the intellectual property of Rimba developers.",
-            "Unauthorized reverse engineering, redistribution, or commercial reproduction of Rimba assets is strictly prohibited.",
-          ],
+          "id": "rights",
+          "title": "5. Intellectual Property",
+          "content": [
+            "Rimba code, brands and assets belong to the developer or its licensors. App use does not grant rights to sell or redistribute assets; rights granted by third-party licenses remain applicable."
+          ]
         },
         {
-          id: "disclaimer-liability",
-          title: "6. Disclaimer & Limitation of Liability",
-          content: [
-            "Rimba is provided on an 'as-is' and 'as-available' basis.",
-            "While we strive for precise timekeeping, background timer performance may be influenced by your device operating system's battery optimization policies.",
-            "Rimba is a productivity companion and does not constitute medical treatment for clinical attention or psychological conditions.",
-          ],
+          "id": "reliability",
+          "title": "6. Availability and Data",
+          "content": [
+            "Background timers are affected by operating system policies. Back up before important actions. We work toward reliable service but cannot guarantee uninterrupted availability or recovery of all data. Mandatory consumer rights remain unaffected."
+          ]
         },
         {
-          id: "updates-to-terms",
-          title: "7. Modifications to Terms",
-          content: [
-            "We reserve the right to revise these Terms of Service periodically to reflect product updates or legal standards.",
-            "Continued use of Rimba following updates signifies your acceptance of the revised terms.",
-          ],
-        },
-      ],
-    },
-  },
+          "id": "contact",
+          "title": "7. Contact and Changes",
+          "content": [
+            "Contact jagarimba.tetaplestari@gmail.com for support, content reports or questions about these terms. Material changes will be shown with an updated date."
+          ]
+        }
+      ]
+    }
+  }
 };

@@ -1,8 +1,10 @@
 'use client';
 
 import { Capacitor } from '@capacitor/core';
+import type { CustomerInfo, PurchasesStoreProduct } from '@revenuecat/purchases-capacitor';
 import { SUBSCRIPTION_PACKAGES, SubscriptionTier, UserSubscription } from '@/types/subscription';
 import { supabase } from '@/lib/supabase/client';
+import { useAuthStore } from '@/lib/auth/useAuthStore';
 
 export interface StoreKitPurchaseResult {
   success: boolean;
@@ -11,282 +13,112 @@ export interface StoreKitPurchaseResult {
   error?: string;
 }
 
-let isRevenueCatConfigured = false;
+let configuredUserId: string | null = null;
+let configurationQueue: Promise<void> = Promise.resolve();
+const productsByTier = {
+  pro_monthly: SUBSCRIPTION_PACKAGES.monthly.id,
+  pro_annual: SUBSCRIPTION_PACKAGES.annual.id,
+  pioneer_lifetime: SUBSCRIPTION_PACKAGES.lifetime.id,
+} as const;
+type PaidTier = keyof typeof productsByTier;
 
-async function loadRevenueCatModule(): Promise<any> {
-  try {
-    const dynamicImporter = new Function('m', 'return import(m)');
-    return await dynamicImporter('@revenuecat/purchases-capacitor');
-  } catch {
-    return null;
-  }
+async function isCurrentUser(userId: string): Promise<boolean> {
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = useAuthStore.getState().user;
+  return session?.user.id === userId && user?.id === userId && !user.isGuest;
 }
 
-async function ensureRevenueCatConfigured(): Promise<any> {
-  const rcModule = await loadRevenueCatModule();
-  const Purchases = rcModule?.Purchases;
-  if (!Purchases) return null;
-
-  if (!isRevenueCatConfigured) {
-    const apiKey =
-      process.env.NEXT_PUBLIC_REVENUECAT_IOS_KEY ||
-      process.env.NEXT_PUBLIC_REVENUECAT_API_KEY ||
-      '';
-    if (!apiKey) {
-      return null;
-    }
-    await Purchases.configure({ apiKey });
-    isRevenueCatConfigured = true;
-  }
-  return Purchases;
+async function storeContext() {
+  if (!Capacitor.isNativePlatform()) throw new Error('Purchases are available in the Rimba mobile app.');
+  const { data: { session } } = await supabase.auth.getSession();
+  const userId = session?.user.id;
+  if (!userId || !(await isCurrentUser(userId))) throw new Error('Sign in to Rimba before purchasing or restoring.');
+  const ios = Capacitor.getPlatform() === 'ios';
+  const apiKey = ios ? process.env.NEXT_PUBLIC_REVENUECAT_IOS_KEY : process.env.NEXT_PUBLIC_REVENUECAT_ANDROID_KEY;
+  if (!apiKey || !apiKey.startsWith(ios ? 'appl_' : 'goog_')) throw new Error('Store billing is not configured on this build.');
+  // Literal import is bundled by Next; new Function(import) left the SDK outside the app.
+  const { Purchases } = await import('@revenuecat/purchases-capacitor');
+  const configure = configurationQueue.then(async () => {
+    if (!(await isCurrentUser(userId))) throw new Error('Account changed. Please try again.');
+    if (!configuredUserId) await Purchases.configure({ apiKey, appUserID: userId });
+    else if (configuredUserId !== userId) await Purchases.logIn({ appUserID: userId });
+    configuredUserId = userId;
+  });
+  configurationQueue = configure.catch(() => {});
+  await configure;
+  if (!(await isCurrentUser(userId))) throw new Error('Account changed. Please try again.');
+  return { Purchases, userId };
 }
 
-async function syncSubscriptionToSupabase(sub: Partial<UserSubscription>) {
-  try {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (!session?.user) return;
-    await supabase.from('user_subscriptions').upsert({
-      user_id: session.user.id,
-      tier: sub.tier || 'free',
-      status: sub.status || 'active',
-      is_pro: Boolean(sub.isPro),
-      expires_at: sub.expiresAt || null,
-      store: sub.store || 'app_store',
-      real_trees_pledged: sub.realTreesPledged ?? 0,
-      pioneer_badge: Boolean(sub.pioneerBadge),
-      tree_certificate_id: sub.treeCertificateId || null,
-      updated_at: new Date().toISOString(),
-    });
-  } catch {
-    // ignore offline or table error
-  }
-}
-
-function buildSubscriptionPayload(
-  tier: SubscriptionTier,
-  expiresAtIso: string | null,
-  store: 'app_store' | 'play_store' | 'stripe' | 'promo'
-): Partial<UserSubscription> {
-  const isLifetime = tier === 'pioneer_lifetime';
-  const isAnnual = tier === 'pro_annual';
+function subscriptionFromCustomerInfo(info: CustomerInfo, expectedTier?: PaidTier): Partial<UserSubscription> | null {
+  const entitlement = info?.entitlements?.active?.rimba_pro;
+  if (!entitlement?.isActive || String(entitlement.verification) === 'FAILED') return null;
+  const tier = (Object.keys(productsByTier) as PaidTier[]).find(key => productsByTier[key] === entitlement.productIdentifier);
+  if (!tier || (expectedTier && tier !== expectedTier)) return null;
+  const lifetime = tier === 'pioneer_lifetime';
+  const expiresAt = entitlement.expirationDate;
+  if (!lifetime && (!expiresAt || !Number.isFinite(Date.parse(expiresAt)) || Date.parse(expiresAt) <= Date.now())) return null;
   return {
     tier,
-    status: isLifetime ? 'lifetime' : 'active',
+    status: lifetime ? 'lifetime' : entitlement.periodType === 'TRIAL' ? 'trialing' : entitlement.willRenew ? 'active' : 'canceled',
     isPro: true,
-    expiresAt: isLifetime
-      ? null
-      : expiresAtIso ||
-        new Date(Date.now() + (isAnnual ? 365 : 30) * 86400 * 1000).toISOString(),
-    originalPurchaseDate: new Date().toISOString(),
-    store,
-    realTreesPledged: isLifetime ? 2 : isAnnual ? 1 : 0,
-    pioneerBadge: isLifetime,
-    treeCertificateId:
-      isLifetime || isAnnual
-        ? `RMB-CONS-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`
-        : undefined,
-    treeLocation:
-      isLifetime || isAnnual
-        ? 'Hutan Konservasi Mangrove Trimulyo, Jawa Tengah'
-        : undefined,
-    treeCoordinates: isLifetime || isAnnual ? [-6.9538, 110.4285] : undefined,
+    expiresAt: lifetime ? null : expiresAt,
+    originalPurchaseDate: entitlement.originalPurchaseDate,
+    productId: entitlement.productIdentifier,
+    store: Capacitor.getPlatform() === 'ios' ? 'app_store' : 'play_store',
+    realTreesPledged: 0,
+    pioneerBadge: lifetime,
+    treeCertificateId: undefined,
+    treeLocation: undefined,
+    treeCoordinates: undefined,
   };
 }
 
-export async function purchaseSubscriptionTier(
-  tier: SubscriptionTier,
-  isEn = false
-): Promise<StoreKitPurchaseResult> {
-  const isNative = typeof window !== 'undefined' && Capacitor.isNativePlatform();
-  const productConfig =
-    tier === 'pioneer_lifetime'
-      ? SUBSCRIPTION_PACKAGES.lifetime
-      : tier === 'pro_annual'
-        ? SUBSCRIPTION_PACKAGES.annual
-        : SUBSCRIPTION_PACKAGES.monthly;
-
-  if (isNative) {
-    try {
-      const Purchases = await ensureRevenueCatConfigured();
-      if (!Purchases) {
-        return {
-          success: false,
-          error: isEn
-            ? 'App Store billing is temporarily unavailable on this build. Please try again later.'
-            : 'Layanan pembayaran App Store sedang tidak tersedia pada versi ini. Silakan coba beberapa saat lagi.',
-        };
-      }
-
-      const offerings = await Purchases.getOfferings();
-      const availablePackages: any[] = offerings?.current?.availablePackages || [];
-      const matchingPkg = availablePackages.find(
-        (p) =>
-          p?.product?.identifier === productConfig.id ||
-          p?.identifier === productConfig.id ||
-          p?.product?.identifier?.includes(tier)
-      );
-
-      let customerInfo: any;
-      if (matchingPkg) {
-        const res = await Purchases.purchasePackage({ aPackage: matchingPkg });
-        customerInfo = res?.customerInfo;
-      } else if (typeof Purchases.purchaseStoreProduct === 'function') {
-        const { products } = await Purchases.getProducts({
-          productIdentifiers: [productConfig.id],
-        });
-        if (!products || products.length === 0) {
-          return {
-            success: false,
-            error: isEn
-              ? 'Subscription product is being synchronized with App Store Connect. Please try again shortly.'
-              : 'Produk langganan sedang disinkronkan dengan App Store Connect. Silakan coba sesaat lagi.',
-          };
-        }
-        const res = await Purchases.purchaseStoreProduct({ product: products[0] });
-        customerInfo = res?.customerInfo;
-      }
-
-      const activeEntitlements = customerInfo?.entitlements?.active || {};
-      const hasProEntitlement =
-        Boolean(activeEntitlements['pro']) ||
-        Boolean(activeEntitlements['rimba_pro']) ||
-        Object.keys(activeEntitlements).length > 0;
-
-      if (!hasProEntitlement) {
-        return {
-          success: false,
-          error: isEn
-            ? 'Purchase was not completed by the App Store.'
-            : 'Transaksi tidak diselesaikan oleh App Store.',
-        };
-      }
-
-      const firstEntitlement: any = Object.values(activeEntitlements)[0];
-      const expiresAt = firstEntitlement?.expirationDate || null;
-      const storeType = Capacitor.getPlatform() === 'ios' ? 'app_store' : 'play_store';
-      const subPayload = buildSubscriptionPayload(tier, expiresAt, storeType);
-      await syncSubscriptionToSupabase(subPayload);
-
-      return {
-        success: true,
-        subscription: subPayload,
-      };
-    } catch (err: any) {
-      const msg = String(err?.message || err || '').toLowerCase();
-      if (err?.userCancelled || msg.includes('cancel')) {
-        return { success: false, cancelled: true };
-      }
-      return {
-        success: false,
-        error:
-          err?.message ||
-          (isEn
-            ? 'Could not complete App Store purchase.'
-            : 'Gagal memproses pembelian di App Store.'),
-      };
-    }
-  }
-
-  // Non-native Web / Local Development Sandbox ONLY (never runs on native iOS App Store builds)
-  if (process.env.NODE_ENV !== 'production') {
-    await new Promise((resolve) => setTimeout(resolve, 600));
-    const subPayload = buildSubscriptionPayload(tier, null, 'promo');
-    return {
-      success: true,
-      subscription: subPayload,
-    };
-  }
-
-  return {
-    success: false,
-    error: isEn
-      ? 'In-App Purchases are only available inside the Rimba iOS / Android app.'
-      : 'Pembelian dalam aplikasi hanya tersedia melalui aplikasi Rimba di iOS / Android.',
-  };
+function failed(error: unknown, isEn: boolean): StoreKitPurchaseResult {
+  const details = error as { userCancelled?: boolean; code?: string; message?: string };
+  if (details?.userCancelled || details?.code === '1' || /cancel/i.test(details?.message || '')) return { success: false, cancelled: true };
+  return { success: false, error: details?.message || (isEn ? 'Store request failed. Please try again.' : 'Permintaan toko gagal. Silakan coba lagi.') };
 }
 
-export async function restoreStoreKitPurchases(
-  isEn = false
-): Promise<StoreKitPurchaseResult> {
-  const isNative = typeof window !== 'undefined' && Capacitor.isNativePlatform();
+export async function getStoreProducts(): Promise<PurchasesStoreProduct[]> {
+  const { Purchases } = await storeContext();
+  const { products } = await Purchases.getProducts({ productIdentifiers: Object.values(productsByTier) });
+  return products.filter(product => Object.values(productsByTier).some(id => id === product.identifier));
+}
 
-  if (isNative) {
-    try {
-      const Purchases = await ensureRevenueCatConfigured();
-      if (Purchases) {
-        const res = await Purchases.restorePurchases();
-        const customerInfo = res?.customerInfo || res;
-        const activeEntitlements = customerInfo?.entitlements?.active || {};
-        const activeKeys = Object.keys(activeEntitlements);
-
-        if (activeKeys.length > 0) {
-          const firstEntitlement: any = activeEntitlements[activeKeys[0]];
-          const prodId = String(firstEntitlement?.productIdentifier || '');
-          const tier: SubscriptionTier = prodId.includes('lifetime')
-            ? 'pioneer_lifetime'
-            : prodId.includes('monthly')
-              ? 'pro_monthly'
-              : 'pro_annual';
-          const storeType = Capacitor.getPlatform() === 'ios' ? 'app_store' : 'play_store';
-          const subPayload = buildSubscriptionPayload(
-            tier,
-            firstEntitlement?.expirationDate || null,
-            storeType
-          );
-          await syncSubscriptionToSupabase(subPayload);
-          return {
-            success: true,
-            subscription: subPayload,
-          };
-        }
-      }
-    } catch (err: any) {
-      console.warn('RevenueCat restore error:', err);
-    }
-  }
-
-  // Fallback check against authenticated user's cloud subscription table
+export async function purchaseSubscriptionTier(tier: SubscriptionTier, isEn = false): Promise<StoreKitPurchaseResult> {
+  if (tier === 'free') return { success: false, error: isEn ? 'Choose a paid plan.' : 'Pilih paket berbayar.' };
   try {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (session?.user) {
-      const { data: cloudSub } = await supabase
-        .from('user_subscriptions')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .maybeSingle();
-
-      if (cloudSub && cloudSub.is_pro) {
-        const isExpired =
-          cloudSub.expires_at && new Date(cloudSub.expires_at).getTime() <= Date.now();
-        if (!isExpired) {
-          return {
-            success: true,
-            subscription: {
-              tier: (cloudSub.tier as SubscriptionTier) || 'pro_annual',
-              status: cloudSub.status || 'active',
-              isPro: true,
-              expiresAt: cloudSub.expires_at || null,
-              store: cloudSub.store || 'app_store',
-              realTreesPledged: cloudSub.real_trees_pledged ?? 1,
-              pioneerBadge: Boolean(cloudSub.pioneer_badge),
-              treeCertificateId: cloudSub.tree_certificate_id || undefined,
-            },
-          };
-        }
-      }
+    const { Purchases, userId } = await storeContext();
+    const productId = productsByTier[tier];
+    const offerings = await Purchases.getOfferings();
+    const aPackage = offerings.current?.availablePackages.find(pkg => pkg.product.identifier === productId);
+    let customerInfo: CustomerInfo;
+    if (aPackage) {
+      if (!(await isCurrentUser(userId))) throw new Error('Account changed. Please try again.');
+      ({ customerInfo } = await Purchases.purchasePackage({ aPackage }));
+    } else {
+      const { products } = await Purchases.getProducts({ productIdentifiers: [productId] });
+      const product = products.find(item => item.identifier === productId);
+      if (!product) throw new Error(isEn ? 'This product is not available in your store.' : 'Produk belum tersedia di toko Anda.');
+      if (!(await isCurrentUser(userId))) throw new Error('Account changed. Please try again.');
+      ({ customerInfo } = await Purchases.purchaseStoreProduct({ product }));
     }
-  } catch {
-    // ignore
-  }
+    if (!(await isCurrentUser(userId))) throw new Error('Account changed. Restore purchases after signing in again.');
+    const subscription = subscriptionFromCustomerInfo(customerInfo, tier);
+    if (!subscription) throw new Error(isEn ? 'No valid Rimba Pro entitlement was returned.' : 'Toko belum mengembalikan hak akses Rimba Pro yang valid.');
+    // Server mirrors are updated only by a verified RevenueCat backend integration.
+    return { success: true, subscription };
+  } catch (error) { return failed(error, isEn); }
+}
 
-  return {
-    success: false,
-    error: isEn
-      ? 'No active Rimba Pro subscription or previous purchase was found for this account.'
-      : 'Tidak ditemukan langganan Rimba Pro aktif atau riwayat pembelian pada akun ini.',
-  };
+export async function restoreStoreKitPurchases(isEn = false): Promise<StoreKitPurchaseResult> {
+  try {
+    const { Purchases, userId } = await storeContext();
+    const { customerInfo } = await Purchases.restorePurchases();
+    if (!(await isCurrentUser(userId))) throw new Error('Account changed. Please try again.');
+    const subscription = subscriptionFromCustomerInfo(customerInfo);
+    if (!subscription) throw new Error(isEn ? 'No active Rimba Pro purchase was found.' : 'Tidak ditemukan pembelian Rimba Pro aktif.');
+    return { success: true, subscription };
+  } catch (error) { return failed(error, isEn); }
 }

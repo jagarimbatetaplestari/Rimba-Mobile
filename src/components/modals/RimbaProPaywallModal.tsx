@@ -5,8 +5,9 @@ import { useGameStore } from "@/lib/game/useGameStore";
 import { useTranslation } from "@/lib/i18n/translations";
 import { soundManager } from "@/lib/audio/sounds";
 import { hapticLight, hapticSuccess, hapticWarning } from "@/lib/mobile/nativeBridge";
-import { purchaseSubscriptionTier, restoreStoreKitPurchases } from "@/lib/subscription/revenueCatService";
+import { purchaseSubscriptionTier, restoreStoreKitPurchases, getStoreProducts } from "@/lib/subscription/revenueCatService";
 import { SUBSCRIPTION_PACKAGES, SubscriptionTier } from "@/types/subscription";
+import { useEntitlements } from "@/lib/subscription/useEntitlements";
 import { LegalModal } from "@/components/modals/LegalModal";
 import {
   X,
@@ -36,14 +37,15 @@ export function RimbaProPaywallModal({
   const isEn = language === "en";
 
   const subscription = useGameStore((state) => state.saveData.subscription);
-  const isPro = subscription?.isPro ?? false;
+  const { isPro } = useEntitlements();
   const currentTier = subscription?.tier;
-  const realTreesPledged = subscription?.realTreesPledged || 0;
   const updateSubscription = useGameStore((state) => state.updateSubscription);
   const notify = useGameStore((state) => state.notify);
 
   const [selectedTier, setSelectedTier] = useState<SubscriptionTier>("pro_annual");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [storePrices, setStorePrices] = useState<Record<string, string>>({});
+  const [storeError, setStoreError] = useState<string | null>(null);
   const [legalModalTab, setLegalModalTab] = useState<"privacy" | "terms" | null>(null);
 
   useEffect(() => {
@@ -56,7 +58,24 @@ export function RimbaProPaywallModal({
     }
   }, [isOpen, currentTier]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    let active = true;
+    setStorePrices({});
+    setStoreError(null);
+    void getStoreProducts().then(products => {
+      if (!active) return;
+      setStorePrices(Object.fromEntries(products.map(product => [product.identifier, product.priceString])));
+      if (products.length === 0) setStoreError(isEn ? "No plans are available in your store yet." : "Paket belum tersedia di toko Anda.");
+    }).catch(() => {
+      if (active) setStoreError(isEn ? "Sign in to Rimba and check your store connection to load plans." : "Masuk ke Rimba dan periksa koneksi toko untuk memuat paket.");
+    });
+    return () => { active = false; };
+  }, [isOpen, isEn]);
+
   if (!isOpen) return null;
+  const unavailablePrice = isEn ? "Price unavailable" : "Harga belum tersedia";
+  const productForTier = selectedTier === "pro_annual" ? SUBSCRIPTION_PACKAGES.annual : selectedTier === "pioneer_lifetime" ? SUBSCRIPTION_PACKAGES.lifetime : SUBSCRIPTION_PACKAGES.monthly;
 
   const handlePurchase = async () => {
     soundManager.playPop();
@@ -123,17 +142,7 @@ export function RimbaProPaywallModal({
     }
   };
 
-  const buttonPrice = isEn
-    ? selectedTier === "pro_annual"
-      ? "$14.99"
-      : selectedTier === "pioneer_lifetime"
-        ? "$29.99"
-        : "$1.99"
-    : selectedTier === "pro_annual"
-      ? "Rp 179rb"
-      : selectedTier === "pioneer_lifetime"
-        ? "Rp 349rb"
-        : "Rp 29rb";
+  const buttonPrice = storePrices[productForTier.id] || unavailablePrice;
 
   const buttonText = isPro
     ? selectedTier === currentTier
@@ -202,12 +211,7 @@ export function RimbaProPaywallModal({
                     </span>
                   </div>
                   <p className="text-[10.5px] text-[#4C7567] mt-0.5 truncate">
-                    {realTreesPledged > 0
-                      ? t.paywallModal.realTreesPlantedCount.replace(
-                          "{count}",
-                          String(realTreesPledged)
-                        )
-                      : t.paywallModal.proActiveTitle}
+                    {t.paywallModal.proActiveTitle}
                   </p>
                 </div>
               </div>
@@ -304,7 +308,7 @@ export function RimbaProPaywallModal({
                   <p className="text-[11px] text-[#4C7567]">
                     {t.paywallModal.annualPrice.replace(
                       "{price}",
-                      SUBSCRIPTION_PACKAGES.annual.priceFormattedIdr
+                      storePrices[SUBSCRIPTION_PACKAGES.annual.id] || unavailablePrice
                     )}
                   </p>
                 </div>
@@ -348,7 +352,7 @@ export function RimbaProPaywallModal({
                   <p className="text-[11px] text-[#4C7567]">
                     {t.paywallModal.lifetimePrice.replace(
                       "{price}",
-                      SUBSCRIPTION_PACKAGES.lifetime.priceFormattedIdr
+                      storePrices[SUBSCRIPTION_PACKAGES.lifetime.id] || unavailablePrice
                     )}
                   </p>
                 </div>
@@ -392,7 +396,7 @@ export function RimbaProPaywallModal({
                   <p className="text-[10.5px] text-[#4C7567]">
                     {t.paywallModal.monthlyPrice.replace(
                       "{price}",
-                      SUBSCRIPTION_PACKAGES.monthly.priceFormattedIdr
+                      storePrices[SUBSCRIPTION_PACKAGES.monthly.id] || unavailablePrice
                     )}
                   </p>
                 </div>
@@ -408,7 +412,7 @@ export function RimbaProPaywallModal({
           <div className="pt-2 relative z-10 flex flex-col gap-2">
             <button
               type="button"
-              disabled={isProcessing}
+              disabled={isProcessing || (!storePrices[productForTier.id] && !(isPro && selectedTier === currentTier))}
               onClick={handlePurchase}
               className="w-full py-3.5 px-5 rounded-2xl bg-gradient-to-r from-[#187557] via-[#208b68] to-[#2BB688] hover:opacity-95 text-white font-extrabold text-[14px] flex items-center justify-center gap-2 shadow-lg shadow-[#187557]/20 active:scale-[0.98] transition-all cursor-pointer"
             >
@@ -422,6 +426,8 @@ export function RimbaProPaywallModal({
               )}
             </button>
 
+            {storeError && <p role="status" className="text-xs text-center text-[#4C7567]">{storeError}</p>}
+            <p className="text-[10px] text-center text-[#4C7567]">{selectedTier === "pioneer_lifetime" ? (isEn ? "One-time purchase for digital Pro features while the service is available." : "Pembelian satu kali untuk fitur Pro digital selama layanan tersedia.") : (isEn ? "Auto-renews until canceled in your store settings." : "Diperpanjang otomatis sampai dibatalkan melalui pengaturan toko.")}</p>
             {/* Restore & Policy Links */}
             <div className="flex items-center justify-center gap-3 text-[11px] text-[#4C7567] pt-1">
               <button

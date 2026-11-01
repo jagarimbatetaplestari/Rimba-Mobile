@@ -1,47 +1,31 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-const mocks = vi.hoisted(() => ({ rpc: vi.fn(), signOut: vi.fn(), reset: vi.fn() }));
-vi.mock('../src/lib/supabase/client', () => ({ supabase: { rpc: mocks.rpc, auth: { signOut: mocks.signOut } } }));
+const mocks = vi.hoisted(() => ({ getUser: vi.fn(), invoke: vi.fn(), signOut: vi.fn(), reset: vi.fn(), authorize: vi.fn() }));
+vi.mock('@capacitor/core',()=>({Capacitor:{isNativePlatform:()=>true,getPlatform:()=> 'ios'}}));
+vi.mock('@capacitor-community/apple-sign-in',()=>({SignInWithApple:{authorize:mocks.authorize}}));
+vi.mock('../src/lib/supabase/client', () => ({ supabase: { functions: {invoke:mocks.invoke}, auth: { getUser:mocks.getUser, signOut: mocks.signOut } } }));
 vi.mock('../src/lib/supabase/cloudSync', () => ({ invalidateCloudSyncSession: vi.fn(), smartSyncOnLogin: vi.fn() }));
 vi.mock('../src/lib/game/storage', () => ({ createInitialSaveData: () => ({ active_biome: 'meadow' }) }));
 vi.mock('../src/lib/game/useGameStore', () => ({ useGameStore: { setState: mocks.reset } }));
 import { useAuthStore } from '../src/lib/auth/useAuthStore';
 const user = { id: 'account-a', email: '', name: 'Ranger', isGuest: false, createdAt: '2026-11-01' };
 beforeEach(() => {
-  vi.clearAllMocks();
-  mocks.signOut.mockResolvedValue({ error: null });
-  useAuthStore.setState({ user });
+ vi.clearAllMocks(); mocks.signOut.mockResolvedValue({error:null});
+ mocks.getUser.mockResolvedValue({data:{user:{id:user.id,identities:[{provider:'email'}]}},error:null});
+ mocks.invoke.mockResolvedValue({data:{deleted:true,appleRevoked:false},error:null});
+ mocks.authorize.mockResolvedValue({response:{authorizationCode:'fresh-apple-code'}});
+ useAuthStore.setState({ user });
 });
 describe('account deletion data safety', () => {
-  it('preserves session and game state when server returns an error', async () => {
-    mocks.rpc.mockResolvedValue({ error: new Error('Deletion refused') });
-    await expect(useAuthStore.getState().deleteAccountAndData()).rejects.toThrow('Deletion refused');
-    expect(useAuthStore.getState().user).toEqual(user);
-    expect(mocks.reset).not.toHaveBeenCalled();
-    expect(mocks.signOut).not.toHaveBeenCalled();
-  });
-  it('preserves data when the network request rejects', async () => {
-    mocks.rpc.mockRejectedValue(new Error('Offline'));
-    await expect(useAuthStore.getState().deleteAccountAndData()).rejects.toThrow('Offline');
-    expect(useAuthStore.getState().user).toEqual(user);
-    expect(mocks.reset).not.toHaveBeenCalled();
-  });
-  it('does not wipe data without an account identity', async () => {
-    useAuthStore.setState({ user: null });
-    await expect(useAuthStore.getState().deleteAccountAndData()).rejects.toThrow();
-    expect(mocks.rpc).not.toHaveBeenCalled();
-    expect(mocks.reset).not.toHaveBeenCalled();
-  });
-  it('clears local state only after confirmed server success, including hidden email', async () => {
-    mocks.rpc.mockResolvedValue({ error: null });
-    await useAuthStore.getState().deleteAccountAndData();
-    expect(mocks.rpc).toHaveBeenCalledWith('delete_user_account');
-    expect(useAuthStore.getState().user).toBeNull();
-    expect(mocks.reset).toHaveBeenCalledOnce();
-  });
-  it('allows a guest to clear local progress without deleting a cloud account', async () => {
-    useAuthStore.setState({ user: { ...user, isGuest: true } });
-    await useAuthStore.getState().deleteAccountAndData();
-    expect(mocks.rpc).not.toHaveBeenCalled();
-    expect(mocks.reset).toHaveBeenCalledOnce();
-  });
+ it('preserves session and game state after server error', async () => {mocks.invoke.mockResolvedValue({error:new Error('Deletion refused')});await expect(useAuthStore.getState().deleteAccountAndData()).rejects.toThrow('Deletion refused');expect(useAuthStore.getState().user).toEqual(user);expect(mocks.reset).not.toHaveBeenCalled();expect(mocks.signOut).not.toHaveBeenCalled();});
+ it('preserves data when the network request rejects', async () => {mocks.invoke.mockRejectedValue(new Error('Offline'));await expect(useAuthStore.getState().deleteAccountAndData()).rejects.toThrow('Offline');expect(useAuthStore.getState().user).toEqual(user);expect(mocks.reset).not.toHaveBeenCalled();});
+ it('does not wipe data without an account identity', async () => {useAuthStore.setState({user:null});await expect(useAuthStore.getState().deleteAccountAndData()).rejects.toThrow();expect(mocks.invoke).not.toHaveBeenCalled();expect(mocks.reset).not.toHaveBeenCalled();});
+ it('requires explicit server confirmation',async()=>{mocks.invoke.mockResolvedValue({data:{},error:null});await expect(useAuthStore.getState().deleteAccountAndData()).rejects.toThrow();expect(mocks.reset).not.toHaveBeenCalled();});
+ it('rejects stale or unverifiable sessions before invoking deletion',async()=>{mocks.getUser.mockResolvedValue({data:{user:{id:'account-b'}},error:null});await expect(useAuthStore.getState().deleteAccountAndData()).rejects.toThrow();expect(mocks.invoke).not.toHaveBeenCalled();});
+ it('clears local state only after confirmed server success, including hidden email', async () => {await useAuthStore.getState().deleteAccountAndData();expect(mocks.invoke).toHaveBeenCalledWith('delete-account',{body:{expectedUserId:user.id}});expect(useAuthStore.getState().user).toBeNull();expect(mocks.reset).toHaveBeenCalledOnce();});
+ it('allows a guest to clear local progress without deleting a cloud account',async()=>{useAuthStore.setState({user:{...user,isGuest:true}});await useAuthStore.getState().deleteAccountAndData();expect(mocks.invoke).not.toHaveBeenCalled();expect(mocks.getUser).not.toHaveBeenCalled();expect(mocks.reset).toHaveBeenCalledOnce();});
+ it('preserves everything when the Apple sheet is cancelled',async()=>{mocks.getUser.mockResolvedValue({data:{user:{id:user.id,identities:[{provider:'apple'}]}},error:null});mocks.authorize.mockRejectedValue(new Error('User cancelled'));await expect(useAuthStore.getState().deleteAccountAndData()).rejects.toThrow('User cancelled');expect(mocks.invoke).not.toHaveBeenCalled();expect(mocks.reset).not.toHaveBeenCalled();});
+ it('passes fresh Apple authorization to the server and requires revocation confirmation',async()=>{mocks.getUser.mockResolvedValue({data:{user:{id:user.id,identities:[{provider:'apple'}]}},error:null});await expect(useAuthStore.getState().deleteAccountAndData()).rejects.toThrow();expect(mocks.invoke).toHaveBeenCalledWith('delete-account',{body:{expectedUserId:user.id,authorizationCode:'fresh-apple-code'}});expect(mocks.reset).not.toHaveBeenCalled();});
+ it('clears an Apple account only after confirmed revocation and deletion',async()=>{mocks.getUser.mockResolvedValue({data:{user:{id:user.id,identities:[{provider:'apple'}]}},error:null});mocks.invoke.mockResolvedValue({data:{deleted:true,appleRevoked:true},error:null});await useAuthStore.getState().deleteAccountAndData();expect(mocks.reset).toHaveBeenCalledOnce();});
+ it('does not delete after an account switch while the Apple sheet is open',async()=>{mocks.getUser.mockResolvedValue({data:{user:{id:user.id,identities:[{provider:'apple'}]}},error:null});mocks.authorize.mockImplementation(async()=>{useAuthStore.setState({user:{...user,id:'account-b'}});return {response:{authorizationCode:'fresh'}};});await expect(useAuthStore.getState().deleteAccountAndData()).rejects.toThrow();expect(mocks.invoke).not.toHaveBeenCalled();expect(mocks.reset).not.toHaveBeenCalled();});
+ it('does not clear another account after a late server response',async()=>{mocks.invoke.mockImplementation(async()=>{useAuthStore.setState({user:{...user,id:'account-b'}});return {data:{deleted:true},error:null};});await expect(useAuthStore.getState().deleteAccountAndData()).rejects.toThrow();expect(useAuthStore.getState().user?.id).toBe('account-b');expect(mocks.reset).not.toHaveBeenCalled();});
 });

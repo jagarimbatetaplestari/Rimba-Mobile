@@ -764,8 +764,36 @@ export const useAuthStore = create<AuthState>()(
         if (!currentUser?.id) throw new Error('Account session is unavailable.');
         // Preserve local progress until the server confirms account deletion.
         if (!currentUser.isGuest) {
-          const { error } = await supabase.rpc('delete_user_account');
+          const { data: verified, error: sessionError } = await supabase.auth.getUser();
+          if (sessionError || verified.user?.id !== currentUser.id) {
+            throw new Error('Sesi akun tidak dapat diverifikasi. Silakan masuk kembali.');
+          }
+          const appleLinked = verified.user.identities?.some(identity => identity.provider === 'apple') ?? false;
+          let authorizationCode: string | undefined;
+          if (appleLinked) {
+            if (!Capacitor.isNativePlatform() || Capacitor.getPlatform() !== 'ios') {
+              throw new Error('Hapus akun Apple melalui aplikasi Rimba di iPhone atau iPad.');
+            }
+            const { SignInWithApple } = await import('@capacitor-community/apple-sign-in');
+            const { hashedNonce } = await generateCryptographicNoncePair();
+            // Cancellation exits before any server deletion or local-state changes.
+            const result = await SignInWithApple.authorize({
+              clientId: 'com.syntheticae.rimba',
+              redirectURI: 'https://rkljugrrscmqopeuwtpd.supabase.co/auth/v1/callback',
+              scopes: 'email name',
+              nonce: hashedNonce,
+            });
+            authorizationCode = result.response?.authorizationCode;
+            if (!authorizationCode) throw new Error('Verifikasi Apple belum selesai. Akun belum dihapus.');
+          }
+          if (get().user?.id !== currentUser.id) throw new Error('Account changed during deletion.');
+          const { data, error } = await supabase.functions.invoke('delete-account', {
+            body: { expectedUserId: currentUser.id, ...(authorizationCode ? { authorizationCode } : {}) },
+          });
           if (error) throw error;
+          if (data?.deleted !== true || (appleLinked && data.appleRevoked !== true)) {
+            throw new Error('Penghapusan akun belum dapat dipastikan. Silakan coba lagi.');
+          }
         }
         if (get().user?.id !== currentUser.id) {
           throw new Error('Account changed during deletion.');

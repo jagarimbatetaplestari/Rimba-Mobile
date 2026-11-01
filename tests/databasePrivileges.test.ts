@@ -29,7 +29,7 @@ beforeAll(async () => {
     insert into profiles(id,email,display_name) values('${a}','private@example.test','Ranger A'),('${b}','other@example.test','Ranger B');
     insert into game_saves values('${a}',1,'{}',now());
   `);
-  await db.exec(readFileSync('supabase/migrations/20261101023438_restrict_client_privileges.sql','utf8'));
+  await db.exec(readFileSync('supabase/migrations/20261101034135_restrict_client_privileges.sql','utf8'));
 }, 20000);
 afterAll(async () => { await db?.close(); });
 async function asRole(role: 'anon' | 'authenticated' | 'service_role', sql: string, userId = a) {

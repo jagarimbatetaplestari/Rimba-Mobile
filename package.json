@@ -35,7 +35,7 @@
     "@capgo/capacitor-social-login": "6.0.1",
     "@react-three/drei": "^9.114.0",
     "@react-three/fiber": "^8.17.10",
-    "@revenuecat/purchases-capacitor": "8.0.0",
+    "@revenuecat/purchases-capacitor": "9.2.2",
     "@supabase/supabase-js": "^2.117.3",
     "canvas-confetti": "^1.9.4",
     "clsx": "^2.1.1",

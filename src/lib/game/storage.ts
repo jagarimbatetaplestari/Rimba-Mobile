@@ -42,6 +42,7 @@ export function createInitialSaveData(): RimbaSaveData {
 
   return {
     version: 1,
+    ...(activeSaveOwner ? { storage_owner: activeSaveOwner } : {}),
     profile: {
       id: 'local-user',
       xp,
@@ -105,17 +106,17 @@ export function createInitialSaveData(): RimbaSaveData {
 /**
  * Loads validated progress. Unreadable data must be recovered, never silently reset.
  */
-export function loadSaveData(): RimbaSaveData {
+export function loadSaveData(ownerId: string | undefined = activeSaveOwner): RimbaSaveData {
   if (typeof window === 'undefined') {
     return createInitialSaveData();
   }
 
   try {
-    const raw = localStorage.getItem(GAME_CONFIG.storageKey);
+    const raw = localStorage.getItem(saveStorageKey(ownerId));
     if (!raw) {
       const initial = createInitialSaveData();
-      saveSaveData(initial);
-      return initial;
+      saveSaveData(initial, ownerId);
+      return ownerId ? { ...initial, storage_owner: ownerId } : initial;
     }
 
     const parsed: RimbaSaveData = JSON.parse(raw);
@@ -125,6 +126,8 @@ export function loadSaveData(): RimbaSaveData {
         !entry || !Number.isFinite(entry.amount) || !['gold', 'xp'].includes(entry.currency))) {
       throw new Error('Save data is damaged or uses an unsupported version.');
     }
+
+    if (ownerId && parsed.storage_owner !== ownerId) throw new Error('Save owner does not match.');
 
     // Normalize collections to guarantee safe references
     parsed.world = parsed.world || {
@@ -199,14 +202,16 @@ export function loadSaveData(): RimbaSaveData {
 /**
  * Writes a cloned save atomically. Storage failure is surfaced without pruning history.
  */
-export function saveSaveData(data: RimbaSaveData): void {
+export function saveSaveData(data: RimbaSaveData, ownerId: string | undefined = activeSaveOwner): void {
   if (typeof window === 'undefined') return;
 
   try {
+    if (data.storage_owner && data.storage_owner !== ownerId) throw new Error('Save owner does not match.');
     // Ensure cached gold matches ledger before writing without in-place mutation of the input object
     const balances = calculateBalances(data.currency_ledger);
     const safeData: RimbaSaveData = {
       ...data,
+      ...(ownerId ? { storage_owner: ownerId } : {}),
       profile: {
         ...data.profile,
         goldCached: balances.gold,
@@ -214,9 +219,24 @@ export function saveSaveData(data: RimbaSaveData): void {
       },
     };
 
-    localStorage.setItem(GAME_CONFIG.storageKey, JSON.stringify(safeData));
+    localStorage.setItem(saveStorageKey(ownerId), JSON.stringify(safeData));
   } catch {
     // Never discard history or claim a write succeeded after storage failure.
     throw new Error('Progres belum tersimpan. Periksa ruang penyimpanan dan coba lagi.');
   }
+}
+
+/** Scoped keys never consume the ambiguous legacy save automatically. */
+export function saveStorageKey(ownerId: string | undefined = activeSaveOwner): string {
+  if (ownerId === undefined) return GAME_CONFIG.storageKey;
+  if (!ownerId || ownerId.length > 128) throw new Error('Save owner is invalid.');
+  return GAME_CONFIG.storageKey + ':owner:' + encodeURIComponent(ownerId);
+}
+
+let activeSaveOwner: string | undefined;
+export function getActiveSaveOwner(): string | undefined { return activeSaveOwner; }
+export function selectSaveOwner(owner: string): RimbaSaveData {
+  saveStorageKey(owner); // Validate before changing context.
+  activeSaveOwner = owner;
+  return loadSaveData(owner);
 }

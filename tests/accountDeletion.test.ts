@@ -4,7 +4,7 @@ vi.mock('@capacitor/core',()=>({Capacitor:{isNativePlatform:()=>true,getPlatform
 vi.mock('@capacitor-community/apple-sign-in',()=>({SignInWithApple:{authorize:mocks.authorize}}));
 vi.mock('../src/lib/supabase/client', () => ({ supabase: { functions: {invoke:mocks.invoke}, auth: { getUser:mocks.getUser, signOut: mocks.signOut } } }));
 vi.mock('../src/lib/supabase/cloudSync', () => ({ invalidateCloudSyncSession: vi.fn(), smartSyncOnLogin: vi.fn() }));
-vi.mock('../src/lib/game/storage', () => ({ createInitialSaveData: () => ({ active_biome: 'meadow' }) }));
+vi.mock('../src/lib/game/storage', () => ({ createInitialSaveData: () => ({ active_biome: 'meadow' }), loadSaveData: () => ({ active_biome: 'meadow' }) }));
 vi.mock('../src/lib/game/useGameStore', () => ({ useGameStore: { setState: mocks.reset } }));
 import { useAuthStore } from '../src/lib/auth/useAuthStore';
 const user = { id: 'account-a', email: '', name: 'Ranger', isGuest: false, createdAt: '2026-11-01' };

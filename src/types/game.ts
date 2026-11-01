@@ -191,6 +191,8 @@ export interface IslandSlot {
 }
 
 export interface RimbaSaveData {
+  /** Local ownership provenance; excluded from backup imports. */
+  storage_owner?: string;
   version: 1;
   profile: Profile;
   world: World;

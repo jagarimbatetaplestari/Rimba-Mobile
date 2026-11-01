@@ -6,7 +6,7 @@ import { Capacitor } from '@capacitor/core';
 import { generateCryptographicNoncePair } from './nonce';
 import { supabase } from '../supabase/client';
 import { smartSyncOnLogin, invalidateCloudSyncSession } from '../supabase/cloudSync';
-import { createInitialSaveData } from '../game/storage';
+import { loadSaveData, getActiveSaveOwner, selectSaveOwner, saveStorageKey } from '../game/storage';
 import { useGameStore } from '../game/useGameStore';
 
 export interface AuthUser {
@@ -27,6 +27,7 @@ export interface AuthResult {
 
 interface AuthState {
   user: AuthUser | null;
+  ownershipError: string | null;
   isLoading: boolean;
   userPasswordHash?: string;
   initAuth: () => Promise<void>;
@@ -84,10 +85,7 @@ function purgeAllRimbaLocalStorage(keepPreferences = false) {
 
 function resetInMemoryGameStateCleanly() {
   try {
-    const freshSave = createInitialSaveData();
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('rimba_save_v1', JSON.stringify(freshSave));
-    }
+    const freshSave = loadSaveData();
     useGameStore.setState({
       saveData: freshSave,
       activeBiome: freshSave.active_biome || 'meadow',
@@ -165,8 +163,29 @@ async function buildAuthUserFromSupabase(
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set, get) => ({
+    (rawSet, get) => {
+      const set = (patch: Partial<AuthState>) => {
+        if (Object.prototype.hasOwnProperty.call(patch, 'user') && typeof window !== 'undefined') {
+          const owner = patch.user && !patch.user.isGuest ? patch.user.id : 'guest';
+          if (getActiveSaveOwner() !== owner) {
+            invalidateCloudSyncSession();
+            try {
+              const saveData = selectSaveOwner(owner);
+              useGameStore.setState({ saveData, activeSession: saveData.focus_sessions.find(s => s.status === 'active') || null,
+                activeBiome: saveData.active_biome || 'meadow', selectedTool: null, selectedCatalogItem: null,
+                selectedObject: null, hoveredGridTile: null, isExpandLandMode: false, relocatingObjectId: null });
+              patch.ownershipError = null;
+            } catch (error) {
+              rawSet({ user: null, isLoading: false, ownershipError: 'Progres akun belum dapat dibaca. Data asli dipertahankan.' });
+              throw error;
+            }
+          }
+        }
+        rawSet(patch);
+      };
+      return ({
       user: null,
+      ownershipError: null,
       isLoading: false,
       userPasswordHash: undefined,
 
@@ -197,6 +216,8 @@ export const useAuthStore = create<AuthState>()(
               if (event === 'SIGNED_OUT') {
                 lastSyncedUserId = null;
                 set({ user: null, isLoading: false });
+              } else if (event === 'INITIAL_SESSION' && !session?.user) {
+                set({ user: get().user?.isGuest ? get().user : null, isLoading: false });
               } else if (session?.user) {
                 const supaUser = session.user;
                 setTimeout(() => {
@@ -217,6 +238,8 @@ export const useAuthStore = create<AuthState>()(
           } else if (get().user && !get().user?.isGuest) {
             // A persisted profile alone is not an authenticated session.
             set({ user: null, isLoading: false });
+          } else {
+            set({ user: get().user?.isGuest ? get().user : null, isLoading: false });
           }
         } catch (err) {
           console.warn('Gagal memuat sesi Supabase:', err);
@@ -806,6 +829,10 @@ export const useAuthStore = create<AuthState>()(
           throw new Error('Account changed during deletion.');
         }
 
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem(saveStorageKey(currentUser.isGuest ? 'guest' : currentUser.id));
+          localStorage.removeItem('rimba_island_snapshots:owner:' + encodeURIComponent(currentUser.isGuest ? 'guest' : currentUser.id));
+        }
         // 2. Clear client state and sign out
         lastSyncedUserId = null;
         set({ user: null, isLoading: false });
@@ -828,11 +855,9 @@ export const useAuthStore = create<AuthState>()(
           // ignore
         }
         set({ user: null, isLoading: false });
-        // Prevent cross-account island/session data bleed into next logged-in account
-        purgeAllRimbaLocalStorage(true);
-        resetInMemoryGameStateCleanly();
+        // Owner-scoped durable saves survive logout, including unsynced offline progress.
       },
-    }),
+    }); },
     {
       name: 'rimba_auth_session',
     }

@@ -1,6 +1,7 @@
 'use client';
 
 import { RimbaSaveData } from '@/types/game';
+import { getActiveSaveOwner } from './storage';
 import { calculateBalances } from './economy';
 import { assertBackupStructure, MAX_BACKUP_BYTES } from './backupSchema';
 import { calculateAnalytics } from './analytics';
@@ -8,7 +9,10 @@ import { isNativeMobile } from '@/lib/mobile/nativeBridge';
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 
-const SNAPSHOTS_STORAGE_KEY = 'rimba_island_snapshots';
+function snapshotStorageKey(): string {
+  const owner = getActiveSaveOwner();
+  return owner ? 'rimba_island_snapshots:owner:' + encodeURIComponent(owner) : 'rimba_island_snapshots';
+}
 
 export interface BackupValidationResult {
   isValid: boolean;
@@ -211,7 +215,7 @@ export function getIslandSnapshots(): IslandSnapshot[] {
   if (typeof window === 'undefined') return [];
 
   try {
-    const raw = localStorage.getItem(SNAPSHOTS_STORAGE_KEY);
+    const raw = localStorage.getItem(snapshotStorageKey());
     if (!raw) return [];
     const list = JSON.parse(raw);
     if (!Array.isArray(list)) throw new Error('Invalid snapshot history');
@@ -228,6 +232,8 @@ export function createIslandSnapshot(
   saveData: RimbaSaveData,
   customTitle?: string
 ): IslandSnapshot {
+  const owner = getActiveSaveOwner();
+  if (owner && saveData.storage_owner !== owner) throw new Error('Pemilik cadangan berubah. Coba lagi dari akun aktif.');
   const existing = getIslandSnapshots();
 
   const sessions = saveData.focus_sessions || [];
@@ -256,7 +262,7 @@ export function createIslandSnapshot(
 
   const updated = [newSnapshot, ...existing].slice(0, 8);
   try {
-    localStorage.setItem(SNAPSHOTS_STORAGE_KEY, JSON.stringify(updated));
+    localStorage.setItem(snapshotStorageKey(), JSON.stringify(updated));
   } catch {
     throw new Error('Cadangan belum tersimpan. Periksa ruang penyimpanan dan coba lagi.');
   }
@@ -271,7 +277,7 @@ export function deleteIslandSnapshot(snapshotId: string): IslandSnapshot[] {
   const existing = getIslandSnapshots();
   const filtered = existing.filter((s) => s.id !== snapshotId);
   try {
-    localStorage.setItem(SNAPSHOTS_STORAGE_KEY, JSON.stringify(filtered));
+    localStorage.setItem(snapshotStorageKey(), JSON.stringify(filtered));
   } catch {
     throw new Error('Perubahan cadangan belum tersimpan. Silakan coba lagi.');
   }

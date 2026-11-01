@@ -2240,6 +2240,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       const current = get().saveData;
       const restored: RimbaSaveData = {
         ...validated.data,
+        storage_owner: current.storage_owner,
         profile: { ...current.profile, xp: validated.data.profile.xp, goldCached: validated.data.profile.goldCached },
         // Backups/snapshots are progress only. Store verification owns purchase rights.
         subscription: current.subscription,

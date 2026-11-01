@@ -4,6 +4,7 @@ import React, { useEffect, useState, useMemo, useCallback, useRef } from "react"
 import { useRouter } from "next/navigation";
 import { useGameStore } from "@/lib/game/useGameStore";
 import { useAuthStore } from "@/lib/auth/useAuthStore";
+import { saveStorageKey } from '@/lib/game/storage';
 import { GAME_CONFIG, detectLocalTimeOfDay } from "@/lib/game/config";
 import { CanvasWrapper } from "@/components/canvas/CanvasWrapper";
 import { MobileHeaderHUD } from "@/components/hud/MobileHeaderHUD";
@@ -30,6 +31,7 @@ import {
 } from "@/components/modals/MobileProfileModal";
 import { MobileStatisticsModal } from "@/components/modals/MobileStatisticsModal";
 import { MobileLeaderboardModal } from "@/components/modals/MobileLeaderboardModal";
+import { ProgressMigrationModal } from '@/components/modals/ProgressMigrationModal';
 import { MobileSettingsSheet } from "@/components/modals/MobileSettingsSheet";
 import { CampfireRoomModal } from "@/components/modals/CampfireRoomModal";
 import { IslandSwitcherModal } from "@/components/modals/IslandSwitcherModal";
@@ -53,6 +55,7 @@ import { useAndroidBackButton } from "@/lib/mobile/useAndroidBackButton";
 export default function RimbaDioramaApp() {
   const router = useRouter();
   const authUser = useAuthStore((state) => state.user);
+  const ownershipError = useAuthStore((state) => state.ownershipError);
   const [isAuthHydrated, setIsAuthHydrated] = useState(false);
   const [needsSaveRecovery, setNeedsSaveRecovery] = useState(false);
   const [recoveryExportError, setRecoveryExportError] = useState(false);
@@ -110,11 +113,11 @@ export default function RimbaDioramaApp() {
 
   useEffect(() => {
     if (!isAuthHydrated) return;
-    if (!authUser) {
+    if (!authUser && !ownershipError) {
       setIsOnboardingOpen(false);
       router.replace("/login");
     }
-  }, [isAuthHydrated, authUser, router]);
+  }, [isAuthHydrated, authUser, ownershipError, router]);
 
   // Smooth Crossfade Loading Overlay state
   const [showLoadingOverlay, setShowLoadingOverlay] = useState(true);
@@ -223,19 +226,16 @@ export default function RimbaDioramaApp() {
   // Initialize store, reclamation interval check, and background timer guard
   useEffect(() => {
     try {
-      init();
-      useAuthStore.getState().initAuth();
+      void useAuthStore.getState().initAuth().then(() => {
+        try { init(); } catch { setNeedsSaveRecovery(true); }
+      }).catch(() => setNeedsSaveRecovery(true));
     } catch (err) {
       console.error("[Rimba] Failed during init():", err);
       setNeedsSaveRecovery(true);
       return;
     }
 
-    const safetyTimer = setTimeout(() => {
-      if (!useGameStore.getState().isInitialized) {
-        useGameStore.setState({ isInitialized: true });
-      }
-    }, 400);
+
 
     let interval: NodeJS.Timeout | null = null;
     try {
@@ -260,7 +260,6 @@ export default function RimbaDioramaApp() {
     const cleanupLifecycle = initAppLifecycleListeners();
 
     return () => {
-      clearTimeout(safetyTimer);
       if (interval) clearInterval(interval);
       cleanupGuard();
       cleanupLifecycle();
@@ -597,7 +596,7 @@ export default function RimbaDioramaApp() {
   }, [isAnyModalOrSheetOpen]);
 
   // Prevent flashing main island or onboarding before redirecting unauthenticated user to /login
-  if (needsSaveRecovery) {
+  if (needsSaveRecovery || ownershipError) {
     const isEn = appLanguage === 'en';
     return (
       <main className="fixed inset-0 z-[200] flex items-center justify-center bg-[#051F18] p-6 text-[#FAFAF7]">
@@ -611,7 +610,7 @@ export default function RimbaDioramaApp() {
           <button className="w-full rounded-2xl bg-[#E8B84B] px-4 py-3 font-semibold text-[#0A261E]" onClick={async () => {
             setRecoveryExportError(false);
             try {
-              const raw = localStorage.getItem(GAME_CONFIG.storageKey);
+              const raw = localStorage.getItem(saveStorageKey());
               if (!raw) throw new Error('Save unavailable');
               const { downloadSaveDataBackup } = await import('@/lib/game/backupManager');
               await downloadSaveDataBackup(raw);
@@ -638,6 +637,7 @@ export default function RimbaDioramaApp() {
     <main
       className={`fixed inset-0 w-full h-[100dvh] overflow-hidden overscroll-none select-none font-sans antialiased transition-colors duration-1000 ${mainThemeClass}`}
     >
+      <ProgressMigrationModal key={authUser.isGuest ? 'guest' : authUser.id} owner={authUser.isGuest ? 'guest' : authUser.id} />
       {/* ====================================================
           MODERN AMBIENT HORIZON BACKDROP (Zero-Jank GPU Accelerated)
           ==================================================== */}

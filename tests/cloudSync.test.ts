@@ -11,7 +11,7 @@ function switchUser(id: string) {
   m.listeners.forEach(listener => listener({ user: m.user }, previous));
 }
 function deferred<T>() { let resolve!: (value: T) => void; const promise = new Promise<T>(r => { resolve = r; }); return { promise, resolve }; }
-beforeEach(() => { vi.clearAllMocks(); switchUser('a'); m.read.mockResolvedValue({ data: null, error: null }); m.upsert.mockResolvedValue({ error: null }); });
+beforeEach(() => { vi.clearAllMocks(); Object.assign(m.save,{storage_owner:'a'}); switchUser('a'); m.read.mockResolvedValue({ data: null, error: null }); m.upsert.mockResolvedValue({ error: null }); });
 afterEach(() => { vi.clearAllTimers(); vi.useRealTimers(); });
 describe('cloud sync account isolation', () => {
   it('discards a profile response after switching accounts', async () => {
@@ -57,4 +57,10 @@ it('never grants Pro from the cloud game-save payload',async()=>{
   expect(await smartSyncOnLogin('a')).toBe(true);
   expect(m.persist.mock.calls[0][0].subscription).toEqual(free);
   Object.assign(m.save,{subscription:undefined});
+});
+
+it('refuses a payload owned by another account before issuing any upload',async()=>{
+  Object.assign(m.save,{storage_owner:'b'});
+  expect(await uploadGameSaveToCloud(m.save as any)).toBe(false);
+  expect(m.upsert).not.toHaveBeenCalled();
 });

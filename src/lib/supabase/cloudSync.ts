@@ -109,6 +109,7 @@ export async function uploadGameSaveToCloud(
   const currentUser = useAuthStore.getState().user;
   if (!currentUser || currentUser.isGuest || !isCurrentAccount(expectedUserId ?? currentUser.id, revision)) return false;
 
+  if (saveData.storage_owner !== currentUser.id) return false;
   try {
     const { error } = await supabase.from('game_saves').upsert(
       {
@@ -170,7 +171,7 @@ export async function fetchCloudGameSave(userId: string): Promise<{
 export async function smartSyncOnLogin(userId: string): Promise<boolean> {
   watchAccountChanges();
   const revision = accountRevision;
-  if (!isCurrentAccount(userId, revision)) return false;
+  if (!isCurrentAccount(userId, revision) || useGameStore.getState().saveData.storage_owner !== userId) return false;
   try {
     // 1. Ambil profil dari Supabase
     const { data: cloudProfile, error: profileError } = await supabase
@@ -283,6 +284,7 @@ export async function smartSyncOnLogin(userId: string): Promise<boolean> {
 
       const mergedSave: RimbaSaveData = {
         ...baseSave,
+        storage_owner: userId,
         profile: {
           ...baseSave.profile,
           xp: maxXp,

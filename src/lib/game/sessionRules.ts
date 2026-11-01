@@ -8,7 +8,7 @@ import {
 } from '@/types/game';
 import { FOCUS_PRESETS, GAME_CONFIG, TREE_SPECIES_CONFIG } from './config';
 import { createLedgerEntry } from './economy';
-import { findEmptyTileNearCenter } from './worldRules';
+import { findEmptyTileNearCenter, isTileOccupied, isValidCoord } from './worldRules';
 
 /**
  * Calculates Gold and XP rewards scaled by focus duration.
@@ -88,6 +88,12 @@ export function startFocusSession({
   };
 }
 
+/** Actual focus time, frozen at the current pause and excluding earlier pauses. */
+export function getFocusedElapsedMs(session: FocusSession, now = Date.now()): number {
+  const reference = session.is_paused && session.paused_at ? Date.parse(session.paused_at) : now;
+  const elapsed = reference - Date.parse(session.started_at) - (session.total_paused_ms ?? 0);
+  return Number.isFinite(elapsed) ? Math.max(0, elapsed) : 0;
+}
 export function abandonFocusSession(session: FocusSession): FocusSession {
   if (session.status !== 'active') {
     return session;
@@ -123,6 +129,20 @@ export function completeFocusSession(
 ): CompleteSessionResult {
   const now = Date.now();
   const expectedEnd = new Date(session.expected_end_at).getTime();
+  const startedAt = new Date(session.started_at).getTime();
+  const pausedMs = session.total_paused_ms ?? 0;
+  if (session.is_paused || !Number.isFinite(startedAt) || !Number.isFinite(expectedEnd) ||
+      !Number.isFinite(pausedMs) || pausedMs < 0 || now < startedAt ||
+      expectedEnd < startedAt || pausedMs > now - startedAt) {
+    return {
+      success: false,
+      error: 'Session is paused or its timing cannot be verified.',
+      updatedSession: session,
+      newLedgerEntries: [],
+      rewardGold: 0,
+      rewardXp: 0,
+    };
+  }
 
   // 1. Idempotency check: Cannot reward if already completed or rewarded
   if (session.status === 'completed' || session.rewarded) {
@@ -147,7 +167,7 @@ export function completeFocusSession(
     };
   }
 
-  const elapsedSeconds = Math.max(0, (now - new Date(session.started_at).getTime()) / 1000);
+  const elapsedSeconds = getFocusedElapsedMs(session, now) / 1000;
 
   // Special Handling for Durasi Bebas (Stopwatch Mode):
   // User can tap "Selesai" whenever they want, but to sprout a mature tree & earn Soul/XP,
@@ -188,7 +208,7 @@ export function completeFocusSession(
   const completedAt = new Date().toISOString();
   const actualElapsedMinutes = Math.max(
     1,
-    Math.round((now - new Date(session.started_at).getTime()) / 60000)
+    Math.round(elapsedSeconds / 60)
   );
   const minutesForReward = session.is_stopwatch
     ? actualElapsedMinutes
@@ -207,7 +227,7 @@ export function completeFocusSession(
   let { gold: rewardGold, xp: rewardXp } = calculateFocusRewards(minutesForReward);
 
   // Fase 5: Sinergi Hangat Api Unggun (+20% Soul & XP bonus)
-  if (session.campfire_room_code) {
+  if (session.campfire_room_code && rewardGold > 0 && rewardXp > 0) {
     rewardGold = Math.max(5, Math.round(rewardGold * 1.2));
     rewardXp = Math.max(20, Math.round(rewardXp * 1.2));
   }
@@ -226,8 +246,17 @@ export function completeFocusSession(
     session.id
   );
 
+  // Stable completion identities allow the existing ID merge to deduplicate replay.
+  goldEntry.id = 'ledger_focus_' + session.id + '_gold';
+  xpEntry.id = 'ledger_focus_' + session.id + '_xp';
+
   // 5. Spawn a persistent tree at empty center tile with selected species variant
-  const emptyTile = session.target_tile || findEmptyTileNearCenter(existingObjects, unlockedTiles);
+  // A reserved target can become occupied or locked while a session is running.
+  const target = session.target_tile;
+  const validTarget = target && isValidCoord(target.grid_x, target.grid_y) &&
+    (!unlockedTiles || unlockedTiles.has(`${target.grid_x},${target.grid_y}`)) &&
+    !isTileOccupied(target.grid_x, target.grid_y, existingObjects);
+  const emptyTile = validTarget ? target : findEmptyTileNearCenter(existingObjects, unlockedTiles);
   let newWorldObject: WorldObject | undefined;
 
   if (emptyTile) {
@@ -243,7 +272,7 @@ export function completeFocusSession(
     const fullNote = initialNote ? `${initialNote}${companionSuffix}` : undefined;
 
     newWorldObject = {
-      id: `obj_tree_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      id: `obj_tree_${session.id}`,
       object_type: 'tree',
       grid_x: emptyTile.grid_x,
       grid_y: emptyTile.grid_y,
@@ -256,7 +285,7 @@ export function completeFocusSession(
       species,
       task_note: fullNote,
       focus_tag: session.tag,
-      focus_duration: session.duration_minutes,
+      focus_duration: minutesForReward,
     };
   }
 

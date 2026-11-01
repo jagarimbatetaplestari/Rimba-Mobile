@@ -7,7 +7,7 @@ import {
   GAME_CONFIG,
   TREE_SPECIES_CONFIG,
 } from "@/lib/game/config";
-import { calculateFocusRewards } from "@/lib/game/sessionRules";
+import { calculateFocusRewards, getFocusedElapsedMs } from "@/lib/game/sessionRules";
 import {
   getUnlockedTilesSet,
   getLandExpansionZoneInfo,
@@ -325,8 +325,7 @@ export function MobileFocusCard({
     if (!activeSession || activeSession.status !== "active") return;
 
     if (activeSession.is_stopwatch) {
-      const startMs = new Date(activeSession.started_at).getTime();
-      const elapsedSec = Math.floor(Math.max(0, now - startMs) / 1000);
+      const elapsedSec = Math.floor(getFocusedElapsedMs(activeSession, now) / 1000);
       const m = Math.floor(elapsedSec / 60)
         .toString()
         .padStart(2, "0");
@@ -484,8 +483,7 @@ export function MobileFocusCard({
     soundManager.playPop();
     hapticLight();
     if (activeSession?.is_stopwatch) {
-      const startMs = new Date(activeSession.started_at).getTime();
-      const elapsedMs = Math.max(0, Date.now() - startMs);
+      const elapsedMs = getFocusedElapsedMs(activeSession);
       if (elapsedMs < 300000) {
         setShowEarlyStopwatchConfirm(true);
         return;
@@ -1236,8 +1234,8 @@ export function MobileFocusCard({
       : now;
   const start = new Date(activeSession.started_at).getTime();
   const expectedEnd = new Date(activeSession.expected_end_at).getTime();
-  const totalDuration = Math.max(1000, expectedEnd - start);
-  const elapsedMs = Math.max(0, referenceNow - start);
+  const totalDuration = Math.max(1000, expectedEnd - start - (activeSession.total_paused_ms ?? 0));
+  const elapsedMs = getFocusedElapsedMs(activeSession, referenceNow);
   const remainingMs = Math.max(0, expectedEnd - referenceNow);
   const sessionProgressPct = activeSession.is_stopwatch
     ? 100

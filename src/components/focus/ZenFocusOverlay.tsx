@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import confetti from "canvas-confetti";
 import { useGameStore } from "@/lib/game/useGameStore";
+import { getFocusedElapsedMs } from "@/lib/game/sessionRules";
 import { soundManager } from "@/lib/audio/sounds";
 import {
   soundscapeManager,
@@ -99,8 +100,7 @@ export function ZenFocusOverlay() {
           : Date.now();
 
       if (activeSession.is_stopwatch) {
-        const start = new Date(activeSession.started_at).getTime();
-        const elapsedSec = Math.max(0, Math.floor((now - start) / 1000));
+        const elapsedSec = Math.floor(getFocusedElapsedMs(activeSession, now) / 1000);
         setRemainingSec(elapsedSec);
       } else {
         const end = new Date(activeSession.expected_end_at).getTime();

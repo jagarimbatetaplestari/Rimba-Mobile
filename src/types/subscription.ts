@@ -1,6 +1,6 @@
 export type SubscriptionTier = 'free' | 'pro_monthly' | 'pro_annual' | 'pioneer_lifetime';
-export type SubscriptionStatus = 'active' | 'trialing' | 'canceled' | 'expired' | 'none';
-export type SubscriptionStore = 'apple_app_store' | 'google_play' | 'web_stripe' | 'promo';
+export type SubscriptionStatus = 'active' | 'trialing' | 'canceled' | 'expired' | 'none' | 'lifetime' | 'grace_period';
+export type SubscriptionStore = 'app_store' | 'play_store' | 'stripe' | 'promo';
 
 export interface UserSubscription {
   tier: SubscriptionTier;
@@ -60,3 +60,16 @@ export const SUBSCRIPTION_PACKAGES = {
     badge: 'Perintis Suaka (Pioneer)',
   },
 } as const;
+
+export type PaywallGateSource = 'multi_island_limit' | 'multi_island_capacity' | 'soundscape_mixer';
+export interface Entitlements {
+  isPro: boolean;
+  maxIslands: number;
+  canCreateNewIsland: boolean;
+  canUseBiome: (biomeId: string) => boolean;
+  canMixAudio: boolean;
+  canUseProSocialTemplates: boolean;
+  hasUnlimitedJournalHistory: boolean;
+  canExportCsv: boolean;
+  entitlements: RimbaEntitlements;
+}

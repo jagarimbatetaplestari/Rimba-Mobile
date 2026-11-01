@@ -839,17 +839,14 @@ export const useAuthStore = create<AuthState>()(
 
       deleteAccountAndData: async () => {
         const currentUser = get().user;
-        // 1. Invoke server-side deletion if user has an authenticated non-guest session
-        // (Apple Sign-In with Hide My Email may have empty email string, so check !isGuest instead of email)
-        if (currentUser && currentUser.id && !currentUser.isGuest) {
-          try {
-            const { error } = await supabase.rpc('delete_user_account');
-            if (error) {
-              console.warn('Server delete_user_account RPC returned:', error.message);
-            }
-          } catch (rpcErr) {
-            console.warn('Failed to call delete_user_account RPC:', rpcErr);
-          }
+        if (!currentUser?.id) throw new Error('Account session is unavailable.');
+        // Preserve local progress until the server confirms account deletion.
+        if (!currentUser.isGuest) {
+          const { error } = await supabase.rpc('delete_user_account');
+          if (error) throw error;
+        }
+        if (get().user?.id !== currentUser.id) {
+          throw new Error('Account changed during deletion.');
         }
 
         // 2. Clear client state and sign out

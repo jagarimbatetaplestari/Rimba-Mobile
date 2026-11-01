@@ -32,7 +32,9 @@ export function useEntitlements(): Entitlements & {
       !isExpired &&
       (subscription.status === 'active' ||
         subscription.status === 'lifetime' ||
-        subscription.status === 'grace_period')
+        subscription.status === 'grace_period' ||
+        subscription.status === 'trialing' ||
+        (subscription.status === 'canceled' && Boolean(subscription.expiresAt)))
   );
   const tier: SubscriptionTier = isPro ? subscription?.tier || 'free' : 'free';
   const maxIslands = isPro ? PRO_MAX_ISLANDS : FREE_MAX_ISLANDS;
@@ -49,6 +51,14 @@ export function useEntitlements(): Entitlements & {
 
   return {
     isPro,
+    entitlements: {
+      maxIslands,
+      streakShieldMonthlyAllowance: isPro ? 1 : 0,
+      multiSoundscapeMixer: isPro,
+      exportHiResDiorama: isPro,
+      exportAnalyticsCSV: isPro,
+      exclusiveTreeCosmetics: isPro,
+    },
     tier,
     maxIslands,
     canCreateNewIsland: islandsCount < maxIslands,

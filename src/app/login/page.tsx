@@ -7,7 +7,7 @@ import { useAuthStore } from "@/lib/auth/useAuthStore";
 import { useTranslation } from "@/lib/i18n/translations";
 import { soundManager } from "@/lib/audio/sounds";
 import { hapticLight, hapticMedium, hapticSuccess, hapticWarning } from "@/lib/mobile/nativeBridge";
-import { Mail, Lock, Eye, EyeOff, ArrowLeft, RefreshCw, CheckCircle2, ShieldCheck, KeyRound } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ArrowLeft, RefreshCw, CheckCircle2, KeyRound } from "lucide-react";
 import { Capacitor } from "@capacitor/core";
 import { supabase } from "@/lib/supabase/client";
 import { LegalModal } from "@/components/modals/LegalModal";
@@ -17,7 +17,7 @@ function WelcomeAuthPageContent() {
   const searchParams = useSearchParams();
   const initialMode = searchParams?.get("mode") === "signin" ? false : true;
   const isResetParam = searchParams?.get("mode") === "reset";
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
 
   // Apple App Store Guideline 4.8 platform check
   const isNativeIOS = typeof window !== "undefined" && Capacitor.isNativePlatform() && Capacitor.getPlatform() === "ios";
@@ -33,6 +33,7 @@ function WelcomeAuthPageContent() {
     updateRecoveredPassword,
     loginAsGuest,
     loginWithApple,
+    loginWithGoogle,
     isLoading,
   } = useAuthStore();
 
@@ -51,6 +52,7 @@ function WelcomeAuthPageContent() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [isSubmittingReset, setIsSubmittingReset] = useState(false);
   const [isSubmittingApple, setIsSubmittingApple] = useState(false);
+  const [isSubmittingGoogle, setIsSubmittingGoogle] = useState(false);
 
   // OTP Verification state
   const [isOtpStep, setIsOtpStep] = useState(false);
@@ -126,7 +128,6 @@ function WelcomeAuthPageContent() {
       hapticMedium();
 
       if (isSignUp) {
-        // Alur Registrasi: Nama default diambil dari email prefix, dikustomisasi saat onboarding
         const fallbackName = cleanEmail.split("@")[0] || "Penjaga Rimba";
         const result = await registerWithEmail(fallbackName, cleanEmail, cleanPassword);
         if (result.success) {
@@ -136,7 +137,6 @@ function WelcomeAuthPageContent() {
             setResendCooldown(60);
             setSuccessMsg(t.auth.otpSent.replace("{email}", cleanEmail));
           } else {
-            // Langsung login tanpa OTP jika dinonaktifkan di backend
             soundManager.playComplete();
             hapticSuccess();
             if (typeof window !== "undefined") {
@@ -150,7 +150,6 @@ function WelcomeAuthPageContent() {
           setErrorMsg(result.error || t.auth.registerFailed);
         }
       } else {
-        // Alur Masuk (Sign In)
         const result = await loginWithEmail(cleanEmail, cleanPassword);
         if (result.success) {
           soundManager.playComplete();
@@ -163,7 +162,6 @@ function WelcomeAuthPageContent() {
           soundManager.playError();
           hapticWarning();
           if (result.requiresOtp) {
-            // Email belum dikonfirmasi
             setIsOtpStep(true);
             setResendCooldown(60);
             setErrorMsg(t.auth.otpDesc);
@@ -181,8 +179,8 @@ function WelcomeAuthPageContent() {
 
   // Handler OTP Digit Input
   const handleDigitChange = (index: number, val: string) => {
-    const char = val.slice(-1); // ambil karakter terakhir jika ketik cepat
-    if (char && !/^[0-9]$/.test(char)) return; // hanya angka
+    const char = val.slice(-1);
+    if (char && !/^[0-9]$/.test(char)) return;
 
     const nextDigits = [...otpDigits];
     nextDigits[index] = char;
@@ -192,7 +190,6 @@ function WelcomeAuthPageContent() {
       otpInputRefs.current[index + 1]?.focus();
     }
 
-    // Jika ke-6 digit sudah terisi lengkap, otomatis eksekusi verifikasi
     const fullCode = nextDigits.join("");
     if (fullCode.length === 6) {
       executeVerifyOtp(fullCode);
@@ -398,6 +395,38 @@ function WelcomeAuthPageContent() {
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    soundManager.playPop();
+    hapticMedium();
+    setErrorMsg("");
+    setSuccessMsg("");
+    setIsSubmittingGoogle(true);
+    try {
+      const res = await loginWithGoogle();
+      if (!res.success) {
+        if (
+          res.error &&
+          !res.error.includes("dibatalkan") &&
+          !res.error.includes("canceled") &&
+          !res.error.includes("cancelled")
+        ) {
+          setErrorMsg(res.error);
+          hapticWarning();
+        }
+        return;
+      }
+      soundManager.playComplete();
+      hapticSuccess();
+      router.push("/?welcome=true");
+    } catch (err: any) {
+      soundManager.playError();
+      hapticWarning();
+      setErrorMsg(err?.message || t.auth.networkError);
+    } finally {
+      setIsSubmittingGoogle(false);
+    }
+  };
+
   const handleGuest = () => {
     soundManager.playPop();
     hapticMedium();
@@ -538,7 +567,6 @@ function WelcomeAuthPageContent() {
           </form>
         ) : forgotStep === "reset" ? (
           <form onSubmit={handleExecutePasswordReset} className="w-full space-y-2.5 animate-in fade-in slide-in-from-bottom-2 duration-300">
-            {/* Optional Recovery Code Input (if opened directly after requesting code) */}
             <div className="relative flex items-center px-4 py-3.5 rounded-2xl bg-black/25 hover:bg-black/30 focus-within:bg-black/35 backdrop-blur-md border border-white/[0.12] focus-within:border-white/35 shadow-[0_8px_24px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.2)] transition-all">
               <KeyRound className="w-4 h-4 text-white/70 stroke-[1.8] flex-shrink-0 drop-shadow-sm" />
               <input
@@ -552,7 +580,6 @@ function WelcomeAuthPageContent() {
               />
             </div>
 
-            {/* New Password Capsule */}
             <div className="relative flex items-center px-4 py-3.5 rounded-2xl bg-black/25 hover:bg-black/30 focus-within:bg-black/35 backdrop-blur-md border border-white/[0.12] focus-within:border-white/35 shadow-[0_8px_24px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.2)] transition-all">
               <Lock className="w-4 h-4 text-white/70 stroke-[1.8] flex-shrink-0 drop-shadow-sm" />
               <input
@@ -618,10 +645,9 @@ function WelcomeAuthPageContent() {
           </form>
         ) : isOtpStep ? (
           /* ========================================================= */
-          /* STATE A: OTP VERIFICATION STEP IN-APP (Fallback Only)     */
+          /* STATE A: OTP VERIFICATION STEP IN-APP                     */
           /* ========================================================= */
           <div className="w-full space-y-3.5 animate-in fade-in slide-in-from-bottom-2 duration-300">
-            {/* 6-Digit OTP Box Grid (Responsive on narrow screens) */}
             <div className="flex items-center justify-between gap-1 sm:gap-1.5 w-full py-1">
               {otpDigits.map((digit, idx) => (
                 <input
@@ -642,7 +668,6 @@ function WelcomeAuthPageContent() {
               ))}
             </div>
 
-            {/* Tombol Konfirmasi OTP */}
             <button
               type="button"
               disabled={isVerifyingOtp || otpDigits.join("").length < 6}
@@ -661,7 +686,6 @@ function WelcomeAuthPageContent() {
               )}
             </button>
 
-            {/* Resend & Back actions */}
             <div className="flex items-center justify-between text-xs text-white/80 pt-1 px-1">
               <button
                 type="button"
@@ -699,7 +723,6 @@ function WelcomeAuthPageContent() {
           /* STATE B: EMAIL & PASSWORD INPUT                           */
           /* ========================================================= */
           <form onSubmit={handleSubmit} className="w-full space-y-2.5">
-            {/* Email Capsule */}
             <div className="relative flex items-center px-4 py-3.5 rounded-2xl bg-black/25 hover:bg-black/30 focus-within:bg-black/35 backdrop-blur-md border border-white/[0.12] focus-within:border-white/35 shadow-[0_8px_24px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.2)] transition-all">
               <Mail className="w-4 h-4 text-white/70 stroke-[1.8] flex-shrink-0 drop-shadow-sm" />
               <input
@@ -717,7 +740,6 @@ function WelcomeAuthPageContent() {
               />
             </div>
 
-            {/* Password Capsule */}
             <div className="relative flex items-center px-4 py-3.5 rounded-2xl bg-black/25 hover:bg-black/30 focus-within:bg-black/35 backdrop-blur-md border border-white/[0.12] focus-within:border-white/35 shadow-[0_8px_24px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.2)] transition-all">
               <Lock className="w-4 h-4 text-white/70 stroke-[1.8] flex-shrink-0 drop-shadow-sm" />
               <input
@@ -749,7 +771,6 @@ function WelcomeAuthPageContent() {
               </button>
             </div>
 
-            {/* Forgot Password Link (Sign In only) */}
             {!isSignUp && (
               <div className="flex justify-end px-1 pt-0.5">
                 <button
@@ -768,13 +789,11 @@ function WelcomeAuthPageContent() {
               </div>
             )}
 
-            {/* Living Dewdrop Action Button */}
             <button
               type="submit"
               disabled={isLoading}
               className="group relative w-full mt-2 py-3.5 px-6 rounded-full font-medium text-xs text-white bg-emerald-500/30 hover:bg-emerald-500/25 active:bg-emerald-500/35 backdrop-blur-2xl border border-emerald-300/10 shadow-[0_12px_32px_rgba(4,25,16,0.45),inset_0_1.5px_2px_rgba(255,255,255,0.5),inset_0_-2px_10px_rgba(16,185,129,0.25)] transition-all active:scale-[0.98] flex items-center justify-center gap-2 overflow-hidden cursor-pointer disabled:opacity-50"
             >
-              {/* Ambient Refraction Sweep */}
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out pointer-events-none" />
 
               {isLoading ? (
@@ -791,10 +810,10 @@ function WelcomeAuthPageContent() {
           </form>
         )}
 
-        {/* Divider & Sign in with Apple (App Store Guideline 4.8) */}
+        {/* Divider & Sign in with Apple + Google (App Store Guideline 4.8 Compliant) */}
         {!isOtpStep && forgotStep === "none" && (
-          <div className="w-full flex flex-col items-center">
-            <div className="w-full flex items-center justify-between gap-3 my-2.5">
+          <div className="w-full flex flex-col items-center gap-2">
+            <div className="w-full flex items-center justify-between gap-3 my-2">
               <div className="h-px flex-1 bg-white/15" />
               <span className="text-[10px] uppercase tracking-wider text-white/45 font-light">
                 {t.auth.orDivider || "atau"}
@@ -802,11 +821,12 @@ function WelcomeAuthPageContent() {
               <div className="h-px flex-1 bg-white/15" />
             </div>
 
+            {/* Sign in with Apple (Primary per Apple HIG) */}
             <button
               type="button"
               onClick={handleAppleSignIn}
-              disabled={isLoading || isSubmittingApple}
-              className="group relative w-full py-3.5 px-6 rounded-full font-medium text-xs text-white bg-black/60 hover:bg-black/75 active:bg-black/85 backdrop-blur-xl border border-white/20 shadow-[0_8px_24px_rgba(0,0,0,0.35),inset_0_1px_1px_rgba(255,255,255,0.25)] transition-all active:scale-[0.98] flex items-center justify-center gap-2.5 overflow-hidden cursor-pointer disabled:opacity-50"
+              disabled={isLoading || isSubmittingApple || isSubmittingGoogle}
+              className="group relative w-full py-3.5 px-6 rounded-full font-medium text-xs text-white bg-black/75 hover:bg-black/85 active:bg-black/95 backdrop-blur-xl border border-white/25 shadow-[0_8px_24px_rgba(0,0,0,0.35),inset_0_1px_1px_rgba(255,255,255,0.25)] transition-all active:scale-[0.98] flex items-center justify-center gap-2.5 overflow-hidden cursor-pointer disabled:opacity-50"
             >
               {isSubmittingApple ? (
                 <span className="flex items-center gap-2 animate-pulse font-light">
@@ -824,12 +844,51 @@ function WelcomeAuthPageContent() {
                 </>
               )}
             </button>
+
+            {/* Sign in with Google */}
+            <button
+              type="button"
+              onClick={handleGoogleSignIn}
+              disabled={isLoading || isSubmittingApple || isSubmittingGoogle}
+              className="group relative w-full py-3.5 px-6 rounded-full font-medium text-xs text-slate-900 bg-white/95 hover:bg-white active:bg-slate-100 backdrop-blur-xl border border-white/60 shadow-[0_8px_24px_rgba(0,0,0,0.25)] transition-all active:scale-[0.98] flex items-center justify-center gap-2.5 overflow-hidden cursor-pointer disabled:opacity-50"
+            >
+              {isSubmittingGoogle ? (
+                <span className="flex items-center gap-2 animate-pulse font-medium text-slate-700">
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  <span>{t.auth.connecting}</span>
+                </span>
+              ) : (
+                <>
+                  <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                    <path
+                      fill="#4285F4"
+                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                    />
+                    <path
+                      fill="#34A853"
+                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                    />
+                    <path
+                      fill="#FBBC05"
+                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                    />
+                    <path
+                      fill="#EA4335"
+                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                    />
+                  </svg>
+                  <span className="tracking-wide font-semibold text-slate-900">
+                    {language === "en" ? "Sign in with Google" : "Masuk dengan Google"}
+                  </span>
+                </>
+              )}
+            </button>
           </div>
         )}
 
         {/* Consolidated Navigation & Clear Guest Mode Pill */}
         {!isOtpStep && forgotStep === "none" && (
-          <div className="flex flex-col items-center gap-2 text-xs text-white/80 drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)] font-light mt-4 w-full">
+          <div className="flex flex-col items-center gap-2 text-xs text-white/80 drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)] font-light mt-3.5 w-full">
             <button
               type="button"
               onClick={() => {
@@ -883,7 +942,7 @@ function WelcomeAuthPageContent() {
             }}
             className="hover:text-emerald-300 transition-colors underline underline-offset-2 cursor-pointer"
           >
-            Syarat & Ketentuan
+            {language === "en" ? "Terms of Service" : "Syarat & Ketentuan"}
           </button>
           <span>•</span>
           <button
@@ -894,7 +953,7 @@ function WelcomeAuthPageContent() {
             }}
             className="hover:text-emerald-300 transition-colors underline underline-offset-2 cursor-pointer"
           >
-            Kebijakan Privasi
+            {language === "en" ? "Privacy Policy" : "Kebijakan Privasi"}
           </button>
         </div>
       </div>

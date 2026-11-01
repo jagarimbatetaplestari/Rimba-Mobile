@@ -463,9 +463,8 @@ export default function RimbaDioramaApp() {
     (state) => Boolean(state.selectedObject),
   );
 
-  const isAnyFullPageModalOpen =
+  const isCanvasPausedByModal =
     isJournalOpen ||
-    isShareOpen ||
     isSoundscapeOpen ||
     isDevOpen ||
     isProfileOpen ||
@@ -473,9 +472,14 @@ export default function RimbaDioramaApp() {
     isLeaderboardOpen ||
     isSettingsOpen ||
     isBiomePickerOpen ||
+    isIslandSwitcherOpen ||
+    isPaywallOpen ||
     isCampfireOpen ||
     isGameplayGuideOpen ||
     isOnboardingOpen;
+
+  const isAnyFullPageModalOpen =
+    isCanvasPausedByModal || isShareOpen;
 
   const isAnyModalOrSheetOpen = Boolean(
     isAnyFullPageModalOpen || isWorkshopActive || isObjectInspectActive,
@@ -495,6 +499,8 @@ export default function RimbaDioramaApp() {
     setIsLeaderboardOpen(false);
     setIsSettingsOpen(false);
     setIsBiomePickerOpen(false);
+    setIsIslandSwitcherOpen(false);
+    setIsPaywallOpen(false);
     setIsCampfireOpen(false);
     setIsGameplayGuideOpen(false);
     setIsOnboardingOpen(false);
@@ -510,6 +516,9 @@ export default function RimbaDioramaApp() {
   useAndroidBackButton({
     activeModals: useMemo(
       () => [
+        { isOpen: isPaywallOpen, close: () => setIsPaywallOpen(false) },
+        { isOpen: isIslandSwitcherOpen, close: () => setIsIslandSwitcherOpen(false) },
+        { isOpen: isBiomePickerOpen, close: () => setIsBiomePickerOpen(false) },
         { isOpen: isOnboardingOpen, close: () => setIsOnboardingOpen(false) },
         { isOpen: isGameplayGuideOpen, close: () => setIsGameplayGuideOpen(false) },
         { isOpen: isCampfireOpen, close: () => setIsCampfireOpen(false) },
@@ -523,6 +532,9 @@ export default function RimbaDioramaApp() {
         { isOpen: isJournalOpen, close: () => setIsJournalOpen(false) },
       ],
       [
+        isPaywallOpen,
+        isIslandSwitcherOpen,
+        isBiomePickerOpen,
         isOnboardingOpen,
         isGameplayGuideOpen,
         isCampfireOpen,
@@ -886,12 +898,12 @@ export default function RimbaDioramaApp() {
       {/* 3D Isometric Diorama Island Scene */}
       <div
         className={`absolute inset-0 z-10 overflow-hidden ${
-          isAnyFullPageModalOpen
+          isCanvasPausedByModal
             ? "invisible pointer-events-none"
             : "pointer-events-auto"
         }`}
       >
-        <CanvasWrapper isPaused={isAnyFullPageModalOpen} />
+        <CanvasWrapper isPaused={isCanvasPausedByModal} />
       </div>
 
       {/* Zen Focus Mode Curtain */}

@@ -1,44 +1,43 @@
-import { useMemo } from 'react';
+'use client';
+
 import { useGameStore } from '@/lib/game/useGameStore';
-import { RimbaEntitlements, UserSubscription } from '@/types/subscription';
+import { Entitlements, PaywallGateSource, SubscriptionTier } from '@/types/subscription';
 
-export const DEFAULT_FREE_SUBSCRIPTION: UserSubscription = {
-  tier: 'free',
-  status: 'none',
-  isPro: false,
-  expiresAt: null,
-  originalPurchaseDate: new Date().toISOString(),
-  store: 'promo',
-  realTreesPledged: 0,
-  pioneerBadge: false,
-};
+const FREE_MAX_ISLANDS = 1;
+const PRO_MAX_ISLANDS = 5;
 
-export function getEntitlementsForSubscription(sub?: UserSubscription): RimbaEntitlements {
-  const isPro = sub?.isPro ?? false;
+/**
+ * Hook terpusat untuk memeriksa status hak akses (Entitlements) Rimba Pro
+ */
+export function useEntitlements(): Entitlements & {
+  tier: SubscriptionTier;
+  realTreesPledged: number;
+  pioneerBadge: boolean;
+  treeCertificateId?: string;
+  triggerPaywall: (source: PaywallGateSource) => void;
+  grantProForTesting: (tier?: SubscriptionTier) => void;
+} {
+  const subscription = useGameStore((state) => state.saveData.subscription);
+  const islandsCount = useGameStore((state) => (state.saveData.islands || []).length || 1);
+  const grantProForTesting = useGameStore((state) => state.grantProForTesting);
 
-  return {
-    maxIslands: isPro ? 5 : 1,
-    streakShieldMonthlyAllowance: isPro ? 1 : 0,
-    multiSoundscapeMixer: isPro,
-    exportHiResDiorama: isPro,
-    exportAnalyticsCSV: isPro,
-    exclusiveTreeCosmetics: isPro,
-  };
-}
+  const isExpired = Boolean(
+    subscription?.expiresAt &&
+      subscription.status !== 'lifetime' &&
+      new Date(subscription.expiresAt).getTime() <= Date.now()
+  );
 
-export function useEntitlements() {
-  const subscription = useGameStore((state) => state.saveData.subscription) || DEFAULT_FREE_SUBSCRIPTION;
-  const islands = useGameStore((state) => state.saveData.islands) || [];
+  const isPro = Boolean(
+    subscription?.isPro &&
+      !isExpired &&
+      (subscription.status === 'active' ||
+        subscription.status === 'lifetime' ||
+        subscription.status === 'grace_period')
+  );
+  const tier: SubscriptionTier = isPro ? subscription?.tier || 'free' : 'free';
+  const maxIslands = isPro ? PRO_MAX_ISLANDS : FREE_MAX_ISLANDS;
 
-  const entitlements = useMemo(() => {
-    return getEntitlementsForSubscription(subscription);
-  }, [subscription]);
-
-  const isPro = subscription.isPro;
-  const currentIslandCount = islands.length || 1;
-  const canCreateNewIsland = currentIslandCount < entitlements.maxIslands;
-
-  const triggerPaywall = (source: string = 'general') => {
+  const triggerPaywall = (source: PaywallGateSource) => {
     if (typeof window !== 'undefined') {
       window.dispatchEvent(
         new CustomEvent('rimba:open_paywall', {
@@ -49,12 +48,22 @@ export function useEntitlements() {
   };
 
   return {
-    subscription,
     isPro,
-    entitlements,
-    currentIslandCount,
-    maxIslands: entitlements.maxIslands,
-    canCreateNewIsland,
+    tier,
+    maxIslands,
+    canCreateNewIsland: islandsCount < maxIslands,
+    canUseBiome: (biomeId: string) => {
+      if (biomeId === 'meadow') return true;
+      return isPro;
+    },
+    canMixAudio: isPro,
+    canUseProSocialTemplates: isPro,
+    hasUnlimitedJournalHistory: isPro,
+    canExportCsv: isPro,
+    realTreesPledged: subscription?.realTreesPledged || 0,
+    pioneerBadge: subscription?.pioneerBadge || false,
+    treeCertificateId: subscription?.treeCertificateId,
     triggerPaywall,
+    grantProForTesting,
   };
 }

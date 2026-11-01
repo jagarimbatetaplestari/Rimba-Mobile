@@ -4,7 +4,8 @@ import React, { useState, useEffect } from "react";
 import { useGameStore } from "@/lib/game/useGameStore";
 import { useTranslation } from "@/lib/i18n/translations";
 import { soundManager } from "@/lib/audio/sounds";
-import { hapticLight, hapticSuccess } from "@/lib/mobile/nativeBridge";
+import { hapticLight, hapticSuccess, hapticWarning } from "@/lib/mobile/nativeBridge";
+import { purchaseSubscriptionTier, restoreStoreKitPurchases } from "@/lib/subscription/revenueCatService";
 import { SUBSCRIPTION_PACKAGES, SubscriptionTier } from "@/types/subscription";
 import { LegalModal } from "@/components/modals/LegalModal";
 import {
@@ -38,7 +39,7 @@ export function RimbaProPaywallModal({
   const isPro = subscription?.isPro ?? false;
   const currentTier = subscription?.tier;
   const realTreesPledged = subscription?.realTreesPledged || 0;
-  const grantProForTesting = useGameStore((state) => state.grantProForTesting);
+  const updateSubscription = useGameStore((state) => state.updateSubscription);
   const notify = useGameStore((state) => state.notify);
 
   const [selectedTier, setSelectedTier] = useState<SubscriptionTier>("pro_annual");
@@ -69,11 +70,21 @@ export function RimbaProPaywallModal({
         onClose();
         return;
       }
-      // Simulation / Native StoreKit handler
-      await new Promise((resolve) => setTimeout(resolve, 800));
-      grantProForTesting(selectedTier);
+      const res = await purchaseSubscriptionTier(selectedTier, isEn);
+      if (res.cancelled) return;
+      if (!res.success || !res.subscription) {
+        soundManager.playError();
+        hapticWarning();
+        notify(
+          res.error || (isEn ? "Purchase could not be completed." : "Pembelian belum dapat diselesaikan."),
+          "error"
+        );
+        return;
+      }
+      updateSubscription(res.subscription);
       soundManager.playComplete();
       hapticSuccess();
+      notify(t.paywallModal.restoreSuccess, "success");
       onClose();
     } finally {
       setIsProcessing(false);
@@ -85,7 +96,6 @@ export function RimbaProPaywallModal({
     hapticLight();
     setIsProcessing(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 600));
       if (isPro) {
         soundManager.playComplete();
         hapticSuccess();
@@ -93,11 +103,21 @@ export function RimbaProPaywallModal({
         onClose();
         return;
       }
-      grantProForTesting(selectedTier);
-      soundManager.playComplete();
-      hapticSuccess();
-      notify(t.paywallModal.restoreSuccess, "success");
-      onClose();
+      const res = await restoreStoreKitPurchases(isEn);
+      if (res.success && res.subscription) {
+        updateSubscription(res.subscription);
+        soundManager.playComplete();
+        hapticSuccess();
+        notify(t.paywallModal.restoreSuccess, "success");
+        onClose();
+      } else {
+        soundManager.playError();
+        hapticWarning();
+        notify(
+          res.error || (isEn ? "No previous purchases found to restore." : "Tidak ditemukan riwayat pembelian untuk dipulihkan."),
+          "info"
+        );
+      }
     } finally {
       setIsProcessing(false);
     }
@@ -427,6 +447,15 @@ export function RimbaProPaywallModal({
               >
                 {t.paywallModal.termsLink}
               </button>
+              <span>•</span>
+              <a
+                href="https://www.apple.com/legal/internet-services/itunes/dev/stdeula/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-[#0D3528] underline underline-offset-2 cursor-pointer transition-colors"
+              >
+                EULA
+              </a>
             </div>
           </div>
         </div>

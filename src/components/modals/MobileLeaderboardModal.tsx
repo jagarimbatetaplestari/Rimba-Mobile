@@ -92,7 +92,6 @@ export function MobileLeaderboardModal({
     <>
       {/* Tipografi Urbanist yang Halus & Modern */}
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700&display=swap');
         .font-urbanist {
           font-family: 'Urbanist', -apple-system, BlinkMacSystemFont, sans-serif !important;
         }

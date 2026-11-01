@@ -1,28 +1,49 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { ArrowLeft, ShieldAlert, CheckCircle2, AlertTriangle, Send } from "lucide-react";
+import { ArrowLeft, ShieldAlert, CheckCircle2, AlertTriangle, Send, Trash2 } from "lucide-react";
+import { useAuthStore } from "@/lib/auth/useAuthStore";
+import { supabase } from "@/lib/supabase/client";
 
 export default function DeleteAccountPublicPage() {
-  const router = useRouter();
+  const user = useAuthStore((state) => state.user);
+  const deleteAccountAndData = useAuthStore((state) => state.deleteAccountAndData);
+
   const [lang, setLang] = useState<"id" | "en">("id");
   const [email, setEmail] = useState("");
   const [reason, setReason] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [wasInstantDeletion, setWasInstantDeletion] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (user?.email) {
+      setEmail(user.email);
+    }
+  }, [user?.email]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) return;
+    if (!email.trim() && (!user || user.isGuest)) return;
 
     setIsSubmitting(true);
-    // Simulate processing deletion request
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (session?.user || (user && !user.isGuest)) {
+        await deleteAccountAndData();
+        setWasInstantDeletion(true);
+      } else {
+        await new Promise((resolve) => setTimeout(resolve, 600));
+        setWasInstantDeletion(false);
+      }
       setSubmitted(true);
-    }, 1200);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -79,13 +100,13 @@ export default function DeleteAccountPublicPage() {
             <div>
               <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
                 {lang === "en"
-                  ? "Request Account & Data Deletion"
-                  : "Permintaan Penghapusan Akun & Data"}
+                  ? "Account & Data Deletion"
+                  : "Penghapusan Akun & Data"}
               </h1>
               <p className="text-xs text-white/60">
                 {lang === "en"
-                  ? "Compliant with Google Play & Apple App Store Privacy Regulations"
-                  : "Sesuai Kebijakan Privasi Google Play & Apple App Store"}
+                  ? "Compliant with Google Play & Apple App Store Privacy Guideline 5.1.1(v)"
+                  : "Sesuai Kebijakan Privasi Google Play & Apple App Store Guideline 5.1.1(v)"}
               </p>
             </div>
           </div>
@@ -96,20 +117,28 @@ export default function DeleteAccountPublicPage() {
             <div className="p-6 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex flex-col items-center text-center gap-3 animate-in fade-in duration-300">
               <CheckCircle2 className="w-12 h-12 text-emerald-400" />
               <h2 className="text-lg font-bold text-white">
-                {lang === "en"
-                  ? "Deletion Request Received"
-                  : "Permintaan Penghapusan Diterima"}
+                {wasInstantDeletion
+                  ? lang === "en"
+                    ? "Account & Data Permanently Deleted"
+                    : "Akun & Data Berhasil Dihapus Permanen"
+                  : lang === "en"
+                    ? "Deletion Request Received"
+                    : "Permintaan Penghapusan Diterima"}
               </h2>
               <p className="text-xs text-white/80 max-w-md leading-relaxed">
-                {lang === "en"
-                  ? `Your request to delete account data associated with "${email}" has been registered. All cloud saves, focus session records, and account credentials will be permanently purged from our database within 24-48 hours.`
-                  : `Permintaan penghapusan data akun untuk "${email}" telah dicatat. Seluruh riwayat simpanan suaka, sesi fokus, dan kredensial akun Anda akan dihapus secara permanen dari basis data kami dalam 24-48 jam.`}
+                {wasInstantDeletion
+                  ? lang === "en"
+                    ? "Your Rimba account, cloud sanctuary saves, and local device records have been permanently erased."
+                    : "Akun Rimba, simpanan suaka cloud, dan seluruh data lokal perangkat Anda telah dihapus secara permanen."
+                  : lang === "en"
+                    ? `Your request to delete account data associated with "${email}" has been registered. All cloud saves, focus session records, and account credentials will be permanently purged from our database within 24-48 hours.`
+                    : `Permintaan penghapusan data akun untuk "${email}" telah dicatat. Seluruh riwayat simpanan suaka, sesi fokus, dan kredensial akun Anda akan dihapus secara permanen dari basis data kami dalam 24-48 jam.`}
               </p>
               <Link
-                href="/"
+                href="/login"
                 className="mt-3 px-5 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-semibold text-white border border-white/20 transition-all"
               >
-                {lang === "en" ? "Return to Homepage" : "Kembali ke Beranda"}
+                {lang === "en" ? "Return to Sign In" : "Kembali ke Halaman Masuk"}
               </Link>
             </div>
           ) : (
@@ -118,8 +147,8 @@ export default function DeleteAccountPublicPage() {
                 <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
                 <p className="leading-relaxed">
                   {lang === "en"
-                    ? "Submitting this form will irreversibly delete your Rimba account, island diorama cloud saves, and personal profile data. If you have the mobile app installed, you can also delete your account instantly from the in-app Settings menu."
-                    : "Mengirim formulir ini akan menghapus akun Rimba, data simpanan pulau suaka, dan profil Anda secara permanen. Jika Anda memasang aplikasi mobile, Anda juga dapat menghapus akun secara instan melalui menu Pengaturan di aplikasi."}
+                    ? "Submitting this form will irreversibly delete your Rimba account, island diorama cloud saves, and personal profile data. You can also delete your account instantly from the in-app Profile or Settings menu."
+                    : "Mengirim formulir ini akan menghapus akun Rimba, data simpanan pulau suaka, dan profil Anda secara permanen. Anda juga dapat menghapus akun secara instan melalui menu Profil atau Pengaturan di dalam aplikasi."}
                 </p>
               </div>
 
@@ -129,7 +158,7 @@ export default function DeleteAccountPublicPage() {
                 </label>
                 <input
                   type="email"
-                  required
+                  required={!user || user.isGuest}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="ranger@rimba.id"
@@ -156,11 +185,16 @@ export default function DeleteAccountPublicPage() {
 
               <button
                 type="submit"
-                disabled={isSubmitting || !email.trim()}
+                disabled={isSubmitting || (!email.trim() && (!user || user.isGuest))}
                 className="w-full h-12 rounded-xl bg-rose-600 hover:bg-rose-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-lg active:scale-98 cursor-pointer mt-2"
               >
                 {isSubmitting ? (
-                  <span>{lang === "en" ? "Submitting Request..." : "Mengirim Permintaan..."}</span>
+                  <span>{lang === "en" ? "Deleting Account..." : "Menghapus Akun..."}</span>
+                ) : user && !user.isGuest ? (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    <span>{lang === "en" ? "Delete Account Immediately" : "Hapus Akun & Data Sekarang"}</span>
+                  </>
                 ) : (
                   <>
                     <Send className="w-4 h-4" />

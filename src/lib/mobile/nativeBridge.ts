@@ -305,7 +305,7 @@ export async function shareOrSaveImage({
   }
 }
 
-let wasSoundscapePlayingBeforeBackground = false;
+let lastSoundscapeTrackBeforeBackground: string = "off";
 let wasMusicPlayingBeforeBackground = false;
 
 /**
@@ -323,14 +323,25 @@ export function initAppLifecycleListeners(): () => void {
 
       if (!isActive) {
         // App minimized / backgrounded
-        wasSoundscapePlayingBeforeBackground = soundscapeManager.getCurrentTrack() !== 'off';
+        const currentTrack = soundscapeManager.getCurrentTrack();
+        lastSoundscapeTrackBeforeBackground = currentTrack;
         wasMusicPlayingBeforeBackground = musicPlayer.getState().isPlaying;
 
-        if (wasSoundscapePlayingBeforeBackground) {
+        if (currentTrack !== 'off') {
           soundscapeManager.stop();
         }
         if (wasMusicPlayingBeforeBackground) {
           musicPlayer.stop();
+        }
+      } else {
+        // App resumed to foreground: restore audio that was playing before background
+        if (lastSoundscapeTrackBeforeBackground && lastSoundscapeTrackBeforeBackground !== 'off') {
+          soundscapeManager.play(lastSoundscapeTrackBeforeBackground as any);
+          lastSoundscapeTrackBeforeBackground = 'off';
+        }
+        if (wasMusicPlayingBeforeBackground) {
+          musicPlayer.togglePlay();
+          wasMusicPlayingBeforeBackground = false;
         }
       }
     });

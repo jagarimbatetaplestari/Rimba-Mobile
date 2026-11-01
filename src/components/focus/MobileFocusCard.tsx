@@ -166,6 +166,7 @@ export function MobileFocusCard({
 
   // Harvest celebration modal & Ambient soundscape popover
   const [showHarvestModal, setShowHarvestModal] = useState<boolean>(false);
+  const [showEarlyStopwatchConfirm, setShowEarlyStopwatchConfirm] = useState<boolean>(false);
   const [harvestSessionSnapshot, setHarvestSessionSnapshot] =
     useState<FocusSession | null>(null);
   const [showWitherModal, setShowWitherModal] = useState<boolean>(false);
@@ -486,19 +487,7 @@ export function MobileFocusCard({
       const startMs = new Date(activeSession.started_at).getTime();
       const elapsedMs = Math.max(0, Date.now() - startMs);
       if (elapsedMs < 300000) {
-        const confirmEarly =
-          typeof window !== "undefined"
-            ? window.confirm(
-                language === "en"
-                  ? "Sessions under 5 minutes do not grow trees or grant rewards. Finish session anyway?"
-                  : "Sesi di bawah 5 menit tidak akan menumbuhkan pohon suaka atau memberi hadiah. Selesaikan sesi sekarang?",
-              )
-            : true;
-        if (!confirmEarly) return;
-
-        cancelPendingFocusNotifications();
-        soundscapeManager.stop();
-        completeFocus();
+        setShowEarlyStopwatchConfirm(true);
         return;
       }
     }
@@ -1548,6 +1537,48 @@ export function MobileFocusCard({
             handleStart();
           }}
         />
+      )}
+      {showEarlyStopwatchConfirm && (
+        <div
+          className="fixed inset-0 z-[95] bg-black/50 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-150 pointer-events-auto select-none"
+          onClick={() => setShowEarlyStopwatchConfirm(false)}
+        >
+          <div
+            style={modalGlassStyle}
+            className="w-full max-w-xs rounded-[28px] p-5 flex flex-col gap-3.5 text-white relative overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h4 className="text-sm font-bold tracking-tight">
+              {language === "en" ? "Finish Under 5 Minutes?" : "Selesaikan di Bawah 5 Menit?"}
+            </h4>
+            <p className="text-xs text-white/80 leading-relaxed">
+              {language === "en"
+                ? "Stopwatch sessions under 5 minutes do not grow sanctuary trees or grant Soul rewards. Finish anyway?"
+                : "Sesi stopwatch di bawah 5 menit belum menumbuhkan pohon suaka atau memberi hadiah Soul. Selesaikan sekarang?"}
+            </p>
+            <div className="flex items-center gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setShowEarlyStopwatchConfirm(false)}
+                className="flex-1 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 border border-white/20 text-xs font-semibold text-white cursor-pointer"
+              >
+                {language === "en" ? "Keep Focusing" : "Lanjut Fokus"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowEarlyStopwatchConfirm(false);
+                  cancelPendingFocusNotifications();
+                  soundscapeManager.stop();
+                  completeFocus();
+                }}
+                className="flex-1 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-bold cursor-pointer"
+              >
+                {language === "en" ? "Finish Now" : "Selesaikan"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
       {renderSoundscapePopover()}
     </>

@@ -195,6 +195,29 @@ export function LegalModal({
               ))}
             </div>
 
+            {/* Apple Standard EULA Reference Card */}
+            <div className="p-3.5 rounded-2xl border border-[#0D3528]/10 bg-white/80 flex items-center justify-between gap-3 text-xs">
+              <div>
+                <p className="font-bold text-[#0D3528]">
+                  {currentLang === "en"
+                    ? "Apple Standard End User License Agreement (EULA)"
+                    : "Perjanjian Lisensi Pengguna Akhir Standar Apple (EULA)"}
+                </p>
+                <p className="text-[11px] text-[#4C7567]">
+                  apple.com/legal/internet-services/itunes/dev/stdeula
+                </p>
+              </div>
+              <a
+                href="https://www.apple.com/legal/internet-services/itunes/dev/stdeula/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3 py-1.5 rounded-xl bg-[#E4F4ED] text-[#187557] font-semibold flex items-center gap-1 shrink-0 hover:bg-[#d5ede2] transition-colors"
+              >
+                <span>EULA</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </div>
+
             {/* Footer Sovereign Badge */}
             <div className="pt-2 pb-6 text-center text-[11px] text-[#4C7567] font-medium flex flex-col items-center gap-1">
               <span>Rimba • Digital Focus Sanctuary v0.2.0</span>

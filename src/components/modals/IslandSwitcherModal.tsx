@@ -5,7 +5,7 @@ import { useGameStore } from "@/lib/game/useGameStore";
 import { useTranslation } from "@/lib/i18n/translations";
 import { useEntitlements } from "@/lib/subscription/useEntitlements";
 import { soundManager } from "@/lib/audio/sounds";
-import { hapticLight, hapticMedium, hapticSuccess } from "@/lib/mobile/nativeBridge";
+import { hapticLight, hapticMedium, hapticSuccess, hapticWarning } from "@/lib/mobile/nativeBridge";
 import { BIOME_CATALOG } from "@/lib/game/config";
 import { BiomeType, IslandSlot } from "@/types/game";
 import {
@@ -16,7 +16,6 @@ import {
   Trash2,
   Sparkles,
   Palmtree,
-  Lock,
 } from "lucide-react";
 
 interface IslandSwitcherModalProps {
@@ -44,6 +43,7 @@ export function IslandSwitcherModal({ isOpen, onClose }: IslandSwitcherModalProp
 
   const [editingIslandId, setEditingIslandId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
@@ -90,6 +90,7 @@ export function IslandSwitcherModal({ isOpen, onClose }: IslandSwitcherModalProp
   const handleStartRename = (isl: IslandSlot) => {
     soundManager.playPop();
     hapticLight();
+    setConfirmingDeleteId(null);
     setEditingIslandId(isl.id);
     setEditingName(isl.name);
   };
@@ -103,13 +104,18 @@ export function IslandSwitcherModal({ isOpen, onClose }: IslandSwitcherModalProp
     setEditingIslandId(null);
   };
 
-  const handleDelete = (isl: IslandSlot) => {
+  const handleRequestDelete = (isl: IslandSlot) => {
     soundManager.playPop();
-    hapticLight();
-    const confirmMsg = t.islandsModal.deleteConfirm.replace("{name}", isl.name);
-    if (typeof window !== "undefined" && window.confirm(confirmMsg)) {
-      deleteIsland(isl.id);
-    }
+    hapticWarning();
+    setEditingIslandId(null);
+    setConfirmingDeleteId(isl.id);
+  };
+
+  const handleConfirmDelete = (islandId: string) => {
+    soundManager.playPop();
+    hapticWarning();
+    deleteIsland(islandId);
+    setConfirmingDeleteId(null);
   };
 
   return (
@@ -164,6 +170,7 @@ export function IslandSwitcherModal({ isOpen, onClose }: IslandSwitcherModalProp
             {islands.map((isl) => {
               const isActive = isl.id === activeIslandId;
               const isEditing = editingIslandId === isl.id;
+              const isConfirmingDelete = confirmingDeleteId === isl.id;
               const currentBiome = isActive ? saveData.active_biome || isl.biome : isl.biome;
               const biomeCfg = BIOME_CATALOG.find((b) => b.id === currentBiome);
               const objectsToCount = isActive ? saveData.world_objects : isl.world_objects;
@@ -173,15 +180,17 @@ export function IslandSwitcherModal({ isOpen, onClose }: IslandSwitcherModalProp
                 <div
                   key={isl.id}
                   className={`p-3 rounded-2xl border transition-all flex items-center justify-between gap-2.5 ${
-                    isActive
-                      ? "bg-white text-[#0D3528] border-[#187557]/40 shadow-xs ring-1 ring-[#187557]/20"
-                      : "bg-white/80 hover:bg-white text-[#0D3528] border-[#0D3528]/10"
+                    isConfirmingDelete
+                      ? "bg-rose-50/90 text-rose-950 border-rose-300 shadow-xs"
+                      : isActive
+                        ? "bg-white text-[#0D3528] border-[#187557]/40 shadow-xs ring-1 ring-[#187557]/20"
+                        : "bg-white/80 hover:bg-white text-[#0D3528] border-[#0D3528]/10"
                   }`}
                 >
                   {/* Left: Island Info / Edit form */}
                   <div
                     className="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer"
-                    onClick={() => !isEditing && handleSelectIsland(isl.id)}
+                    onClick={() => !isEditing && !isConfirmingDelete && handleSelectIsland(isl.id)}
                   >
                     <span className="text-2xl shrink-0 p-1 rounded-xl bg-[#0D3528]/5">
                       {biomeCfg?.icon || "🌱"}
@@ -208,6 +217,15 @@ export function IslandSwitcherModal({ isOpen, onClose }: IslandSwitcherModalProp
                             <Check className="w-3 h-3 stroke-[3]" />
                           </button>
                         </div>
+                      ) : isConfirmingDelete ? (
+                        <div className="flex flex-col" onClick={(e) => e.stopPropagation()}>
+                          <span className="text-[12px] font-bold text-rose-800 truncate">
+                            {isEn ? `Delete "${isl.name}"?` : `Hapus "${isl.name}"?`}
+                          </span>
+                          <span className="text-[10.5px] text-rose-600 font-medium">
+                            {isEn ? "Cannot be undone" : "Tindakan permanen"}
+                          </span>
+                        </div>
                       ) : (
                         <>
                           <div className="flex items-center gap-1.5">
@@ -228,27 +246,48 @@ export function IslandSwitcherModal({ isOpen, onClose }: IslandSwitcherModalProp
                     </div>
                   </div>
 
-                  {/* Actions (Rename, Delete) */}
+                  {/* Actions (Rename, Delete, or Confirm Delete) */}
                   {!isEditing && (
                     <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-                      <button
-                        type="button"
-                        onClick={() => handleStartRename(isl)}
-                        className="p-1.5 rounded-lg transition-colors cursor-pointer text-[#4C7567] hover:text-[#0D3528] hover:bg-[#0D3528]/5"
-                        title={t.islandsModal.rename}
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </button>
+                      {isConfirmingDelete ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setConfirmingDeleteId(null)}
+                            className="px-2 py-1 rounded-lg text-[11px] font-semibold bg-white border border-rose-200 text-slate-700 hover:bg-slate-50 cursor-pointer"
+                          >
+                            {t.islandsModal.cancelBtn}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleConfirmDelete(isl.id)}
+                            className="px-2 py-1 rounded-lg text-[11px] font-bold bg-rose-600 text-white hover:bg-rose-700 cursor-pointer"
+                          >
+                            {isEn ? "Delete" : "Hapus"}
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => handleStartRename(isl)}
+                            className="p-1.5 rounded-lg transition-colors cursor-pointer text-[#4C7567] hover:text-[#0D3528] hover:bg-[#0D3528]/5"
+                            title={t.islandsModal.rename}
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
 
-                      {islands.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(isl)}
-                          className="p-1.5 rounded-lg transition-colors cursor-pointer text-rose-600 hover:text-rose-700 hover:bg-rose-50"
-                          title={t.islandsModal.delete}
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                          {islands.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRequestDelete(isl)}
+                              className="p-1.5 rounded-lg transition-colors cursor-pointer text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+                              title={t.islandsModal.delete}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </>
                       )}
                     </div>
                   )}

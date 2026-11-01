@@ -188,10 +188,11 @@ export function MobileSettingsSheet({
     hapticLight();
     const opened = await openDeviceAppSettings();
     if (!opened) {
-      alert(
+      useGameStore.getState().notify(
         lang === "en"
-          ? "To adjust permissions, open device Settings -> Rimba -> enable Notifications, Photos, or Camera."
-          : "Untuk mengubah izin, buka menu Pengaturan HP Anda -> Rimba -> aktifkan Notifikasi, Foto, atau Kamera."
+          ? "Open device Settings -> Rimba -> enable Notifications, Photos, or Camera."
+          : "Buka menu Pengaturan HP Anda -> Rimba -> aktifkan Notifikasi, Foto, atau Kamera.",
+        "info"
       );
     }
   };
@@ -319,7 +320,6 @@ export function MobileSettingsSheet({
     <>
       {/* Tipografi Urbanist yang Halus & Modern */}
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700&display=swap');
         .font-urbanist {
           font-family: 'Urbanist', -apple-system, BlinkMacSystemFont, sans-serif !important;
         }

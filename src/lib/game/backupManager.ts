@@ -3,6 +3,9 @@
 import { RimbaSaveData } from '@/types/game';
 import { calculateBalances } from './economy';
 import { calculateAnalytics } from './analytics';
+import { isNativeMobile } from '@/lib/mobile/nativeBridge';
+import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 
 const SNAPSHOTS_STORAGE_KEY = 'rimba_island_snapshots';
 
@@ -53,7 +56,6 @@ export function validateRimbaBackup(raw: string | unknown): BackupValidationResu
       };
     }
 
-    // Normalize and sanitize fields
     const sessions = Array.isArray(parsed.focus_sessions) ? parsed.focus_sessions : [];
     const worldObjects = Array.isArray(parsed.world_objects) ? parsed.world_objects : [];
     const ledger = Array.isArray(parsed.currency_ledger) ? parsed.currency_ledger : [];
@@ -132,23 +134,56 @@ export function validateRimbaBackup(raw: string | unknown): BackupValidationResu
 }
 
 /**
- * Downloads the current save data as a formatted JSON backup
+ * Downloads or shares the current save data as a formatted JSON backup
+ * Supports native iOS/Android Capacitor Share Sheet + Web Blob fallback
  */
-export function downloadSaveDataBackup(saveData: RimbaSaveData): void {
+export async function downloadSaveDataBackup(saveData: RimbaSaveData): Promise<void> {
   if (typeof window === 'undefined') return;
 
   const now = new Date();
   const dateStr = now.toISOString().slice(0, 10);
   const timeStr = `${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
   const fileName = `rimba_suaka_backup_${dateStr}_${timeStr}.json`;
+  const jsonContent = JSON.stringify(saveData, null, 2);
 
-  const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(saveData, null, 2));
-  const anchor = document.createElement('a');
-  anchor.setAttribute('href', dataStr);
-  anchor.setAttribute('download', fileName);
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
+  if (isNativeMobile()) {
+    try {
+      const savedFile = await Filesystem.writeFile({
+        path: fileName,
+        data: jsonContent,
+        directory: Directory.Cache,
+        encoding: Encoding.UTF8,
+      });
+
+      await Share.share({
+        title: 'Cadangan Pulau Suaka Rimba',
+        text: 'Berkas cadangan pulau dan riwayat fokus Rimba (.json)',
+        url: savedFile.uri,
+        dialogTitle: 'Simpan Berkas Cadangan Rimba',
+      });
+      return;
+    } catch (nativeErr: any) {
+      const msg = String(nativeErr?.message || nativeErr || '').toLowerCase();
+      if (msg.includes('cancel') || msg.includes('abort')) {
+        return;
+      }
+      console.warn('Native JSON backup share fallback to web:', nativeErr);
+    }
+  }
+
+  try {
+    const blob = new Blob([jsonContent], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.setAttribute('href', url);
+    anchor.setAttribute('download', fileName);
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
+  } catch (err) {
+    console.warn('Fallback JSON download failed:', err);
+  }
 }
 
 /**
@@ -197,10 +232,10 @@ export function createIslandSnapshot(
     level,
     totalFocusMinutes: analytics.totalFocusMinutes,
     sessionsCount: sessions.length,
-    data: JSON.parse(JSON.stringify(saveData)), // Deep copy
+    data: JSON.parse(JSON.stringify(saveData)),
   };
 
-  let updated = [newSnapshot, ...existing].slice(0, 8);
+  const updated = [newSnapshot, ...existing].slice(0, 8);
   while (updated.length > 0) {
     try {
       localStorage.setItem(SNAPSHOTS_STORAGE_KEY, JSON.stringify(updated));
@@ -218,12 +253,13 @@ export function createIslandSnapshot(
  * Deletes an island snapshot by ID
  */
 export function deleteIslandSnapshot(snapshotId: string): IslandSnapshot[] {
+  if (typeof window === 'undefined') return [];
   const existing = getIslandSnapshots();
-  const updated = existing.filter((s) => s.id !== snapshotId);
+  const filtered = existing.filter((s) => s.id !== snapshotId);
   try {
-    localStorage.setItem(SNAPSHOTS_STORAGE_KEY, JSON.stringify(updated));
-  } catch (err) {
-    console.warn('[BackupManager] Failed to save updated snapshots after deletion:', err);
+    localStorage.setItem(SNAPSHOTS_STORAGE_KEY, JSON.stringify(filtered));
+  } catch {
+    // Ignore storage error
   }
-  return updated;
+  return filtered;
 }

@@ -9,7 +9,7 @@ Endpoint: `supabase/functions/delete-account/index.ts`.
 
 Required Edge secrets: `APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY`; Supabase supplies `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`. Client ID is fixed to `com.syntheticae.rimba`.
 
-The user authorized creation/configuration/deployment. Apple key R9B28XR2MR was created for the Rimba primary App ID and backed up privately under Apple Dev. **Secret installation, Apple provider activation and endpoint deployment have NOT completed.** The first deploy was not executed because automatic approval review hit a usage limit. On resume, the connector exposes only other projects and local browser control is disabled; restore these accesses before deploying.
+The user authorized creation/configuration/deployment. Apple key R9B28XR2MR was created for the Rimba primary App ID and backed up privately under Apple Dev. **Endpoint version1 is now ACTIVE with gateway JWT verification. Secret installation and Apple provider activation have NOT completed.** The first deploy was not executed because automatic approval review hit a usage limit. On resume, the connector exposes only other projects and local browser control is disabled; restore these accesses before deploying.
 
 Before rollout: verify live function/config without exposing secrets; test only an explicitly disposable reviewer/test account. Check cancel sheet leaves account intact, successful deletion removes physical media/Auth rows and Apple authorization, and a new login requests authorization. Retire client EXECUTE on legacy `delete_user_account()` only after the replacement endpoint is live and the candidate is available; old versions otherwise lose their deletion path.
 

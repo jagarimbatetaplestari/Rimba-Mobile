@@ -87,3 +87,12 @@ Current verification: 52/52 Vitest, mobile typecheck and npm run build passed af
 - Updated two obsolete source-smoke assertions that explicitly required untrusted backup/cloud subscription restoration; behavioral regressions now prove the correct trust boundary instead. Did not remove the failing test coverage.
 - Fresh verification: 107/107 Vitest, typecheck, 157/157 prelaunch smoke/mock assertions, npm run build and git diff --check passed. These do not establish Apple/Google device acceptance or full App Store readiness.
 - Still required: owner-scoped saves/guest migration and conflict handling; complete backup schema/size bounds and durable snapshot failure reporting; server entitlement lifecycle; timer/economy and social moderation; native UX/iPad/performance; IAP/store/privacy/screenshots; final device acceptance. Overall Rimba is NOT ready to submit.
+
+## Endpoint production deployment (2026-11-01)
+
+- Supabase Rimba connection restored as link_6ae6bb3505d88191bd8e904e107643bb; project confirmed rkljugrrscmqopeuwtpd / JagaRimba-project.
+- Deployed delete-account version1 through the connector, status ACTIVE, function66fcb7af-a33d-4c56-9bba-7d364555b42c, verify_jwt=true. Source SHA256 d20f7ad3b9d7f4e746230e2f239aa3b42635033d2073b84dc26c67003d5f6bf9. List-functions verified matching deployment.
+- Live non-destructive probes: missing-session POST401; anon API key used as Bearer also401. No real user token, account mutation or user-data read involved.
+- Public Auth settings: Google enabled, Apple disabled, email enabled, confirmation ON. Apple secrets still NOT installed. No complete Apple deletion/device-acceptance claim.
+- Browser remains blocked with "Local browser use is disabled in Work settings" even after user enabled settings and one clean tool-session reload. Do not bypass the disabled browser with another automation route. Connector has no secret/auth-configuration operation; local known CLI credential files are absent. User needs browser access restored for the already-authorized secret installation/provider configuration.
+- Legacy deletion RPC remains callable until the new replacement and a tested candidate are ready; do not revoke old client access prematurely.

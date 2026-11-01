@@ -114,6 +114,7 @@ async function buildAuthUserFromSupabase(
   fallbackName?: string
 ): Promise<AuthUser> {
   const userId = supaUser.id;
+  const revision = authSessionRevision;
   let profile: { display_name?: string | null; bio?: string | null; avatar_url?: string | null } | null = null;
   try {
     const { data } = await supabase
@@ -124,6 +125,12 @@ async function buildAuthUserFromSupabase(
     profile = data;
   } catch {
     // ignore offline/table missing
+  }
+
+  // Profile hydration may finish after logout/account switching on any login path.
+  const { data: current, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError || current.session?.user.id !== userId || revision !== authSessionRevision) {
+    throw new Error('Sesi akun berubah. Silakan masuk kembali.');
   }
 
   const cachedAppleName =

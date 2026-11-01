@@ -127,3 +127,10 @@ Current verification: 52/52 Vitest, mobile typecheck and npm run build passed af
 - All snapshot callers now handle errors; restore/reset aborts before replacing current progress if the requested backup is not durable. User sees ID/EN errors; successful restore feedback happens only after successful import. History remains in local storage if unreadable. Complete owner isolation and export/recovery for malformed snapshot history are still Task5 follow-up.
 - Fresh verification before final formatting:127/127 Vitest, typecheck,157/157 prelaunch checks and npm run build passed. Rerun focused checks after final feedback/formatting edits. No real account or production data was modified for these tests.
 - Final feedback/formatting follow-up verified: typecheck and16 focused backup/snapshot tests passed; final npm run build exited0. Diff whitespace check clean. Snapshot UI visual QA is still pending browser access restoration.
+
+## Shared authenticated profile commit guard
+
+- Three additional email-login failures reproduced: a late profile could reauthenticate a logged-out UI, overwrite the now-current account B, or claim success when the session lookup fails. Added the check in shared buildAuthUserFromSupabase rather than only patching email/Google callers.
+- Profile commit requires current Supabase session user ID and unchanged auth revision after profile hydration. Auth callbacks still defer queries outside the callback lock. Updated lifecycle fixture to model current Auth session accurately; preserved existing sign-out/account-switch regressions.
+- Fresh verification:131/131 Vitest,14focused auth tests, typecheck,157/157prelaunch assertions, npm run build and diff check passed. Auth profile guards do NOT close storage owner-isolation or guest-migration gate.
+- Added BUG_BACKLOG.md and DATA_FLOW.md as reviewable gates/inventory. They explicitly keep ownership/conflicts, trusted billing lifecycle, moderation, privacy/native UX and device/store acceptance OPEN.

@@ -1,0 +1,12 @@
+import { beforeEach, expect, it, vi } from 'vitest';
+const m=vi.hoisted(()=>({login:vi.fn(),profile:vi.fn(),current:vi.fn(),sync:vi.fn()}));
+vi.mock('../src/lib/supabase/client',()=>({supabase:{auth:{signInWithPassword:m.login,getSession:m.current},from:()=>({select:()=>({eq:()=>({maybeSingle:m.profile})})})}}));
+vi.mock('../src/lib/supabase/cloudSync',()=>({smartSyncOnLogin:m.sync,invalidateCloudSyncSession:vi.fn()}));
+vi.mock('../src/lib/game/storage',()=>({createInitialSaveData:()=>({})}));
+vi.mock('../src/lib/game/useGameStore',()=>({useGameStore:{setState:vi.fn()}}));
+import { useAuthStore } from '../src/lib/auth/useAuthStore';
+beforeEach(()=>{vi.clearAllMocks();useAuthStore.setState({user:null});m.login.mockResolvedValue({data:{user:{id:'a',email:'a@example.test'},session:{user:{id:'a'}}},error:null});m.profile.mockResolvedValue({data:{display_name:'A'}});m.current.mockResolvedValue({data:{session:{user:{id:'a'}}},error:null});m.sync.mockResolvedValue(true);});
+it('commits a profile only while its authenticated session is current',async()=>{expect((await useAuthStore.getState().loginWithEmail('a@example.test','fictional-test-password')).success).toBe(true);expect(useAuthStore.getState().user?.id).toBe('a');});
+it('does not sign back in from a late profile response after logout',async()=>{m.current.mockResolvedValue({data:{session:null},error:null});const result=await useAuthStore.getState().loginWithEmail('a@example.test','fictional-test-password');expect(result.success).toBe(false);expect(useAuthStore.getState().user).toBeNull();expect(m.sync).not.toHaveBeenCalled();});
+it('does not replace account B when account A profile finishes late',async()=>{m.profile.mockImplementation(async()=>{useAuthStore.setState({user:{id:'b',email:'',name:'B',isGuest:false,createdAt:''}});return {data:{display_name:'A'}};});m.current.mockResolvedValue({data:{session:{user:{id:'b'}}},error:null});expect((await useAuthStore.getState().loginWithEmail('a@example.test','fictional-test-password')).success).toBe(false);expect(useAuthStore.getState().user?.id).toBe('b');expect(m.sync).not.toHaveBeenCalled();});
+it('does not commit a profile when current session lookup fails',async()=>{m.current.mockResolvedValue({data:{session:null},error:new Error('Session unavailable')});expect((await useAuthStore.getState().loginWithEmail('a@example.test','fictional-test-password')).success).toBe(false);expect(m.sync).not.toHaveBeenCalled();});

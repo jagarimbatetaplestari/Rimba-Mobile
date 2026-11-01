@@ -1,11 +1,11 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
-const m = vi.hoisted(() => ({ callback: null as any, read: vi.fn(), sync: vi.fn() }));
-vi.mock('../src/lib/supabase/client', () => ({ supabase: { auth: { onAuthStateChange: (cb: any) => { m.callback = cb; }, getSession: async () => ({ data: { session: null } }) }, from: () => ({ select: () => ({ eq: () => ({ maybeSingle: m.read }) }) }) } }));
+const m = vi.hoisted(() => ({ callback: null as any, read: vi.fn(), sync: vi.fn(), session: null as any }));
+vi.mock('../src/lib/supabase/client', () => ({ supabase: { auth: { onAuthStateChange: (cb: any) => { m.callback = (event: string, session: any) => { m.session = session; return cb(event, session); }; }, getSession: async () => ({ data: { session: m.session } }) }, from: () => ({ select: () => ({ eq: () => ({ maybeSingle: m.read }) }) }) } }));
 vi.mock('../src/lib/supabase/cloudSync', () => ({ invalidateCloudSyncSession: vi.fn(), smartSyncOnLogin: m.sync }));
 vi.mock('../src/lib/game/storage', () => ({ createInitialSaveData: () => ({}) }));
 vi.mock('../src/lib/game/useGameStore', () => ({ useGameStore: { setState: vi.fn() } }));
 let store: typeof import('../src/lib/auth/useAuthStore').useAuthStore;
-beforeEach(async () => { vi.resetModules(); vi.clearAllMocks(); vi.useFakeTimers(); m.read.mockResolvedValue({ data: null }); m.sync.mockResolvedValue(true); store = (await import('../src/lib/auth/useAuthStore')).useAuthStore; await store.getState().initAuth(); });
+beforeEach(async () => { vi.resetModules(); vi.clearAllMocks(); m.session = null; vi.useFakeTimers(); m.read.mockResolvedValue({ data: null }); m.sync.mockResolvedValue(true); store = (await import('../src/lib/auth/useAuthStore')).useAuthStore; await store.getState().initAuth(); });
 afterEach(() => { vi.clearAllTimers(); vi.useRealTimers(); });
 const session = (id: string) => ({ user: { id, email: `${id}@example.test` } });
 describe('Supabase auth lifecycle', () => {

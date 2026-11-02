@@ -266,3 +266,8 @@ Current verification: 52/52 Vitest, mobile typecheck and npm run build passed af
 ### Final activation candidate distributed
 - a839c4e nativeCI41389307337 SUCCESS; deploy41389860676/build8 SUCCESS. Apple1.0(8)8b34cd2f-6e5b-484b-b9ef-15a74a0c34b7 VALID, Internal group and IN_BETA_TESTING verified. Draft selects8, beta notes en-US/id saved; no App Review submission.
 - Final342tests/35files,155prelaunch,typecheck,production export passed. Device Restore/actual Pro activation still awaits owner confirmation. Screenshots predating owner UI changes need refresh before submission. Widget native integration remains open.
+
+### Native widgets candidate
+- Source a1ea4f6 preserves owner UI/3D work, embeds WidgetKit extension, registers AppGroup bridge and real Home/Lock/Control surfaces. Review caught/fixed host privacy manifest membership, minutes/seconds mismatch and previous-session telemetry. Regression coverage includes native packaging, one-shot late actions, account clearing and session start/pause/resume/cancel.
+- Full364tests/40files,155prelaunch,typecheck,static export pass. NativeCI41402950906 SUCCESS. First41402107252 compiled but failed host manifest packaging assertion; corrected.
+- Group associated with host+extension, new App Store profiles ACTIVE, group entitlement decoded/verified; GitHub host/widget profile secrets updated using existing GitHub credentials. Deploy41403770011/build11 dispatched for exact source. Apple status and device acceptance pending; no Submit. See NATIVE_WIDGETS_20261102.md.

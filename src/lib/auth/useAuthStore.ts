@@ -75,7 +75,10 @@ const RIMBA_LOCAL_STORAGE_KEYS = [
 ];
 
 let authStateListenerRegistered = false;
+// Token rotation supersedes profile reads without invalidating this owner's purchases.
 let authSessionRevision = 0;
+let authHydrationRevision = 0;
+let authEventOwner: string | null | undefined;
 export function getAuthSessionRevision(): number {
   return authSessionRevision;
 }
@@ -257,11 +260,12 @@ export const useAuthStore = create<AuthState>()(
         initAuth: async () => {
           const restoreSession = async (
             supaUser: Parameters<typeof buildAuthUserFromSupabase>[0],
-            revision: number
+            revision: number,
+            hydration: number
           ) => {
-            if (revision !== authSessionRevision) return;
+            if (revision !== authSessionRevision || hydration !== authHydrationRevision) return;
             const userObj = await buildAuthUserFromSupabase(supaUser);
-            if (revision !== authSessionRevision) return;
+            if (revision !== authSessionRevision || hydration !== authHydrationRevision) return;
             set({ user: userObj, isLoading: false });
             if (lastSyncedUserId !== supaUser.id) {
               const synced = await smartSyncOnLogin(supaUser.id);
@@ -272,8 +276,16 @@ export const useAuthStore = create<AuthState>()(
             if (!authStateListenerRegistered) {
               authStateListenerRegistered = true;
               supabase.auth.onAuthStateChange((event, session) => {
-                const revision = ++authSessionRevision;
-                if (event === 'SIGNED_OUT' || session?.user?.id !== get().user?.id) {
+                const nextOwner = session?.user?.id ?? null;
+                const previousOwner = authEventOwner === undefined
+                  ? (get().user?.isGuest ? null : get().user?.id ?? null)
+                  : authEventOwner;
+                const boundary = event === 'SIGNED_OUT' || nextOwner !== previousOwner;
+                if (boundary) ++authSessionRevision;
+                authEventOwner = nextOwner;
+                const revision = authSessionRevision;
+                const hydration = ++authHydrationRevision;
+                if (boundary) {
                   invalidateCloudSyncSession();
                 }
                 if (event === 'SIGNED_OUT') {
@@ -284,7 +296,7 @@ export const useAuthStore = create<AuthState>()(
                 } else if (session?.user) {
                   const supaUser = session.user;
                   setTimeout(() => {
-                    void restoreSession(supaUser, revision).catch((err) => {
+                    void restoreSession(supaUser, revision, hydration).catch((err) => {
                       console.warn('Gagal memulihkan sesi Supabase:', err);
                     });
                   }, 0);
@@ -293,14 +305,15 @@ export const useAuthStore = create<AuthState>()(
             }
 
             const revision = authSessionRevision;
+            const hydration = ++authHydrationRevision;
             const {
               data: { session },
               error,
             } = await supabase.auth.getSession();
-            if (revision !== authSessionRevision) return;
+            if (revision !== authSessionRevision || hydration !== authHydrationRevision) return;
             if (error) throw error;
             if (session?.user) {
-              await restoreSession(session.user, revision);
+              await restoreSession(session.user, revision, hydration);
             } else if (get().user && !get().user?.isGuest) {
               set({ user: null, isLoading: false });
             } else {

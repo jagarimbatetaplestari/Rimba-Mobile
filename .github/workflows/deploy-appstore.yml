@@ -41,6 +41,7 @@ jobs:
           APPLE_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
           APPLE_PROVISION_PROFILE_BASE64: ${{ secrets.APPLE_PROVISION_PROFILE_BASE64 }}
+          APPLE_WIDGET_PROVISION_PROFILE_BASE64: ${{ secrets.APPLE_WIDGET_PROVISION_PROFILE_BASE64 }}
           APP_STORE_CONNECT_PRIVATE_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY_BASE64 }}
         run: node scripts/check-release-env.mjs
 
@@ -99,85 +100,34 @@ jobs:
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
           rm -f "$CERT_PATH"
 
-      - name: Install Provisioning Profile
+      - name: Install App and Widget provisioning profiles
         env:
           PROFILE_BASE64: ${{ secrets.APPLE_PROVISION_PROFILE_BASE64 }}
+          WIDGET_PROFILE_BASE64: ${{ secrets.APPLE_WIDGET_PROVISION_PROFILE_BASE64 }}
         run: |
           PROFILES_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
           mkdir -p "$PROFILES_DIR"
+          for TARGET in App RimbaWidgets; do
+            if [ "$TARGET" = App ]; then DATA="$PROFILE_BASE64"; PREFIX=PROFILE; BUNDLE=com.syntheticae.rimba; else DATA="$WIDGET_PROFILE_BASE64"; PREFIX=WIDGET_PROFILE; BUNDLE=com.syntheticae.rimba.widgets; fi
+            TEMP_PROFILE="$RUNNER_TEMP/$TARGET.mobileprovision"
+            PROFILE_PLIST="$RUNNER_TEMP/$TARGET-profile.plist"
+            printf '%s' "$DATA" | base64 --decode > "$TEMP_PROFILE"
+            security cms -D -i "$TEMP_PROFILE" > "$PROFILE_PLIST"
+            UUID=$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$PROFILE_PLIST")
+            NAME=$(/usr/libexec/PlistBuddy -c 'Print :Name' "$PROFILE_PLIST")
+            TEAM=$(/usr/libexec/PlistBuddy -c 'Print :TeamIdentifier:0' "$PROFILE_PLIST")
+            test "$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:application-identifier' "$PROFILE_PLIST")" = "$TEAM.$BUNDLE"
+            test "$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:com.apple.security.application-groups:0' "$PROFILE_PLIST")" = 'group.com.syntheticae.rimba'
+            cp "$TEMP_PROFILE" "$PROFILES_DIR/$UUID.mobileprovision"
+            echo "${PREFIX}_NAME=$NAME" >> "$GITHUB_ENV"
+            echo "APPLE_TEAM_ID=$TEAM" >> "$GITHUB_ENV"
+            rm -f "$TEMP_PROFILE" "$PROFILE_PLIST"
+          done
 
-          TEMP_PROFILE="$RUNNER_TEMP/appstore.mobileprovision"
-          echo "$PROFILE_BASE64" | base64 --decode > "$TEMP_PROFILE"
-
-          # Ekstrak metadata UUID & Name dari file profile
-          PROFILE_PLIST="$RUNNER_TEMP/profile.plist"
-          security cms -D -i "$TEMP_PROFILE" > "$PROFILE_PLIST"
-
-          PROFILE_UUID=$(/usr/libexec/PlistBuddy -c "Print :UUID" "$PROFILE_PLIST")
-          PROFILE_NAME=$(/usr/libexec/PlistBuddy -c "Print :Name" "$PROFILE_PLIST")
-          TEAM_ID=$(/usr/libexec/PlistBuddy -c "Print :TeamIdentifier:0" "$PROFILE_PLIST")
-
-          cp "$TEMP_PROFILE" "$PROFILES_DIR/$PROFILE_UUID.mobileprovision"
-
-          echo "Installed Provisioning Profile: $PROFILE_NAME"
-          echo "UUID: $PROFILE_UUID"
-          echo "Team ID: $TEAM_ID"
-          echo "PROFILE_NAME=$PROFILE_NAME" >> $GITHUB_ENV
-          echo "PROFILE_UUID=$PROFILE_UUID" >> $GITHUB_ENV
-          echo "APPLE_TEAM_ID=$TEAM_ID" >> $GITHUB_ENV
-          rm -f "$TEMP_PROFILE" "$PROFILE_PLIST"
-
-      - name: Configure Target App Manual Signing & Versioning
+      - name: Configure App and Widget Manual Signing and Versioning
         env:
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID || env.APPLE_TEAM_ID || 'VU4PP3SY5B' }}
-          PROFILE_NAME: ${{ env.PROFILE_NAME }}
           BUILD_NUMBER: ${{ github.run_number }}
-        run: |
-          node -e '
-            const fs = require("fs");
-            const pbxPath = "ios/App/App.xcodeproj/project.pbxproj";
-            let content = fs.readFileSync(pbxPath, "utf8");
-
-            const buildNum = process.env.BUILD_NUMBER || "1";
-            const teamId = process.env.APPLE_TEAM_ID || "VU4PP3SY5B";
-            const profileName = process.env.PROFILE_NAME;
-
-            console.log(`Setting CURRENT_PROJECT_VERSION to build #${buildNum}`);
-            content = content.replace(/CURRENT_PROJECT_VERSION = [^;]+;/g, `CURRENT_PROJECT_VERSION = ${buildNum};`);
-
-            // Kunci signing hanya pada Target App (Release) agar pods & SPM packages tidak terganggu
-            const releaseTargetRegex = /(504EC3181FED79650016851F \/\* Release \*\/ = {[\s\S]*?buildSettings = {)([\s\S]*?)(};[\s\S]*?name = Release;)/;
-
-            if (!releaseTargetRegex.test(content)) {
-              console.error("Target App Release configuration not found in project.pbxproj!");
-              process.exit(1);
-            }
-
-            content = content.replace(releaseTargetRegex, (match, prefix, settings, suffix) => {
-              let newSettings = settings;
-              newSettings = newSettings.replace(/CODE_SIGN_STYLE = [^;]+;/, "CODE_SIGN_STYLE = Manual;");
-              
-              if (!newSettings.includes("DEVELOPMENT_TEAM =")) {
-                newSettings += `\n\t\t\t\tDEVELOPMENT_TEAM = ${teamId};`;
-              } else {
-                newSettings = newSettings.replace(/DEVELOPMENT_TEAM = [^;]+;/, `DEVELOPMENT_TEAM = ${teamId};`);
-              }
-
-              if (!newSettings.includes("PROVISIONING_PROFILE_SPECIFIER =")) {
-                newSettings += `\n\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = "${profileName}";`;
-              } else {
-                newSettings = newSettings.replace(/PROVISIONING_PROFILE_SPECIFIER = [^;]+;/, `PROVISIONING_PROFILE_SPECIFIER = "${profileName}";`);
-              }
-
-              if (!newSettings.includes("\"CODE_SIGN_IDENTITY[sdk=iphoneos*]\" =")) {
-                newSettings += `\n\t\t\t\t"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Distribution";`;
-              }
-              return prefix + newSettings + suffix;
-            });
-
-            fs.writeFileSync(pbxPath, content, "utf8");
-            console.log("Successfully configured manual signing for target App (Release) only.");
-          '
+        run: node scripts/configure-ios-signing.cjs
 
       - name: Archive Xcode Project
         run: |
@@ -209,6 +159,8 @@ jobs:
               <dict>
                   <key>com.syntheticae.rimba</key>
                   <string>${{ env.PROFILE_NAME }}</string>
+                  <key>com.syntheticae.rimba.widgets</key>
+                  <string>${{ env.WIDGET_PROFILE_NAME }}</string>
               </dict>
               <key>destination</key>
               <string>export</string>
@@ -233,6 +185,20 @@ jobs:
           fi
           cp "$IPA_FOUND" build/App.ipa
           echo "App.ipa successfully prepared at build/App.ipa ($(ls -lh build/App.ipa | awk '{print $5}'))"
+
+      - name: Verify signed embedded widget
+        run: |
+          APP=build/App.xcarchive/Products/Applications/App.app
+          WIDGET="$APP/PlugIns/RimbaWidgets.appex"
+          test -d "$WIDGET"
+          codesign --verify --deep --strict "$APP"
+          for TARGET in "$APP" "$WIDGET"; do
+            codesign -d --entitlements :- "$TARGET" > build/widget-entitlements.plist
+            test "$(/usr/libexec/PlistBuddy -c 'Print :com.apple.security.application-groups:0' build/widget-entitlements.plist)" = 'group.com.syntheticae.rimba'
+          done
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Info.plist")" = "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$WIDGET/Info.plist")"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Info.plist")" = "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$WIDGET/Info.plist")"
+          unzip -l build/App.ipa | grep 'PlugIns/RimbaWidgets.appex/Info.plist'
 
       - name: Upload Build Artifact to GitHub
         uses: actions/upload-artifact@v4

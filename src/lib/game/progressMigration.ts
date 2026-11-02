@@ -1,5 +1,5 @@
 import { GAME_CONFIG } from './config';
-import { saveStorageKey } from './storage';
+import { createInitialSaveData, saveStorageKey } from './storage';
 import { validateRimbaBackup, BackupValidationResult } from './backupManager';
 import { hasMeaningfulProgress } from '../supabase/syncJournal';
 
@@ -13,50 +13,43 @@ export interface ProgressMigration {
 const choiceKey = (owner: string, kind: ProgressMigration['kind']) =>
   'rimba_progress_choice:' + encodeURIComponent(owner) + ':' + kind;
 
-const choiceDoneKey = (owner: string, kind: ProgressMigration['kind']) =>
-  'rimba_progress_choice_done:' + encodeURIComponent(owner) + ':' + kind;
+function starterComparable(save: NonNullable<BackupValidationResult['data']>): string {
+  // Starter generation varies these timestamps and ledger IDs on each device.
+  // Compare everything else conservatively, including names, rewards and balances.
+  const comparable = {
+    ...save,
+    currency_ledger: save.currency_ledger.map(({ id: _id, ...entry }) => entry),
+  };
+  return JSON.stringify(comparable, (key, value) => {
+    if (key === 'created_at' || key === 'last_focus_completed_at') return undefined;
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      return Object.fromEntries(Object.keys(value).sort().map((k) => [k, value[k]]));
+    }
+    return value;
+  });
+}
 
 export async function getProgressMigration(owner: string): Promise<ProgressMigration | null> {
   if (!owner) return null;
-
-  // If the active owner already has their own saved sessions, do not nag with migration prompts
-  try {
-    const ownerRaw = localStorage.getItem(saveStorageKey(owner));
-    if (ownerRaw) {
-      const ownerVal = validateRimbaBackup(ownerRaw);
-      if (ownerVal.isValid && ownerVal.data && hasMeaningfulProgress(ownerVal.data)) {
-        return null;
-      }
-    }
-  } catch {}
 
   const sources: Array<[ProgressMigration['kind'], string]> = [['legacy', GAME_CONFIG.storageKey]];
   if (owner !== 'guest') sources.push(['guest', saveStorageKey('guest')]);
 
   for (const [kind, key] of sources) {
-    if (localStorage.getItem(choiceDoneKey(owner, kind)) === '1') continue;
-
     const raw = localStorage.getItem(key);
     if (!raw) continue;
 
     const validation = validateRimbaBackup(raw);
-    if (!validation.isValid || !validation.data) {
-      // Do not block login for empty/stale legacy keys; remember dismissal automatically
-      localStorage.setItem(choiceDoneKey(owner, kind), '1');
-      continue;
-    }
-
-    const s = validation.data;
-    // Skip starter/empty saves for BOTH legacy and guest
-    if (!hasMeaningfulProgress(s)) {
-      localStorage.setItem(choiceDoneKey(owner, kind), '1');
-      continue;
+    // Recheck empty saves on every lookup so later progress is still offered.
+    // Invalid sources remain available for original-data export.
+    if (validation.isValid && validation.data && !hasMeaningfulProgress(validation.data)) {
+      const starter = validateRimbaBackup(createInitialSaveData()).data!;
+      if (starterComparable(validation.data) === starterComparable(starter)) continue;
     }
 
     const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw));
     const fingerprint = Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, '0')).join('');
     if (localStorage.getItem(choiceKey(owner, kind)) === fingerprint) {
-      localStorage.setItem(choiceDoneKey(owner, kind), '1');
       continue;
     }
 
@@ -67,10 +60,4 @@ export async function getProgressMigration(owner: string): Promise<ProgressMigra
 
 export function rememberProgressChoice(owner: string, source: ProgressMigration): void {
   localStorage.setItem(choiceKey(owner, source.kind), source.fingerprint);
-  localStorage.setItem(choiceDoneKey(owner, source.kind), '1');
-  if (source.kind === 'legacy') {
-    try {
-      localStorage.removeItem(GAME_CONFIG.storageKey);
-    } catch {}
-  }
 }

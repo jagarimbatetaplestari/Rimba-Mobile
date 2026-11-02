@@ -45,6 +45,11 @@ jobs:
           EXPECTED_SCHEME="com.googleusercontent.apps.${NEXT_PUBLIC_GOOGLE_IOS_CLIENT_ID%.apps.googleusercontent.com}"
           ACTUAL_SCHEME=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleURLTypes:0:CFBundleURLSchemes:0' ios/App/App/Info.plist)
           test "$ACTUAL_SCHEME" = "$EXPECTED_SCHEME"
+      - name: Verify native widget data and one-shot actions
+        run: |
+          mkdir -p build
+          swiftc ios/App/Shared/RimbaWidgetData.swift tests/native/WidgetDataTests.swift -o build/widget-data-tests
+          build/widget-data-tests
       - name: Compile iPhone and iPad simulator app without signing
         run: |
           set -o pipefail
@@ -68,6 +73,10 @@ jobs:
               console.log("Verified iPhone and iPad device families");
             });
           '
+          test -d "$APP/PlugIns/RimbaWidgets.appex"
+          test -f "$APP/PlugIns/RimbaWidgets.appex/PrivacyInfo.xcprivacy"
+          test -f "$APP/PrivacyInfo.xcprivacy"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/PlugIns/RimbaWidgets.appex/Info.plist")" = 'com.syntheticae.rimba.widgets'
           find "$APP" -name PrivacyInfo.xcprivacy -print
           ditto -c -k --keepParent "$APP" build/Rimba-Simulator.app.zip
       - name: Capture native iPhone and iPad screenshots

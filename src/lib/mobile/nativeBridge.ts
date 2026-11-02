@@ -382,14 +382,9 @@ export function initAppLifecycleListeners(): () => void {
       }
     });
 
-    const urlPromise = App.addListener('appUrlOpen', ({ url }) => {
-      if (!url) return;
-      window.dispatchEvent(new CustomEvent('rimba:deep_link', { detail: { url } }));
-    });
 
     cleanup = () => {
       statePromise.then((handle) => handle.remove()).catch(() => {});
-      urlPromise.then((handle) => handle.remove()).catch(() => {});
     };
   }
 

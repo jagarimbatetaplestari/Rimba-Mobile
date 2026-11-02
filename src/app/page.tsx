@@ -40,6 +40,8 @@ import { CampfireRoomModal } from "@/components/modals/CampfireRoomModal";
 import { IslandSwitcherModal } from "@/components/modals/IslandSwitcherModal";
 import { RimbaProPaywallModal } from "@/components/modals/RimbaProPaywallModal";
 import { syncMobileStatusBar, initAppLifecycleListeners } from "@/lib/mobile/nativeBridge";
+import { useNativeWidgetActions } from "@/lib/mobile/useNativeWidgetActions";
+import { parseWidgetAction } from "@/lib/mobile/widgetActions";
 import { syncWidgetsWithSaveData } from "@/lib/mobile/widgetBridge";
 import { setupBackgroundGuard } from "@/lib/mobile/backgroundTimerGuard";
 import { getDailyQuestStatus } from "@/lib/game/quests";
@@ -426,11 +428,11 @@ export default function RimbaDioramaApp() {
         const rawUrl = (e as CustomEvent<{ url?: string }>).detail?.url || "";
         if (!rawUrl) return;
         try {
-          const parsed = new URL(rawUrl);
-          const host = parsed.host || parsed.pathname.replace(/^\/+/, "");
+          const action = parseWidgetAction(rawUrl);
+          if (!action) return;
+          const host = action.route;
           if (host === "focus") {
-            const mins = parseInt(parsed.searchParams.get("minutes") || "25", 10);
-            const safeMins = Number.isFinite(mins) && mins >= 5 && mins <= 120 ? mins : 25;
+            const safeMins = action.route === "focus" ? action.minutes : 25;
             const store = useGameStore.getState();
             store.setFocusSetup({ minutes: safeMins });
             if (!store.activeSession) {
@@ -482,6 +484,8 @@ export default function RimbaDioramaApp() {
       };
     }
   }, [isAuthHydrated, authUser]);
+
+  useNativeWidgetActions(isInitialized && isAuthHydrated && !!authUser && !ownershipError);
 
   // Sync mobile status bar with atmosphere (day/night)
   useEffect(() => {

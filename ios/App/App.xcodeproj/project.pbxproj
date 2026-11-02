@@ -16,6 +16,14 @@
 		504EC3121FED79650016851F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC3101FED79650016851F /* LaunchScreen.storyboard */; };
 		50B271D11FEDC1A000F3C39B /* public in Resources */ = {isa = PBXBuildFile; fileRef = 50B271D01FEDC1A000F3C39B /* public */; };
 		A084ECDBA7D38E1E42DFC39D /* Pods_App.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AF277DCFFFF123FFC6DF26C7 /* Pods_App.framework */; };
+		B8705024C70E40E0A4F3C502 /* RimbaWidgets.appex in Copy Files */ = {isa = PBXBuildFile; fileRef = 36E2B0FB93C44BE7945C3D40 /* RimbaWidgets.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		675BB8ACD48948FE983623F2 /* RimbaWidgetsBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03660AE48E2846DEA9202336 /* RimbaWidgetsBundle.swift */; };
+		6FED574281F943E58A02DF89 /* RimbaWidgetData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B4D1F7B5E314D8E840D0B8A /* RimbaWidgetData.swift */; };
+		960CE69ABCC54FE09F0BF35F /* StartRimbaFocusIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02963407780342CEA2CC4A83 /* StartRimbaFocusIntent.swift */; };
+		45A779F293314248A2FF0192 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 0C97F07DDB4E4583AEABF807 /* PrivacyInfo.xcprivacy */; };
+		7C5CFEF1BD7146B2A6BB31C6 /* RimbaWidgetData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B4D1F7B5E314D8E840D0B8A /* RimbaWidgetData.swift */; };
+		C4A1DE594B2D47B7A9BF62E7 /* StartRimbaFocusIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02963407780342CEA2CC4A83 /* StartRimbaFocusIntent.swift */; };
+		4FEF4D907B6140E894185278 /* RimbaBridgeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9218CCD84664454EA8C30A61 /* RimbaBridgeViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -33,6 +41,12 @@
 		AF277DCFFFF123FFC6DF26C7 /* Pods_App.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_App.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		AF51FD2D460BCFE21FA515B2 /* Pods-App.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-App.release.xcconfig"; path = "Pods/Target Support Files/Pods-App/Pods-App.release.xcconfig"; sourceTree = "<group>"; };
 		FC68EB0AF532CFC21C3344DD /* Pods-App.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-App.debug.xcconfig"; path = "Pods/Target Support Files/Pods-App/Pods-App.debug.xcconfig"; sourceTree = "<group>"; };
+		36E2B0FB93C44BE7945C3D40 /* RimbaWidgets.appex */ = {isa = PBXFileReference; name = "RimbaWidgets.appex"; path = "RimbaWidgets.appex"; sourceTree = BUILT_PRODUCTS_DIR; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; };
+		03660AE48E2846DEA9202336 /* RimbaWidgetsBundle.swift */ = {isa = PBXFileReference; name = "RimbaWidgetsBundle.swift"; path = "RimbaWidgets/RimbaWidgetsBundle.swift"; sourceTree = SOURCE_ROOT; fileEncoding = 4; lastKnownFileType = sourcecode.swift; includeInIndex = 0; };
+		0B4D1F7B5E314D8E840D0B8A /* RimbaWidgetData.swift */ = {isa = PBXFileReference; name = "RimbaWidgetData.swift"; path = "Shared/RimbaWidgetData.swift"; sourceTree = SOURCE_ROOT; fileEncoding = 4; lastKnownFileType = sourcecode.swift; includeInIndex = 0; };
+		02963407780342CEA2CC4A83 /* StartRimbaFocusIntent.swift */ = {isa = PBXFileReference; name = "StartRimbaFocusIntent.swift"; path = "Shared/StartRimbaFocusIntent.swift"; sourceTree = SOURCE_ROOT; fileEncoding = 4; lastKnownFileType = sourcecode.swift; includeInIndex = 0; };
+		0C97F07DDB4E4583AEABF807 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; name = "PrivacyInfo.xcprivacy"; path = "Shared/PrivacyInfo.xcprivacy"; sourceTree = SOURCE_ROOT; lastKnownFileType = text.xml; includeInIndex = 0; };
+		9218CCD84664454EA8C30A61 /* RimbaBridgeViewController.swift */ = {isa = PBXFileReference; name = "RimbaBridgeViewController.swift"; path = "App/RimbaBridgeViewController.swift"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.swift; includeInIndex = 0; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -41,6 +55,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				A084ECDBA7D38E1E42DFC39D /* Pods_App.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E3324EFAA73C49A1847E3DF8 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -62,6 +83,11 @@
 				504EC3051FED79650016851F /* Products */,
 				7F8756D8B27F46E3366F6CEA /* Pods */,
 				27E2DDA53C4D2A4D1A88CE4A /* Frameworks */,
+				9218CCD84664454EA8C30A61 /* RimbaBridgeViewController.swift */,
+				03660AE48E2846DEA9202336 /* RimbaWidgetsBundle.swift */,
+				0B4D1F7B5E314D8E840D0B8A /* RimbaWidgetData.swift */,
+				02963407780342CEA2CC4A83 /* StartRimbaFocusIntent.swift */,
+				0C97F07DDB4E4583AEABF807 /* PrivacyInfo.xcprivacy */,
 			);
 			sourceTree = "<group>";
 		};
@@ -69,6 +95,7 @@
 			isa = PBXGroup;
 			children = (
 				504EC3041FED79650016851F /* App.app */,
+				36E2B0FB93C44BE7945C3D40 /* RimbaWidgets.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -111,15 +138,34 @@
 				504EC3011FED79650016851F /* Frameworks */,
 				504EC3021FED79650016851F /* Resources */,
 				9592DBEFFC6D2A0C8D5DEB22 /* [CP] Embed Pods Frameworks */,
+				435F280083E649E0AEB79BD6 /* Copy Files */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				80DD1D2178174884AEA3AFCE /* PBXTargetDependency */,
 			);
 			name = App;
 			productName = App;
 			productReference = 504EC3041FED79650016851F /* App.app */;
 			productType = "com.apple.product-type.application";
+		};
+		41B293E98228474796EC32B7 /* "RimbaWidgets" */ = {
+			isa = PBXNativeTarget;
+			name = "RimbaWidgets";
+			productName = "RimbaWidgets";
+			productReference = 36E2B0FB93C44BE7945C3D40;
+			productType = "com.apple.product-type.app-extension";
+			buildConfigurationList = 0ED1540B5B7645DBA07F44C1;
+			buildPhases = (
+				9F5ECA91270045ABB3B830C1 /* Sources */,
+				E3324EFAA73C49A1847E3DF8 /* Frameworks */,
+				233C4F69A8FC494DA1650C1E /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
 		};
 /* End PBXNativeTarget section */
 
@@ -127,8 +173,8 @@
 		504EC2FC1FED79650016851F /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastSwiftUpdateCheck = 0920;
-				LastUpgradeCheck = 0920;
+				LastSwiftUpdateCheck = 920;
+				LastUpgradeCheck = 920;
 				TargetAttributes = {
 					504EC3031FED79650016851F = {
 						CreatedOnToolsVersion = 9.2;
@@ -153,6 +199,7 @@
 			projectRoot = "";
 			targets = (
 				504EC3031FED79650016851F /* App */,
+				41B293E98228474796EC32B7 /* "RimbaWidgets" */,
 			);
 		};
 /* End PBXProject section */
@@ -168,6 +215,14 @@
 				50379B232058CBB4000EE86E /* capacitor.config.json in Resources */,
 				504EC30D1FED79650016851F /* Main.storyboard in Resources */,
 				2FAD9763203C412B000D30F8 /* config.xml in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		233C4F69A8FC494DA1650C1E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				45A779F293314248A2FF0192 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -216,6 +271,19 @@
 			files = (
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
 				504EC3211FED79650016851F /* RimbaWidgetBridgePlugin.swift in Sources */,
+				7C5CFEF1BD7146B2A6BB31C6 /* RimbaWidgetData.swift in Sources */,
+				C4A1DE594B2D47B7A9BF62E7 /* StartRimbaFocusIntent.swift in Sources */,
+				4FEF4D907B6140E894185278 /* RimbaBridgeViewController.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9F5ECA91270045ABB3B830C1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				675BB8ACD48948FE983623F2 /* RimbaWidgetsBundle.swift in Sources */,
+				6FED574281F943E58A02DF89 /* RimbaWidgetData.swift in Sources */,
+				960CE69ABCC54FE09F0BF35F /* StartRimbaFocusIntent.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -389,6 +457,50 @@
 			};
 			name = Release;
 		};
+		9DCD6CDF4CD242DA99AF456E /* Debug */ = {
+			name = Debug;
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				INFOPLIST_FILE = RimbaWidgets/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.syntheticae.rimba.widgets;
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = RimbaWidgets/RimbaWidgets.entitlements;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				CURRENT_PROJECT_VERSION = 1;
+				MARKETING_VERSION = 1.0;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+		};
+		615D318126CA4DB49F73744B /* Release */ = {
+			name = Release;
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				INFOPLIST_FILE = RimbaWidgets/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.syntheticae.rimba.widgets;
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = RimbaWidgets/RimbaWidgets.entitlements;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				CURRENT_PROJECT_VERSION = 1;
+				MARKETING_VERSION = 1.0;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -410,7 +522,48 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		0ED1540B5B7645DBA07F44C1 /* Build configuration list for PBXNativeTarget "RimbaWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9DCD6CDF4CD242DA99AF456E /* Debug */,
+				615D318126CA4DB49F73744B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		435F280083E649E0AEB79BD6 /* Copy Files */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B8705024C70E40E0A4F3C502 /* RimbaWidgets.appex in Copy Files */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			name = "Copy Files";
+			dstPath = "";
+			dstSubfolderSpec = 13;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		80DD1D2178174884AEA3AFCE /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 41B293E98228474796EC32B7 /* "RimbaWidgets" */;
+			targetProxy = 7F11EDFD16BB4F1EB5127E93 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXContainerItemProxy section */
+		7F11EDFD16BB4F1EB5127E93 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 504EC2FC1FED79650016851F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 41B293E98228474796EC32B7;
+			remoteInfo = "RimbaWidgets";
+		};
+/* End PBXContainerItemProxy section */
 	};
 	rootObject = 504EC2FC1FED79650016851F /* Project object */;
 }

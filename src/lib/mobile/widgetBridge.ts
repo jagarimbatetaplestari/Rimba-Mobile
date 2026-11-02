@@ -1,6 +1,6 @@
 'use client';
 
-import { Capacitor, registerPlugin } from '@capacitor/core';
+import { Capacitor, registerPlugin, PluginListenerHandle } from '@capacitor/core';
 import { RimbaSaveData, FocusSession } from '@/types/game';
 import { calculateAnalytics, getStreakMilestone } from '@/lib/game/analytics';
 import { getLevelFromXp, getLevelMetadata } from '@/lib/game/levelRules';
@@ -28,6 +28,7 @@ export interface RimbaWidgetPayload {
   activeBiome: string;
   quickPresetMinutes: number;
   isFocusActive: boolean;
+  isFocusPaused: boolean;
   activeSessionTag: string | null;
   activeSessionSpecies: string | null;
   activeSessionEndsAt: string | null;
@@ -36,7 +37,16 @@ export interface RimbaWidgetPayload {
 
 interface RimbaWidgetBridgePluginInterface {
   syncWidgetState(options: { payload: string }): Promise<{ synced: boolean }>;
-  reloadWidgets(): Promise<{ reloaded: boolean }>;
+  getWidgetStatus(): Promise<WidgetStatus>;
+  consumePendingAction(): Promise<{ url?: string }>;
+  clearWidgetState(): Promise<{ cleared: boolean }>;
+  addListener(event: 'widgetActionQueued', callback: () => void): Promise<PluginListenerHandle>;
+}
+
+export interface WidgetStatus {
+  available: boolean;
+  controlsSupported: boolean;
+  installedWidgets?: number;
 }
 
 const RimbaWidgetBridgeNative = registerPlugin<RimbaWidgetBridgePluginInterface>('RimbaWidgetBridge');
@@ -45,6 +55,26 @@ export const WIDGET_STORAGE_KEY = 'rimba_widget_telemetry_v1';
 export const WIDGET_PRESET_MINUTES_KEY = 'rimba_widget_quick_minutes';
 
 let lastSyncedSignature = '';
+let widgetOwnerRevision = 0;
+let nativeQueue: Promise<unknown> = Promise.resolve();
+const isNativeIOS = () => typeof window !== 'undefined' && Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios';
+
+export async function getNativeWidgetStatus(): Promise<WidgetStatus> {
+  if (isNativeIOS()) {
+    try { return await RimbaWidgetBridgeNative.getWidgetStatus(); } catch { /* Older build has no registered bridge. */ }
+  }
+  return { available: false, controlsSupported: false };
+}
+
+export async function consumeNativeWidgetAction(): Promise<string | undefined> {
+  if (!isNativeIOS()) return;
+  try { return (await RimbaWidgetBridgeNative.consumePendingAction()).url; } catch { return; }
+}
+
+export async function listenForNativeWidgetActions(callback: () => void): Promise<PluginListenerHandle | undefined> {
+  if (!isNativeIOS()) return;
+  try { return await RimbaWidgetBridgeNative.addListener('widgetActionQueued', callback); } catch { return; }
+}
 
 export function getWidgetQuickPresetMinutes(): number {
   if (typeof window === 'undefined') return 25;
@@ -110,6 +140,7 @@ export function buildWidgetPayload(
     activeBiome: saveData.active_biome || 'meadow',
     quickPresetMinutes: getWidgetQuickPresetMinutes(),
     isFocusActive,
+    isFocusPaused: isFocusActive && Boolean(activeSession?.paused_at),
     activeSessionTag: isFocusActive ? activeSession?.tag || null : null,
     activeSessionSpecies: isFocusActive ? activeSession?.species || null : null,
     activeSessionEndsAt: isFocusActive ? activeSession?.expected_end_at || null : null,
@@ -126,38 +157,35 @@ export async function syncWidgetsWithSaveData(
   saveData: RimbaSaveData,
   activeSession?: FocusSession | null,
   force = false
-): Promise<RimbaWidgetPayload> {
+): Promise<RimbaWidgetPayload & { nativeSynced: boolean }> {
   const payload = buildWidgetPayload(saveData, activeSession);
   const signatureObj = { ...payload, updatedAt: '' };
   const signature = JSON.stringify(signatureObj);
 
   if (!force && signature === lastSyncedSignature) {
-    return payload;
+    return { ...payload, nativeSynced: true };
   }
-  lastSyncedSignature = signature;
-
-  const serialized = JSON.stringify(payload);
-  if (typeof window !== 'undefined') {
+  if (!isNativeIOS()) return { ...payload, nativeSynced: false };
+  // Widgets need aggregates and timer state, never the user's name or private focus label.
+  const { rangerName: _name, activeSessionTag: _tag, ...shared } = payload;
+  const serialized = JSON.stringify(shared);
+  const revision = widgetOwnerRevision;
+  const operation = nativeQueue.then(async () => {
+    if (revision !== widgetOwnerRevision) return false;
     try {
-      localStorage.setItem(WIDGET_STORAGE_KEY, serialized);
-    } catch {
-      // ignore
-    }
-  }
-
-  if (typeof window !== 'undefined' && Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios') {
-    try {
-      await RimbaWidgetBridgeNative.syncWidgetState({ payload: serialized });
-    } catch {
-      // Native plugin gracefully falls back if not yet active
-    }
-  }
-
-  return payload;
+      const result = await RimbaWidgetBridgeNative.syncWidgetState({ payload: serialized });
+      if (!result.synced || revision !== widgetOwnerRevision) return false;
+      lastSyncedSignature = signature;
+      return true;
+    } catch { return false; }
+  });
+  nativeQueue = operation;
+  return { ...payload, nativeSynced: await operation };
 }
 
 export async function clearWidgetCacheOnSignOut(): Promise<void> {
   lastSyncedSignature = '';
+  widgetOwnerRevision += 1;
   if (typeof window !== 'undefined') {
     try {
       localStorage.removeItem(WIDGET_STORAGE_KEY);
@@ -165,11 +193,9 @@ export async function clearWidgetCacheOnSignOut(): Promise<void> {
       // ignore
     }
   }
-  if (typeof window !== 'undefined' && Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios') {
-    try {
-      await RimbaWidgetBridgeNative.syncWidgetState({ payload: '{}' });
-    } catch {
-      // ignore
-    }
+  if (isNativeIOS()) {
+    const operation = nativeQueue.then(() => RimbaWidgetBridgeNative.clearWidgetState()).catch(() => undefined);
+    nativeQueue = operation;
+    await operation;
   }
 }

@@ -1,4 +1,4 @@
-import { create } from 'zustand';
+﻿import { create } from 'zustand';
 import { supabase } from './client';
 import { RimbaSaveData } from '@/types/game';
 import { useAuthStore } from '../auth/useAuthStore';
@@ -315,7 +315,7 @@ function applyCloudSave(owner: string, cloud: RimbaSaveData) {
     profile: {
       ...current.profile,
       ...cloud.profile,
-      id: owner,
+      id: 'local-user' as const,
       name: resolvedName,
       avatarUrl: resolvedAvatar,
       bio: resolvedBio,
@@ -497,3 +497,4 @@ export function scheduleDebouncedCloudSync() {
     void uploadGameSaveToCloud(useGameStore.getState().saveData, user.id, generation);
   }, 4000);
 }
+

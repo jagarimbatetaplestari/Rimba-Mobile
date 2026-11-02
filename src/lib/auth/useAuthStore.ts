@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
@@ -175,7 +175,7 @@ async function buildAuthUserFromSupabase(
     profile?.avatar_url ||
     supaUser.user_metadata?.avatar_url ||
     supaUser.user_metadata?.picture ||
-    '🦌';
+    'ðŸ¦Œ';
 
   return {
     id: userId,
@@ -206,13 +206,13 @@ export const useAuthStore = create<AuthState>()(
                     ...saveData,
                     profile: {
                       ...saveData.profile,
-                      id: nextUser.id,
+                      id: 'local-user' as const,
                       name:
                         saveData.profile.name && saveData.profile.name !== 'Penjaga Rimba'
                           ? saveData.profile.name
                           : nextUser.name || saveData.profile.name,
                       avatarUrl:
-                        saveData.profile.avatarUrl && saveData.profile.avatarUrl !== '🦌'
+                        saveData.profile.avatarUrl && saveData.profile.avatarUrl !== 'ðŸ¦Œ'
                           ? saveData.profile.avatarUrl
                           : nextUser.avatarUrl || saveData.profile.avatarUrl,
                       bio: nextUser.bio || saveData.profile.bio,
@@ -317,7 +317,7 @@ export const useAuthStore = create<AuthState>()(
             email: '',
             name: customName,
             bio: 'Penjelajah Rimba Baru',
-            avatarUrl: '🦌',
+            avatarUrl: 'ðŸ¦Œ',
             isGuest: true,
             createdAt: new Date().toISOString(),
           };
@@ -838,7 +838,7 @@ export const useAuthStore = create<AuthState>()(
                 id: currentUser.id,
                 display_name: updatedUser.name,
                 bio: updatedUser.bio || 'Penjaga Hutan Suaka',
-                avatar_url: updatedUser.avatarUrl || '🦌',
+                avatar_url: updatedUser.avatarUrl || 'ðŸ¦Œ',
                 updated_at: new Date().toISOString(),
               })
               .then(() => {});
@@ -992,3 +992,4 @@ export const useAuthStore = create<AuthState>()(
     }
   )
 );
+

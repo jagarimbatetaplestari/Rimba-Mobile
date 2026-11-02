@@ -18,7 +18,7 @@ Scope: iPhone+iPad, global excluding27EU territories, Free/Pro, virtual trees on
 | FOCUS-01 | P1 | Paused time counted as focus; completion replay mints different IDs | Fourteen production-rule regressions pass; normal/Zen display aligned. Native clock/background/force-close matrix pending. |
 | SOCIAL-01 | P1 | Campfire/leaderboard authorization and moderation not proven | OPEN. Audit and production behavior tests required; do not claim moderation complete. |
 | NATIVE-01 | P1 | Native dependency compilation failed | RevenueCat9.2.2 resolves ambiguity; a23af77 unsigned iPhone+iPad CI passed. Newer commits must pass again. |
-| NATIVE-02 | P1 | Release binary and device matrix missing | OPEN. Latest ASC binary remains old1.0(3); candidate is not TestFlight-ready yet. |
+| NATIVE-02 | P1 | Release binary and device matrix missing | OPEN. ASC1.0(5) VALID and Internal testing; physical-device acceptance pending. |
 | STORE-01 | P1 | Listing/territory/privacy incomplete | en-US/id version listing+subtitle+public privacy URL saved. App and product territory exclusion verified. Productivity category, content rights, regional age ratings and8-type App Privacy published with owner approval. Screenshots, reviewer access and final draft validation OPEN. |
 | RELEASE-01 | P1 | Publish before all gates pass | OPEN. No review submission authorized or performed for Rimba. No100%readiness claim. |
 
@@ -31,6 +31,6 @@ Scope: iPhone+iPad, global excluding27EU territories, Free/Pro, virtual trees on
 | AUTH-LOGOUT-02 | P1 | Blank page reproduced from history.back/auth navigation race. Awaited local sign-out/client routing/history guard fixed; logout+guest browser pass. Apple native/A-B device matrix pending. |
 | AUTH-GOOGLE-02 | P1 | Release build omitted both public Google IDs. Workflow/preflight fixed with regressions; replacement native login pending. |
 | UI-LANG-02 | P2 | Loading/focus/Zen/species/menu localized; flyouts revised. Tests and EN/ID core browser pass; native visual audit pending. |
-| SOCIAL-02 | P1 | RPC/moderation/recovery candidate with24database/31store tests; NOT deployed. Moderator assignment, retention, privacy/adversarial/native gates open. |
+| SOCIAL-02 | P1 | RPC/moderation/recovery migration and approved daily retention deployed; production privilege/rollback authorization checks passed. Public privacy published. Moderator registration/assignment and native acceptance remain open. |
 
 For chronology and test logs see EXECUTION_LOG.md. Do not close device/production gates solely because unit tests or unsigned simulator compilation passed.

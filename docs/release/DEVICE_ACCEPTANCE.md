@@ -1,6 +1,6 @@
 # Final candidate device acceptance
 
-Candidate source: `f64367307a1211004eaf757f118d4f77315a08de`. TestFlight build number must be recorded after Apple processing. Previous build 4 does not contain these fixes. Record results separately for iPhone and iPad; all rows remain unverified until tested on that build.
+Candidate source: `f64367307a1211004eaf757f118d4f77315a08de`. TestFlight 1.0 (5) is VALID and available to the Internal group, uploaded from 308215b (runtime unchanged from f643673). Previous build 4 does not contain these fixes. Record results separately for iPhone and iPad; all rows remain unverified until tested on that build.
 
 | Flow | Expected result | iPhone | iPad |
 | --- | --- | --- | --- |

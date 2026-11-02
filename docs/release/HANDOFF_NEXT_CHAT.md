@@ -2,6 +2,16 @@
 
 Diperbarui: 2 November 2026 (Asia/Jakarta).
 
+## Checkpoint rilis build 5 — 2 November 2026
+
+- TestFlight 1.0 (5), source 308215bd140a442bd9b20c57ce2e2d24228d9cbf (app runtime f643673), upload run 41376358841 SUCCESS. Apple API reports VALID; Internal beta group contains build5 and internalBuildState IN_BETA_TESTING. Draft version1.0 now selects build5. No review submitted.
+- OTP verification/paste and password recovery now accept full8digits; explicit verification supports6/8digits without auto-submit at6. ID/EN copy updated.324tests,155prelaunch,typecheck,production export passed.
+- Native verify41374567443 for f643673 completed SUCCESS, including all12screenshots. Browser log lag misled an earlier stall diagnosis; artifacts proved all three device sizes captured.308215b adds only bounded simctl commands/logging and docs. Follow-up native verify41375983476 still running screenshot step at last check; do not assume final success.
+- All12native screenshots visually checked and uploaded through current Apple Asset Library API; en-US/id placements use official IPHONE_DYNAMIC_ISLAND_MEDIUM_PROFILE, IPHONE_DYNAMIC_ISLAND_LARGE_PROFILE, IPAD_13_PROFILE.10images PREPARE_FOR_SUBMISSION/ACTIVE; iphone-medium-en-sanctuary and ipad-13-en-sanctuary remain UPLOAD_COMPLETE/PENDING (no stateDetails). Recheck processing; do not call every asset ready. Evidence: build/asc-assets-uploaded.json and asc-assets-verification.json (ignored/private operational artifacts).
+- Website4be7359 published on production main; public /privacy verified in both languages with November2 Campfire/90day disclosures. Monthly/annual/lifetime review notes saved. IAP review paywall screenshot and native sandbox acceptance remain pending.
+- Device acceptance request sent for exact build5; no result yet. See DEVICE_ACCEPTANCE.md. Owner support account must be registered before assigning moderator role; prior exact email lookup found0users.
+- Native simulator artifact inspected:16privacy manifests including GoogleSignIn8/RevenueCat and transitive Facebook frameworks. App config initializes Google only (Facebook requires explicit appId); do not infer active collection from framework presence. Google manifest declares more potential categories than current App Privacy inventory (coarse location/device/other usage), requiring final reconciliation with configured SDK behavior. Signed IPA5 audit remains open. Never mark Submit-ready from unit tests.
+
 ## Checkpoint terbaru — baca sebelum checkpoint lama
 
 - Pemilik menguji build4 dan melaporkan crash fokus, tombol subscription/delete macet, logout blank, Google gagal, bahasa campur, serta progres Apple terlihat pada tamu. Build4 belum layak rilis.

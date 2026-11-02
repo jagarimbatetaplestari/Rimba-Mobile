@@ -238,3 +238,10 @@ Current verification: 52/52 Vitest, mobile typecheck and npm run build passed af
 - Website4be7359 passed typecheck/build and was fast-forwarded to production main. Public /privacy verified in ID and EN with November2 date, Campfire evidence and90day retention disclosures.
 - Apple session renewed by owner. Monthly, annual and lifetime product review instructions saved; review screenshots and native billing acceptance remain open. DEVICE_ACCEPTANCE.md records the exact source and unverified device flows.
 - Screenshot runner stalled after its first device with unbounded simctl calls. Added command logging, bounded process timeouts and best-effort simulator cleanup; syntax and fictional-fixture regression passed. App runtime source remains f643673.
+
+### Build5 distribution checkpoint
+- Deploy41376358841 SUCCESS for308215b; Apple build06a89475-73bf-4b93-91db-0a958a1f0e7e version5 VALID, Internal group includes5, internal beta state IN_BETA_TESTING. Draft1.0 selected5 via API; no submission.
+- Correction: verify41374567443 actually finished SUCCESS with all12screenshots; the browser log was stale. f643673 runtime has native/screenshot evidence. Additional run41375983476 remains under observation.
+- All12native screenshots uploaded and placed using official Asset Library schema/reference groups.10active,2pending processing with no error details. Review notes for all3products saved; native paywall review screenshot pending.
+- SDK inventory:16privacy manifests in simulator app. GoogleSignIn8 declares potential coarse location/device/other usage beyond current inventory; final configuration-aware reconciliation and signed IPA audit remain OPEN. Facebook is linked by Capgo6.0.1 but Rimba initializes only Google, no Facebook appId; do not equate packaging with collection.
+- Requested owner tests on exact build5 and support-account registration. No device/purchase/deletion/moderation acceptance result received yet.

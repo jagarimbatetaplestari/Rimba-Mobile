@@ -2,14 +2,13 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Image from "next/image";
-import { STORY_CHAPTERS, StoryChapter } from "@/lib/game/storyLore";
+import { STORY_CHAPTERS } from "@/lib/game/storyLore";
 import { useGameStore } from "@/lib/game/useGameStore";
 import { useTranslation } from "@/lib/i18n/translations";
 import { soundManager } from "@/lib/audio/sounds";
 import {
   hapticLight,
-  hapticMedium,
-  hapticWarning,
+    hapticWarning,
   hapticSuccess,
 } from "@/lib/mobile/nativeBridge";
 import {

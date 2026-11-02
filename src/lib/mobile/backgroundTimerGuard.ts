@@ -2,16 +2,13 @@
 
 import { App, AppState } from '@capacitor/app';
 import { useGameStore } from '@/lib/game/useGameStore';
-import { isNativeMobile, hapticLight, hapticSuccess, hapticWarning } from './nativeBridge';
+import { isNativeMobile, hapticLight, hapticWarning } from './nativeBridge';
 import {
   fireStrictWarningNotification,
   dismissStrictWarningNotification,
   fireFocusPausedNotification,
   dismissFocusPausedNotification,
-  cancelPendingFocusNotifications,
-} from './notificationManager';
-import { soundManager } from '@/lib/audio/sounds';
-
+  } from './notificationManager';
 let gracePeriodTimeout: NodeJS.Timeout | null = null;
 let isGracePeriodActive = false;
 let gracePeriodStartTime = 0;

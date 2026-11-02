@@ -1,7 +1,9 @@
-import { RimbaSaveData, WorldObject } from '@/types/game';
+import { RimbaSaveData } from '@/types/game';
 import { calculateAnalytics } from './analytics';
 import { calculateBalances, createLedgerEntry } from './economy';
 import { getUnlockedTilesSet } from './worldRules';
+import { usePreferencesStore } from '@/lib/settings/usePreferencesStore';
+import { translateAchievement } from '@/lib/i18n/translations';
 
 export interface AchievementConfig {
   id: string;
@@ -145,16 +147,13 @@ export function evaluateAchievements(saveData: RimbaSaveData): {
   const unlockedTiles = getUnlockedTilesSet(saveData.world, worldObjects);
   const analytics = calculateAnalytics(saveData.focus_sessions);
 
-  // 1. Total Completed Focus Sessions
   const totalCompletedSessions = sessions.length;
 
-  // 2. Distinct tree species planted on island
   const activeTrees = worldObjects.filter(
     (o) => o.object_type === 'tree' && o.status === 'active'
   );
   const distinctSpecies = new Set(activeTrees.map((t) => t.species || 'oak')).size;
 
-  // 3. Night sessions
   const nightSessionsCount = sessions.filter((s) => {
     try {
       const date = new Date(s.started_at);
@@ -165,16 +164,10 @@ export function evaluateAchievements(saveData: RimbaSaveData): {
     }
   }).length;
 
-  // 4 & 5. Streaks
   const maxStreak = Math.max(analytics.currentStreak, analytics.longestStreak);
-
-  // 6. Unlocked Tiles
   const unlockedCount = unlockedTiles.size;
-
-  // 7. Distinct fauna species greeted
   const greetedSpeciesCount = Object.keys(saveData.animal_interactions || {}).length;
 
-  // 8. Bulldozer resolved
   const bulldozerHeroResolved = saveData.currency_ledger.some(
     (e) =>
       e.reason.includes('bribe') ||
@@ -184,16 +177,19 @@ export function evaluateAchievements(saveData: RimbaSaveData): {
     ? 1
     : 0;
 
-  // 9. Total Focus Minutes
-  const totalFocusMinutes = sessions.reduce(
-    (sum, s) => {
-      const mins = typeof s.duration_minutes === 'number'
+  const totalFocusMinutes = sessions.reduce((sum, s) => {
+    const mins =
+      typeof s.duration_minutes === 'number'
         ? s.duration_minutes
-        : Math.max(1, Math.round((new Date(s.completed_at || s.expected_end_at).getTime() - new Date(s.started_at).getTime()) / 60000));
-      return sum + mins;
-    },
-    0
-  );
+        : Math.max(
+            1,
+            Math.round(
+              (new Date(s.completed_at || s.expected_end_at).getTime() - new Date(s.started_at).getTime()) /
+                60000
+            )
+          );
+    return sum + mins;
+  }, 0);
 
   let unclaimedCount = 0;
   let completedCount = 0;
@@ -273,28 +269,32 @@ export interface ClaimAchievementResult {
 }
 
 /**
- * Claims the reward for a completed achievement.
+ * Claims the reward for a completed achievement (Bilingual ID/EN).
  */
 export function claimAchievementReward(
   achievementId: string,
   saveData: RimbaSaveData
 ): ClaimAchievementResult {
+  const lang = usePreferencesStore.getState().language || 'id';
+  const isEn = lang === 'en';
   const config = ACHIEVEMENTS_LIST.find((a) => a.id === achievementId);
   if (!config) {
     return {
       ok: false,
-      message: 'Prestasi tidak ditemukan.',
+      message: isEn ? 'Achievement not found.' : 'Prestasi tidak ditemukan.',
       goldEarned: 0,
       xpEarned: 0,
       updatedSaveData: saveData,
     };
   }
 
+  const localized = translateAchievement(config, lang);
+
   const claimedSet = new Set(saveData.claimed_achievements || []);
   if (claimedSet.has(achievementId)) {
     return {
       ok: false,
-      message: 'Hadiah prestasi ini sudah pernah diklaim!',
+      message: isEn ? 'This achievement reward has already been claimed!' : 'Hadiah prestasi ini sudah pernah diklaim!',
       goldEarned: 0,
       xpEarned: 0,
       updatedSaveData: saveData,
@@ -306,14 +306,15 @@ export function claimAchievementReward(
   if (!targetItem || !targetItem.isUnlocked) {
     return {
       ok: false,
-      message: `Syarat prestasi '${config.title}' belum tercapai (${targetItem?.currentValue || 0}/${config.targetValue}).`,
+      message: isEn
+        ? `Requirement for '${localized.title}' not yet met (${targetItem?.currentValue || 0}/${config.targetValue}).`
+        : `Syarat prestasi '${config.title}' belum tercapai (${targetItem?.currentValue || 0}/${config.targetValue}).`,
       goldEarned: 0,
       xpEarned: 0,
       updatedSaveData: saveData,
     };
   }
 
-  // Create ledger entries for reward
   const goldEntry = createLedgerEntry(
     'gold',
     config.reward.gold,
@@ -345,7 +346,9 @@ export function claimAchievementReward(
 
   return {
     ok: true,
-    message: `Lencana '${config.title}' berhasil diraih! +${config.reward.gold} Soul, +${config.reward.xp} XP.`,
+    message: isEn
+      ? `Badge '${localized.title}' unlocked! +${config.reward.gold} Soul, +${config.reward.xp} XP.`
+      : `Lencana '${config.title}' berhasil diraih! +${config.reward.gold} Soul, +${config.reward.xp} XP.`,
     goldEarned: config.reward.gold,
     xpEarned: config.reward.xp,
     updatedSaveData,

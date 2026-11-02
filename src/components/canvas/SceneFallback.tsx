@@ -1,7 +1,5 @@
 import React from 'react';
 import { useGameStore } from '@/lib/game/useGameStore';
-import { ObjectType } from '@/types/game';
-import { canAfford } from '@/lib/game/economy';
 import { GAME_CONFIG } from '@/lib/game/config';
 
 export function SceneFallback() {

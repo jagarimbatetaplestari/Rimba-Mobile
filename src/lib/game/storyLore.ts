@@ -2,14 +2,15 @@ import { RimbaSaveData } from '@/types/game';
 import { getLevelFromXp } from './levelRules';
 import { getUnlockedTilesSet } from './worldRules';
 import { calculateAnalytics } from './analytics';
+import { usePreferencesStore } from '@/lib/settings/usePreferencesStore';
 
 export interface StoryChapter {
   id: string;
   chapterNumber: number;
   title: string;
   subtitle: string;
-  icon: string; // Line icon key (Sprout, Droplets, Trees, HeartHandshake, Compass, Sparkles, Shield)
-  image: string; // Path to high-res WebP story background
+  icon: string;
+  image: string;
   unlockDescription: string;
   narration: string;
   quote: string;
@@ -18,6 +19,14 @@ export interface StoryChapter {
     xp: number;
   };
   checkUnlocked: (saveData: RimbaSaveData) => { isUnlocked: boolean; progressText: string };
+}
+
+function isEn(): boolean {
+  try {
+    return usePreferencesStore.getState().language === 'en';
+  } catch {
+    return false;
+  }
 }
 
 export const STORY_CHAPTERS: StoryChapter[] = [
@@ -35,7 +44,7 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     reward: { gold: 20, xp: 40 },
     checkUnlocked: (_saveData) => ({
       isUnlocked: true,
-      progressText: '1/1 Terbuka',
+      progressText: isEn() ? '1/1 Unlocked' : '1/1 Terbuka',
     }),
   },
   {
@@ -58,11 +67,16 @@ export const STORY_CHAPTERS: StoryChapter[] = [
           o.object_type === 'path'
       );
       const isUnlocked = level >= 3 && hasWater;
+      const en = isEn();
       return {
         isUnlocked,
         progressText: isUnlocked
-          ? 'Terpenuhi'
-          : `Level ${level}/3, Air: ${hasWater ? 'Ada' : 'Belum'}`,
+          ? en
+            ? 'Completed'
+            : 'Terpenuhi'
+          : en
+            ? `Lv. ${level}/3, Stream: ${hasWater ? 'Ready' : 'None'}`
+            : `Level ${level}/3, Air: ${hasWater ? 'Ada' : 'Belum'}`,
       };
     },
   },
@@ -82,11 +96,16 @@ export const STORY_CHAPTERS: StoryChapter[] = [
       const level = getLevelFromXp(saveData.profile.xp);
       const treeCount = saveData.world_objects.filter((o) => o.object_type === 'tree').length;
       const isUnlocked = level >= 5 && treeCount >= 5;
+      const en = isEn();
       return {
         isUnlocked,
         progressText: isUnlocked
-          ? 'Terpenuhi'
-          : `Level ${level}/5, Pohon: ${treeCount}/5`,
+          ? en
+            ? 'Completed'
+            : 'Terpenuhi'
+          : en
+            ? `Lv. ${level}/5, Trees: ${treeCount}/5`
+            : `Level ${level}/5, Pohon: ${treeCount}/5`,
       };
     },
   },
@@ -106,11 +125,16 @@ export const STORY_CHAPTERS: StoryChapter[] = [
       const level = getLevelFromXp(saveData.profile.xp);
       const treeCount = saveData.world_objects.filter((o) => o.object_type === 'tree').length;
       const isUnlocked = level >= 6 && treeCount >= 8;
+      const en = isEn();
       return {
         isUnlocked,
         progressText: isUnlocked
-          ? 'Terpenuhi'
-          : `Level ${level}/6, Pohon: ${treeCount}/8`,
+          ? en
+            ? 'Completed'
+            : 'Terpenuhi'
+          : en
+            ? `Lv. ${level}/6, Trees: ${treeCount}/8`
+            : `Level ${level}/6, Pohon: ${treeCount}/8`,
       };
     },
   },
@@ -129,14 +153,22 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     checkUnlocked: (saveData) => {
       const level = getLevelFromXp(saveData.profile.xp);
       const hasStructure = saveData.world_objects.some(
-        (o) => o.object_type === 'rock' || o.object_type === 'path' || (o.model_variant && o.model_variant.includes('tent'))
+        (o) =>
+          o.object_type === 'rock' ||
+          o.object_type === 'path' ||
+          (o.model_variant && o.model_variant.includes('tent'))
       );
       const isUnlocked = level >= 8 && hasStructure;
+      const en = isEn();
       return {
         isUnlocked,
         progressText: isUnlocked
-          ? 'Terpenuhi'
-          : `Level ${level}/8, Struktur: ${hasStructure ? 'Ada' : 'Belum'}`,
+          ? en
+            ? 'Completed'
+            : 'Terpenuhi'
+          : en
+            ? `Lv. ${level}/8, Structure: ${hasStructure ? 'Ready' : 'None'}`
+            : `Level ${level}/8, Struktur: ${hasStructure ? 'Ada' : 'Belum'}`,
       };
     },
   },
@@ -155,15 +187,20 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     checkUnlocked: (saveData) => {
       const level = getLevelFromXp(saveData.profile.xp);
       const totalMinutes = (saveData.focus_sessions || []).reduce(
-        (sum, s) => sum + (s.status === 'completed' ? (s.duration_minutes || 0) : 0),
+        (sum, s) => sum + (s.status === 'completed' ? s.duration_minutes || 0 : 0),
         0
       );
       const isUnlocked = level >= 10 && totalMinutes >= 60;
+      const en = isEn();
       return {
         isUnlocked,
         progressText: isUnlocked
-          ? 'Terpenuhi'
-          : `Level ${level}/10, Fokus: ${totalMinutes}/60m`,
+          ? en
+            ? 'Completed'
+            : 'Terpenuhi'
+          : en
+            ? `Lv. ${level}/10, Focus: ${totalMinutes}/60m`
+            : `Level ${level}/10, Fokus: ${totalMinutes}/60m`,
       };
     },
   },
@@ -183,11 +220,16 @@ export const STORY_CHAPTERS: StoryChapter[] = [
       const level = getLevelFromXp(saveData.profile.xp);
       const greetedCount = Object.keys(saveData.animal_interactions || {}).length;
       const isUnlocked = level >= 12 && greetedCount >= 1;
+      const en = isEn();
       return {
         isUnlocked,
         progressText: isUnlocked
-          ? 'Terpenuhi'
-          : `Level ${level}/12, Satwa Disapa: ${greetedCount}/1`,
+          ? en
+            ? 'Completed'
+            : 'Terpenuhi'
+          : en
+            ? `Lv. ${level}/12, Fauna Greeted: ${greetedCount}/1`
+            : `Level ${level}/12, Satwa Disapa: ${greetedCount}/1`,
       };
     },
   },
@@ -212,11 +254,16 @@ export const STORY_CHAPTERS: StoryChapter[] = [
       );
       const streak = analytics.currentStreak;
       const isUnlocked = level >= 14 && streak >= 5;
+      const en = isEn();
       return {
         isUnlocked,
         progressText: isUnlocked
-          ? 'Terpenuhi'
-          : `Level ${level}/14, Streak: ${streak}/5 hari`,
+          ? en
+            ? 'Completed'
+            : 'Terpenuhi'
+          : en
+            ? `Lv. ${level}/14, Streak: ${streak}/5 days`
+            : `Level ${level}/14, Streak: ${streak}/5 hari`,
       };
     },
   },
@@ -230,17 +277,23 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     unlockDescription: 'Capai Level 16 & Buka 20+ Petak Lahan',
     narration:
       'Dari segenggam tanah sunyi, lahirlah nirwana hijau terapung yang abadi. Di sini, setiap tarikan napas adalah suaka, dan setiap detik fokus adalah warisan ketenangan batin yang murni.',
-    quote: 'Suaka terindah bukanlah tempat yang kau cari di luar, melainkan ketenangan yang kau rawat di dalam dirimu.',
+    quote:
+      'Suaka terindah bukanlah tempat yang kau cari di luar, melainkan ketenangan yang kau rawat di dalam dirimu.',
     reward: { gold: 70, xp: 140 },
     checkUnlocked: (saveData) => {
       const level = getLevelFromXp(saveData.profile.xp);
       const unlockedTiles = getUnlockedTilesSet(saveData.world, saveData.world_objects).size;
       const isUnlocked = level >= 16 && unlockedTiles >= 20;
+      const en = isEn();
       return {
         isUnlocked,
         progressText: isUnlocked
-          ? 'Terpenuhi'
-          : `Level ${level}/16, Petak: ${unlockedTiles}/20`,
+          ? en
+            ? 'Completed'
+            : 'Terpenuhi'
+          : en
+            ? `Lv. ${level}/16, Tiles: ${unlockedTiles}/20`
+            : `Level ${level}/16, Petak: ${unlockedTiles}/20`,
       };
     },
   },

@@ -222,6 +222,43 @@ export async function openDeviceAppSettings(): Promise<boolean> {
 }
 
 /**
+ * Native-first text sharing for iOS WKWebView & Web.
+ */
+export async function shareTextNative({
+  title,
+  text,
+}: {
+  title: string;
+  text: string;
+}): Promise<boolean> {
+  if (isNativeMobile()) {
+    try {
+      await Share.share({ title, text });
+      return true;
+    } catch (e) {
+      const errMsg = String((e as { message?: string })?.message || e).toLowerCase();
+      if (errMsg.includes('cancel') || errMsg.includes('abort')) {
+        return false;
+      }
+    }
+  }
+
+  if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+    try {
+      await navigator.share({ title, text });
+      return true;
+    } catch (e) {
+      const errMsg = String((e as { message?: string })?.message || e).toLowerCase();
+      if (errMsg.includes('cancel') || errMsg.includes('abort')) {
+        return false;
+      }
+    }
+  }
+
+  return false;
+}
+
+/**
  * Native-first image sharing and saving.
  * Seamlessly integrates with iOS UIActivityViewController (Save Image, AirDrop, Messages)
  * with robust fallbacks for Web Share and standard download triggers.
@@ -272,7 +309,8 @@ export async function shareOrSaveImage({
 
     if (
       typeof navigator !== 'undefined' &&
-      navigator.canShare &&
+      typeof navigator.share === 'function' &&
+      typeof navigator.canShare === 'function' &&
       navigator.canShare({ files: [file] })
     ) {
       await navigator.share({
@@ -309,7 +347,7 @@ let lastSoundscapeTrackBeforeBackground: string = "off";
 let wasMusicPlayingBeforeBackground = false;
 
 /**
- * Native App lifecycle listener for background muting and state management
+ * Native App lifecycle listener for background muting, widget deep-link routing, and state management
  */
 export function initAppLifecycleListeners(): () => void {
   if (typeof window === 'undefined') return () => {};
@@ -317,12 +355,11 @@ export function initAppLifecycleListeners(): () => void {
   let cleanup = () => {};
 
   if (isNativeMobile()) {
-    const listenerPromise = App.addListener('appStateChange', ({ isActive }) => {
+    const statePromise = App.addListener('appStateChange', ({ isActive }) => {
       const prefs = usePreferencesStore.getState();
       if (!prefs.muteWhenBackgrounded) return;
 
       if (!isActive) {
-        // App minimized / backgrounded
         const currentTrack = soundscapeManager.getCurrentTrack();
         lastSoundscapeTrackBeforeBackground = currentTrack;
         wasMusicPlayingBeforeBackground = musicPlayer.getState().isPlaying;
@@ -334,7 +371,6 @@ export function initAppLifecycleListeners(): () => void {
           musicPlayer.stop();
         }
       } else {
-        // App resumed to foreground: restore audio that was playing before background
         if (lastSoundscapeTrackBeforeBackground && lastSoundscapeTrackBeforeBackground !== 'off') {
           soundscapeManager.play(lastSoundscapeTrackBeforeBackground as any);
           lastSoundscapeTrackBeforeBackground = 'off';
@@ -346,8 +382,14 @@ export function initAppLifecycleListeners(): () => void {
       }
     });
 
+    const urlPromise = App.addListener('appUrlOpen', ({ url }) => {
+      if (!url) return;
+      window.dispatchEvent(new CustomEvent('rimba:deep_link', { detail: { url } }));
+    });
+
     cleanup = () => {
-      listenerPromise.then((handle) => handle.remove()).catch(() => {});
+      statePromise.then((handle) => handle.remove()).catch(() => {});
+      urlPromise.then((handle) => handle.remove()).catch(() => {});
     };
   }
 

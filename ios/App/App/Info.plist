@@ -65,6 +65,12 @@
 			<key>CFBundleURLSchemes</key>
 			<array><string>com.googleusercontent.apps.475693230434-pd36p3isodu8jo7tem4tgjja8rm5u61b</string></array>
 		</dict>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.syntheticae.rimba</string>
+			<key>CFBundleURLSchemes</key>
+			<array><string>rimba</string></array>
+		</dict>
 	</array>
 </dict>
 </plist>

@@ -1,4 +1,5 @@
 import { FocusSession } from '@/types/game';
+import { usePreferencesStore } from '@/lib/settings/usePreferencesStore';
 
 export interface DayFocusStat {
   date: string; // YYYY-MM-DD
@@ -44,9 +45,12 @@ export function calculateAnalytics(
 
   completed.forEach((s) => {
     const dateStr = toLocalDateString(s.completed_at || s.started_at);
-    const duration = s.duration_minutes || Math.max(1, Math.round(
-      (new Date(s.expected_end_at).getTime() - new Date(s.started_at).getTime()) / 60000
-    ));
+    const duration =
+      s.duration_minutes ||
+      Math.max(
+        1,
+        Math.round((new Date(s.expected_end_at).getTime() - new Date(s.started_at).getTime()) / 60000)
+      );
 
     totalFocusMinutes += duration;
 
@@ -92,18 +96,15 @@ export function calculateAnalytics(
   let longestStreak = 0;
 
   if (activeDates.length > 0) {
-    // Check if user was active today or yesterday
     const yesterday = new Date(currentDate);
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStr = toLocalDateString(yesterday);
 
     let checkDate = new Date(currentDate);
-    // If no session today yet, but active yesterday, streak is maintained from yesterday
     if (!activityMap[todayStr] && activityMap[yesterdayStr]) {
       checkDate = yesterday;
     }
 
-    // Count backwards day by day for current streak
     while (true) {
       const dStr = toLocalDateString(checkDate);
       if (activityMap[dStr] && activityMap[dStr].sessionCount > 0) {
@@ -114,7 +115,6 @@ export function calculateAnalytics(
       }
     }
 
-    // Calculate longest consecutive streak across all active dates
     const sortedAsc = Object.keys(activityMap).sort();
     let tempStreak = 0;
     let prevDate: Date | null = null;
@@ -155,14 +155,46 @@ export function calculateAnalytics(
 }
 
 /**
- * Returns streak milestone badge title and icon.
+ * Returns localized streak milestone badge title and icon.
  */
-export function getStreakMilestone(streak: number): { title: string; icon: string; nextTarget: number } {
-  if (streak >= 30) return { title: 'Maharaja Rimba', icon: '👑', nextTarget: 60 };
-  if (streak >= 14) return { title: 'Pelindung Kanopi', icon: '🌲', nextTarget: 30 };
-  if (streak >= 7) return { title: 'Penjaga Hutan', icon: '🌿', nextTarget: 14 };
-  if (streak >= 3) return { title: 'Tunas Rimba', icon: '🌱', nextTarget: 7 };
-  return { title: 'Pemula Rimba', icon: '🌾', nextTarget: 3 };
+export function getStreakMilestone(
+  streak: number,
+  language?: 'id' | 'en'
+): { title: string; icon: string; nextTarget: number } {
+  const isEn = (language ?? usePreferencesStore.getState().language) === 'en';
+  if (streak >= 30) {
+    return {
+      title: isEn ? 'Rimba Sovereign' : 'Maharaja Rimba',
+      icon: '👑',
+      nextTarget: 60,
+    };
+  }
+  if (streak >= 14) {
+    return {
+      title: isEn ? 'Canopy Guardian' : 'Pelindung Kanopi',
+      icon: '🌲',
+      nextTarget: 30,
+    };
+  }
+  if (streak >= 7) {
+    return {
+      title: isEn ? 'Forest Warden' : 'Penjaga Hutan',
+      icon: '🌿',
+      nextTarget: 14,
+    };
+  }
+  if (streak >= 3) {
+    return {
+      title: isEn ? 'Rimba Sprout' : 'Tunas Rimba',
+      icon: '🌱',
+      nextTarget: 7,
+    };
+  }
+  return {
+    title: isEn ? 'Rimba Novice' : 'Pemula Rimba',
+    icon: '🌾',
+    nextTarget: 3,
+  };
 }
 
 export type AnalyticsPeriod = 'day' | 'week' | 'month' | 'year';
@@ -192,16 +224,36 @@ const DAY_NAMES_SHORT_ID = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 const DAY_NAMES_FULL_ID = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 const MONTH_NAMES_SHORT_ID = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
 const MONTH_NAMES_FULL_ID = [
-  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+  'Januari',
+  'Februari',
+  'Maret',
+  'April',
+  'Mei',
+  'Juni',
+  'Juli',
+  'Agustus',
+  'September',
+  'Oktober',
+  'November',
+  'Desember',
 ];
 
 const DAY_NAMES_SHORT_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const DAY_NAMES_FULL_EN = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const MONTH_NAMES_SHORT_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const MONTH_NAMES_FULL_EN = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
 ];
 
 function getSessionDurationMinutes(s: FocusSession): number {
@@ -240,7 +292,6 @@ export function calculatePeriodAnalytics(
     const prefix = isToday ? (isEn ? 'Today, ' : 'Hari Ini, ') : '';
     periodLabel = `${prefix}${start.getDate()} ${monthShort[start.getMonth()]} ${start.getFullYear()}`;
   } else if (period === 'week') {
-    // Monday-start week
     const dayOfWeek = start.getDay();
     const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
     start.setDate(start.getDate() + diffToMonday + offset * 7);
@@ -263,7 +314,6 @@ export function calculatePeriodAnalytics(
     periodLabel = isEn ? `Year ${start.getFullYear()}` : `Tahun ${start.getFullYear()}`;
   }
 
-  // Previous period bounds for comparison
   const durationMs = end.getTime() - start.getTime() + 1;
   const prevStart = new Date(start.getTime() - durationMs);
   const prevEnd = new Date(start.getTime() - 1);
@@ -275,7 +325,6 @@ export function calculatePeriodAnalytics(
   const tagDistribution: Record<string, number> = {};
   const filteredSessions: FocusSession[] = [];
 
-  // Buckets for bar chart & natural-language peak insights
   const hourBuckets = new Array(24).fill(0);
   const weekdayBuckets = new Array(7).fill(0);
   const monthDayBuckets = new Array(31).fill(0);
@@ -308,10 +357,8 @@ export function calculatePeriodAnalytics(
     }
   });
 
-  // Build bars for period
   const bars: PeriodBarPoint[] = [];
   if (period === 'day') {
-    // Group into 8 x 3-hour blocks for clean mobile readability
     const blocks = [
       { label: '00h', hours: [0, 1, 2] },
       { label: '03h', hours: [3, 4, 5] },
@@ -329,7 +376,7 @@ export function calculatePeriodAnalytics(
       });
     });
   } else if (period === 'week') {
-    const order = [1, 2, 3, 4, 5, 6, 0]; // Sen..Min (Mon..Sun)
+    const order = [1, 2, 3, 4, 5, 6, 0];
     order.forEach((dow) => {
       bars.push({
         label: dayShort[dow],
@@ -337,7 +384,6 @@ export function calculatePeriodAnalytics(
       });
     });
   } else if (period === 'month') {
-    // 5 weekly buckets across the month for clean mobile chart
     const daysInMonth = end.getDate();
     const ranges = [
       { label: '1-6', s: 0, e: 6 },
@@ -357,7 +403,6 @@ export function calculatePeriodAnalytics(
     });
   }
 
-  // Generate Natural-Language Headlines (#27)
   let peakHeadline = isEn
     ? 'No focus sessions recorded in this period — nurture your first tree!'
     : 'Belum ada catatan fokus pada periode ini — tanam sesi pertamamu!';
@@ -471,15 +516,23 @@ export function calculateCircadianFocusRhythm(
   const nextHour = (peakHour + 1) % 24;
   let peakWindowLabel = isEn ? 'Morning' : 'Pagi Hari';
   if (isEn) {
-    if (peakHour >= 4 && peakHour < 10) peakWindowLabel = `Calm Dawn (${String(peakHour).padStart(2, '0')}:00 – ${String(nextHour).padStart(2, '0')}:00)`;
-    else if (peakHour >= 10 && peakHour < 16) peakWindowLabel = `Productive Midday (${String(peakHour).padStart(2, '0')}:00 – ${String(nextHour).padStart(2, '0')}:00)`;
-    else if (peakHour >= 16 && peakHour < 20) peakWindowLabel = `Serene Twilight (${String(peakHour).padStart(2, '0')}:00 – ${String(nextHour).padStart(2, '0')}:00)`;
-    else peakWindowLabel = `Contemplative Night (${String(peakHour).padStart(2, '0')}:00 – ${String(nextHour).padStart(2, '0')}:00)`;
+    if (peakHour >= 4 && peakHour < 10)
+      peakWindowLabel = `Calm Dawn (${String(peakHour).padStart(2, '0')}:00 – ${String(nextHour).padStart(2, '0')}:00)`;
+    else if (peakHour >= 10 && peakHour < 16)
+      peakWindowLabel = `Productive Midday (${String(peakHour).padStart(2, '0')}:00 – ${String(nextHour).padStart(2, '0')}:00)`;
+    else if (peakHour >= 16 && peakHour < 20)
+      peakWindowLabel = `Serene Twilight (${String(peakHour).padStart(2, '0')}:00 – ${String(nextHour).padStart(2, '0')}:00)`;
+    else
+      peakWindowLabel = `Contemplative Night (${String(peakHour).padStart(2, '0')}:00 – ${String(nextHour).padStart(2, '0')}:00)`;
   } else {
-    if (peakHour >= 4 && peakHour < 10) peakWindowLabel = `Fajar Tenang (${String(peakHour).padStart(2, '0')}:00 – ${String(nextHour).padStart(2, '0')}:00)`;
-    else if (peakHour >= 10 && peakHour < 16) peakWindowLabel = `Siang Berdaya (${String(peakHour).padStart(2, '0')}:00 – ${String(nextHour).padStart(2, '0')}:00)`;
-    else if (peakHour >= 16 && peakHour < 20) peakWindowLabel = `Senja Teduh (${String(peakHour).padStart(2, '0')}:00 – ${String(nextHour).padStart(2, '0')}:00)`;
-    else peakWindowLabel = `Malam Kontemplatif (${String(peakHour).padStart(2, '0')}:00 – ${String(nextHour).padStart(2, '0')}:00)`;
+    if (peakHour >= 4 && peakHour < 10)
+      peakWindowLabel = `Fajar Tenang (${String(peakHour).padStart(2, '0')}:00 – ${String(nextHour).padStart(2, '0')}:00)`;
+    else if (peakHour >= 10 && peakHour < 16)
+      peakWindowLabel = `Siang Berdaya (${String(peakHour).padStart(2, '0')}:00 – ${String(nextHour).padStart(2, '0')}:00)`;
+    else if (peakHour >= 16 && peakHour < 20)
+      peakWindowLabel = `Senja Teduh (${String(peakHour).padStart(2, '0')}:00 – ${String(nextHour).padStart(2, '0')}:00)`;
+    else
+      peakWindowLabel = `Malam Kontemplatif (${String(peakHour).padStart(2, '0')}:00 – ${String(nextHour).padStart(2, '0')}:00)`;
   }
 
   let dawn = 0;
@@ -548,7 +601,6 @@ export function calculateFlowMastery(
   const deepWorkCount = completed.filter((s) => (s.duration_minutes || 25) >= 25).length;
   const totalFocusHours = Math.round((totalMinutes / 60) * 10) / 10;
 
-  // Composite flow harmony score (weighted: completion rate 50%, deep work consistency 30%, avg duration 20%)
   const deepRatio = totalCompleted > 0 ? Math.min(1, deepWorkCount / totalCompleted) : 1;
   const durFactor = Math.min(1, avgSessionMinutes / 45);
   const flowHarmonyScore = Math.round(completionRate * 0.5 + deepRatio * 100 * 0.3 + durFactor * 100 * 0.2);
@@ -561,5 +613,3 @@ export function calculateFlowMastery(
     flowHarmonyScore,
   };
 }
-
-

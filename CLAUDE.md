@@ -1,5 +1,9 @@
 # Behavioral & Coding Rules (karpathy.md)
 
+## Acuan kerja dan status rilis — 2 November 2026
+
+Baca [aturan bersama](../rules.md) dan [handoff rilis](docs/release/HANDOFF_NEXT_CHAT.md) sebelum bekerja. Kandidat TestFlight 1.0 (5) sudah VALID dan tersedia di grup Internal; draft memilih build5. Ini belum membuktikan kesiapan Submit. Pemilik akan menyampaikan hasil pengujian perangkat kemudian; jangan menandai hasilnya lulus tanpa laporan. Gunakan checkpoint terbaru, pertahankan isolasi data akun dan fix OTP8digit, serta hindari sinkronisasi source atau audit berulang yang tidak diperlukan.
+
 Setiap kali mengerjakan task, WAJIB membaca dan menerapkan prinsip-prinsip ini:
 
 ## 1. Think Before Coding

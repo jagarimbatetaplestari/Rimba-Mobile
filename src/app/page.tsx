@@ -40,6 +40,7 @@ import { CampfireRoomModal } from "@/components/modals/CampfireRoomModal";
 import { IslandSwitcherModal } from "@/components/modals/IslandSwitcherModal";
 import { RimbaProPaywallModal } from "@/components/modals/RimbaProPaywallModal";
 import { syncMobileStatusBar, initAppLifecycleListeners } from "@/lib/mobile/nativeBridge";
+import { syncWidgetsWithSaveData } from "@/lib/mobile/widgetBridge";
 import { setupBackgroundGuard } from "@/lib/mobile/backgroundTimerGuard";
 import { getDailyQuestStatus } from "@/lib/game/quests";
 import { evaluateAchievements } from "@/lib/game/achievements";
@@ -416,6 +417,39 @@ export default function RimbaDioramaApp() {
       };
       window.addEventListener("rimba:open_guide", handleOpenGuide);
 
+      const handleOpenSoundscapes = () => {
+        setIsSoundscapeOpen(true);
+      };
+      window.addEventListener("rimba:open_soundscapes", handleOpenSoundscapes);
+
+      const handleDeepLink = (e: Event) => {
+        const rawUrl = (e as CustomEvent<{ url?: string }>).detail?.url || "";
+        if (!rawUrl) return;
+        try {
+          const parsed = new URL(rawUrl);
+          const host = parsed.host || parsed.pathname.replace(/^\/+/, "");
+          if (host === "focus") {
+            const mins = parseInt(parsed.searchParams.get("minutes") || "25", 10);
+            const safeMins = Number.isFinite(mins) && mins >= 5 && mins <= 120 ? mins : 25;
+            const store = useGameStore.getState();
+            store.setFocusSetup({ minutes: safeMins });
+            if (!store.activeSession) {
+              store.startFocus(safeMins);
+            }
+          } else if (host === "soundscape") {
+            setIsSoundscapeOpen(true);
+          } else if (host === "journal") {
+            setJournalInitialTab("quests");
+            setIsJournalOpen(true);
+          } else if (host === "zen") {
+            useGameStore.getState().setZenMode(true);
+          }
+        } catch {
+          // ignore malformed deep link
+        }
+      };
+      window.addEventListener("rimba:deep_link", handleDeepLink as EventListener);
+
       return () => {
         window.removeEventListener(
           "rimba:open_onboarding",
@@ -443,6 +477,8 @@ export default function RimbaDioramaApp() {
           handleOpenPaywall as EventListener,
         );
         window.removeEventListener("rimba:open_guide", handleOpenGuide);
+        window.removeEventListener("rimba:open_soundscapes", handleOpenSoundscapes);
+        window.removeEventListener("rimba:deep_link", handleDeepLink as EventListener);
       };
     }
   }, [isAuthHydrated, authUser]);
@@ -459,13 +495,17 @@ export default function RimbaDioramaApp() {
     return quests.claimableCount + achs.unclaimedCount;
   });
 
-  // Dynamic HTML lang attribute synchronization with user preference
+  // Dynamic HTML lang attribute & iOS Widget synchronization with user preference
   const appLanguage = usePreferencesStore((state) => state.language);
   useEffect(() => {
     if (typeof document !== "undefined" && appLanguage) {
       document.documentElement.lang = appLanguage;
     }
-  }, [appLanguage]);
+    if (isInitialized) {
+      const st = useGameStore.getState();
+      void syncWidgetsWithSaveData(st.saveData, st.activeSession);
+    }
+  }, [appLanguage, isInitialized]);
 
   const handleEnterZen = useCallback(() => {
     setZenMode(true);

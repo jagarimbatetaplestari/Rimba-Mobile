@@ -20,12 +20,10 @@ import {
   BUILD_CATALOG,
   CatalogItem,
   GAME_CONFIG,
-  ATMOSPHERE_CONFIG,
-  detectLocalTimeOfDay,
+    detectLocalTimeOfDay,
   BIOME_CATALOG,
   detectRealWorldSeasonBiome,
-  CELESTIAL_ISLAND_LEVEL_REQUIRED,
-  STARTER_UNLOCKED_TILES,
+    STARTER_UNLOCKED_TILES,
 } from './config';
 import { calculateBalances, canAfford, createLedgerEntry, getObjectBaseCost } from './economy';
 import {
@@ -41,11 +39,10 @@ import { STORY_CHAPTERS } from './storyLore';
 import { WISDOM_FRAGMENTS } from './wisdomLore';
 import { calculateAnalytics, toLocalDateString } from './analytics';
 import { claimAchievementReward } from './achievements';
-import { greetFauna, FAUNA_CONFIG } from './faunaRules';
+import { greetFauna } from './faunaRules';
 import { useCampfireStore } from './campfireStore';
 import {
-  executeReclamation,
-  restoreObject,
+    restoreObject,
   triggerBulldozerReclamation,
   canExecuteBulldozerTier2,
   bribeBulldozer,
@@ -69,10 +66,9 @@ import {
   scheduleFocusCompletionNotification,
 } from '@/lib/mobile/notificationManager';
 import { syncProfileUpdate, scheduleDebouncedCloudSync } from '../supabase/cloudSync';
+import { syncWidgetsWithSaveData } from '@/lib/mobile/widgetBridge';
 import { soundscapeManager } from '@/lib/audio/soundscapes';
 import { usePreferencesStore } from '@/lib/settings/usePreferencesStore';
-import { TAG_TRANSLATIONS_EN } from '@/lib/i18n/translations';
-
 function getStoreLang(): 'id' | 'en' {
   if (typeof window === 'undefined') return 'id';
   try {
@@ -98,6 +94,11 @@ function persistAndSyncSaveData(data: RimbaSaveData): void {
     throw error;
   }
   scheduleDebouncedCloudSync();
+  try {
+    void syncWidgetsWithSaveData(data, useGameStore.getState().activeSession);
+  } catch {
+    // ignore widget sync error
+  }
 }
 
 export interface NotificationState {
@@ -414,7 +415,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     set((state) => {
       const next = (state.placementRotation + Math.PI / 2) % (Math.PI * 2);
       const degrees = Math.round((next * 180) / Math.PI);
-      get().notify(`Rotasi Objek: ${degrees}° ↺`, 'info');
+      get().notify(getStoreLang() === 'en' ? `Object Rotation: ${degrees}° ↺` : `Rotasi Objek: ${degrees}° ↺`, 'info');
       return { placementRotation: next };
     });
   },
@@ -433,7 +434,9 @@ export const useGameStore = create<GameState>((set, get) => ({
       placementRotation: target.rotation || 0,
     });
     get().notify(
-      `Pindahkan ${target.object_type}: Ketuk petak baru untuk menaruh preview, lalu tekan tombol konfirmasi.`,
+      getStoreLang() === 'en'
+        ? `Move ${target.object_type}: Tap an open tile to preview, then confirm.`
+        : `Pindahkan ${target.object_type}: Ketuk petak baru untuk menaruh preview, lalu tekan tombol konfirmasi.`,
       'info'
     );
   },
@@ -454,20 +457,20 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (!relocatingObjectId) return false;
 
     if (!isValidCoord(grid_x, grid_y)) {
-      get().notify('Posisi grid di luar batas!', 'error');
+      get().notify(getStoreLang() === 'en' ? 'Grid position is out of bounds!' : 'Posisi grid di luar batas!', 'error');
       return false;
     }
 
     const unlockedSet = getUnlockedTilesSet(saveData.world, saveData.world_objects);
     if (!isTileUnlocked(grid_x, grid_y, unlockedSet)) {
-      get().notify('Objek hanya bisa dipindah ke petak lahan yang sudah dibuka!', 'error');
+      get().notify(getStoreLang() === 'en' ? 'Objects can only be moved to unlocked land tiles!' : 'Objek hanya bisa dipindah ke petak lahan yang sudah dibuka!', 'error');
       return false;
     }
 
     // Check collision against all OTHER objects
     const otherObjects = saveData.world_objects.filter((o) => o.id !== relocatingObjectId);
     if (isTileOccupied(grid_x, grid_y, otherObjects)) {
-      get().notify('Petak tersebut sudah terisi objek lain!', 'error');
+      get().notify(getStoreLang() === 'en' ? 'That tile is already occupied by another object!' : 'Petak tersebut sudah terisi objek lain!', 'error');
       return false;
     }
 
@@ -507,7 +510,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       hoveredGridTile: null,
     });
 
-    get().notify('🌿 Posisi objek berhasil dipindahkan (Gratis)!', 'success');
+    get().notify(getStoreLang() === 'en' ? '🌿 Object relocated for free!' : '🌿 Posisi objek berhasil dipindahkan (Gratis)!', 'success');
     return true;
   },
 
@@ -515,7 +518,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     const { saveData } = get();
     const target = saveData.world_objects.find((o) => o.id === objectId);
     if (!target) {
-      get().notify('Objek tidak ditemukan.', 'error');
+      get().notify(getStoreLang() === 'en' ? 'Object not found.' : 'Objek tidak ditemukan.', 'error');
       return false;
     }
 
@@ -667,7 +670,9 @@ export const useGameStore = create<GameState>((set, get) => ({
     });
 
     get().notify(
-      `🗑️ Struktur ${target.object_type} dibongkar. Material didaur ulang (+${refund} Soul).`,
+      getStoreLang() === 'en'
+        ? `🗑️ Structure ${target.object_type} dismantled. Materials recycled (+${refund} Soul).`
+        : `🗑️ Struktur ${target.object_type} dibongkar. Material didaur ulang (+${refund} Soul).`,
       'info'
     );
     return true;
@@ -764,7 +769,9 @@ export const useGameStore = create<GameState>((set, get) => ({
       data.used_shield_dates = updatedUsedDates;
       persistAndSyncSaveData(data);
       get().notify(
-        `🛡️ Embun Pelindung aktif! Absen kemarin dimaafkan, streak harianmu tetap utuh! (Sisa perisai: ${updatedShields})`,
+        getStoreLang() === 'en'
+          ? `🛡️ Streak Freeze activated! Yesterday's absence was forgiven, keeping your streak intact! (Shields left: ${updatedShields})`
+          : `🛡️ Embun Pelindung aktif! Absen kemarin dimaafkan, streak harianmu tetap utuh! (Sisa perisai: ${updatedShields})`,
         'success'
       );
     }
@@ -779,7 +786,9 @@ export const useGameStore = create<GameState>((set, get) => ({
         data.last_monthly_shield_month = currentMonthKey;
         persistAndSyncSaveData(data);
         get().notify(
-          '🛡️ Jatah Embun Pelindung bulanan Pro telah ditambahkan ke suakamu!',
+          getStoreLang() === 'en'
+            ? '🛡️ Monthly Pro Streak Freeze allowance has been added to your sanctuary!'
+            : '🛡️ Jatah Embun Pelindung bulanan Pro telah ditambahkan ke suakamu!',
           'success'
         );
       } else {
@@ -839,7 +848,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     const currentLevel = getLevelFromXp(saveData.profile.xp);
     const config = BIOME_CATALOG.find((b) => b.id === biome);
     if (config && currentLevel < config.levelRequired && !devFastMode) {
-      get().notify(`🔒 ${config.name} terbuka saat mencapai Level ${config.levelRequired}! Teruslah fokus.`, 'error');
+      get().notify(getStoreLang() === 'en' ? `🔒 ${config.nameEn} unlocks at Level ${config.levelRequired}! Keep focusing.` : `🔒 ${config.name} terbuka saat mencapai Level ${config.levelRequired}! Teruslah fokus.`, 'error');
       return;
     }
     if (typeof window !== 'undefined') {
@@ -856,7 +865,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     persistAndSyncSaveData(updatedData);
     set({ activeBiome: biome, saveData: updatedData });
     if (showToast && config) {
-      get().notify(`${config.icon} Tema ${config.name} aktif!`, 'info');
+      get().notify(getStoreLang() === 'en' ? `${config.icon} ${config.nameEn} theme active!` : `${config.icon} Tema ${config.name} aktif!`, 'info');
     }
   },
 
@@ -881,7 +890,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (unlocked.length <= 1) {
       const nextLocked = BIOME_CATALOG.find((b) => !get().isBiomeUnlocked(b.id));
       if (nextLocked) {
-        get().notify(`🔒 Bioma berikutnya (${nextLocked.name}) terbuka di Level ${nextLocked.levelRequired}!`, 'info');
+        get().notify(getStoreLang() === 'en' ? `🔒 Next biome (${nextLocked.nameEn}) unlocks at Level ${nextLocked.levelRequired}!` : `🔒 Bioma berikutnya (${nextLocked.name}) terbuka di Level ${nextLocked.levelRequired}!`, 'info');
       }
       return;
     }
@@ -1135,7 +1144,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     const { saveData } = get();
     const existing = saveData.custom_tags || [];
     if (existing.some((t) => t.label.toLowerCase() === clean.toLowerCase())) {
-      get().notify(`Tag "${clean}" sudah ada.`, 'info');
+      get().notify(getStoreLang() === 'en' ? `Tag "${clean}" already exists.` : `Tag "${clean}" sudah ada.`, 'info');
       return existing.find((t) => t.label.toLowerCase() === clean.toLowerCase()) || null;
     }
 
@@ -1152,7 +1161,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     };
     persistAndSyncSaveData(updatedData);
     set({ saveData: updatedData });
-    get().notify(`🏷️ Tag baru "${clean}" ditambahkan!`, 'success');
+    get().notify(getStoreLang() === 'en' ? `🏷️ New tag "${clean}" added!` : `🏷️ Tag baru "${clean}" ditambahkan!`, 'success');
     return newTag;
   },
 
@@ -1165,7 +1174,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     };
     persistAndSyncSaveData(updatedData);
     set({ saveData: updatedData });
-    get().notify(`Tag "${tagId}" dihapus.`, 'info');
+    get().notify(getStoreLang() === 'en' ? `Tag "${tagId}" removed.` : `Tag "${tagId}" dihapus.`, 'info');
   },
 
   setDistractionSource: (source) => {
@@ -1508,7 +1517,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   completeFocus: () => {
     const { activeSession, saveData } = get();
     if (!activeSession) {
-      get().notify('Tidak ada sesi fokus aktif untuk diselesaikan.', 'error');
+      get().notify(getStoreLang() === 'en' ? 'No active focus session to complete.' : 'Tidak ada sesi fokus aktif untuk diselesaikan.', 'error');
       return false;
     }
 
@@ -1638,20 +1647,22 @@ export const useGameStore = create<GameState>((set, get) => ({
     const { saveData } = get();
 
     if (!isValidCoord(grid_x, grid_y)) {
-      get().notify('Posisi petak di luar batas pulau.', 'error');
+      get().notify(getStoreLang() === 'en' ? 'Tile position is outside island bounds.' : 'Posisi petak di luar batas pulau.', 'error');
       return false;
     }
 
     const unlockedSet = getUnlockedTilesSet(saveData.world, saveData.world_objects);
     if (!isTileUnlocked(grid_x, grid_y, unlockedSet)) {
-      get().notify('Petak ini belum dibuka! Buka lahan terlebih dahulu.', 'error');
+      get().notify(getStoreLang() === 'en' ? 'This tile is still locked! Unlock the land tile first.' : 'Petak ini belum dibuka! Buka lahan terlebih dahulu.', 'error');
       return false;
     }
 
     const coordKey = `${grid_x},${grid_y}`;
     if (saveData.world.sealed_tiles && saveData.world.sealed_tiles.includes(coordKey)) {
       get().notify(
-        '🚧 Petak ini sedang disegel oleh kru Bulldozer! Selesaikan 1 sesi fokus atau restorasi tunggul untuk membuka segel.',
+        getStoreLang() === 'en'
+          ? '🚧 This tile is sealed by the Bulldozer crew! Complete 1 focus session or restore a stump to unseal.'
+          : '🚧 Petak ini sedang disegel oleh kru Bulldozer! Selesaikan 1 sesi fokus atau restorasi tunggul untuk membuka segel.',
         'error'
       );
       return false;
@@ -1670,14 +1681,14 @@ export const useGameStore = create<GameState>((set, get) => ({
       if (isBridge && isExistingRiver) {
         // Bridge seamlessly spans across the river channel!
       } else {
-        get().notify('Petak tersebut sudah terisi objek lain!', 'error');
+        get().notify(getStoreLang() === 'en' ? 'That tile is already occupied by another object!' : 'Petak tersebut sudah terisi objek lain!', 'error');
         return false;
       }
     }
 
     const cost = item.cost;
     if (!canAfford(saveData.currency_ledger, cost)) {
-      get().notify(`Soul tidak cukup! Menempatkan ${item.name} membutuhkan ${cost} Soul.`, 'error');
+      get().notify(getStoreLang() === 'en' ? `Not enough Soul! Placing ${item.name} costs ${cost} Soul.` : `Soul tidak cukup! Menempatkan ${item.name} membutuhkan ${cost} Soul.`, 'error');
       return false;
     }
 
@@ -1973,12 +1984,16 @@ export const useGameStore = create<GameState>((set, get) => ({
 
       if (result.tier === 1) {
         get().notify(
-          '🚜 Kru konstruksi tiba di tepi pulau! Selesaikan sesi fokus untuk menghalau mereka.',
+          getStoreLang() === 'en'
+            ? '🚜 Construction crew arrived at the island edge! Complete a focus session to repel them.'
+            : '🚜 Kru konstruksi tiba di tepi pulau! Selesaikan sesi fokus untuk menghalau mereka.',
           'reclamation'
         );
       } else {
         get().notify(
-          '⚠️ Kru konstruksi menebang pohon yang ditandai menjadi tunggul karena tidak aktif terlalu lama!',
+          getStoreLang() === 'en'
+            ? '⚠️ Construction crew felled a marked tree into a stump due to prolonged inactivity!'
+            : '⚠️ Kru konstruksi menebang pohon yang ditandai menjadi tunggul karena tidak aktif terlalu lama!',
           'error'
         );
       }
@@ -2230,7 +2245,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   importSaveData: (newData: RimbaSaveData) => {
     try {
       if (get().activeSession?.status === 'active') {
-        get().notify('Selesaikan atau batalkan sesi fokus sebelum memulihkan cadangan.', 'error');
+        get().notify(getStoreLang() === 'en' ? 'Finish or cancel the active focus session before restoring a backup.' : 'Selesaikan atau batalkan sesi fokus sebelum memulihkan cadangan.', 'error');
         return false;
       }
       const validated = validateRimbaBackup(newData);
@@ -2256,11 +2271,11 @@ export const useGameStore = create<GameState>((set, get) => ({
         hoveredGridTile: null,
         isExpandLandMode: false,
       });
-      get().notify(`✨ Suaka "${newData.world.name || 'Rimba'}" berhasil dipulihkan dari berkas cadangan!`, 'success');
+      get().notify(getStoreLang() === 'en' ? `✨ Sanctuary "${newData.world.name || 'Rimba'}" restored from backup!` : `✨ Suaka "${newData.world.name || 'Rimba'}" berhasil dipulihkan dari berkas cadangan!`, 'success');
       return true;
     } catch (err) {
       console.error('Failed to import save data:', err);
-      get().notify('Gagal memulihkan berkas cadangan.', 'error');
+      get().notify(getStoreLang() === 'en' ? 'Failed to restore backup file.' : 'Gagal memulihkan berkas cadangan.', 'error');
       return false;
     }
   },
@@ -2585,7 +2600,9 @@ export const useGameStore = create<GameState>((set, get) => ({
     persistAndSyncSaveData(updatedData);
     set({ saveData: updatedData });
     get().notify(
-      `🎁 Misi diklaim! +${result.rewardGold} Soul & +${result.rewardXp} XP ditambahkan ke jurnalmu.`,
+      getStoreLang() === 'en'
+        ? `🎁 Quest claimed! +${result.rewardGold} Soul & +${result.rewardXp} XP added to your journal.`
+        : `🎁 Misi diklaim! +${result.rewardGold} Soul & +${result.rewardXp} XP ditambahkan ke jurnalmu.`,
       'success'
     );
     return true;
@@ -2616,7 +2633,9 @@ export const useGameStore = create<GameState>((set, get) => ({
     persistAndSyncSaveData(updatedData);
     set({ saveData: updatedData });
     get().notify(
-      `🏆 Peti All-Clear Harian terbuka! +${result.rewardGold} Soul & +${result.rewardXp} XP!`,
+      getStoreLang() === 'en'
+        ? `🏆 Daily All-Clear Chest opened! +${result.rewardGold} Soul & +${result.rewardXp} XP!`
+        : `🏆 Peti All-Clear Harian terbuka! +${result.rewardGold} Soul & +${result.rewardXp} XP!`,
       'success'
     );
     return true;
@@ -2669,19 +2688,19 @@ export const useGameStore = create<GameState>((set, get) => ({
     };
     persistAndSyncSaveData(updatedData);
     set({ saveData: updatedData });
-    get().notify('📝 Catatan refleksi berhasil disimpan ke Jurnal!', 'success');
+    get().notify(getStoreLang() === 'en' ? '📝 Reflection note saved to Journal!' : '📝 Catatan refleksi berhasil disimpan ke Jurnal!', 'success');
   },
 
   buyStreakShield: () => {
     const { saveData } = get();
     const currentShields = saveData.streak_shields || 0;
     if (currentShields >= 2) {
-      get().notify('Kapasitas penuh! Kamu sudah memiliki maksimal 2 Embun Pelindung.', 'info');
+      get().notify(getStoreLang() === 'en' ? 'Full capacity! You already hold the maximum of 2 Streak Freezes.' : 'Kapasitas penuh! Kamu sudah memiliki maksimal 2 Embun Pelindung.', 'info');
       return false;
     }
     const cost = 15;
     if (!canAfford(saveData.currency_ledger, cost)) {
-      get().notify(`Soul tidak cukup! Butuh ${cost} Soul untuk membeli 1 Embun Pelindung.`, 'error');
+      get().notify(getStoreLang() === 'en' ? `Not enough Soul! Buying 1 Streak Freeze costs ${cost} Soul.` : `Soul tidak cukup! Butuh ${cost} Soul untuk membeli 1 Embun Pelindung.`, 'error');
       return false;
     }
     const entry = createLedgerEntry('gold', -cost, 'buy_streak_shield', `shield_${Date.now()}`);
@@ -2698,7 +2717,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     };
     persistAndSyncSaveData(updatedData);
     set({ saveData: updatedData });
-    get().notify('🛡️ Embun Pelindung berhasil dibeli! Streak harianmu terlindungi bila libur 1 hari.', 'success');
+    get().notify(getStoreLang() === 'en' ? '🛡️ Streak Freeze purchased! Your daily streak is protected if you miss 1 day.' : '🛡️ Embun Pelindung berhasil dibeli! Streak harianmu terlindungi bila libur 1 hari.', 'success');
     return true;
   },
 
@@ -2706,17 +2725,17 @@ export const useGameStore = create<GameState>((set, get) => ({
     const { saveData } = get();
     const claimed = new Set(saveData.claimed_story_chapters || []);
     if (claimed.has(chapterId)) {
-      get().notify('Berkah bab ini sudah pernah diklaim!', 'info');
+      get().notify(getStoreLang() === 'en' ? 'This chapter blessing has already been claimed!' : 'Berkah bab ini sudah pernah diklaim!', 'info');
       return false;
     }
     const chapter = STORY_CHAPTERS.find((c) => c.id === chapterId);
     if (!chapter) {
-      get().notify('Bab cerita tidak ditemukan.', 'error');
+      get().notify(getStoreLang() === 'en' ? 'Story chapter not found.' : 'Bab cerita tidak ditemukan.', 'error');
       return false;
     }
     const { isUnlocked } = chapter.checkUnlocked(saveData);
     if (!isUnlocked) {
-      get().notify('Syarat bab cerita ini belum terpenuhi.', 'error');
+      get().notify(getStoreLang() === 'en' ? 'Requirements for this story chapter are not yet met.' : 'Syarat bab cerita ini belum terpenuhi.', 'error');
       return false;
     }
 
@@ -2739,7 +2758,9 @@ export const useGameStore = create<GameState>((set, get) => ({
     persistAndSyncSaveData(updatedData);
     set({ saveData: updatedData });
     get().notify(
-      `📜 Bab ${chapter.chapterNumber} terbuka! Berkah suaka: +${chapter.reward.gold} Soul & +${chapter.reward.xp} XP!`,
+      getStoreLang() === 'en'
+        ? `📜 Chapter ${chapter.chapterNumber} claimed! Sanctuary blessing: +${chapter.reward.gold} Soul & +${chapter.reward.xp} XP!`
+        : `📜 Bab ${chapter.chapterNumber} terbuka! Berkah suaka: +${chapter.reward.gold} Soul & +${chapter.reward.xp} XP!`,
       'success'
     );
     return true;
@@ -2753,12 +2774,12 @@ export const useGameStore = create<GameState>((set, get) => ({
       ...(saveData.claimed_story_chapters || []).filter((id) => id.startsWith('wisdom_')),
     ]);
     if (claimedWisdom.has(fragmentId)) {
-      get().notify('Fragmen kebijaksanaan ini sudah pernah diserap!', 'info');
+      get().notify(getStoreLang() === 'en' ? 'This wisdom fragment has already been absorbed!' : 'Fragmen kebijaksanaan ini sudah pernah diserap!', 'info');
       return false;
     }
     const frag = WISDOM_FRAGMENTS.find((f) => f.id === fragmentId);
     if (!frag) {
-      get().notify('Fragmen kebijaksanaan tidak ditemukan.', 'error');
+      get().notify(getStoreLang() === 'en' ? 'Wisdom fragment not found.' : 'Fragmen kebijaksanaan tidak ditemukan.', 'error');
       return false;
     }
 
@@ -2774,7 +2795,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     const totalHours = totalMinutes / 60;
 
     if (totalHours < frag.hoursRequired) {
-      get().notify(`Syarat jam fokus belum terpenuhi (${frag.hoursRequired} jam).`, 'error');
+      get().notify(getStoreLang() === 'en' ? `Focus hours requirement not yet met (${frag.hoursRequired} hours).` : `Syarat jam fokus belum terpenuhi (${frag.hoursRequired} jam).`, 'error');
       return false;
     }
 
@@ -2797,7 +2818,9 @@ export const useGameStore = create<GameState>((set, get) => ({
     persistAndSyncSaveData(updatedData);
     set({ saveData: updatedData });
     get().notify(
-      `✨ Kebijaksanaan '${frag.title}' diserap! Berkah suaka: +${frag.rewardSoul} Soul & +${frag.rewardXp} XP!`,
+      getStoreLang() === 'en'
+        ? `✨ Wisdom absorbed! Sanctuary blessing: +${frag.rewardSoul} Soul & +${frag.rewardXp} XP!`
+        : `✨ Kebijaksanaan '${frag.title}' diserap! Berkah suaka: +${frag.rewardSoul} Soul & +${frag.rewardXp} XP!`,
       'success'
     );
     return true;

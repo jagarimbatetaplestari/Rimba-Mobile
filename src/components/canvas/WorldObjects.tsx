@@ -14,8 +14,7 @@ import {
   buildRiverTileMap,
   getRiverWaterGeometry,
   getRiverBedGeometry,
-  getRiverPebbles,
-  RiverAdjacency,
+    RiverAdjacency,
 } from '@/lib/game/riverSystem';
 
 // Eagerly preload only the 3 starter models needed on initial island render

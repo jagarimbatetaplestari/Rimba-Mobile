@@ -34,14 +34,14 @@ import { SnapshotsHistoryModal } from "@/components/modals/SnapshotsHistoryModal
 import { LegalModal } from "@/components/modals/LegalModal";
 import { AvatarPickerModal } from "@/components/modals/AvatarPickerModal";
 import { ChangePasswordModal } from "@/components/modals/ChangePasswordModal";
+import { WidgetControlCenterModal } from "@/components/modals/WidgetControlCenterModal";
 import { RangerAvatar } from "@/components/ui/RangerAvatar";
 import { uploadGameSaveToCloud } from "@/lib/supabase/cloudSync";
 import { useTranslation } from "@/lib/i18n/translations";
 import { usePwaInstall } from "@/lib/mobile/usePwaInstall";
 import {
   BIOME_CATALOG,
-  CELESTIAL_ISLAND_LEVEL_REQUIRED,
-  detectRealWorldSeasonBiome,
+    detectRealWorldSeasonBiome,
 } from "@/lib/game/config";
 import { calculateAnalytics } from "@/lib/game/analytics";
 import { getLevelFromXp } from "@/lib/game/levelRules";
@@ -67,9 +67,7 @@ import {
   Cloud,
   RefreshCw,
   Globe,
-  Compass,
-  Check,
-  Lock,
+      Lock,
   Sparkles,
   Calendar,
   Camera,
@@ -126,6 +124,7 @@ export function MobileSettingsSheet({
   const [legalTab, setLegalTab] = useState<"privacy" | "terms">("privacy");
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+  const [showWidgetsModal, setShowWidgetsModal] = useState(false);
   const [notifPermState, setNotifPermState] = useState<"granted" | "denied" | "prompt">("prompt");
   const [testNotifSent, setTestNotifSent] = useState(false);
   const [isTestingNotif, setIsTestingNotif] = useState(false);
@@ -341,13 +340,13 @@ export function MobileSettingsSheet({
       `}</style>
 
       <div
-        className="fixed inset-0 z-[100] h-[100dvh] w-full overflow-y-auto overscroll-contain no-scrollbar select-none antialiased font-urbanist text-[#0D3528] pointer-events-auto bg-[#FAFAF7]"
+        className="fixed inset-0 z-[100] h-[100dvh] w-full overflow-y-auto overscroll-contain no-scrollbar select-none antialiased font-urbanist text-[#0D3528] pointer-events-auto bg-gradient-to-b from-[#E6F1EC] via-[#EEF6F2] to-[#E3EFE9]"
         role="dialog"
         aria-modal="true"
       >
         <div className="w-full max-w-md mx-auto px-5 safe-modal-content space-y-4">
-          {/* HEADER NAV */}
-          <div className="flex items-center justify-between py-1">
+          {/* STICKY SAFE-AREA HEADER NAV */}
+          <div className="safe-sticky-modal-header flex items-center justify-between gap-2">
             {currentView === "storage" ? (
               <button
                 type="button"
@@ -355,17 +354,17 @@ export function MobileSettingsSheet({
                   hapticLight();
                   setCurrentView("main");
                 }}
-                className="flex items-center gap-1.5 text-[15px] font-semibold text-[#0D3528] transition-colors cursor-pointer active:scale-95 py-1"
+                className="flex items-center gap-1.5 text-[15px] font-semibold text-[#0D3528] transition-colors cursor-pointer active:scale-95 py-1 whitespace-nowrap"
               >
                 <ChevronLeft className="w-5 h-5 stroke-[2]" />
                 <span>{t.settings.title}</span>
               </button>
             ) : (
-              <div className="flex items-center gap-2.5">
-                <h2 className="text-[23px] font-semibold tracking-normal text-[#0D3528]">
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <h2 className="text-[20px] font-bold tracking-tight text-[#0D3528] whitespace-nowrap truncate">
                   {t.settings.title}
                 </h2>
-                <span className="rounded-full bg-[#E4F4ED] border border-[#BCE5D3] px-3 py-0.5 text-[11.5px] font-medium text-[#14664D]">
+                <span className="rounded-full bg-[#E4F4ED] border border-[#BCE5D3] px-2.5 py-0.5 text-[10.5px] font-semibold text-[#14664D] whitespace-nowrap shrink-0">
                   {t.settings.subtitle}
                 </span>
               </div>
@@ -377,10 +376,10 @@ export function MobileSettingsSheet({
                 hapticLight();
                 onClose();
               }}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0D3528]/5 border border-[#0D3528]/10 text-[#0D3528] shadow-xs active:scale-90 transition-transform hover:bg-[#0D3528]/10 cursor-pointer"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white border border-[#0D3528]/15 text-[#0D3528] shadow-xs active:scale-90 transition-transform hover:bg-[#0D3528]/5 cursor-pointer"
               aria-label={t.common.close}
             >
-              <X className="h-4 w-4 stroke-[2]" />
+              <X className="h-4 w-4 stroke-[2.2]" />
             </button>
           </div>
 
@@ -395,7 +394,7 @@ export function MobileSettingsSheet({
                   <span>{t.settings.languageSection}</span>
                 </p>
 
-                <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-2 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl grid grid-cols-2 gap-1.5">
+                <div className="rounded-3xl border border-[#BCE5D3] bg-white p-2 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl grid grid-cols-2 gap-1.5">
                   <button
                     type="button"
                     onClick={() => {
@@ -442,7 +441,7 @@ export function MobileSettingsSheet({
                 <button
                   type="button"
                   onClick={handleProfileClick}
-                  className="group flex w-full items-center justify-between rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-4 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl transition-all active:scale-[0.98] cursor-pointer"
+                  className="group flex w-full items-center justify-between rounded-3xl border border-[#BCE5D3] bg-white p-4 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl transition-all active:scale-[0.98] cursor-pointer"
                 >
                   <div className="flex items-center gap-3.5 min-w-0 pr-2">
                     <RangerAvatar
@@ -500,12 +499,45 @@ export function MobileSettingsSheet({
                       </div>
                       <p className="text-[11px] text-[#4C7567] mt-0.5">
                         {isPro
-                          ? (lang === "en" ? "5 Island Slots • Real Trees Pledged" : "Kapasitas 5 Pulau • Pohon Nyata Terdaftar")
-                          : (lang === "en" ? "Unlock 5 islands, peace of mind & real trees" : "Buka 5 pulau, proteksi libur, dan tanam pohon nyata")}
+                          ? (lang === "en" ? "5 Island Slots • Dual Audio Mixer" : "Kapasitas 5 Pulau • Mixer Audio Ganda")
+                          : (lang === "en" ? "Unlock 5 islands, streak shields & dual audio" : "Buka 5 pulau, perisai streak & mixer audio ganda")}
                       </p>
                     </div>
                   </div>
                   <ChevronRight className="h-4 w-4 shrink-0 text-[#4C7567]/70" />
+                </button>
+
+                {/* iOS Home Screen, Lock Screen & Control Center Widgets Card */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    hapticLight();
+                    soundManager.playPop();
+                    setShowWidgetsModal(true);
+                  }}
+                  className="w-full p-3.5 rounded-3xl border border-[#BCE5D3] bg-white text-[#0D3528] shadow-md flex items-center justify-between transition-all active:scale-[0.98] cursor-pointer text-left"
+                >
+                  <div className="flex items-center gap-3 min-w-0 pr-2">
+                    <div className="w-9 h-9 rounded-2xl bg-[#187557] text-white flex items-center justify-center shrink-0 shadow-xs">
+                      <Smartphone className="w-4.5 h-4.5 stroke-[2]" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[13.5px] font-bold text-[#0D3528] truncate">
+                          {lang === "en" ? "Home, Lock & Control Widgets" : "Widget Layar Utama, Kunci & Kontrol"}
+                        </span>
+                        <span className="text-[9.5px] font-bold uppercase px-2 py-0.5 rounded-full bg-[#E4F4ED] text-[#14664D] border border-[#BCE5D3] shrink-0 whitespace-nowrap">
+                          iOS 18
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-[#4C7567] mt-0.5 truncate">
+                        {lang === "en"
+                          ? "Configure 1-tap quick focus & live sanctuary telemetry"
+                          : "Atur fokus cepat 1-ketuk & telemetri suaka langsung"}
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-4 w-4 shrink-0 text-[#4C7567]" />
                 </button>
               </div>
 
@@ -521,7 +553,7 @@ export function MobileSettingsSheet({
                 </p>
 
                 {/* Master Audio Switch */}
-                <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-3.5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl flex items-center justify-between">
+                <div className="rounded-3xl border border-[#BCE5D3] bg-white p-3.5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-xl bg-[#E4F4ED] border border-[#BCE5D3] flex items-center justify-center text-[#187557] shrink-0">
                       {prefs.masterAudioEnabled ? (
@@ -577,7 +609,7 @@ export function MobileSettingsSheet({
 
                 <div className="grid grid-cols-2 gap-3 w-full">
                   {/* Musik Latar */}
-                  <div className="flex flex-col justify-between rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-4 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl overflow-hidden min-w-0">
+                  <div className="flex flex-col justify-between rounded-3xl border border-[#BCE5D3] bg-white p-4 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl overflow-hidden min-w-0">
                     <div className="flex items-center justify-between">
                       <Music className="h-4 w-4 text-[#187557] shrink-0 stroke-[1.8]" />
                       <button
@@ -657,7 +689,7 @@ export function MobileSettingsSheet({
                   {/* Efek Suara & Getaran Stack */}
                   <div className="flex flex-col gap-3 min-w-0">
                     {/* Efek Suara */}
-                    <div className="flex flex-col justify-between rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-3.5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl min-w-0">
+                    <div className="flex flex-col justify-between rounded-3xl border border-[#BCE5D3] bg-white p-3.5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl min-w-0">
                       <div className="flex items-center justify-between">
                         <p className="text-[13px] font-semibold text-[#0D3528] truncate">
                           {t.settings.soundFx}
@@ -712,7 +744,7 @@ export function MobileSettingsSheet({
                     </div>
 
                     {/* Getaran Haptik */}
-                    <div className="flex flex-col justify-between rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-3.5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl min-w-0">
+                    <div className="flex flex-col justify-between rounded-3xl border border-[#BCE5D3] bg-white p-3.5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl min-w-0">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1.5 min-w-0 pr-1">
                           <Smartphone className="h-3.5 w-3.5 shrink-0 text-[#187557] stroke-[1.8]" />
@@ -792,7 +824,7 @@ export function MobileSettingsSheet({
                   </span>
                 </div>
 
-                <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-4 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-3">
+                <div className="rounded-3xl border border-[#BCE5D3] bg-white p-4 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-3">
                   {/* Selector Grid for Unlocked Biomes */}
                   <div className="grid grid-cols-4 gap-1.5 p-1 rounded-2xl bg-[#0D3528]/6">
                     {BIOME_CATALOG.map((biome) => {
@@ -890,7 +922,7 @@ export function MobileSettingsSheet({
                   </span>
                 </div>
 
-                <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-4 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-2.5">
+                <div className="rounded-3xl border border-[#BCE5D3] bg-white p-4 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-2.5">
                   <div className="grid grid-cols-3 gap-1.5 p-1 rounded-2xl bg-[#0D3528]/6">
                     {[
                       {
@@ -961,7 +993,7 @@ export function MobileSettingsSheet({
                   </span>
                 </div>
 
-                <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-4 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-3">
+                <div className="rounded-3xl border border-[#BCE5D3] bg-white p-4 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-3">
                   {/* Row 1: Izin Notifikasi */}
                   <div className="flex flex-col gap-2 pb-3 border-b border-[#0D3528]/8">
                     <div className="flex items-center justify-between">
@@ -1040,7 +1072,7 @@ export function MobileSettingsSheet({
                         className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#187557]/10 hover:bg-[#187557]/15 border border-[#187557]/20 text-[#187557] text-[11px] font-semibold active:scale-95 transition-all cursor-pointer"
                       >
                         <Bell className="w-3 h-3 stroke-[2]" />
-                        <span>{isTestingNotif ? "Mengirim..." : t.settings.notifTestBtn}</span>
+                        <span>{isTestingNotif ? (lang === "en" ? "Sending..." : "Mengirim...") : t.settings.notifTestBtn}</span>
                       </button>
                     </div>
 
@@ -1147,7 +1179,7 @@ export function MobileSettingsSheet({
                       onClick={handleOpenSystemSettings}
                       className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-[#187557] hover:bg-[#136147] text-white text-[11px] font-semibold shrink-0 shadow-xs active:scale-95 transition-all cursor-pointer"
                     >
-                      <span>Buka</span>
+                      <span>{lang === "en" ? "Open" : "Buka"}</span>
                       <ExternalLink className="w-3 h-3 stroke-[2.2]" />
                     </button>
                   </div>
@@ -1170,7 +1202,7 @@ export function MobileSettingsSheet({
                       hapticLight();
                       setCurrentView("storage");
                     }}
-                    className="group flex flex-col justify-between rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-4 text-left shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl transition-all active:scale-[0.98] cursor-pointer min-w-0"
+                    className="group flex flex-col justify-between rounded-3xl border border-[#BCE5D3] bg-white p-4 text-left shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl transition-all active:scale-[0.98] cursor-pointer min-w-0"
                   >
                     <div className="flex items-center justify-between w-full">
                       <Database className="h-4 w-4 text-[#187557] shrink-0 stroke-[1.8]" />
@@ -1192,7 +1224,7 @@ export function MobileSettingsSheet({
                     type="button"
                     disabled={isSyncingCloud}
                     onClick={handleManualCloudSync}
-                    className="group flex flex-col justify-between rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-4 text-left shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl transition-all active:scale-[0.98] cursor-pointer min-w-0"
+                    className="group flex flex-col justify-between rounded-3xl border border-[#BCE5D3] bg-white p-4 text-left shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl transition-all active:scale-[0.98] cursor-pointer min-w-0"
                   >
                     <div className="flex items-center justify-between w-full">
                       <Cloud className="h-4 w-4 text-[#187557] shrink-0 stroke-[1.8]" />
@@ -1231,7 +1263,7 @@ export function MobileSettingsSheet({
                   {lang === "en" ? "About & Legal" : "Tentang & Legal"}
                 </p>
 
-                <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-1.5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl divide-y divide-[#0D3528]/8">
+                <div className="rounded-3xl border border-[#BCE5D3] bg-white p-1.5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl divide-y divide-[#0D3528]/8">
                   {/* Panduan Permainan */}
                   <button
                     type="button"
@@ -1370,12 +1402,12 @@ export function MobileSettingsSheet({
                 SUB-VIEW: PENYIMPANAN & CADANGAN SUAKA
                 ==================================================== */
             <div className="space-y-3.5 animate-in fade-in slide-in-from-right-3 duration-200">
-              <div className="p-4 rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 text-[12px] text-[#4C7567] leading-relaxed shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl font-normal">
+              <div className="p-4 rounded-3xl border border-[#BCE5D3] bg-white text-[12px] text-[#4C7567] leading-relaxed shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl font-normal">
                 {t.settings.storageInfo}
               </div>
 
               {/* Supabase Cloud Sync Card */}
-              <div className="p-4 rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 space-y-3 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl">
+              <div className="p-4 rounded-3xl border border-[#BCE5D3] bg-white space-y-3 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-xl bg-[#E4F4ED] border border-[#BCE5D3] flex items-center justify-center text-[#187557]">
@@ -1441,7 +1473,7 @@ export function MobileSettingsSheet({
                   soundManager.playPop();
                   setShowChangePasswordModal(true);
                 }}
-                className="flex w-full items-center justify-between rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-4 text-left shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl transition-all active:scale-[0.98] cursor-pointer"
+                className="flex w-full items-center justify-between rounded-3xl border border-[#BCE5D3] bg-white p-4 text-left shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl transition-all active:scale-[0.98] cursor-pointer"
               >
                 <div className="flex items-center gap-3 min-w-0 pr-2">
                   <KeyRound className="h-4 w-4 text-[#187557] shrink-0 stroke-[1.8]" />
@@ -1466,7 +1498,7 @@ export function MobileSettingsSheet({
                 <button
                   type="button"
                   onClick={handleExportBackup}
-                  className="flex w-full items-center justify-between rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-4 text-left shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl transition-all active:scale-[0.98] cursor-pointer"
+                  className="flex w-full items-center justify-between rounded-3xl border border-[#BCE5D3] bg-white p-4 text-left shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl transition-all active:scale-[0.98] cursor-pointer"
                 >
                   <div className="flex items-center gap-3 min-w-0 pr-2">
                     <Download className="h-4 w-4 text-[#187557] shrink-0 stroke-[1.8]" />
@@ -1490,7 +1522,7 @@ export function MobileSettingsSheet({
                     hapticLight();
                     setShowSnapshotsModal(true);
                   }}
-                  className="flex w-full items-center justify-between rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-4 text-left shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl transition-all active:scale-[0.98] cursor-pointer"
+                  className="flex w-full items-center justify-between rounded-3xl border border-[#BCE5D3] bg-white p-4 text-left shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl transition-all active:scale-[0.98] cursor-pointer"
                 >
                   <div className="flex items-center gap-3 min-w-0 pr-2">
                     <History className="h-4 w-4 text-[#187557] shrink-0 stroke-[1.8]" />
@@ -1512,7 +1544,7 @@ export function MobileSettingsSheet({
                     hapticLight();
                     setShowRestoreModal(true);
                   }}
-                  className="flex w-full items-center justify-between rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-4 text-left shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl transition-all active:scale-[0.98] cursor-pointer"
+                  className="flex w-full items-center justify-between rounded-3xl border border-[#BCE5D3] bg-white p-4 text-left shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl transition-all active:scale-[0.98] cursor-pointer"
                 >
                   <div className="flex items-center gap-3 min-w-0 pr-2">
                     <RotateCcw className="h-4 w-4 text-[#187557] shrink-0 stroke-[1.8]" />
@@ -1542,7 +1574,7 @@ export function MobileSettingsSheet({
                     hapticWarning();
                     setIsResetConfirmOpen(true);
                   }}
-                  className="flex w-full items-center justify-between rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-4 text-left shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl transition-all active:scale-[0.98] cursor-pointer"
+                  className="flex w-full items-center justify-between rounded-3xl border border-[#BCE5D3] bg-white p-4 text-left shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl transition-all active:scale-[0.98] cursor-pointer"
                 >
                   <div className="flex items-center gap-3 min-w-0 pr-2">
                     <Trash2 className="h-4 w-4 text-emerald-700 shrink-0 stroke-[1.8]" />
@@ -1755,6 +1787,10 @@ export function MobileSettingsSheet({
         <ChangePasswordModal
           isOpen={showChangePasswordModal}
           onClose={() => setShowChangePasswordModal(false)}
+        />
+        <WidgetControlCenterModal
+          isOpen={showWidgetsModal}
+          onClose={() => setShowWidgetsModal(false)}
         />
       </div>
     </>

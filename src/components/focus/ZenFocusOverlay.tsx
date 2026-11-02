@@ -12,7 +12,7 @@ import {
 } from "@/lib/audio/soundscapes";
 import { hapticLight } from "@/lib/mobile/nativeBridge";
 import { TREE_SPECIES_CONFIG, FOCUS_TAGS } from "@/lib/game/config";
-import { TreeSpecies, FocusTag } from "@/types/game";
+import { TreeSpecies } from "@/types/game";
 import { useTranslation } from "@/lib/i18n/translations";
 import {
   Minimize2,

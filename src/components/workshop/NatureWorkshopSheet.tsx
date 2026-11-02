@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import { useGameStore } from "@/lib/game/useGameStore";
-import { BUILD_CATALOG, CatalogItem, GAME_CONFIG } from "@/lib/game/config";
+import { BUILD_CATALOG, CatalogItem } from "@/lib/game/config";
 import {
   getUnlockedTilesSet,
   getLandExpansionZoneInfo,

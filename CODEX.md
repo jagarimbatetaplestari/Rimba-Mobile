@@ -1,4 +1,8 @@
 # RIMBA MOBILE (CODEX MASTER SYSTEM INSTRUCTIONS)
+
+## Acuan kerja dan status rilis — 2 November 2026
+
+Baca [aturan bersama](../rules.md) dan [handoff rilis](docs/release/HANDOFF_NEXT_CHAT.md) sebelum bekerja. Kandidat TestFlight 1.0 (5) sudah VALID dan tersedia di grup Internal; draft memilih build5. Ini belum membuktikan kesiapan Submit. Pemilik akan menyampaikan hasil pengujian perangkat kemudian; jangan menandai hasilnya lulus tanpa laporan. Gunakan checkpoint terbaru, pertahankan isolasi data akun dan fix OTP8digit, serta hindari sinkronisasi source atau audit berulang yang tidak diperlukan.
 ### Autonomous Senior Principal Mobile Engineer & 3D Sanctuary Systems Architect Handbook
 **Target Repository:** `Rimba-Mobile` (`d:\Project\Rimba\Rimba-Mobile`)  
 **Monorepo Workspace:** `d:\Project\Rimba` (`Rimba-Mobile`, `Rimba-Website`, `Rimba-Desktop`)  
@@ -98,7 +102,7 @@ You MUST strictly adhere to these four core engineering principles on every task
 ### 4.2 GitHub Repository & CI/CD
 - **Remote URL**: `https://github.com/jagarimbatetaplestari/Rimba-Mobile.git`
 - **Workflow Rilis TestFlight**: `.github/workflows/deploy-appstore.yml`
-- **Trigger**: Push git tag `v*` pada repositori `Rimba-Mobile`.
+- **Trigger**: `workflow_dispatch` pada branch kandidat yang dipilih atau push tag `v*`. Verifikasi SHA kandidat dan kompilasi native sebelum upload; status App Review terpisah.
 
 ### 4.3 Apple Developer & App Store Connect Directory (`D:\Project\Apple Dev`)
 Kredensial dan sertifikat penandatanganan aplikasi Rimba:
@@ -106,7 +110,7 @@ Kredensial dan sertifikat penandatanganan aplikasi Rimba:
 | Berkas di `D:\Project\Apple Dev` | Fungsi & Identitas | Pemetaan di GitHub Secrets |
 |:---|:---|:---|
 | `Rimba_AppStore_Distribution.mobileprovision` | Profil provisioning App Store (`com.syntheticae.rimba`) | `APPLE_PROVISION_PROFILE_BASE64` |
-| `distribution.p12` | Sertifikat Apple Distribution resmi (Syntheticae) | `APPLE_CERTIFICATE_BASE64` (password di `APPLE_CERTIFICATE_PASSWORD` / default `Accrual2026Secret`) |
+| `distribution.p12` | Sertifikat Apple Distribution resmi (Syntheticae) | `APPLE_CERTIFICATE_BASE64` (password hanya di secret `APPLE_CERTIFICATE_PASSWORD`; jangan tulis nilainya di dokumen) |
 | `AuthKey_X4SX9VQZ44.p8` / `AuthKey_RFD9S3H8RW.p8` | API Private Key App Store Connect (`Key ID: X4SX9VQZ44` / `RFD9S3H8RW`) | `APP_STORE_CONNECT_PRIVATE_KEY_BASE64` (Key ID di `APP_STORE_CONNECT_KEY_ID`) |
 | `Issuer ID.txt` | Apple Issuer ID: `c32ee50b-c9f8-4532-898e-4c793cac57f6` | `APP_STORE_CONNECT_ISSUER_ID` |
 
@@ -130,10 +134,7 @@ npm run build
 npx cap sync ios
 
 # 5. Rilis TestFlight via GitHub Actions
-# Bump versi di package.json, commit, dan push tag:
-git add .
-git commit -m "feat(sanctuary): update focus flow and release v1.0.x"
-git tag v1.0.x
-git push origin main
-git push origin v1.0.x
+# Setelah verifikasi kandidat, jalankan deploy-appstore.yml dengan workflow_dispatch
+# pada branch/SHA yang ditinjau. Pastikan build VALID dan tersedia untuk Internal.
+# Jangan push main/tag atau Submit hanya karena build lokal lulus.
 ```

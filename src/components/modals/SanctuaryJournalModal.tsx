@@ -18,7 +18,7 @@ import {
 import { getLevelFromXp } from "@/lib/game/levelRules";
 import { getDailyQuestStatus } from "@/lib/game/quests";
 import { STORY_CHAPTERS } from "@/lib/game/storyLore";
-import { getWisdomProgress, WisdomFragment } from "@/lib/game/wisdomLore";
+import { getWisdomProgress } from "@/lib/game/wisdomLore";
 import { TagLineIcon } from "@/components/common/TagLineIcon";
 import { soundManager } from "@/lib/audio/sounds";
 import {
@@ -28,7 +28,7 @@ import {
   hapticWarning,
 } from "@/lib/mobile/nativeBridge";
 import { StoryReaderModal } from "@/components/modals/StoryReaderModal";
-import { DailyQuestId, BiomeType } from "@/types/game";
+import { DailyQuestId } from "@/types/game";
 import { useTranslation } from "@/lib/i18n/translations";
 import {
   X,
@@ -420,20 +420,22 @@ export function SanctuaryJournalModal({
       `}</style>
 
       <div
-        className="fixed inset-0 z-[100] h-[100dvh] w-full overflow-y-auto overscroll-contain no-scrollbar select-none antialiased font-urbanist text-[#0D3528] pointer-events-auto bg-[#FAFAF7]"
+        className="fixed inset-0 z-[100] h-[100dvh] w-full overflow-y-auto overscroll-contain no-scrollbar select-none antialiased font-urbanist text-[#0D3528] pointer-events-auto bg-gradient-to-b from-[#E6F1EC] via-[#EEF6F2] to-[#E3EFE9]"
         role="dialog"
         aria-modal="true"
       >
         <div className="w-full max-w-md mx-auto px-5 safe-modal-content space-y-4">
-          {/* HEADER NAV */}
-          <div className="flex items-center justify-between py-1">
-            <div className="flex items-center gap-2.5">
-              <h2 className="text-[23px] font-semibold tracking-normal text-[#0D3528]">
-                {t.journal.title}
-              </h2>
-              <span className="rounded-full bg-[#E4F4ED] border border-[#BCE5D3] px-3 py-0.5 text-[11.5px] font-medium text-[#14664D]">
-                {t.journal.subtitle}
-              </span>
+          {/* STICKY SAFE-AREA HEADER NAV */}
+          <div className="safe-sticky-modal-header flex items-center justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <h2 className="text-[20px] font-bold tracking-tight text-[#0D3528] whitespace-nowrap truncate">
+                  {t.journal.title}
+                </h2>
+                <span className="rounded-full bg-[#E4F4ED] border border-[#BCE5D3] px-2.5 py-0.5 text-[10.5px] font-semibold text-[#14664D] whitespace-nowrap shrink-0">
+                  {t.journal.subtitle}
+                </span>
+              </div>
             </div>
 
             <button
@@ -442,15 +444,15 @@ export function SanctuaryJournalModal({
                 hapticLight();
                 onClose();
               }}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0D3528]/5 border border-[#0D3528]/10 text-[#0D3528] shadow-xs active:scale-90 transition-transform hover:bg-[#0D3528]/10 cursor-pointer"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white border border-[#0D3528]/15 text-[#0D3528] shadow-xs active:scale-90 transition-transform hover:bg-[#0D3528]/5 cursor-pointer"
               aria-label={t.common.close}
             >
-              <X className="h-4 w-4 stroke-[2]" />
+              <X className="h-4 w-4 stroke-[2.2]" />
             </button>
           </div>
 
           {/* 5-PILLAR SEGMENTED SWITCHER (Clean Alabaster Pill Bar) */}
-          <div className="rounded-full p-1 border border-[#0D3528]/8 bg-[#0D3528]/[0.05] shadow-xs flex items-center justify-between gap-1 overflow-x-auto no-scrollbar">
+          <div className="rounded-full p-1 border border-[#BCE5D3] bg-white/85 shadow-xs flex items-center justify-between gap-1 overflow-x-auto no-scrollbar">
             <button
               type="button"
               onClick={() => {
@@ -460,7 +462,7 @@ export function SanctuaryJournalModal({
               }}
               className={`flex-1 min-w-[56px] py-1.5 px-2 rounded-full text-[11px] sm:text-[12px] whitespace-nowrap transition-all relative cursor-pointer text-center ${
                 activeTab === "quests"
-                  ? "bg-white text-[#0D3528] shadow-xs font-semibold"
+                  ? "bg-[#187557] text-white shadow-xs font-semibold"
                   : "text-[#4C7567] hover:text-[#0D3528] font-medium"
               }`}
             >
@@ -479,7 +481,7 @@ export function SanctuaryJournalModal({
               }}
               className={`flex-1 min-w-[56px] py-1.5 px-2 rounded-full text-[11px] sm:text-[12px] whitespace-nowrap transition-all cursor-pointer text-center ${
                 activeTab === "reflections"
-                  ? "bg-white text-[#0D3528] shadow-xs font-semibold"
+                  ? "bg-[#187557] text-white shadow-xs font-semibold"
                   : "text-[#4C7567] hover:text-[#0D3528] font-medium"
               }`}
             >
@@ -495,7 +497,7 @@ export function SanctuaryJournalModal({
               }}
               className={`flex-1 min-w-[56px] py-1.5 px-2 rounded-full text-[11px] sm:text-[12px] whitespace-nowrap transition-all relative cursor-pointer text-center ${
                 activeTab === "story"
-                  ? "bg-white text-[#0D3528] shadow-xs font-semibold"
+                  ? "bg-[#187557] text-white shadow-xs font-semibold"
                   : "text-[#4C7567] hover:text-[#0D3528] font-medium"
               }`}
             >
@@ -514,7 +516,7 @@ export function SanctuaryJournalModal({
               }}
               className={`flex-1 min-w-[56px] py-1.5 px-2 rounded-full text-[11px] sm:text-[12px] whitespace-nowrap transition-all relative cursor-pointer text-center ${
                 activeTab === "wisdom"
-                  ? "bg-white text-[#0D3528] shadow-xs font-semibold"
+                  ? "bg-[#187557] text-white shadow-xs font-semibold"
                   : "text-[#4C7567] hover:text-[#0D3528] font-medium"
               }`}
             >
@@ -533,7 +535,7 @@ export function SanctuaryJournalModal({
               }}
               className={`flex-1 min-w-[56px] py-1.5 px-2 rounded-full text-[11px] sm:text-[12px] whitespace-nowrap transition-all relative cursor-pointer text-center ${
                 activeTab === "biomes"
-                  ? "bg-white text-[#0D3528] shadow-xs font-semibold"
+                  ? "bg-[#187557] text-white shadow-xs font-semibold"
                   : "text-[#4C7567] hover:text-[#0D3528] font-medium"
               }`}
             >
@@ -547,7 +549,7 @@ export function SanctuaryJournalModal({
           {activeTab === "quests" && (
             <div className="space-y-4 animate-in fade-in duration-200">
               {/* Streak & Pelindung Streak Banner */}
-              <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-4">
+              <div className="rounded-3xl border border-[#BCE5D3] bg-white p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3.5">
                     <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200/70 text-amber-600 flex items-center justify-center shadow-xs">
@@ -641,10 +643,10 @@ export function SanctuaryJournalModal({
               {/* Daily Quests List */}
               <div className="space-y-2.5">
                 <div className="flex items-baseline justify-between px-1">
-                  <p className="text-[12px] font-medium uppercase tracking-[0.12em] text-white/90 drop-shadow-xs">
+                  <p className="text-[12px] font-bold uppercase tracking-[0.1em] text-[#0D3528]">
                     {t.journal.dailyQuestsTitle}
                   </p>
-                  <span className="text-[11.5px] text-emerald-100 font-normal">
+                  <span className="text-[11.5px] text-[#14664D] font-semibold">
                     {t.journal.completedCount.replace(
                       "{done}",
                       String(questSummary.quests.filter((q) => q.isClaimed).length)
@@ -662,7 +664,7 @@ export function SanctuaryJournalModal({
                   return (
                     <div
                       key={q.id}
-                      className="p-4 rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-3"
+                      className="p-4 rounded-3xl border border-[#BCE5D3] bg-white shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-3"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-center gap-3">
@@ -711,7 +713,7 @@ export function SanctuaryJournalModal({
                 })}
 
                 {/* Bonus Semua Misi (All-Clear Chest) */}
-                <div className="p-4 rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl flex items-center justify-between gap-3">
+                <div className="p-4 rounded-3xl border border-[#BCE5D3] bg-white shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#2BB688] to-[#187557] text-white flex items-center justify-center shadow-xs">
                       <Sparkles className="w-5 h-5 stroke-[1.8]" />
@@ -754,7 +756,7 @@ export function SanctuaryJournalModal({
           {activeTab === "reflections" && (
             <div className="space-y-4 animate-in fade-in duration-200">
               {/* Header Summary (Open Airy Divide Layout) */}
-              <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-4 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl grid grid-cols-3 py-2 divide-x divide-[#0D3528]/10 text-center">
+              <div className="rounded-3xl border border-[#BCE5D3] bg-white p-4 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl grid grid-cols-3 py-2 divide-x divide-[#0D3528]/10 text-center">
                 <div className="px-1">
                   <span className="text-[11px] text-[#4C7567] block font-normal">
                     {t.journal.totalSessions}
@@ -807,8 +809,8 @@ export function SanctuaryJournalModal({
                         }}
                         className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer border ${
                           isActive
-                            ? "bg-white text-[#0D3528] border-white/90 shadow-md shadow-[#0E3B2D]/15 scale-100"
-                            : "bg-white/20 hover:bg-white/30 text-white border-white/25 backdrop-blur-md"
+                            ? "bg-[#187557] text-white border-[#187557] shadow-sm scale-100"
+                            : "bg-white hover:bg-[#E4F4ED] text-[#0D3528] border-[#BCE5D3] shadow-2xs"
                         }`}
                       >
                         {pill.label}
@@ -826,8 +828,8 @@ export function SanctuaryJournalModal({
                   }}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer border shrink-0 ${
                     notesOnlyFilter
-                      ? "bg-white text-[#187557] border-white/90 shadow-md shadow-[#0E3B2D]/15 scale-100"
-                      : "bg-white/20 hover:bg-white/30 text-white border-white/25 backdrop-blur-md"
+                      ? "bg-[#187557] text-white border-[#187557] shadow-sm scale-100"
+                      : "bg-white hover:bg-[#E4F4ED] text-[#0D3528] border-[#BCE5D3] shadow-2xs"
                   }`}
                 >
                   <Edit3 className="w-3 h-3 stroke-[2.2]" />
@@ -837,7 +839,7 @@ export function SanctuaryJournalModal({
 
               {/* Timeline Groups */}
               {groupedSessions.length === 0 ? (
-                <div className="p-7 rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 text-center space-y-2 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl">
+                <div className="p-7 rounded-3xl border border-[#BCE5D3] bg-white text-center space-y-2 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl">
                   <BookMarked className="w-8 h-8 text-[#187557]/40 mx-auto stroke-[1.8]" />
                   <p className="text-[14px] font-semibold text-[#0D3528]">
                     {t.journal.emptyNotesTitle}
@@ -849,7 +851,7 @@ export function SanctuaryJournalModal({
               ) : (
                 groupedSessions.map((group) => (
                   <div key={group.label} className="space-y-2.5">
-                    <p className="px-1 text-[12px] font-medium uppercase tracking-[0.12em] text-white/90 drop-shadow-xs">
+                    <p className="px-1 text-[12px] font-bold uppercase tracking-[0.1em] text-[#0D3528]">
                       {group.label}
                     </p>
 
@@ -899,7 +901,7 @@ export function SanctuaryJournalModal({
                             className={`p-4 rounded-3xl border shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-3 transition-all ${
                               isAbandoned
                                 ? "border-stone-300/80 bg-stone-50/90 opacity-90"
-                                : "border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 hover:bg-white"
+                                : "border-[#BCE5D3] bg-white hover:bg-white"
                             }`}
                           >
                             {/* Top Meta Bar */}
@@ -1060,10 +1062,10 @@ export function SanctuaryJournalModal({
             <div className="space-y-3.5 pb-6 animate-in fade-in duration-200">
               {/* Header Seksi */}
               <div className="px-1 pb-0.5">
-                <p className="text-[12px] font-medium uppercase tracking-[0.12em] text-white/90 drop-shadow-xs">
+                <p className="text-[12px] font-bold uppercase tracking-[0.1em] text-[#0D3528]">
                   {t.journal.storyHeader}
                 </p>
-                <p className="text-[11.5px] text-emerald-100 font-normal mt-0.5">
+                <p className="text-[11.5px] text-[#4C7567] font-medium mt-0.5">
                   {t.journal.storySub}
                 </p>
               </div>
@@ -1198,7 +1200,7 @@ export function SanctuaryJournalModal({
           {activeTab === "wisdom" && (
             <div className="space-y-4 pb-6 animate-in fade-in duration-200">
               {/* Header Hero: Pohon Kebijaksanaan (Apple Liquid Glass) */}
-              <div className="rounded-[32px] border border-white/80 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-5 shadow-xl shadow-[#0E3B2D]/10 backdrop-blur-2xl space-y-4 relative overflow-hidden">
+              <div className="rounded-[32px] border border-[#BCE5D3] bg-white p-5 shadow-xl shadow-[#0E3B2D]/10 backdrop-blur-2xl space-y-4 relative overflow-hidden">
                 {/* Top specular sheen */}
                 <div className="absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-white/40 to-transparent pointer-events-none rounded-t-[32px]" />
 
@@ -1313,7 +1315,7 @@ export function SanctuaryJournalModal({
               {/* Fragment Cards List */}
               <div className="space-y-3.5">
                 <div className="flex items-center justify-between px-1 pt-1">
-                  <h3 className="text-[13px] font-bold text-white uppercase tracking-wider drop-shadow-xs">
+                  <h3 className="text-[12.5px] font-bold text-[#0D3528] uppercase tracking-wider">
                     {t.journal.quotesHeader
                       .replace(
                         "{unlocked}",
@@ -1321,7 +1323,7 @@ export function SanctuaryJournalModal({
                       )
                       .replace("{total}", String(wisdomProgress.totalCount))}
                   </h3>
-                  <span className="text-[11px] font-medium text-emerald-100">
+                  <span className="text-[11px] font-semibold text-[#14664D]">
                     {t.journal.basedOnHours}
                   </span>
                 </div>
@@ -1359,8 +1361,8 @@ export function SanctuaryJournalModal({
                         key={frag.id}
                         className={`rounded-[28px] border p-5 transition-all space-y-3.5 relative overflow-hidden ${
                           frag.isUnlocked
-                            ? "bg-white/95 border-white/80 shadow-lg shadow-[#0E3B2D]/6 hover:border-emerald-300/80 transition-all duration-300"
-                            : "bg-white/55 border-white/40 opacity-80 backdrop-blur-md"
+                            ? "bg-white border-[#BCE5D3] shadow-md hover:border-[#187557]/50 transition-all duration-300"
+                            : "bg-white/90 border-[#BCE5D3]/80 shadow-sm"
                         }`}
                       >
                         {/* Top row */}
@@ -1490,7 +1492,7 @@ export function SanctuaryJournalModal({
           {activeTab === "biomes" && (
             <div className="space-y-4 animate-in fade-in duration-200">
               {/* Sanctuary Level & Biome Header Card */}
-              <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-3">
+              <div className="rounded-3xl border border-[#BCE5D3] bg-white p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-2xl bg-[#E4F4ED] border border-[#BCE5D3] flex items-center justify-center text-[#187557]">

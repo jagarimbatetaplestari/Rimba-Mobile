@@ -10,15 +10,12 @@ import { useTranslation } from "@/lib/i18n/translations";
 import { BiomeType } from "@/types/game";
 import {
   X,
-  Sparkles,
-  Lock,
+    Lock,
   Check,
   Compass,
   Calendar,
   Eye,
-  Sliders,
-  Flame,
-} from "lucide-react";
+    } from "lucide-react";
 
 export interface QuickBiomePickerSheetProps {
   isOpen: boolean;

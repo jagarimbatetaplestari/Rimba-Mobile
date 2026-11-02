@@ -145,7 +145,7 @@ export function CampfireRoomModal({
       language === "en"
         ? `🔥 Join my Focus Together room on Rimba! Enter code [${code}] to grow trees together. #RimbaApp`
         : `🔥 Yuk fokus bareng di Rimba! Masukkan kode ruang [${code}] di aplikasi Rimba untuk tanam pohon bareng. #RimbaApp`;
-    if (typeof navigator !== "undefined" && navigator.share) {
+    if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
       try {
         await navigator.share({
           title: t.campfire.title,
@@ -165,19 +165,19 @@ export function CampfireRoomModal({
 
   return (
     <div
-      className="fixed inset-0 z-[100] h-[100dvh] w-full overflow-y-auto overscroll-contain no-scrollbar select-none antialiased font-urbanist text-[#0D3528] pointer-events-auto bg-[#FAFAF7]"
+      className="fixed inset-0 z-[100] h-[100dvh] w-full overflow-y-auto overscroll-contain no-scrollbar select-none antialiased font-urbanist text-[#0D3528] pointer-events-auto bg-gradient-to-b from-[#E6F1EC] via-[#EEF6F2] to-[#E3EFE9]"
       role="dialog"
       aria-modal="true"
     >
       <div className="w-full max-w-md mx-auto px-5 safe-modal-content space-y-4">
-        {/* HEADER NAV */}
-        <div className="flex items-center justify-between py-1">
-          <div className="flex items-center gap-2.5">
-            <h2 className="text-[23px] font-semibold tracking-normal text-[#0D3528] flex items-center gap-2">
-              <span>{t.campfire.title}</span>
+        {/* STICKY SAFE-AREA HEADER NAV */}
+        <div className="safe-sticky-modal-header flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <h2 className="text-[20px] font-bold tracking-tight text-[#0D3528] whitespace-nowrap truncate">
+              {t.campfire.title}
             </h2>
-            <span className="rounded-full bg-amber-50 border border-amber-200/80 px-3 py-0.5 text-[11.5px] font-medium text-amber-800 flex items-center gap-1">
-              <Flame className="w-3.5 h-3.5 text-amber-600 fill-amber-600" />
+            <span className="rounded-full bg-amber-50 border border-amber-200/80 px-2.5 py-0.5 text-[10.5px] font-semibold text-amber-800 flex items-center gap-1 whitespace-nowrap shrink-0">
+              <Flame className="w-3.5 h-3.5 text-amber-600 fill-amber-600 shrink-0" />
               <span>{t.campfire.badge}</span>
             </span>
           </div>
@@ -210,7 +210,7 @@ export function CampfireRoomModal({
         {/* ======================================================== */}
         {currentRoom ? (
           <div className="space-y-4 animate-in fade-in duration-200">
-            <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-4">
+            <div className="rounded-3xl border border-[#BCE5D3] bg-white p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-semibold break-words max-w-[15rem]">{currentRoom.name}</p>
@@ -498,7 +498,7 @@ export function CampfireRoomModal({
 
             {activeTab === "create" ? (
               /* TAB 1: CREATE ROOM */
-              <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-4">
+              <div className="rounded-3xl border border-[#BCE5D3] bg-white p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-4">
                 <div className="flex items-center gap-3">
                   <div className="w-11 h-11 rounded-2xl bg-amber-50 border border-amber-200/80 text-amber-600 flex items-center justify-center shadow-xs">
                     <Flame className="w-6 h-6 stroke-[1.8] fill-amber-500/30" />
@@ -637,7 +637,7 @@ export function CampfireRoomModal({
               </div>
             ) : (
               /* TAB 2: JOIN ROOM */
-              <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-4">
+              <div className="rounded-3xl border border-[#BCE5D3] bg-white p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-4">
                 <div className="flex items-center gap-3">
                   <div className="w-11 h-11 rounded-2xl bg-emerald-50 border border-emerald-200/80 text-[#187557] flex items-center justify-center shadow-xs">
                     <Users className="w-6 h-6 stroke-[1.8]" />

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useMemo } from "react";
-import { BookOpen, Clock3, Flame, Lock, Play, X } from "lucide-react";
+import { Clock3, Flame, Lock, Play, X } from "lucide-react";
 
 import { soundManager } from "@/lib/audio/sounds";
 import { hapticLight, hapticMedium } from "@/lib/mobile/nativeBridge";

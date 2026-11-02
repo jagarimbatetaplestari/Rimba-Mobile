@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useGameStore } from "@/lib/game/useGameStore";
 import { useTranslation } from "@/lib/i18n/translations";
-import { Flame, ShieldAlert, Sparkles } from "lucide-react";
+import { Flame, ShieldAlert } from "lucide-react";
 
 const GRACE_PERIOD_SECONDS = 10;
 

@@ -245,3 +245,7 @@ Current verification: 52/52 Vitest, mobile typecheck and npm run build passed af
 - All12native screenshots uploaded and placed using official Asset Library schema/reference groups.10active,2pending processing with no error details. Review notes for all3products saved; native paywall review screenshot pending.
 - SDK inventory:16privacy manifests in simulator app. GoogleSignIn8 declares potential coarse location/device/other usage beyond current inventory; final configuration-aware reconciliation and signed IPA audit remain OPEN. Facebook is linked by Capgo6.0.1 but Rimba initializes only Google, no Facebook appId; do not equate packaging with collection.
 - Requested owner tests on exact build5 and support-account registration. No device/purchase/deletion/moderation acceptance result received yet.
+
+### Pembaruan dokumentasi atas permintaan pemilik
+- Memperbarui whitepaper Mobile dan salinan root, whitepaper ekosistem, GEMINI, CLAUDE/CODEX root+Mobile; membuat root rules.md sebagai aturan bersama. Mengoreksi klaim seluruh fitur offline, enkripsi LocalStorage, benchmark tak terbukti, trigger rilis dan sinkronisasi source.
+- Status build5 VALID/Internal dan gerbang terbuka dicatat; pemilik menyatakan hasil tes akan disampaikan kemudian, belum ada acceptance baru. Verifikasi dokumen:9file,24tautan acuan baru,paritas isi kedua whitepaper Mobile (selain tautan relatif); tidak menjalankan ulang tes runtime untuk perubahan dokumen saja.

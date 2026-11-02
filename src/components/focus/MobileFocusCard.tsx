@@ -20,8 +20,7 @@ import { soundManager } from "@/lib/audio/sounds";
 import {
   hapticSuccess,
   hapticWarning,
-  hapticMedium,
-  hapticLight,
+    hapticLight,
 } from "@/lib/mobile/nativeBridge";
 import {
   checkOrRequestNotificationPermission,

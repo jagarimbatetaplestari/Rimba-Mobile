@@ -19,8 +19,7 @@ import { soundManager } from "@/lib/audio/sounds";
 import { hapticSuccess, hapticLight } from "@/lib/mobile/nativeBridge";
 import {
   Sparkles,
-  CheckCircle2,
-  Share2,
+    Share2,
   Sprout,
   Clock,
   Maximize2,
@@ -147,7 +146,7 @@ export function FocusHarvestModal({
         ? `🌱 Just completed a ${durationMins}-minute focus session on Rimba!\n🌳 Planted: ${localizedSpeciesName}\n🏷️ Tag: #${localizedTagLabel}${noteText}\n✨ Earned: +${rewards.gold} Soul & +${rewards.xp} XP\n\nStay focused and grow your island on Rimba 🌿`
         : `🌱 Baru saja menyelesaikan fokus ${durationMins} menit di Rimba!\n🌳 Menanam: ${localizedSpeciesName}\n🏷️ Kategori: #${localizedTagLabel}${noteText}\n✨ Hadiah: +${rewards.gold} Soul & +${rewards.xp} XP\n\nYuk fokus bareng dan tumbuhkan pulaumu di Rimba 🌿`;
 
-    if (typeof navigator !== "undefined" && navigator.share) {
+    if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
       try {
         await navigator.share({
           title: "Rimba Focus",

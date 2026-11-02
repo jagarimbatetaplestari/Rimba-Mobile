@@ -1,5 +1,4 @@
 import React, { useMemo, useEffect, useState, useRef } from 'react';
-import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { useGameStore } from '@/lib/game/useGameStore';

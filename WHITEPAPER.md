@@ -1,9 +1,25 @@
 # 📄 RIMBA MOBILE: TECHNICAL & PRODUCT WHITEPAPER
 ### *A Gamified 3D Isometric Productivity Sanctuary & Calm Mindfulness Ecosystem*
-**Versi:** 2.0.0 (Apple + Forest Minimalist Architecture Edition)  
-**Status:** Produksi / Rilis Mobile Terverifikasi  
+**Versi Dokumen:** 2.1 (Kandidat Rilis November 2026)
+**Status:** Kandidat TestFlight 1.0 (5); pengujian perangkat dan gerbang App Review terbuka
 **Penyusun:** Tim Rekayasa Sistem, Desain Produk & Gamifikasi Rimba  
-**Tanggal Publikasi:** Oktober 2026  
+**Diperbarui:** 2 November 2026
+
+---
+
+## Status implementasi dan rilis — 2 November 2026
+
+Dokumen ini menjelaskan produk dan arsitektur; versi dokumen berbeda dari versi aplikasi. Rimba iOS 1.0 (5) sudah VALID di Apple, tersedia untuk tester Internal, dan dipilih pada draft App Store. Source kandidat adalah 308215b; kode runtime f643673. Status ini belum berarti siap Submit. Rincian bukti dan status yang berubah ada di [handoff](docs/release/HANDOFF_NEXT_CHAT.md); aturan kerja ada di [rules.md](../rules.md).
+
+- **Autentikasi dan isolasi:** Supabase Auth dengan email, Apple dan Google. Input verifikasi/paste dan pemulihan password menerima OTP8digit utuh serta kode6digit lama, dengan submit eksplisit. Save/history mengikuti pemilik akun; logout menunggu sign-out lokal dan menolak hasil async dari akun sebelumnya.
+- **Fokus dan UI:** Perbaikan urutan hooks mencegah crash recovery berulang; navigasi logout, layering paywall/delete, flyout, dan ID/EN diperbaiki. Tes browser bukan bukti penerimaan di perangkat fisik.
+- **Cloud:** Penyimpanan lokal per pemilik, outbox idempoten, revision/CAS server dan pemilihan salinan konflik secara eksplisit. Konflik tidak diselesaikan dengan menimpa progres diam-diam.
+- **Pro:** Paket bulanan, tahunan dan lifetime memakai RevenueCat/native store dengan verifikasi backend. Save/JSON tidak dapat memberikan hak Pro; cache offline dibatasi24jam dan memerlukan bukti native yang sah.
+- **Campfire:** RPC server-authoritative, polling, otorisasi host/anggota, report/block, antrean moderator dan bonus berdasarkan snapshot runtime terverifikasi. Migrasi serta retensi harian10.17WIB sudah diterapkan; laporan/tindakan moderasi disimpan hingga90hari, dengan redaksi konten terkait saat akun dihapus. Akun support pemilik perlu terdaftar sebelum peran moderator ditetapkan.
+- **Bukti rilis:**324tes, typecheck,155prelaunch checks dan build produksi lulus pada runtime kandidat. CI simulator dan12screenshot native iPhone/iPad ID/EN tersedia. Screenshot diunggah ke draft; status pemrosesan Apple tetap dicek terpisah.
+- **Gerbang terbuka:** Pemilik akan melaporkan tes build5 pada iPhone/iPad. Pembelian/restore/lifecycle, login/deletion nyata, sync dua perangkat, moderasi, screenshot review IAP dan rekonsiliasi akhir privasi SDK belum dinyatakan lulus. Tidak ada submission App Review.
+
+Semua pohon, pulau dan hadiah adalah virtual; pembelian tidak menjanjikan penanaman pohon nyata.
 
 ---
 
@@ -33,7 +49,7 @@ Pembaruan **Versi 2.0.0 (Apple + Forest Minimalist Architecture Edition)** merep
 1. **Redesain & Relayout Menyeluruh:** Mengeliminasi lembar bawah bertumpuk (*stacked bottom sheets*) dan tombol bertumpuk yang mengaburkan pulau, beralih ke tata letak minimalis terinspirasi **Forest** dan **Apple iOS 18**.
 2. **Kanon Visual Latar Alam Organik:** Menggantikan latar krim/datar lama dengan gradien langit alam yang lembut dan menenangkan mata (*Organic Sky Gradient*), dilengkapi preferensi kustomisasi palet rumput pulau (*Island Grass Palette Options*).
 3. **Penyatuan Navigasi Satu Tangan (*One-Hand Bottom Dock*):** Menghadirkan dock mengambang ergonomis dengan tombol Hero 1-Tap Start yang instan.
-4. **Pemberesan Arsitektur Interaksi & Pointer-Events:** Mengatasi secara tuntas masalah isolasi penumpukan z-index (*stacking context*), menjamin setiap tombol penutup (X) dan *backdrop* modal responsif 100% terhadap sentuhan pengguna tanpa risiko terjebak di dalam layar.
+4. **Pemberesan Arsitektur Interaksi & Pointer-Events:** Memperbaiki isolasi penumpukan z-index (*stacking context*) dan pointer-events pada modal; alur browser sudah diuji, sedangkan penerimaan sentuhan native tetap harus diperiksa pada kandidat final.
 
 ```mermaid
 graph TD
@@ -321,22 +337,20 @@ classDiagram
 
 | Prinsip | Implementasi Teknis di Rimba Mobile |
 | :--- | :--- |
-| **Kedaulatan Privasi Penuh** | Nol pelacakan pihak ketiga (*Zero Analytics Trackers*), tidak ada telemetri invasif. |
-| **Konektivitas Mandiri (100% Offline)** | Seluruh fitur berjalan mulus di peramban tanpa koneksi internet aktif. |
+| **Privasi dan penyedia layanan** | Supabase, penyedia login, native store dan RevenueCat memproses data untuk fungsi layanan. Inventaris App Privacy harus sesuai perilaku SDK yang dikonfigurasi; audit akhir masih terbuka. |
+| **Local-first** | Progres tamu dan fokus dasar disimpan lokal. Auth, sync, Campfire serta pembelian/restore memerlukan jaringan; hak Pro offline memiliki batas verifikasi. |
 | **Integritas Buku Kas (Double-Entry Ledger)** | Koin Soul dan XP dicatat melalui buku kas mutasi deterministik untuk mencegah inkonsistensi saldo. |
-| **Keamanan Autentikasi Klien** | Hashing kata sandi berbasis SHA-256 lokal; data sensitif tersimpan terisolasi di LocalStorage terenkripsi. |
-| **Kompresi Avatar Lokal** | Foto avatar pengguna dikompresi menjadi JPEG 256×256 px langsung di memori Canvas peramban (~25 KB); tidak ada berkas yang dikirim ke server luar. |
+| **Autentikasi dan akses data** | Supabase Auth, HTTPS/TLS, RLS dan RPC server membatasi akses. LocalStorage bukan penyimpanan terenkripsi atau enkripsi end-to-end; namespace pemilik menjaga isolasi akun. |
+| **Avatar** | Avatar dapat diproses di perangkat lalu diunggah ke Supabase Storage dengan aturan pemilik. URL avatar bersifat publik; hapus akun juga menangani data avatar. |
 | **Pencadangan & Pemulihan Mandiri** | Ekspor dan impor seluruh basis data suaka dalam format JSON terbuka dengan validator skema bawaan. |
 
 ---
 
 ## 10. Metrik Performa & Jaminan Kualitas Mobile
 
-Berdasarkan audit benchmark terbaru:
-- **Kompilasi TypeScript:** `npx tsc --noEmit` lolos dengan **0 error (Strict Mode)**.
-- **Tingkat Responsivitas Server:** Dev server merespons dengan kode **HTTP 200 OK (0 fatal exceptions)**.
-- **Kecepatan Bingkai WebGL (*Framerate*):** Konstan pada **60 FPS** pada pengujian peramban mobile modern dengan beban 50+ objek 3D di kanvas.
-- **Waktu Muat Awal (*First Contentful Paint*):** Kurang dari **1.2 detik** berkat partisi kode dinamis dan pemuatan aset lokal terkompresi.
+Bukti kandidat runtime f643673:324tes Vitest, typecheck,155prelaunch checks, build produksi dan kompilasi simulator iPhone/iPad lulus. Screenshot native menunjukkan halaman utama dan fokus dalam ID/EN. Bukti ini bukan pengujian performa pada perangkat pemilik.
+
+Target60FPS dan waktu muat awal harus diukur pada perangkat nyata dengan versi, jumlah objek dan kondisi jaringan yang dicatat; dokumen ini tidak mengklaim hasil benchmark60FPS konstan atau FCP1.2detik sudah terbukti.
 
 ---
 

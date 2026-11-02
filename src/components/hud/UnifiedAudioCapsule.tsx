@@ -13,7 +13,7 @@ import {
 import { soundManager } from "@/lib/audio/sounds";
 import { hapticLight } from "@/lib/mobile/nativeBridge";
 import { useTranslation, translateSoundscape, translateMusicTrack } from "@/lib/i18n/translations";
-import { Volume2, VolumeX, Music, Waves } from "lucide-react";
+import { Volume2, VolumeX, Music } from "lucide-react";
 
 export interface UnifiedAudioCapsuleProps {
   onOpenSoundscapes?: () => void;

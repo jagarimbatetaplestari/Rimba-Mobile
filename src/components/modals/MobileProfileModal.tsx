@@ -19,6 +19,7 @@ import { AvatarPickerModal } from "@/components/modals/AvatarPickerModal";
 import { BadgesShowcaseModal } from "@/components/modals/BadgesShowcaseModal";
 import { RestoreDataModal } from "@/components/modals/RestoreDataModal";
 import { ChangePasswordModal } from "@/components/modals/ChangePasswordModal";
+import { WidgetControlCenterModal } from "@/components/modals/WidgetControlCenterModal";
 import { RangerAvatar } from "@/components/ui/RangerAvatar";
 import { useTranslation, getLocalizedRangerTitle } from "@/lib/i18n/translations";
 import {
@@ -85,6 +86,7 @@ export function MobileProfileModal({
   const [isBadgesOpen, setIsBadgesOpen] = useState(false);
   const [isRestoreOpen, setIsRestoreOpen] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [isWidgetsOpen, setIsWidgetsOpen] = useState(false);
 
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameInput, setNameInput] = useState("");
@@ -141,13 +143,13 @@ export function MobileProfileModal({
     [world, worldObjects],
   );
   const zoneInfo = useMemo(
-    () => getLandExpansionZoneInfo(unlockedSet.size),
-    [unlockedSet.size],
+    () => getLandExpansionZoneInfo(unlockedSet.size, language),
+    [unlockedSet.size, language],
   );
 
   const levelProgress = useMemo(
-    () => getLevelProgress(profile.xp),
-    [profile.xp],
+    () => getLevelProgress(profile.xp, language),
+    [profile.xp, language],
   );
   const currentLevel = levelProgress.currentLevel;
   const xpInCurrentLevel = levelProgress.xpInCurrentLevel;
@@ -157,8 +159,8 @@ export function MobileProfileModal({
   const sessions = saveData.focus_sessions || [];
   const streakInfo = useMemo(() => {
     const analytics = calculateAnalytics(sessions);
-    return getStreakMilestone(analytics.currentStreak);
-  }, [sessions]);
+    return getStreakMilestone(analytics.currentStreak, language);
+  }, [sessions, language]);
 
   const { treesCount, stumpsCount } = useMemo(() => {
     let trees = 0;
@@ -218,18 +220,18 @@ export function MobileProfileModal({
       `}</style>
 
       <div
-        className="fixed inset-0 z-[100] h-[100dvh] w-full overflow-y-auto overscroll-contain no-scrollbar select-none antialiased font-urbanist text-[#0D3528] pointer-events-auto bg-[#FAFAF7]"
+        className="fixed inset-0 z-[100] h-[100dvh] w-full overflow-y-auto overscroll-contain no-scrollbar select-none antialiased font-urbanist text-[#0D3528] pointer-events-auto bg-gradient-to-b from-[#E6F1EC] via-[#EEF6F2] to-[#E3EFE9]"
         role="dialog"
         aria-modal="true"
       >
         <div className="w-full max-w-md mx-auto px-5 safe-modal-content space-y-4">
-          {/* HEADER NAV */}
-          <div className="flex items-center justify-between py-1">
-            <div className="flex items-center gap-2.5">
-              <h2 className="text-[23px] font-semibold tracking-normal text-[#0D3528]">
+          {/* STICKY SAFE-AREA HEADER NAV */}
+          <div className="safe-sticky-modal-header flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <h2 className="text-[20px] font-bold tracking-tight text-[#0D3528] whitespace-nowrap truncate">
                 {t.profile.title}
               </h2>
-              <span className="rounded-full bg-[#E4F4ED] border border-[#BCE5D3] px-3 py-0.5 text-[11.5px] font-medium text-[#14664D]">
+              <span className="rounded-full bg-[#E4F4ED] border border-[#BCE5D3] px-2.5 py-0.5 text-[10.5px] font-semibold text-[#14664D] whitespace-nowrap shrink-0">
                 {rangerTitle}
               </span>
             </div>
@@ -263,7 +265,7 @@ export function MobileProfileModal({
           </div>
 
           {/* 1. KARTU IDENTITAS & XP (Translucent Blended White Gradient) */}
-          <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-4">
+          <div className="rounded-3xl border border-[#BCE5D3] bg-white p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-4">
             <div className="flex items-center gap-3.5">
               <button
                 type="button"
@@ -354,7 +356,7 @@ export function MobileProfileModal({
           </div>
 
           {/* 2. SUAKA & STATISTIK (Harmonious Air Layout) */}
-          <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/95 p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-4">
+          <div className="rounded-3xl border border-[#BCE5D3] bg-white p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-[14.5px] font-semibold text-[#0D3528] tracking-wide">
                 {world.name || (language === "en" ? "Rimba Island" : "Pulau Rimba")}
@@ -441,7 +443,7 @@ export function MobileProfileModal({
           </div>
 
           {/* 3. KOLEKSI POHON (List Bersih & Transparan) */}
-          <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/95 p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-3">
+          <div className="rounded-3xl border border-[#BCE5D3] bg-white p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-[14.5px] font-semibold text-[#0D3528] tracking-wide">
                 {t.profile.treeCollection}
@@ -496,7 +498,7 @@ export function MobileProfileModal({
           </div>
 
           {/* 4. PENCAPAIAN */}
-          <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/95 p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-3.5">
+          <div className="rounded-3xl border border-[#BCE5D3] bg-white p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-3.5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5">
                 <Award className="w-4 h-4 text-emerald-600 stroke-[1.8]" />
@@ -542,16 +544,16 @@ export function MobileProfileModal({
           </div>
 
           {/* 5. DATA & AKUN */}
-          <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/95 p-4 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-3">
-            <div className="flex items-center justify-between px-1">
-              <div className="flex items-center gap-2 min-w-0">
+          <div className="rounded-3xl border border-[#BCE5D3] bg-white p-4 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-3">
+            <div className="flex items-center justify-between gap-2 px-1">
+              <div className="flex items-center gap-1.5 min-w-0 flex-1">
                 <ShieldCheck className="w-4 h-4 text-[#187557] stroke-[1.8] shrink-0" />
-                <span className="text-[12.5px] font-medium text-[#0D3528] truncate max-w-[170px]">
+                <span className="text-[12px] font-semibold text-[#0D3528] truncate">
                   {user?.email || t.common.localSave}
                 </span>
                 {user && !user.isGuest && (
-                  <span className="rounded-full bg-[#E4F4ED] border border-[#BCE5D3] px-2 py-0.5 text-[10px] font-medium text-[#14664D] flex items-center gap-1 shrink-0">
-                    <Cloud className="w-2.5 h-2.5 stroke-[2]" />
+                  <span className="rounded-full bg-[#E4F4ED] border border-[#BCE5D3] px-2 py-0.5 text-[10px] font-semibold text-[#14664D] flex items-center gap-1 shrink-0 whitespace-nowrap">
+                    <Cloud className="w-2.5 h-2.5 stroke-[2] shrink-0" />
                     <span>Cloud</span>
                   </span>
                 )}
@@ -571,9 +573,9 @@ export function MobileProfileModal({
                     setIsSigningOut(false);
                   }
                 }}
-                className="flex items-center gap-1.5 text-[11px] font-medium text-rose-600 hover:text-rose-700 bg-rose-50 border border-rose-200/60 px-2.5 py-1 rounded-full active:scale-95 transition-transform"
+                className="flex items-center gap-1.5 text-[11px] font-semibold text-rose-700 hover:text-rose-800 bg-rose-50 border border-rose-200 px-3 py-1.5 rounded-full active:scale-95 transition-transform shrink-0 whitespace-nowrap cursor-pointer"
               >
-                <LogOut className="w-3 h-3 stroke-[1.8]" />
+                <LogOut className="w-3 h-3 stroke-[2] shrink-0" />
                 <span>{t.profile.logout}</span>
               </button>
             </div>
@@ -602,13 +604,32 @@ export function MobileProfileModal({
               <ChevronRight className="w-3.5 h-3.5 text-[#14664D]/60" />
             </button>
 
+            <button
+              type="button"
+              onClick={() => {
+                hapticLight();
+                setIsWidgetsOpen(true);
+              }}
+              className="w-full py-2.5 px-3 rounded-2xl bg-[#F4F9F6] hover:bg-[#E4F4ED] border border-[#BCE5D3] text-[12px] font-semibold text-[#0D3528] active:scale-[0.98] transition-all flex items-center justify-between shadow-2xs cursor-pointer"
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <MapPin className="w-3.5 h-3.5 text-[#187557] stroke-[2] shrink-0" />
+                <span className="truncate">
+                  {language === "en"
+                    ? "iOS Home, Lock & Control Widgets"
+                    : "Widget Layar Utama, Kunci & Kontrol"}
+                </span>
+              </div>
+              <ChevronRight className="w-3.5 h-3.5 text-[#4C7567] shrink-0" />
+            </button>
+
             <div className="grid grid-cols-2 gap-2.5 pt-1">
               <button
                 type="button"
                 onClick={handleDownloadBackup}
-                className="py-2.5 rounded-2xl bg-white/85 hover:bg-white border border-white text-[12px] font-medium text-[#0D3528] active:scale-95 transition-all flex items-center justify-center gap-1.5 shadow-xs"
+                className="py-2.5 px-3 rounded-2xl bg-[#F4F9F6] hover:bg-[#E4F4ED] border border-[#BCE5D3] text-[12px] font-semibold text-[#0D3528] active:scale-95 transition-all flex items-center justify-center gap-1.5 shadow-2xs whitespace-nowrap"
               >
-                <Download className="w-3.5 h-3.5 text-[#187557] stroke-[1.8]" />
+                <Download className="w-3.5 h-3.5 text-[#187557] stroke-[2] shrink-0" />
                 <span>{t.profile.backupBtn}</span>
               </button>
               <button
@@ -617,9 +638,9 @@ export function MobileProfileModal({
                   hapticLight();
                   setIsRestoreOpen(true);
                 }}
-                className="py-2.5 rounded-2xl bg-white/85 hover:bg-white border border-white text-[12px] font-medium text-[#0D3528] active:scale-95 transition-all flex items-center justify-center gap-1.5 shadow-xs"
+                className="py-2.5 px-3 rounded-2xl bg-[#F4F9F6] hover:bg-[#E4F4ED] border border-[#BCE5D3] text-[12px] font-semibold text-[#0D3528] active:scale-95 transition-all flex items-center justify-center gap-1.5 shadow-2xs whitespace-nowrap"
               >
-                <Upload className="w-3.5 h-3.5 text-[#187557] stroke-[1.8]" />
+                <Upload className="w-3.5 h-3.5 text-[#187557] stroke-[2] shrink-0" />
                 <span>{t.profile.restoreBtn}</span>
               </button>
             </div>
@@ -751,6 +772,10 @@ export function MobileProfileModal({
       <ChangePasswordModal
         isOpen={isChangePasswordOpen}
         onClose={() => setIsChangePasswordOpen(false)}
+      />
+      <WidgetControlCenterModal
+        isOpen={isWidgetsOpen}
+        onClose={() => setIsWidgetsOpen(false)}
       />
     </>
   );

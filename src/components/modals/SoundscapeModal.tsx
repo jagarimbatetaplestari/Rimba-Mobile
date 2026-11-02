@@ -42,7 +42,8 @@ type ActiveTab = "music" | "nature";
 type MusicFilterCategory = "all" | "jazz" | "chill" | "ambient";
 
 export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
-  const { t, translateSoundscape, translateMusicTrack } = useTranslation();
+  const { t, language, translateSoundscape, translateMusicTrack } = useTranslation();
+  const isEn = language === "en";
   const { entitlements, isPro, triggerPaywall } = useEntitlements();
 
   const [activeTab, setActiveTab] = useState<ActiveTab>("music");
@@ -96,7 +97,6 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
       soundscapeManager.stop();
       setActiveNatureTrack("off");
     } else {
-      // If user is on Free tier and music is currently playing, pause music to adhere to 1-track limit
       if (!entitlements.multiSoundscapeMixer && musicState.isPlaying) {
         musicPlayer.stop();
       }
@@ -121,7 +121,6 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
   const handleSelectMusicTrack = (track: MusicTrack) => {
     soundManager.playPop();
     hapticLight();
-    // If user is on Free tier and nature soundscape is playing, stop nature to adhere to 1-track limit
     if (!entitlements.multiSoundscapeMixer && activeNatureTrack !== "off") {
       soundscapeManager.stop();
       setActiveNatureTrack("off");
@@ -191,23 +190,28 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-[100] h-[100dvh] w-full overflow-y-auto overscroll-contain no-scrollbar select-none antialiased text-[#0D3528] pointer-events-auto bg-[#FAFAF7]"
+      className="fixed inset-0 z-[100] h-[100dvh] w-full overflow-y-auto overscroll-contain no-scrollbar select-none antialiased text-[#0D3528] pointer-events-auto bg-gradient-to-b from-[#E6F1EC] via-[#EEF6F2] to-[#E3EFE9]"
       role="dialog"
       aria-modal="true"
     >
-      <div className="w-full max-w-md mx-auto px-5 safe-modal-content space-y-4">
-        {/* HEADER NAV */}
-        <div className="flex items-center justify-between py-1">
-          <div className="flex items-center gap-2.5">
-            <h2 className="text-[23px] font-semibold tracking-normal text-[#0D3528]">
+      {/* STICKY SAFE-AREA HEADER (Zero 2-Line Text Wrapping & Notch-Safe) */}
+      <div
+        className="sticky top-0 z-30 w-full bg-[#E6F1EC]/92 backdrop-blur-xl border-b border-[#0D3528]/10"
+        style={{
+          paddingTop: "max(calc(env(safe-area-inset-top, 0px) + 12px), 44px)",
+        }}
+      >
+        <div className="w-full max-w-md mx-auto px-5 pb-3 flex items-center justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <h2 className="text-[20px] font-bold tracking-tight text-[#0D3528] whitespace-nowrap truncate">
               {t.audio.title}
             </h2>
-            <span className="rounded-full bg-[#E4F4ED] border border-[#BCE5D3] px-3 py-0.5 text-[11.5px] font-medium text-[#14664D]">
+            <p className="text-[11.5px] font-medium text-[#14664D] truncate mt-0.5">
               {t.audio.badge}
-            </span>
+            </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             {!isPro && (
               <button
                 type="button"
@@ -215,10 +219,10 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
                   hapticLight();
                   triggerPaywall("soundscape_mixer");
                 }}
-                className="rounded-full bg-amber-500/10 border border-amber-500/25 px-2.5 py-1 text-[10.5px] font-semibold text-amber-800 hover:bg-amber-500/20 active:scale-95 transition-all flex items-center gap-1 cursor-pointer"
+                className="rounded-full bg-amber-500/15 border border-amber-500/35 px-3 py-1.5 text-[11px] font-bold text-amber-900 hover:bg-amber-500/25 active:scale-95 transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer shadow-2xs"
               >
-                <Sparkles className="w-3 h-3 text-amber-600 stroke-[2]" />
-                <span>Dual Mixer Pro</span>
+                <Sparkles className="w-3.5 h-3.5 text-amber-600 stroke-[2] shrink-0" />
+                <span>{isEn ? "Dual Mixer Pro" : "Mixer Ganda Pro"}</span>
               </button>
             )}
 
@@ -228,36 +232,45 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
                 hapticLight();
                 onClose();
               }}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0D3528]/5 border border-[#0D3528]/10 text-[#0D3528] shadow-xs active:scale-90 transition-transform hover:bg-[#0D3528]/10 cursor-pointer"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white border border-[#0D3528]/15 text-[#0D3528] shadow-xs active:scale-90 transition-transform hover:bg-[#0D3528]/5 cursor-pointer"
               aria-label={t.common.close}
             >
-              <X className="h-4 w-4 stroke-[2]" />
+              <X className="h-4 w-4 stroke-[2.2]" />
             </button>
           </div>
         </div>
+      </div>
 
+      <div
+        className="w-full max-w-md mx-auto px-5 pt-4 space-y-4"
+        style={{
+          paddingBottom: "max(calc(env(safe-area-inset-bottom, 0px) + 36px), 48px)",
+        }}
+      >
         {/* DUAL-TRACK MIXER STATUS BANNER (When both are active) */}
         {isDualMixActive && (
-          <div className="rounded-3xl border border-[#187557]/30 bg-gradient-to-r from-[#E4F4ED] via-white to-[#E4F4ED] p-3.5 shadow-sm flex items-center justify-between text-xs animate-in fade-in duration-200">
+          <div className="rounded-3xl border border-[#187557]/30 bg-white p-3.5 shadow-sm flex items-center justify-between text-xs animate-in fade-in duration-200">
             <div className="flex items-center gap-2.5 min-w-0 pr-2">
               <span className="text-lg shrink-0">🎛️</span>
               <div className="min-w-0">
                 <p className="font-semibold text-[#0D3528] truncate">
-                  Dual-Track Soundscape Mixer
+                  {isEn ? "Dual-Track Soundscape Mixer" : "Mixer Suara Dua Jalur Aktif"}
                 </p>
                 <p className="text-[11px] text-[#4C7567] truncate">
-                  Memadukan musik suaka & suasana alam secara harmonis
+                  {isEn
+                    ? "Harmoniously blending sanctuary music & nature sounds"
+                    : "Memadukan musik suaka & suasana alam secara harmonis"}
                 </p>
               </div>
             </div>
-            <span className="px-2.5 py-0.5 rounded-full bg-[#187557] text-white font-bold text-[10px] tracking-wide shrink-0">
+            <span className="px-2.5 py-0.5 rounded-full bg-[#187557] text-white font-bold text-[10px] tracking-wide shrink-0 whitespace-nowrap">
               PRO MIX
             </span>
           </div>
         )}
 
         {/* SEGMENTED CONTROL SWITCH */}
-        <div className="rounded-full p-1 border border-[#0D3528]/10 bg-[#0D3528]/5 shadow-xs grid grid-cols-2 gap-1">
+        <div className="rounded-full p-1 border border-[#0D3528]/12 bg-white/80 shadow-xs grid grid-cols-2 gap-1">
           <button
             type="button"
             onClick={() => {
@@ -265,16 +278,16 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
               hapticLight();
               setActiveTab("music");
             }}
-            className={`py-2 px-3 rounded-full text-[12px] flex items-center justify-center gap-2 transition-all cursor-pointer ${
+            className={`py-2 px-3 rounded-full text-[12px] flex items-center justify-center gap-2 whitespace-nowrap transition-all cursor-pointer ${
               activeTab === "music"
-                ? "bg-white text-[#0D3528] shadow-sm font-semibold"
+                ? "bg-[#187557] text-white shadow-xs font-semibold"
                 : "text-[#4C7567] hover:text-[#0D3528] font-medium"
             }`}
           >
-            <Music2 className="w-3.5 h-3.5 stroke-[1.8]" />
+            <Music2 className="w-3.5 h-3.5 stroke-[2] shrink-0" />
             <span>{t.audio.tabMusic}</span>
             {musicState.isPlaying && (
-              <span className="w-2 h-2 rounded-full bg-[#187557] animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-emerald-300 animate-pulse shrink-0" />
             )}
           </button>
 
@@ -285,16 +298,16 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
               hapticLight();
               setActiveTab("nature");
             }}
-            className={`py-2 px-3 rounded-full text-[12px] flex items-center justify-center gap-2 transition-all cursor-pointer ${
+            className={`py-2 px-3 rounded-full text-[12px] flex items-center justify-center gap-2 whitespace-nowrap transition-all cursor-pointer ${
               activeTab === "nature"
-                ? "bg-white text-[#0D3528] shadow-sm font-semibold"
+                ? "bg-[#187557] text-white shadow-xs font-semibold"
                 : "text-[#4C7567] hover:text-[#0D3528] font-medium"
             }`}
           >
-            <Wind className="w-3.5 h-3.5 stroke-[1.8]" />
+            <Wind className="w-3.5 h-3.5 stroke-[2] shrink-0" />
             <span>{t.audio.tabNature}</span>
             {activeNatureTrack !== "off" && (
-              <span className="w-2 h-2 rounded-full bg-[#187557] animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-emerald-300 animate-pulse shrink-0" />
             )}
           </button>
         </div>
@@ -306,17 +319,17 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
           <div className="space-y-4 animate-in fade-in duration-200">
             {/* Now Playing Bento Card */}
             <div className="space-y-1.5">
-              <p className="px-1 text-[12px] font-medium uppercase tracking-[0.12em] text-[#4C7567]">
+              <p className="px-1 text-[12px] font-bold uppercase tracking-[0.1em] text-[#14664D]">
                 {t.audio.nowPlaying}
               </p>
 
-              <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-4 min-w-0 overflow-hidden">
+              <div className="rounded-3xl border border-[#BCE5D3] bg-white p-5 shadow-md shadow-[#0E3B2D]/8 space-y-4 min-w-0 overflow-hidden">
                 <div className="flex items-center justify-between min-w-0 gap-3">
                   <div className="min-w-0 flex-1 text-left">
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-[#14664D] bg-[#E4F4ED] border border-[#BCE5D3] px-2 py-0.5 rounded-md inline-block">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#14664D] bg-[#E4F4ED] border border-[#BCE5D3] px-2.5 py-0.5 rounded-md inline-block whitespace-nowrap">
                       {musicState.currentTrack?.categoryLabel || "Rimba Tunes"}
                     </span>
-                    <span className="text-[15.5px] font-semibold text-[#0D3528] tracking-tight truncate block mt-1">
+                    <span className="text-[16px] font-bold text-[#0D3528] tracking-tight truncate block mt-1.5">
                       {musicState.currentTrack
                         ? translateMusicTrack(musicState.currentTrack)
                         : t.audio.noTrack}
@@ -328,10 +341,10 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
                     <button
                       type="button"
                       onClick={handleCycleRepeat}
-                      className={`h-8.5 w-8.5 rounded-full flex items-center justify-center transition-all active:scale-90 cursor-pointer relative ${
+                      className={`h-9 w-9 rounded-full flex items-center justify-center transition-all active:scale-90 cursor-pointer relative ${
                         musicState.repeatMode !== "off"
                           ? "bg-[#E4F4ED] text-[#14664D] border border-[#BCE5D3] shadow-2xs"
-                          : "bg-[#0D3528]/5 hover:bg-[#0D3528]/10 text-[#4C7567]"
+                          : "bg-[#0D3528]/6 hover:bg-[#0D3528]/12 text-[#4C7567]"
                       }`}
                       title={
                         musicState.repeatMode === "one"
@@ -357,7 +370,7 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
                     <button
                       type="button"
                       onClick={handleMusicPrev}
-                      className="h-8.5 w-8.5 rounded-full bg-[#0D3528]/5 hover:bg-[#0D3528]/10 text-[#0D3528] flex items-center justify-center transition-all active:scale-90 cursor-pointer"
+                      className="h-9 w-9 rounded-full bg-[#0D3528]/6 hover:bg-[#0D3528]/12 text-[#0D3528] flex items-center justify-center transition-all active:scale-90 cursor-pointer"
                       title={t.audio.prev}
                     >
                       <SkipBack className="w-3.5 h-3.5 fill-current" />
@@ -366,7 +379,7 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
                     <button
                       type="button"
                       onClick={handleToggleMusicPlay}
-                      className="h-10 w-10 rounded-full bg-[#187557] hover:bg-[#126046] text-white flex items-center justify-center shadow-xs active:scale-95 transition-all cursor-pointer"
+                      className="h-10 w-10 rounded-full bg-[#187557] hover:bg-[#126046] text-white flex items-center justify-center shadow-sm active:scale-95 transition-all cursor-pointer"
                       title={musicState.isPlaying ? t.audio.pause : t.audio.play}
                     >
                       {musicState.isPlaying ? (
@@ -379,7 +392,7 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
                     <button
                       type="button"
                       onClick={handleMusicNext}
-                      className="h-8.5 w-8.5 rounded-full bg-[#0D3528]/5 hover:bg-[#0D3528]/10 text-[#0D3528] flex items-center justify-center transition-all active:scale-90 cursor-pointer"
+                      className="h-9 w-9 rounded-full bg-[#0D3528]/6 hover:bg-[#0D3528]/12 text-[#0D3528] flex items-center justify-center transition-all active:scale-90 cursor-pointer"
                       title={t.audio.next}
                     >
                       <SkipForward className="w-3.5 h-3.5 fill-current" />
@@ -388,7 +401,7 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
                 </div>
 
                 {/* Touch-Friendly Volume Slider */}
-                <div className="flex items-center gap-2 pt-2 border-t border-[#0D3528]/8 w-full min-w-0 overflow-hidden">
+                <div className="flex items-center gap-2 pt-2 border-t border-[#0D3528]/10 w-full min-w-0 overflow-hidden">
                   <button
                     type="button"
                     onClick={handleToggleMusicMute}
@@ -414,7 +427,7 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
                     />
                   </div>
 
-                  <span className="shrink-0 text-[11px] font-medium text-[#4C7567] tabular-nums w-8 text-right">
+                  <span className="shrink-0 text-[11px] font-semibold text-[#0D3528] tabular-nums w-8 text-right">
                     {Math.round(
                       (musicState.isMuted ? 0 : musicState.volume) * 100,
                     )}
@@ -426,13 +439,13 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
 
             {/* Playlist Section */}
             <div className="space-y-2.5">
-              <div className="flex items-center justify-between px-1">
-                <p className="text-[12px] font-medium uppercase tracking-[0.12em] text-[#4C7567]">
+              <div className="flex items-center justify-between px-1 gap-2">
+                <p className="text-[12px] font-bold uppercase tracking-[0.1em] text-[#14664D] whitespace-nowrap">
                   {t.audio.playlist}
                 </p>
 
                 {/* Filter Pills */}
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
                   {(
                     [
                       "all",
@@ -449,10 +462,10 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
                         hapticLight();
                         setMusicCategory(cat);
                       }}
-                      className={`px-3 py-0.5 rounded-full text-[11px] font-medium capitalize transition-all cursor-pointer ${
+                      className={`px-3 py-1 rounded-full text-[11px] font-semibold capitalize whitespace-nowrap shrink-0 transition-all cursor-pointer ${
                         musicCategory === cat
                           ? "bg-[#187557] text-white shadow-xs"
-                          : "bg-[#0D3528]/5 text-[#4C7567] hover:bg-[#0D3528]/10 border border-[#0D3528]/10"
+                          : "bg-white text-[#4C7567] hover:text-[#0D3528] border border-[#BCE5D3]"
                       }`}
                     >
                       {cat === "all" ? t.audio.filterAll : cat}
@@ -462,7 +475,7 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
               </div>
 
               {/* Tracks List */}
-              <div className="space-y-2">
+              <div className="space-y-2.5">
                 {filteredPlaylist.map((track) => {
                   const isCurrent = musicState.currentTrack?.id === track.id;
                   const isTrackPlaying = isCurrent && musicState.isPlaying;
@@ -474,8 +487,8 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
                       onClick={() => handleSelectMusicTrack(track)}
                       className={`w-full p-3.5 rounded-2xl flex items-center justify-between text-left transition-all active:scale-[0.98] cursor-pointer ${
                         isCurrent
-                          ? "border border-[#187557]/40 bg-[#E4F4ED]/80 shadow-xs"
-                          : "border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 hover:bg-white shadow-sm"
+                          ? "border-2 border-[#187557] bg-[#E4F4ED] shadow-sm"
+                          : "border border-[#BCE5D3] bg-white hover:bg-[#F7FBF9] shadow-xs"
                       }`}
                     >
                       <div className="flex items-center gap-3 min-w-0 pr-2">
@@ -483,11 +496,11 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
                           className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-colors ${
                             isCurrent
                               ? "bg-[#187557] text-white"
-                              : "bg-[#0D3528]/5 text-[#0D3528]"
+                              : "bg-[#E4F4ED] text-[#187557]"
                           }`}
                         >
                           {isTrackPlaying ? (
-                            <Volume2 className="w-4 h-4 animate-pulse stroke-[1.8]" />
+                            <Volume2 className="w-4 h-4 animate-pulse stroke-[2]" />
                           ) : (
                             <Play className="w-3.5 h-3.5 fill-current translate-x-0.5" />
                           )}
@@ -497,8 +510,8 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
                           <p
                             className={`text-[13.5px] truncate tracking-tight ${
                               isCurrent
-                                ? "font-semibold text-[#0D3528]"
-                                : "font-medium text-[#0D3528]"
+                                ? "font-bold text-[#0D3528]"
+                                : "font-semibold text-[#0D3528]"
                             }`}
                           >
                             {translateMusicTrack(track)}
@@ -509,7 +522,7 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
                         </div>
                       </div>
 
-                      <span className="text-[11.5px] text-[#4C7567] shrink-0 tabular-nums font-normal">
+                      <span className="text-[11.5px] text-[#4C7567] shrink-0 tabular-nums font-medium">
                         {track.durationEstimate}
                       </span>
                     </button>
@@ -526,7 +539,7 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
         {activeTab === "nature" && (
           <div className="space-y-4 animate-in fade-in duration-200">
             <div className="space-y-1.5">
-              <p className="px-1 text-[12px] font-medium uppercase tracking-[0.12em] text-[#4C7567]">
+              <p className="px-1 text-[12px] font-bold uppercase tracking-[0.1em] text-[#14664D]">
                 {t.audio.chooseAtmosphere}
               </p>
 
@@ -540,10 +553,10 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
                       key={sc.id}
                       type="button"
                       onClick={() => handleSelectNatureTrack(sc.id)}
-                      className={`p-4 rounded-3xl text-left flex flex-col justify-between transition-all active:scale-[0.98] cursor-pointer min-h-[104px] ${
+                      className={`p-4 rounded-3xl text-left flex flex-col justify-between transition-all active:scale-[0.98] cursor-pointer min-h-[108px] ${
                         isActive
-                          ? "border border-[#187557]/40 bg-[#E4F4ED]/80 shadow-md"
-                          : "border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 hover:bg-white shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl"
+                          ? "border-2 border-[#187557] bg-[#E4F4ED] shadow-md"
+                          : "border border-[#BCE5D3] bg-white hover:bg-[#F7FBF9] shadow-sm"
                       }`}
                     >
                       <div className="flex items-center justify-between w-full">
@@ -561,8 +574,8 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
                         <p
                           className={`text-[13.5px] truncate ${
                             isActive
-                              ? "font-semibold text-[#0D3528]"
-                              : "font-medium text-[#0D3528]"
+                              ? "font-bold text-[#0D3528]"
+                              : "font-semibold text-[#0D3528]"
                           }`}
                         >
                           {trSc.name}
@@ -579,10 +592,10 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
 
             {/* Nature Volume Slider (Touch-Friendly) */}
             {activeNatureTrack !== "off" && (
-              <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-4 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-2.5 min-w-0 overflow-hidden">
+              <div className="rounded-3xl border border-[#BCE5D3] bg-white p-4 shadow-md space-y-2.5 min-w-0 overflow-hidden">
                 <div className="flex items-center justify-between text-[12.5px] font-semibold text-[#0D3528]">
                   <span>{t.audio.natureVolume}</span>
-                  <span className="font-medium text-[#187557] tabular-nums">
+                  <span className="font-bold text-[#187557] tabular-nums">
                     {Math.round((natureMuted ? 0 : natureVolume) * 100)}%
                   </span>
                 </div>
@@ -624,7 +637,7 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
             <button
               type="button"
               onClick={handleStopAll}
-              className="w-full py-3 rounded-full flex items-center justify-center gap-2 text-[12px] font-medium text-rose-700 bg-rose-50 border border-rose-200/80 active:scale-[0.98] transition-all cursor-pointer shadow-xs"
+              className="w-full py-3 rounded-full flex items-center justify-center gap-2 text-[12px] font-semibold text-rose-700 bg-rose-50 border border-rose-200 active:scale-[0.98] transition-all cursor-pointer shadow-xs"
             >
               <Square className="w-3.5 h-3.5 fill-current" />
               <span>{t.audio.stopAll}</span>

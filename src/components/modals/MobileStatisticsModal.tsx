@@ -226,18 +226,18 @@ export function MobileStatisticsModal({
       `}</style>
 
       <div
-        className="fixed inset-0 z-[100] h-[100dvh] w-full overflow-y-auto overscroll-contain no-scrollbar select-none antialiased font-urbanist text-[#0D3528] pointer-events-auto bg-[#FAFAF7]"
+        className="fixed inset-0 z-[100] h-[100dvh] w-full overflow-y-auto overscroll-contain no-scrollbar select-none antialiased font-urbanist text-[#0D3528] pointer-events-auto bg-gradient-to-b from-[#E6F1EC] via-[#EEF6F2] to-[#E3EFE9]"
         role="dialog"
         aria-modal="true"
       >
-        <div className="w-full max-w-md mx-auto px-5 pt-[max(calc(env(safe-area-inset-top,0px)+16px),24px)] pb-[max(calc(env(safe-area-inset-bottom,0px)+24px),32px)] space-y-4">
-          {/* HEADER NAV */}
-          <div className="flex items-center justify-between py-1">
-            <div className="flex items-center gap-2.5">
-              <h2 className="text-[23px] font-semibold tracking-normal text-[#0D3528]">
+        <div className="w-full max-w-md mx-auto px-5 safe-modal-content space-y-4">
+          {/* STICKY SAFE-AREA HEADER NAV */}
+          <div className="safe-sticky-modal-header flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <h2 className="text-[20px] font-bold tracking-tight text-[#0D3528] whitespace-nowrap truncate">
                 {t.stats.title}
               </h2>
-              <span className="rounded-full bg-[#E4F4ED] border border-[#BCE5D3] px-3 py-0.5 text-[11.5px] font-medium text-[#14664D]">
+              <span className="rounded-full bg-[#E4F4ED] border border-[#BCE5D3] px-2.5 py-0.5 text-[10.5px] font-semibold text-[#14664D] whitespace-nowrap shrink-0">
                 {t.stats.subtitle}
               </span>
             </div>
@@ -280,7 +280,7 @@ export function MobileStatisticsModal({
               {t.stats.overviewSection}
             </p>
 
-            <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl">
+            <div className="rounded-3xl border border-[#BCE5D3] bg-white p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl">
               <div className="grid grid-cols-2 gap-3">
                 {/* Total Waktu */}
                 <div className="p-3.5 rounded-2xl bg-[#0D3528]/[0.025] border border-[#0D3528]/8 flex flex-col justify-between">
@@ -395,7 +395,7 @@ export function MobileStatisticsModal({
               {t.stats.activitySection}
             </p>
 
-            <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-4">
+            <div className="rounded-3xl border border-[#BCE5D3] bg-white p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-4">
               {/* Segmented Control Pill */}
               <div className="p-1 rounded-full bg-[#0D3528]/7 border border-white/60 grid grid-cols-4 gap-1">
                 {(
@@ -566,7 +566,7 @@ export function MobileStatisticsModal({
               {t.stats.circadianSection}
             </p>
 
-            <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-3.5">
+            <div className="rounded-3xl border border-[#BCE5D3] bg-white p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-3.5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Activity className="h-4 w-4 text-[#187557] stroke-[1.8]" />
@@ -707,7 +707,7 @@ export function MobileStatisticsModal({
               {t.stats.categorySection}
             </p>
 
-            <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-4">
+            <div className="rounded-3xl border border-[#BCE5D3] bg-white p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <PieChart className="h-4 w-4 text-[#187557] stroke-[1.8]" />
@@ -864,7 +864,7 @@ export function MobileStatisticsModal({
               {t.stats.consistencySection}
             </p>
 
-            <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-4">
+            <div className="rounded-3xl border border-[#BCE5D3] bg-white p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-[#187557] stroke-[1.8]" />
@@ -978,7 +978,7 @@ export function MobileStatisticsModal({
                 </button>
               </div>
 
-              <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-4 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-2">
+              <div className="rounded-3xl border border-[#BCE5D3] bg-white p-4 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-2">
                 {drilldownSessions.length === 0 ? (
                   <p className="text-[12px] text-[#4C7567] italic py-2.5 text-center font-normal">
                     {t.stats.noFocusDay}
@@ -1049,7 +1049,7 @@ export function MobileStatisticsModal({
           {/* ========================================================= */}
           {/* 7. KARTU PENCAPAIAN (SHARE CARD FLEX BANNER)              */}
           {/* ========================================================= */}
-          <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-4.5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl flex items-center justify-between gap-3">
+          <div className="rounded-3xl border border-[#BCE5D3] bg-white p-4.5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
               <div className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-200/80 text-[#187557] flex items-center justify-center shrink-0 shadow-xs">
                 <Sparkles className="w-5 h-5 stroke-[1.8]" />

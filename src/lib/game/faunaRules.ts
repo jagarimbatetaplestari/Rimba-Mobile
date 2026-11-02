@@ -3,6 +3,8 @@ import { calculateAnalytics, toLocalDateString } from './analytics';
 import { calculateBalances, createLedgerEntry } from './economy';
 import { getUnlockedTilesSet } from './worldRules';
 import { getLevelFromXp } from './levelRules';
+import { usePreferencesStore } from '@/lib/settings/usePreferencesStore';
+import { FAUNA_TRANSLATIONS_EN } from '@/lib/i18n/translations';
 
 export const FAUNA_CONFIG: Record<FaunaSpecies, FaunaConfig> = {
   bee: {
@@ -236,9 +238,6 @@ export const ALL_FAUNA_SPECIES: FaunaSpecies[] = [
   'beaver',
 ];
 
-/**
- * Checks if a world object is a flower, bush, or shrub that attracts pollinators.
- */
 export function isFlowerOrBush(obj: WorldObject): boolean {
   if (obj.status !== 'active') return false;
   const variant = (obj.model_variant || '').toLowerCase();
@@ -252,18 +251,12 @@ export function isFlowerOrBush(obj: WorldObject): boolean {
   );
 }
 
-/**
- * Counts mature active trees on the island.
- */
 export function countMatureTrees(worldObjects: WorldObject[]): number {
   return worldObjects.filter(
     (obj) => obj.object_type === 'tree' && obj.status === 'active'
   ).length;
 }
 
-/**
- * Checks whether a specific fauna species is eligible to appear on the island.
- */
 export function checkFaunaEligibility(
   species: FaunaSpecies,
   saveData: RimbaSaveData,
@@ -304,19 +297,15 @@ export function checkFaunaEligibility(
   switch (species) {
     case 'bee':
     case 'butterfly':
-      // Syarat: Bunga mekar aktif di suaka
       return flowerCount >= 1;
 
     case 'rabbit':
-      // Syarat: Level 1+ & Lahan minimal 9 petak (starter core)
       return playerLevel >= 1 && landSize >= 9;
 
     case 'bird':
-      // Syarat: Level 2+, Lahan 12+ petak, Pohon 2+
       return playerLevel >= 2 && landSize >= 12 && treeCount >= 2;
 
     case 'koala': {
-      // Syarat: Level 2+, Pohon 1+, Sesi fokus 1+ (atau ada pohon lebat)
       const hasDenseTree = worldObjects.some(
         (obj) =>
           obj.object_type === 'tree' &&
@@ -332,36 +321,28 @@ export function checkFaunaEligibility(
     }
 
     case 'cat':
-      // Syarat: Level 2+, Lahan 12+ petak & Tenda kemah berdiri
       return playerLevel >= 2 && landSize >= 12 && hasCamp;
 
     case 'fish':
-      // Syarat: Level 2+, Lahan 14+ petak & 2+ petak aliran sungai
       return playerLevel >= 2 && landSize >= 14 && riverCount >= 2;
 
     case 'fox':
-      // Syarat: Level 3+, Lahan 16+ petak & 2+ pohon
       return playerLevel >= 3 && landSize >= 16 && treeCount >= 2;
 
     case 'monkey':
-      // Syarat: Level 3+, Lahan 16+ petak & 3+ pohon rimbun
       return playerLevel >= 3 && landSize >= 16 && treeCount >= 3;
 
     case 'hog':
-      // Syarat: Level 4+, Lahan 18+ petak & 2+ batu/semak
       return playerLevel >= 4 && landSize >= 18 && rockOrBushCount >= 2;
 
     case 'beaver':
-      // Syarat: Level 4+, Lahan 18+ petak, 2+ sungai & 2+ pohon
       return playerLevel >= 4 && landSize >= 18 && riverCount >= 2 && treeCount >= 2;
 
     case 'polar':
-      // Syarat: Bioma Salju aktif, Level 4+, Lahan 16+ petak
       return activeBiome === 'snow' && playerLevel >= 4 && landSize >= 16;
 
     case 'mystic_stag':
     case 'deer': {
-      // Syarat: Level 4+, Lahan 20+ petak, 3+ pohon & (streak fokus 2 hari ATAU saat malam)
       if (playerLevel < 4 || landSize < 20 || treeCount < 3) return false;
       if (timeOfDay === 'night') return true;
       const refDate = targetDateStr ? new Date(targetDateStr) : new Date();
@@ -370,23 +351,18 @@ export function checkFaunaEligibility(
     }
 
     case 'panda':
-      // Syarat: Level 5+, Lahan 20+ petak, 3+ pohon & 2+ tanaman
       return playerLevel >= 5 && landSize >= 20 && treeCount >= 3 && flowerCount >= 2;
 
     case 'giraffe':
-      // Syarat: Level 6+, Lahan 24+ petak (padang savana luas) & 4+ pohon
       return playerLevel >= 6 && landSize >= 24 && treeCount >= 4;
 
     case 'elephant':
-      // Syarat: Level 7+, Lahan 28+ petak (padang lapang luas) & 4+ pohon
       return playerLevel >= 7 && landSize >= 28 && treeCount >= 4;
 
     case 'tiger':
-      // Syarat: Level 8+, Lahan 28+ petak, 4+ pohon & 3+ batu/semak
       return playerLevel >= 8 && landSize >= 28 && treeCount >= 4 && rockOrBushCount >= 3;
 
     case 'lion':
-      // Syarat: Level 9+, Lahan 32+ petak megah & 60+ menit total fokus
       return playerLevel >= 9 && landSize >= 32 && totalFocusMinutes >= 60;
 
     default:
@@ -394,9 +370,6 @@ export function checkFaunaEligibility(
   }
 }
 
-/**
- * Retrieves the list of all active fauna species on the island right now.
- */
 export function getActiveFaunaList(
   saveData: RimbaSaveData,
   timeOfDay: TimeOfDay = 'day',
@@ -408,9 +381,6 @@ export function getActiveFaunaList(
   );
 }
 
-/**
- * Checks if the player can greet the animal today for daily rewards.
- */
 export function canGreetFauna(
   species: FaunaSpecies,
   saveData: RimbaSaveData,
@@ -429,7 +399,7 @@ export interface GreetFaunaResult {
 }
 
 /**
- * Greets an active animal, awarding once-per-day gold & XP rewards.
+ * Greets an active animal, awarding once-per-day gold & XP rewards (Bilingual ID/EN).
  */
 export function greetFauna(
   species: FaunaSpecies,
@@ -438,41 +408,49 @@ export function greetFauna(
   todayStr: string = toLocalDateString(new Date()),
   activeBiome: BiomeType = 'meadow'
 ): GreetFaunaResult {
+  const isEn = usePreferencesStore.getState().language === 'en';
   const config = FAUNA_CONFIG[species];
   if (!config) {
     return {
       ok: false,
-      message: 'Spesies satwa tidak ditemukan.',
+      message: isEn ? 'Fauna species not found.' : 'Spesies satwa tidak ditemukan.',
       goldEarned: 0,
       xpEarned: 0,
       updatedSaveData: saveData,
     };
   }
 
-  // Verify habitat eligibility
+  const localizedName = isEn && FAUNA_TRANSLATIONS_EN[species] ? FAUNA_TRANSLATIONS_EN[species].name : config.name;
+  const localizedCond =
+    isEn && FAUNA_TRANSLATIONS_EN[species]
+      ? FAUNA_TRANSLATIONS_EN[species].unlockConditionText
+      : config.unlockConditionText;
+
   const isEligible = checkFaunaEligibility(species, saveData, timeOfDay, todayStr, activeBiome);
   if (!isEligible) {
     return {
       ok: false,
-      message: `${config.name} belum dapat hadir di pulau. ${config.unlockConditionText}`,
+      message: isEn
+        ? `${localizedName} cannot visit the island yet. ${localizedCond}`
+        : `${config.name} belum dapat hadir di pulau. ${config.unlockConditionText}`,
       goldEarned: 0,
       xpEarned: 0,
       updatedSaveData: saveData,
     };
   }
 
-  // Verify daily greeting limit
   if (!canGreetFauna(species, saveData, todayStr)) {
     return {
       ok: false,
-      message: `Kamu sudah menyapa ${config.name} hari ini! Kembali lagi besok.`,
+      message: isEn
+        ? `You already greeted ${localizedName} today! Come back tomorrow.`
+        : `Kamu sudah menyapa ${config.name} hari ini! Kembali lagi besok.`,
       goldEarned: 0,
       xpEarned: 0,
       updatedSaveData: saveData,
     };
   }
 
-  // Record daily interaction and ledger rewards
   const goldEntry = createLedgerEntry(
     'gold',
     config.dailyReward.gold,
@@ -507,7 +485,9 @@ export function greetFauna(
 
   return {
     ok: true,
-    message: `${config.name} menyambutmu hangat! +${config.dailyReward.gold} Soul, +${config.dailyReward.xp} XP.`,
+    message: isEn
+      ? `${localizedName} greets you warmly! +${config.dailyReward.gold} Soul, +${config.dailyReward.xp} XP.`
+      : `${config.name} menyambutmu hangat! +${config.dailyReward.gold} Soul, +${config.dailyReward.xp} XP.`,
     goldEarned: config.dailyReward.gold,
     xpEarned: config.dailyReward.xp,
     updatedSaveData,

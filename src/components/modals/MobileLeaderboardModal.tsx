@@ -98,18 +98,18 @@ export function MobileLeaderboardModal({
       `}</style>
 
       <div
-        className="fixed inset-0 z-[100] h-[100dvh] w-full overflow-y-auto overscroll-contain no-scrollbar select-none antialiased font-urbanist text-[#0D3528] pointer-events-auto bg-[#FAFAF7]"
+        className="fixed inset-0 z-[100] h-[100dvh] w-full overflow-y-auto overscroll-contain no-scrollbar select-none antialiased font-urbanist text-[#0D3528] pointer-events-auto bg-gradient-to-b from-[#E6F1EC] via-[#EEF6F2] to-[#E3EFE9]"
         role="dialog"
         aria-modal="true"
       >
         <div className="w-full max-w-md mx-auto px-5 safe-modal-content space-y-4">
-          {/* HEADER NAV */}
-          <div className="flex items-center justify-between py-1">
-            <div className="flex items-center gap-2.5">
-              <h2 className="text-[23px] font-semibold tracking-normal text-[#0D3528]">
+          {/* STICKY SAFE-AREA HEADER NAV */}
+          <div className="safe-sticky-modal-header flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <h2 className="text-[20px] font-bold tracking-tight text-[#0D3528] whitespace-nowrap truncate">
                 {t.ranks.title}
               </h2>
-              <span className="rounded-full bg-[#E4F4ED] border border-[#BCE5D3] px-3 py-0.5 text-[11.5px] font-medium text-[#14664D]">
+              <span className="rounded-full bg-[#E4F4ED] border border-[#BCE5D3] px-2.5 py-0.5 text-[10.5px] font-semibold text-[#14664D] whitespace-nowrap shrink-0">
                 {t.ranks.subtitle}
               </span>
             </div>
@@ -129,7 +129,7 @@ export function MobileLeaderboardModal({
 
           {/* 1. HERO CURRENT USER BENTO CARD (Translucent Blended White Gradient) */}
           {currentUserEntry && (
-            <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-4">
+            <div className="rounded-3xl border border-[#BCE5D3] bg-white p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3.5 min-w-0 pr-2">
                   <RangerAvatar
@@ -207,7 +207,7 @@ export function MobileLeaderboardModal({
 
           {/* NEXT TIER MOTIVATION / PROGRESS CARD */}
           {nextTierProgress ? (
-            <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-4 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-2.5">
+            <div className="rounded-3xl border border-[#BCE5D3] bg-white p-4 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-2.5">
               <div className="flex items-center justify-between text-[12px]">
                 <div className="flex items-center gap-1.5 text-[#0D3528] font-semibold">
                   <span className="text-base">{nextTierProgress.nextTier.badgeEmoji}</span>
@@ -283,7 +283,7 @@ export function MobileLeaderboardModal({
           </div>
 
           {/* 2. TIER HIERARCHY CARD (Translucent Container) */}
-          <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-4 sm:p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-2.5">
+          <div className="rounded-3xl border border-[#BCE5D3] bg-white p-4 sm:p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-2.5">
             {RANGER_HALL_OF_FAME_TIERS.map((tier: RangerTier) => {
               const trTier = translateTier(tier);
               const isUnlocked =
@@ -362,7 +362,7 @@ export function MobileLeaderboardModal({
           </div>
 
           {/* 3. PRIVACY & SOVEREIGN GUARANTEE CARD */}
-          <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-4 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl flex items-start gap-3">
+          <div className="rounded-3xl border border-[#BCE5D3] bg-white p-4 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl flex items-start gap-3">
             <div className="p-1.5 rounded-xl bg-[#E4F4ED] border border-[#BCE5D3] text-[#187557] shrink-0 mt-0.5">
               <ShieldCheck className="w-4 h-4 stroke-[1.8]" />
             </div>

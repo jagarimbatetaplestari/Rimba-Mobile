@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Shield, Calendar, Lock, Globe } from "lucide-react";
+import { ArrowLeft, Shield, Calendar, Lock } from "lucide-react";
 import { LEGAL_CONTENT } from "@/lib/legal/legalContent";
 import { soundManager } from "@/lib/audio/sounds";
 import { hapticLight } from "@/lib/mobile/nativeBridge";

@@ -1,10 +1,11 @@
 import { CurrencyLedgerEntry, DailyQuestId, RimbaSaveData } from '@/types/game';
 import { toLocalDateString } from './analytics';
 import { createLedgerEntry } from './economy';
+import { usePreferencesStore } from '@/lib/settings/usePreferencesStore';
 
 export interface DailyQuestDefinition {
   id: DailyQuestId;
-  icon: string; // Line icon key: Sprout, Clock, Compass, Layers, Heart, Sun, Moon, Target
+  icon: string;
   title: string;
   description: string;
   target: number;
@@ -29,7 +30,7 @@ export interface DailyQuestStatusSummary {
   allClearClaimKey: string;
   allClearRewardGold: number;
   allClearRewardXp: number;
-  claimableCount: number; // Number of rewards ready to be claimed right now
+  claimableCount: number;
 }
 
 export const ALL_DAILY_QUEST_POOL: DailyQuestDefinition[] = [
@@ -133,10 +134,6 @@ function hashStringToNumber(str: string): number {
   return Math.abs(hash);
 }
 
-/**
- * Returns deterministic set of 3 daily quests for a given date.
- * Always includes q_focus_1 as primary pillar, and rotates 2 others from the pool.
- */
 export function getDailyQuestDefinitionsForDate(dateStr: string): DailyQuestDefinition[] {
   const rotatingPool = ALL_DAILY_QUEST_POOL.filter((q) => q.id !== 'q_focus_1');
   const seed = hashStringToNumber(dateStr);
@@ -149,23 +146,18 @@ export function getDailyQuestDefinitionsForDate(dateStr: string): DailyQuestDefi
   return [coreQuest, rotatingPool[firstIndex], remaining[secondIndex]];
 }
 
-/**
- * Deterministically evaluates today's quest progress and claim status from saveData.
- */
 export function getDailyQuestStatus(
   saveData: RimbaSaveData,
   dateStr: string = toLocalDateString(new Date())
 ): DailyQuestStatusSummary {
   const claimedSet = new Set(saveData.claimed_quests || []);
 
-  // Check ledger reference_ids for idempotency
   for (const entry of saveData.currency_ledger) {
     if (entry.reference_id && entry.reference_id.startsWith(`${dateStr}:q_`)) {
       claimedSet.add(entry.reference_id);
     }
   }
 
-  // 1. Sessions completed on dateStr
   const completedToday = saveData.focus_sessions.filter((s) => {
     if (s.status !== 'completed' || !s.completed_at) return false;
     return toLocalDateString(new Date(s.completed_at)) === dateStr;
@@ -181,7 +173,6 @@ export function getDailyQuestStatus(
     return sum + Math.max(1, Math.round((end - start) / 60000));
   }, 0);
 
-  // 2. Flow sessions (>= 30 mins)
   const flowSessionsToday = completedToday.filter((s) => {
     const mins =
       typeof s.duration_minutes === 'number' && s.duration_minutes > 0
@@ -192,7 +183,6 @@ export function getDailyQuestStatus(
     return mins >= 30;
   }).length;
 
-  // 3. Builder / Island actions on dateStr
   const objectsCreatedToday = saveData.world_objects.filter((obj) => {
     if (!obj.created_at) return false;
     return toLocalDateString(new Date(obj.created_at)) === dateStr;
@@ -212,13 +202,11 @@ export function getDailyQuestStatus(
 
   const builderCountToday = Math.max(objectsCreatedToday, builderLedgerActionsToday);
 
-  // 4. Animal interaction today
   const animalInteractions = saveData.animal_interactions || {};
   const animalsGreetedToday = Object.values(animalInteractions).filter(
     (greetDate) => greetDate === dateStr
   ).length;
 
-  // 5. Day / Night sessions
   const dawnSessionsToday = completedToday.filter((s) => {
     const d = new Date(s.completed_at!);
     const hours = d.getHours() + d.getMinutes() / 60;
@@ -231,7 +219,6 @@ export function getDailyQuestStatus(
     return hours >= 16.5 || hours < 6;
   }).length;
 
-  // 6. Distinct tags used today
   const distinctTagsToday = new Set(
     completedToday.map((s) => s.tag || 'Belajar')
   ).size;
@@ -316,21 +303,19 @@ export interface ClaimQuestResult {
   rewardXp: number;
 }
 
-/**
- * Claims an individual completed daily quest idempotently.
- */
 export function claimDailyQuest(
   saveData: RimbaSaveData,
   questId: string,
   dateStr: string = toLocalDateString(new Date())
 ): ClaimQuestResult {
+  const isEn = usePreferencesStore.getState().language === 'en';
   const status = getDailyQuestStatus(saveData, dateStr);
   const quest = status.quests.find((q) => q.id === questId);
 
   if (!quest) {
     return {
       success: false,
-      error: 'Misi tidak ditemukan.',
+      error: isEn ? 'Quest not found.' : 'Misi tidak ditemukan.',
       newLedgerEntries: [],
       rewardGold: 0,
       rewardXp: 0,
@@ -340,7 +325,7 @@ export function claimDailyQuest(
   if (!quest.isCompleted) {
     return {
       success: false,
-      error: 'Syarat misi belum terpenuhi.',
+      error: isEn ? 'Quest requirements not yet met.' : 'Syarat misi belum terpenuhi.',
       newLedgerEntries: [],
       rewardGold: 0,
       rewardXp: 0,
@@ -350,7 +335,7 @@ export function claimDailyQuest(
   if (quest.isClaimed) {
     return {
       success: false,
-      error: 'Hadiah misi ini sudah diklaim.',
+      error: isEn ? 'This quest reward has already been claimed.' : 'Hadiah misi ini sudah diklaim.',
       newLedgerEntries: [],
       rewardGold: 0,
       rewardXp: 0,
@@ -379,19 +364,19 @@ export function claimDailyQuest(
   };
 }
 
-/**
- * Claims the All-Clear Daily Bonus Chest once all 3 daily quests are claimed.
- */
 export function claimAllClearDailyBonus(
   saveData: RimbaSaveData,
   dateStr: string = toLocalDateString(new Date())
 ): ClaimQuestResult {
+  const isEn = usePreferencesStore.getState().language === 'en';
   const status = getDailyQuestStatus(saveData, dateStr);
 
   if (!status.allQuestsClaimed) {
     return {
       success: false,
-      error: 'Klaim ketiga misi harian terlebih dahulu untuk membuka peti ini!',
+      error: isEn
+        ? 'Claim all 3 daily quests first to open this bonus chest!'
+        : 'Klaim ketiga misi harian terlebih dahulu untuk membuka peti ini!',
       newLedgerEntries: [],
       rewardGold: 0,
       rewardXp: 0,
@@ -401,7 +386,9 @@ export function claimAllClearDailyBonus(
   if (status.allClearClaimed) {
     return {
       success: false,
-      error: 'Peti Sapu Bersih hari ini sudah diklaim.',
+      error: isEn
+        ? 'Today’s All-Clear Bonus Chest has already been claimed.'
+        : 'Peti Sapu Bersih hari ini sudah diklaim.',
       newLedgerEntries: [],
       rewardGold: 0,
       rewardXp: 0,

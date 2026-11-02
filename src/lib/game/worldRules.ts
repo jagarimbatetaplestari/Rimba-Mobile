@@ -1,5 +1,6 @@
 import { WorldObject } from '@/types/game';
 import { GAME_CONFIG, STARTER_UNLOCKED_TILES } from './config';
+import { usePreferencesStore } from '@/lib/settings/usePreferencesStore';
 
 /**
  * Checks if coordinate is within 10x10 grid bounds [0..9].
@@ -30,12 +31,10 @@ export function isTileOccupied(
 
 /**
  * Mathematical Heightfield Function: getTerrainElevation(x, z)
- * Calculates gentle, organic rolling meadow heights (+0.02m to +0.12m).
- * Zero sunken trenches; full continuous lawn across the 10x10 garden.
  */
 export function getTerrainElevation(
-  x: number,
-  z: number
+  _x: number,
+  _z: number
 ): { height: number; isRiver: boolean; isBank: boolean; bankFactor: number } {
   return {
     height: 0.0,
@@ -47,7 +46,6 @@ export function getTerrainElevation(
 
 /**
  * Converts logical grid coordinates (0..9, 0..9) to 3D world coordinates [x, y, z].
- * Y elevation is dynamically sampled from getTerrainElevation so objects sit naturally on terrain.
  */
 export function gridToWorld(
   grid_x: number,
@@ -82,9 +80,7 @@ export function worldToGrid(
 }
 
 /**
-/**
  * Resolves the active set of unlocked tiles for the world.
- * Defaults to the 3x3 starter hub at center, plus any tile that already holds an object.
  */
 export function getUnlockedTilesSet(
   world?: { unlocked_tiles?: string[] } | null,
@@ -95,11 +91,9 @@ export function getUnlockedTilesSet(
   if (world?.unlocked_tiles && world.unlocked_tiles.length > 0) {
     world.unlocked_tiles.forEach((t) => set.add(t));
   } else {
-    // Default to the 3x3 starter hub at center
     STARTER_UNLOCKED_TILES.forEach((t) => set.add(t));
   }
 
-  // Ensure any tile that already contains an active/reclaimed object is never locked
   if (existingObjects) {
     existingObjects.forEach((obj) => {
       set.add(`${obj.grid_x},${obj.grid_y}`);
@@ -111,7 +105,6 @@ export function getUnlockedTilesSet(
 
 /**
  * Returns a deterministic sorted string signature of unlocked tiles.
- * Used as a stable React useMemo dependency so placing/moving objects does not rebuild 3D terrain or grass.
  */
 export function getUnlockedTilesSignature(
   world?: { unlocked_tiles?: string[] } | null,
@@ -133,10 +126,7 @@ export function isTileUnlocked(
 }
 
 /**
- * Checks if a tile can be unlocked:
- * 1. Must be within 10x10 bounds (0..9).
- * 2. Must not already be unlocked.
- * 3. Must be strictly 4-way adjacent (North, South, East, West) to at least one unlocked tile.
+ * Checks if a tile can be unlocked.
  */
 export function canUnlockTile(
   grid_x: number,
@@ -178,7 +168,6 @@ export function getExpandableTiles(
 
 /**
  * Finds an unoccupied and UNLOCKED tile closest to the center (4.5, 4.5) to spawn the focus reward tree.
- * Searches spirally / radially outward.
  */
 export function findEmptyTileNearCenter(
   objects: WorldObject[] = [],
@@ -190,7 +179,6 @@ export function findEmptyTileNearCenter(
     : [];
   const occupied = new Set(safeObjects.map((o) => `${o.grid_x},${o.grid_y}`));
 
-  // Generate list of all grid coords sorted by distance to center (4.5, 4.5)
   const centerX = (size - 1) / 2;
   const centerY = (size - 1) / 2;
 
@@ -200,15 +188,13 @@ export function findEmptyTileNearCenter(
     for (let y = 0; y < size; y++) {
       const coordKey = `${x},${y}`;
       if (!occupied.has(coordKey)) {
-        // If an unlocked set is provided, only allow unlocked tiles
         if (unlockedTiles && !unlockedTiles.has(coordKey)) {
           continue;
         }
 
         const dx = x - centerX;
         const dy = y - centerY;
-        // Add a slight pseudo-random jitter so trees don't always take identical slots
-        const distSq = dx * dx + dy * dy + (Math.sin(x * 13 + y * 7) * 0.3);
+        const distSq = dx * dx + dy * dy + Math.sin(x * 13 + y * 7) * 0.3;
         candidates.push({ grid_x: x, grid_y: y, distSq });
       }
     }
@@ -233,26 +219,31 @@ export interface LandExpansionZoneInfo {
 }
 
 /**
- * Kubbo-style Progressive Land Expansion Zone & Pricing Calculator:
- * - Zone 1 (9 -> 25 tiles / 3x3 to 5x5): 8 Gold/tile — Starter Core (Sebelumnya 25)
- * - Zone 2 (25 -> 49 tiles / 5x5 to 7x7): 15 Gold/tile — River Valley & Bridges (Sebelumnya 40)
- * - Zone 3 (49 -> 100 tiles / 7x7 to 10x10): 25 Gold/tile — Grand Rimba Sovereign (Sebelumnya 60)
+ * Kubbo-style Progressive Land Expansion Zone & Pricing Calculator (Bilingual ID/EN)
  */
-export function getLandExpansionZoneInfo(unlockedCount: number): LandExpansionZoneInfo {
+export function getLandExpansionZoneInfo(
+  unlockedCount: number,
+  language?: 'id' | 'en'
+): LandExpansionZoneInfo {
+  const isEn = (language ?? usePreferencesStore.getState().language) === 'en';
   const count = Math.max(9, Math.min(100, unlockedCount));
 
   if (count < 25) {
     const ratio = Math.min(1, Math.max(0, (count - 9) / (25 - 9)));
     return {
       zoneNumber: 1,
-      zoneName: 'Zona 1: Inti Perintis (3×3 → 5×5)',
-      shortZoneName: 'Zona 1 • Inti Perintis',
+      zoneName: isEn
+        ? 'Zone 1: Pioneer Core (3×3 → 5×5)'
+        : 'Zona 1: Inti Perintis (3×3 → 5×5)',
+      shortZoneName: isEn ? 'Zone 1 • Pioneer Core' : 'Zona 1 • Inti Perintis',
       nextTileCost: 8,
       unlockedCount: count,
       zoneStartTiles: 9,
       zoneTargetTiles: 25,
       zoneProgressRatio: ratio,
-      milestoneRewardText: 'Target 25 Petak: Membuka Zona Lembah Sungai & Aliran Air!',
+      milestoneRewardText: isEn
+        ? 'Target 25 Tiles: Unlocks River Valley Zone & Water Streams!'
+        : 'Target 25 Petak: Membuka Zona Lembah Sungai & Aliran Air!',
     };
   }
 
@@ -260,22 +251,28 @@ export function getLandExpansionZoneInfo(unlockedCount: number): LandExpansionZo
     const ratio = Math.min(1, Math.max(0, (count - 25) / (49 - 25)));
     return {
       zoneNumber: 2,
-      zoneName: 'Zona 2: Lembah Sungai (5×5 → 7×7)',
-      shortZoneName: 'Zona 2 • Lembah Sungai',
+      zoneName: isEn
+        ? 'Zone 2: River Valley (5×5 → 7×7)'
+        : 'Zona 2: Lembah Sungai (5×5 → 7×7)',
+      shortZoneName: isEn ? 'Zone 2 • River Valley' : 'Zona 2 • Lembah Sungai',
       nextTileCost: 15,
       unlockedCount: count,
       zoneStartTiles: 25,
       zoneTargetTiles: 49,
       zoneProgressRatio: ratio,
-      milestoneRewardText: 'Target 49 Petak: Membuka Zona Rimba Raya & Landmark Pesisir!',
+      milestoneRewardText: isEn
+        ? 'Target 49 Tiles: Unlocks Rimba Sovereign & Coastal Landmarks!'
+        : 'Target 49 Petak: Membuka Zona Rimba Raya & Landmark Pesisir!',
     };
   }
 
   const ratio = Math.min(1, Math.max(0, (count - 49) / (100 - 49)));
   return {
     zoneNumber: 3,
-    zoneName: 'Zona 3: Rimba Raya (7×7 → 10×10)',
-    shortZoneName: 'Zona 3 • Rimba Raya',
+    zoneName: isEn
+      ? 'Zone 3: Rimba Sovereign (7×7 → 10×10)'
+      : 'Zona 3: Rimba Raya (7×7 → 10×10)',
+    shortZoneName: isEn ? 'Zone 3 • Rimba Sovereign' : 'Zona 3 • Rimba Raya',
     nextTileCost: 25,
     unlockedCount: count,
     zoneStartTiles: 49,
@@ -283,8 +280,12 @@ export function getLandExpansionZoneInfo(unlockedCount: number): LandExpansionZo
     zoneProgressRatio: ratio,
     milestoneRewardText:
       count >= 100
-        ? 'Kedaulatan Penuh 10×10 (100 Petak) Tercapai! 👑'
-        : 'Target 100 Petak: Kedaulatan Penuh Pulau 10×10!',
+        ? isEn
+          ? 'Full 10×10 Sovereignty (100 Tiles) Achieved! 👑'
+          : 'Kedaulatan Penuh 10×10 (100 Petak) Tercapai! 👑'
+        : isEn
+          ? 'Target 100 Tiles: Full 10×10 Island Sovereignty!'
+          : 'Target 100 Petak: Kedaulatan Penuh Pulau 10×10!',
   };
 }
 
@@ -313,4 +314,3 @@ export function getOuterUnlockedTileForBulldozer(
   candidates.sort((a, b) => b.distSq - a.distSq);
   return candidates[0].key;
 }
-

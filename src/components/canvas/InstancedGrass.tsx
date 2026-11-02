@@ -10,8 +10,7 @@ import {
 import {
   buildRiverTileMap,
   getRiverChannelDistance,
-  RiverAdjacency,
-} from '@/lib/game/riverSystem';
+  } from '@/lib/game/riverSystem';
 import { useGameStore } from '@/lib/game/useGameStore';
 import { usePreferencesStore } from '@/lib/settings/usePreferencesStore';
 

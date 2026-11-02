@@ -91,7 +91,7 @@ Current verification: 52/52 Vitest, mobile typecheck and npm run build passed af
 ## Endpoint production deployment (2026-11-01)
 
 - Supabase Rimba connection restored as link_6ae6bb3505d88191bd8e904e107643bb; project confirmed rkljugrrscmqopeuwtpd / JagaRimba-project.
-- Deployed delete-account version1 through the connector, status ACTIVE, function66fcb7af-a33d-4c56-9bba-7d364555b42c, verify_jwt=true. Source SHA256 d20f7ad3b9d7f4e746230e2f239aa3b42635033d2073b84dc26c67003d5f6bf9. List-functions verified matching deployment.
+- Deployed delete-account version1 through the connector, status ACTIVE, function66fcb7af-a33d-4c56-9bba-7d365555b42c, verify_jwt=true. Source SHA256 d20f7ad3b9d7f4e746230e2f239aa3b42635033d2073b84dc26c67003d5f6bf9. List-functions verified matching deployment.
 - Live non-destructive probes: missing-session POST401; anon API key used as Bearer also401. No real user token, account mutation or user-data read involved.
 - Public Auth settings: Google enabled, Apple disabled, email enabled, confirmation ON. Apple secrets still NOT installed. No complete Apple deletion/device-acceptance claim.
 - Browser remains blocked with "Local browser use is disabled in Work settings" even after user enabled settings and one clean tool-session reload. Do not bypass the disabled browser with another automation route. Connector has no secret/auth-configuration operation; local known CLI credential files are absent. User needs browser access restored for the already-authorized secret installation/provider configuration.
@@ -269,5 +269,9 @@ Current verification: 52/52 Vitest, mobile typecheck and npm run build passed af
 
 ### Native widgets candidate
 - Source a1ea4f6 preserves owner UI/3D work, embeds WidgetKit extension, registers AppGroup bridge and real Home/Lock/Control surfaces. Review caught/fixed host privacy manifest membership, minutes/seconds mismatch and previous-session telemetry. Regression coverage includes native packaging, one-shot late actions, account clearing and session start/pause/resume/cancel.
-- Full364tests/40files,155prelaunch,typecheck,static export pass. NativeCI41402950906 SUCCESS. First41402107252 compiled but failed host manifest packaging assertion; corrected.
+- Full365tests/40files,155prelaunch,typecheck,static export pass. NativeCI41402950906 SUCCESS. First41402107252 compiled but failed host manifest packaging assertion; corrected.
 - Group associated with host+extension, new App Store profiles ACTIVE, group entitlement decoded/verified; GitHub host/widget profile secrets updated using existing GitHub credentials. Deploy41403770011/build11 dispatched for exact source. Apple status and device acceptance pending; no Submit. See NATIVE_WIDGETS_20261102.md.
+
+### Native widget final distributed
+- Source408345b includes stopwatch guard (no false24-hour countdown),365tests/40files and fresh export/typecheck pass;155prelaunch pass. NativeCI41404506471 SUCCESS; signed archive/export/extension entitlements and IPA embedding verified in deploy41404509381 SUCCESS.
+- Build11/41403770011 canceled before upload. Apple build63dde60f-edb0-4122-afe4-9828114e69da1.0(12) VALID/IN_BETA_TESTING, Internal membership verified. EN/ID beta notes saved; draft selects12; no Submit. Physical widget and Restore/Pro acceptance still pending.

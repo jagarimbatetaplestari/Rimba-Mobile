@@ -4,8 +4,8 @@ Diperbarui: 2 November 2026 (Asia/Jakarta).
 
 ## Widget native — checkpoint terbaru
 
-- Source `a1ea4f6`, native CI `41402950906` SUCCESS;364tes/40file,155prelaunch,typecheck dan export produksi lulus. Target WidgetKit nyata, AppGroup, bridge terdaftar, quick focus cold/warm, countdown/jeda, isolasi akun dan petunjuk pemasangan diterapkan. Lihat [laporan widget](NATIVE_WIDGETS_20261102.md).
-- Profil App Store host+extension ACTIVE dan kedua secret GitHub diperbarui. Deploy `41403770011`/build11 sedang berjalan; verifikasi status Apple sebelum menyebutnya tersedia. Build8 di bawah adalah kandidat sebelumnya.
+- Source final `408345b`; native CI final `41404506471` SUCCESS;365tes/40file,155prelaunch,typecheck dan export produksi lulus. Target WidgetKit nyata, AppGroup, bridge terdaftar, quick focus cold/warm, countdown/jeda, isolasi akun dan petunjuk pemasangan diterapkan. Lihat [laporan widget](NATIVE_WIDGETS_20261102.md).
+- Profil App Store host+extension ACTIVE dan kedua secret GitHub diperbarui. Build11/run41403770011 dibatalkan sebelum upload untuk guard stopwatch. NativeCI41404506471 dan deploy41404509381/build12 SUCCESS. Apple1.0(12)63dde60f-edb0-4122-afe4-9828114e69da VALID/IN_BETA_TESTING, ada di grup Internal; draft memilih12 dan catatan EN/ID tersimpan. Tidak Submit. Build8 di bawah adalah kandidat sebelumnya.
 - UI/3D pemilik dipertahankan. Pengaman aktivasi Pro yang tertimpa dikembalikan; starter kosong tidak memunculkan dialog migrasi, tetapi progres berubah/rusak tetap membutuhkan pilihan pemilik. Uji perangkat, Restore/Pro, screenshot final dan gerbang Submit tetap terbuka.
 
 ## Kandidat aktivasi Pro final — build8 VALID

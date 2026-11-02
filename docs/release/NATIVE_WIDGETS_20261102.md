@@ -1,6 +1,6 @@
 # Native widget candidate — 2 November 2026
 
-Source: `a1ea4f6bb18591ff1e1a66dad013bb41c87c5de9`, branch `fix/rimba-release-readiness`. Preserves owner changes through `b09e007`; no Website/Desktop source copy.
+Source: `408345b55654609bdf3b94526eff5728502cba10`, branch `fix/rimba-release-readiness`. Preserves owner changes through `b09e007`; no Website/Desktop source copy.
 
 ## Implemented
 
@@ -14,12 +14,12 @@ Source: `a1ea4f6bb18591ff1e1a66dad013bb41c87c5de9`, branch `fix/rimba-release-re
 
 ## Evidence
 
-- Full **364 tests / 40 files**, typecheck, **155 prelaunch assertions**, production static export passed.
+- Full **365 tests / 40 files**, typecheck, **155 prelaunch assertions**, production static export passed.
 - Native CI `41402950906` **SUCCESS**: Swift data tests, iPhone/iPad compilation, embedded `.appex`, both privacy manifests and extension bundle ID verified.
 - First run `41402107252` compiled successfully but failed the host-manifest assertion. Fixed and regression tested; that first run was not fully successful.
 - Apple resources: host `QJ4H63XFUD`, extension `WM5T3JK5Y9`; group `A5AQFD68D9` associated with both Rimba targets. Replacement App Store profiles ACTIVE and decoded locally to verify group entitlements; existing distribution certificate retained.
 - GitHub host profile updated and widget profile secret added. Profile/key contents are not in Git or documents.
-- TestFlight deploy `41403770011`, build **11**, started for the same source. Check Apple processing/distribution status before claiming availability.
+- Build11/run41403770011 canceled before upload to include the stopwatch safety-deadline guard. Final source408345b has365passing tests and a fresh production export; nativeCI41404506471 and deploy41404509381/build12 are SUCCESS. Stopwatch shows session status, not a false24-hour countdown. Apple build63dde60f-edb0-4122-afe4-9828114e69da is1.0(12) VALID, IN_BETA_TESTING and included in Internal. Draft selects12; EN/ID beta notes saved. No App Review submission.
 
 ## Acceptance still required
 

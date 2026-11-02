@@ -1,6 +1,6 @@
 # Final candidate device acceptance
 
-Candidate source: `a1ea4f6bb18591ff1e1a66dad013bb41c87c5de9`. Native widget candidate TestFlight 1.0 (11) is being uploaded in run41403770011; verify Apple VALID/Internal availability before installing. Build8 was the previous Pro activation candidate; build5 screenshots/runtime are older. Record the exact installed build and separate iPhone/iPad results. All rows remain unverified until device testing.
+Candidate source: `408345b55654609bdf3b94526eff5728502cba10`. Native widget candidate TestFlight 1.0 (12) is VALID, IN_BETA_TESTING and available to Internal after successful run41404509381. Draft selects12; no review submitted. Build8 was the previous Pro activation candidate; build5 screenshots/runtime are older. Record the exact installed build and separate iPhone/iPad results. All rows remain unverified until device testing.
 
 | Flow | Expected result | iPhone | iPad |
 | --- | --- | --- | --- |

@@ -1,26 +1,35 @@
 # Submit readiness — 2 November 2026
 
-Status: **NOT ready to Submit**. No submission was sent. Remaining gates are specific below; a green source/simulator check is not physical-device acceptance.
+**Ready for the owner to click Submit for Review. No review has been submitted.** Submit is visibly enabled; the owner subsequently reported build15smoke acceptance "aman". Device model/OS unspecified; full-matrix coverage limits remain below.
 
-## Verified
+## Final candidate and draft
 
-- Runtime `9b6548d08665a812746477e90f5f36880a958767`, documentation/source checkout `c229c207493d97fb183bc7b4a2a8343ca61dd7bd`.
-- NativeCI [41445401653](https://github.com/jagarimbatetaplestari/Rimba-Mobile/actions/runs/41445401653) SUCCESS:401tests/45files, typecheck,155prelaunch, static production build, Swift widget tests and iPhone/iPad simulator compilation.
-- Artifact13143211438 (verification25) downloaded through the GitHub connector and inspected. Host `com.syntheticae.rimba` and embedded `com.syntheticae.rimba.widgets`, both families1/2, iOS16 minimum;18privacy manifests including host and widget. Simulator build number1 is expected and is not TestFlight14. Local audit JSON: ignored `build/native25-privacy-audit.json`.
-- GoogleSignIn8.0 declaration reconciled to Apple label. With explicit owner approval, four additional categories published; Apple displays12categories and no unfinished setup. See APP_PRIVACY.md.
-- Two Facebook SDK privacy manifests declare tracking capabilities (`ep1.facebook.com`). They arrive through the monolithic social-login plugin. Rimba configures only Google email/profile, has no FacebookAppID/client token, no Facebook AppDelegate initialization and no Facebook login path. This is configuration/source evidence of an unused provider, not a packet capture or proof that the manifest itself declares no tracking. Do not rewrite vendor manifests to hide declarations.
-- Reviewer account password login succeeded against production Auth, correct identity, fictional cloud save readable at revision1, moderator=false. Stored Apple username/password match, review contact fields complete. No credentials are logged in this document.
-- Owner iPhone video first +6frames,8iPad screens and header;46placements ACTIVE across EN/ID. Three Pro review screenshots COMPLETE, with browser-capture provenance explicitly disclosed. Actual native-price screenshot still desirable/awaited.
-- All three products had READY_TO_SUBMIT before being added to review draft. Draft now contains group Rimba Pro, annual, monthly and lifetime (4items). `submittedDate=null`. Preparing the draft is not Submit for Review.
+- Runtime9b6548d08665a812746477e90f5f36880a958767; release6f74a1f724f7a4db5e2b62660cda7d03de7794d4. Only deploy runner/docs differ from the verified app source.
+- NativeCI41445401653 SUCCESS:401tests/45files, typecheck,155prelaunch, production export, Swift widget tests and iPhone/iPad compilation. Fresh local build/typecheck/155prelaunch passed after the runner-only change.
+- Both build14attempts/run41448458837 failed to acquire hosted ARM capacity before any step/upload. One deploy runs-on line changed to official standard macos-26-intel, not a paid larger runner.
+- Deploy41453991325 SUCCESS, actual **1.0(15)**. Apple30f5b9e2-1a38-4c74-ab6a-e4623d8dac15 **VALID / IN_BETA_TESTING**, listed in Internal. Group automatically has all builds; manual assignment initially returned422, then automatic membership was verified. EN/ID beta notes saved; version1.0 selects15.
+- Signed IPA/artifact13146986626: host+widget1.0(15),ARM64,families1/2,iOS16minimum,matching/unexpired distribution profiles,get-task-allow=false,correct shared AppGroup,18privacy manifests including both bundles. CI codesign/deep/widget verification passed. Evidence: build/ipa15-audit.json, copied to Deliverables.
+- Draft41619189-27ab-4c80-83e3-2e07ef3e3bba has **5ready items**: iOS1.0(15),Rimba Pro group,annual,monthly,lifetime. API READY_FOR_REVIEW, every item READY_FOR_REVIEW, **submittedDate=null**. UI has no blocking validation message and final Submit enabled. Draft preparation is not submission.
 
-## Remaining
+## Listing, privacy, business and reviewer
 
-1. Upload14/run [41448458837](https://github.com/jagarimbatetaplestari/Rimba-Mobile/actions/runs/41448458837), checkout c229c20/runtime9b6548d. BOTH attempts failed before any step: hosted runner not acquired; annotations cite macOS arm64 capacity constraints. Targeted recovery changes only deploy `runs-on` to standard `macos-26-intel`, officially documented with Xcode26.6/iOSSDK26.5. No paid larger runner or runtime change. Next deploy expected15; verify actual number. Do not count14as uploaded.
-2. Once upload succeeds, inspect signed IPA/AppGroup/code-sign verification, wait for Apple14VALID, assign Internal, save EN/ID beta notes and select14 in version1.0. Existing13VALID/Internal is the older UI candidate without current audio/name/icon/direct-moderation fixes. Prepared ignored helper `build/asc-candidate14.mjs` refuses to select a missing/non-VALID build.
-3. Add app version1.0 with final14 to the **same** draft `41619189-27ab-4c80-83e3-2e07ef3e3bba`. Apple currently disables Submit because no app version is included. Include any creative assets Apple asks to review; verify all validation messages and save a final screenshot. Never click final Submit.
-4. Owner device acceptance: current audio/mute on iOS, generated/custom names EN/ID, monochrome popups, support moderator direct Campfire entry/empty queue; core account isolation/focus/Pro persistence; actual Home/Lock/control widgets and two-device sync/Campfire. DEVICE_ACCEPTANCE.md records pending rows honestly. Earlier Restore/recreated-account success is partial evidence, not all-device/lifecycle completion.
-5. Final App Review reviewability check and handoff. Keep product/browser/simulator/device evidence separate. No "ready" claim while these gates remain open.
+- Owner iPhone video first+6frames,8iPad screens and header;46placements ACTIVE across EN/ID. All three IAP review screenshots COMPLETE with explicit browser-capture/unavailable-price provenance. They are not native purchase proof.
+- App Privacy12categories published with explicit owner approval; no unfinished setup. GoogleSignIn8.0 additions/purposes recorded in APP_PRIVACY.md.
+- Two bundled Facebook SDK manifests declare tracking capability at ep1.facebook.com. Rimba configures only Google email/profile; no FacebookAppID/client token,Facebook AppDelegate initialization or Facebook login path. Configuration/source evidence of an unused provider is not packet-level proof. Vendor manifests were not rewritten.
+- Reviewer password login succeeded, expected identity, fictional cloud save readable and moderator=false. Apple stored credentials match; review contacts complete. No credentials in this ledger.
+- Paid/Free agreements, configured bank account, tax forms and compliance Active; no business/legal settings changed. Age declaration userGeneratedContent=true,messagingAndChat=false,health/wellness=true; no ads/gambling/lootbox.
 
-Owner update: build13 account→guest isolation, Restore/Pro relaunch and widget setup reported safe on one device, model/OS unspecified. Live Campfire test then used native host13 and authenticated reviewer QA RPC participant: two-member lobby revision2, active revision3 and normal15-minute timer reported by owner. Owner intentionally exited safely to sanctuary; server severed revision4 before QA leave (which succeeded). This is not a second native/browser UI, full timed completion/reward or report/block/moderation device test. Two-device cloud and final-candidate audio/name/icon/moderation remain open.
+## Device and live-service evidence
 
-Public evidence: `D:/Project/Rimba/Deliverables/Rimba-Build14-UI/privacy-published.png`, `review-draft-products.png`; account verification JSON omits private identity/credentials. Product screenshot captures show unavailable browser prices and must not be described as native purchase proof.
+- Owner reported13single-device guest-history isolation,Restore/Pro surviving relaunch and widget setup safe. Model/OS unspecified; no separate physical iPad result.
+- Live Campfire: native host13+authenticated reviewer QA RPC participant,2-member lobby rev2,active rev3,15-minute Shared Destiny. Owner reported normal timer, then intentionally exited safely to sanctuary. Server severed rev4 before QA leave, which succeeded. Not a second native/browser UI, timed completion/reward or report/block/moderation action test. No fake reports or account deletion.
+- Two separate Auth sessions on fictional reviewer tested production CAS with identical content:rev1→2,stale commit rejected,duplicate idempotent,progress unchanged. Not a two-physical-client conflict UI test.
+- Owner asked to install15and verify audio sliders/mute,generated/custom names EN/ID,outline icons,focus start/pause/cancel and direct Campfire moderation/empty queue on support account. **Owner replied "aman".** No repurchase/deletion performed for this smoke. Do not infer unspecified device model/OS or full lifecycle scenarios.
+
+Remaining coverage: two physical clients,physical iPad,full billing lifecycle,timed social rewards and report/block/moderation actions. DEVICE_ACCEPTANCE.md keeps coverage limits separate from owner-reported passes; do not mark the entire matrix passed.
+
+## Evidence and next step
+
+Proof: D:/Project/Rimba/Deliverables/Rimba-Build14-UI/apple-submit-enabled-build15.png,candidate15-verified.json,submit-draft15-verified.json,ipa15-audit.json,privacy-published.png plus reviewer/business booleans and live QA summaries. Folder name is historical; final candidate15.
+
+Leave final Submit for Review to the owner; the page is prepared and owner15smoke passed as reported. Preparing the page does not authorize submitting it. Preserve the coverage limits rather than marking every pending historical scenario passed.

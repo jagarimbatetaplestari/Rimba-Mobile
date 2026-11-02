@@ -232,3 +232,9 @@ Current verification: 52/52 Vitest, mobile typecheck and npm run build passed af
 - Replaced segmented verification with one numeric one-time-code input accepting up to 8 digits; explicit submit accepts complete 6/8-digit codes without premature verification at digit six. Recovery supports eight digits. ID/EN copy updated.
 - Candidate must include this fix before final native acceptance; previous uploaded builds do not contain it.
 - Verification OTP: 324/324 tests, typecheck and production export passed; native CI 41372926763 passed for preceding cabfdb2 (not OTP).
+
+### 2026-11-02 — OTP release candidate and public disclosures
+- f643673 pushed to fix/rimba-release-readiness; local324tests, typecheck,155prelaunch checks, production export passed. Native verify41374567443 passed compilation and is capturing iPhone/iPad screenshots.
+- Website4be7359 passed typecheck/build and was fast-forwarded to production main. Public /privacy verified in ID and EN with November2 date, Campfire evidence and90day retention disclosures.
+- Apple session renewed by owner. Monthly, annual and lifetime product review instructions saved; review screenshots and native billing acceptance remain open. DEVICE_ACCEPTANCE.md records the exact source and unverified device flows.
+- Screenshot runner stalled after its first device with unbounded simctl calls. Added command logging, bounded process timeouts and best-effort simulator cleanup; syntax and fictional-fixture regression passed. App runtime source remains f643673.

@@ -13,7 +13,11 @@ if(fs.existsSync(fixture))throw Error('Use a fresh isolated screenshot workspace
 fs.mkdirSync(path.dirname(fixture),{recursive:true});fs.mkdirSync(output,{recursive:true});
 fs.cpSync(original,fixture,{recursive:true,force:false,errorOnExist:true});
 const index=path.join(fixture,'public/index.html'),originalHtml=fs.readFileSync(index,'utf8');
-const sim=(...args)=>execFileSync('xcrun',['simctl',...args],{encoding:'utf8',maxBuffer:10*1024*1024});
+const sim=(...args)=>{
+ console.log('simctl '+args.join(' '));
+ const timeout=args[0]==='bootstatus'?180000:['shutdown','delete'].includes(args[0])?30000:120000;
+ return execFileSync('xcrun',['simctl',...args],{encoding:'utf8',maxBuffer:10*1024*1024,timeout,killSignal:'SIGKILL'});
+};
 const {runtimes}=JSON.parse(sim('list','runtimes','-j'));
 const runtime=runtimes.filter(r=>r.isAvailable&&r.identifier.includes('.iOS-')).sort((a,b)=>b.version.localeCompare(a.version,undefined,{numeric:true}))[0];
 if(!runtime)throw Error('An available iOS simulator runtime is required');
@@ -46,6 +50,6 @@ for(const device of devices){
    manifest.push({file:path.basename(file),device:device.type.name,runtime:runtime.version,language,scene,width:metadata.width,height:metadata.height,native:true,fictionalGuestData:true});
    console.log(JSON.stringify(manifest.at(-1)));
   }
- }finally{try{sim('shutdown',id);}catch{}sim('delete',id);}
+ }finally{try{sim('shutdown',id);}catch(error){console.warn('Simulator shutdown failed: '+error.message);}try{sim('delete',id);}catch(error){console.warn('Simulator deletion failed: '+error.message);}}
 }
 fs.writeFileSync(path.join(output,'manifest.json'),JSON.stringify({commit:process.env.GITHUB_SHA,capturedAt:new Date().toISOString(),screenshots:manifest},null,2));

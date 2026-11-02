@@ -1,6 +1,6 @@
 # Campfire server contract
 
-Local candidate, 2 November 2026. Migration `20261101201444_campfire_authority_and_moderation.sql` has not been deployed by this task. Polling replaces public client-authored Realtime gameplay commands. Free and Pro members use the same authorization boundary. No paid entitlement is granted by any social operation.
+Deployed 2 November 2026. Migration `20261101201444_campfire_authority_and_moderation.sql` and daily 03:17 UTC retention are active with owner approval. Production privilege checks and rollback-safe authorization tests passed; owner moderator onboarding and native acceptance remain pending. Polling replaces public client-authored Realtime gameplay commands. Free and Pro members use the same authorization boundary. No paid entitlement is granted by any social operation.
 
 ## API
 

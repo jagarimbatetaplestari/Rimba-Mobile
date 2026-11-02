@@ -612,10 +612,10 @@ export function MobileHeaderHUD({
                       onClick={() => handleAction(onOpenProfile)}
                       className={bentoTileClass}
                     >
-                      <div className="w-8 h-8 rounded-xl bg-[#187557]/15 text-[#187557] dark:text-emerald-300 flex items-center justify-center shrink-0">
+                      <div className="w-8 h-8 rounded-xl bg-[#dcefe4] text-[#0b2719] flex items-center justify-center shrink-0">
                         <User className="w-4 h-4 stroke-[2.2]" />
                       </div>
-                      <span className="text-[12.5px] font-bold truncate">
+                      <span className="text-[12.5px] font-bold whitespace-normal break-words leading-snug">
                         {t.hud.menuProfile}
                       </span>
                     </button>
@@ -626,10 +626,10 @@ export function MobileHeaderHUD({
                       onClick={() => handleAction(onOpenStats || onOpenProfile)}
                       className={bentoTileClass}
                     >
-                      <div className="w-8 h-8 rounded-xl bg-[#187557]/15 text-[#187557] dark:text-emerald-300 flex items-center justify-center shrink-0">
+                      <div className="w-8 h-8 rounded-xl bg-[#dcefe4] text-[#0b2719] flex items-center justify-center shrink-0">
                         <BarChart3 className="w-4 h-4 stroke-[2.2]" />
                       </div>
-                      <span className="text-[12.5px] font-bold truncate">
+                      <span className="text-[12.5px] font-bold whitespace-normal break-words leading-snug">
                         {t.hud.menuStats}
                       </span>
                     </button>
@@ -640,7 +640,7 @@ export function MobileHeaderHUD({
                       onClick={() => handleAction(onOpenJournal || onOpenAlmanac)}
                       className={bentoTileClass}
                     >
-                      <div className="w-8 h-8 rounded-xl bg-[#187557]/15 text-[#187557] dark:text-emerald-300 flex items-center justify-center shrink-0 relative">
+                      <div className="w-8 h-8 rounded-xl bg-[#dcefe4] text-[#0b2719] flex items-center justify-center shrink-0 relative">
                         <BookMarked className="w-4 h-4 stroke-[2.2]" />
                         {claimableCount > 0 && (
                           <span className="absolute -top-1 -right-1 min-w-[14px] h-[14px] px-1 rounded-full bg-emerald-600 text-white font-bold text-[8.5px] flex items-center justify-center">
@@ -648,7 +648,7 @@ export function MobileHeaderHUD({
                           </span>
                         )}
                       </div>
-                      <span className="text-[12.5px] font-bold truncate flex-1">
+                      <span className="text-[12.5px] font-bold whitespace-normal break-words leading-snug flex-1">
                         {t.hud.menuJournal}
                       </span>
                     </button>
@@ -659,10 +659,10 @@ export function MobileHeaderHUD({
                       onClick={() => handleAction(onOpenCampfire)}
                       className={bentoTileClass}
                     >
-                      <div className="w-8 h-8 rounded-xl bg-[#187557]/15 text-[#187557] dark:text-emerald-300 flex items-center justify-center shrink-0">
+                      <div className="w-8 h-8 rounded-xl bg-[#dcefe4] text-[#0b2719] flex items-center justify-center shrink-0">
                         <Flame className="w-4 h-4 stroke-[2.2]" />
                       </div>
-                      <span className="text-[12.5px] font-bold truncate">
+                      <span className="text-[12.5px] font-bold whitespace-normal break-words leading-snug">
                         {t.hud.menuCampfire}
                       </span>
                     </button>
@@ -673,10 +673,10 @@ export function MobileHeaderHUD({
                       onClick={() => handleAction(onOpenIslandSwitcher)}
                       className={bentoTileClass}
                     >
-                      <div className="w-8 h-8 rounded-xl bg-[#187557]/15 text-[#187557] dark:text-emerald-300 flex items-center justify-center shrink-0">
+                      <div className="w-8 h-8 rounded-xl bg-[#dcefe4] text-[#0b2719] flex items-center justify-center shrink-0">
                         <Palmtree className="w-4 h-4 stroke-[2.2]" />
                       </div>
-                      <span className="text-[12.5px] font-bold truncate">
+                      <span className="text-[12.5px] font-bold whitespace-normal break-words leading-snug">
                         {lang === "en" ? "Islands" : "Daftar Pulau"}
                       </span>
                     </button>
@@ -687,10 +687,10 @@ export function MobileHeaderHUD({
                       onClick={() => handleAction(onOpenLeaderboard)}
                       className={bentoTileClass}
                     >
-                      <div className="w-8 h-8 rounded-xl bg-[#187557]/15 text-[#187557] dark:text-emerald-300 flex items-center justify-center shrink-0">
+                      <div className="w-8 h-8 rounded-xl bg-[#dcefe4] text-[#0b2719] flex items-center justify-center shrink-0">
                         <Trophy className="w-4 h-4 stroke-[2.2]" />
                       </div>
-                      <span className="text-[12.5px] font-bold truncate">
+                      <span className="text-[12.5px] font-bold whitespace-normal break-words leading-snug">
                         {t.hud.menuRanks}
                       </span>
                     </button>
@@ -701,10 +701,10 @@ export function MobileHeaderHUD({
                       onClick={() => handleAction(onOpenShare)}
                       className={bentoTileClass}
                     >
-                      <div className="w-8 h-8 rounded-xl bg-[#187557]/15 text-[#187557] dark:text-emerald-300 flex items-center justify-center shrink-0">
+                      <div className="w-8 h-8 rounded-xl bg-[#dcefe4] text-[#0b2719] flex items-center justify-center shrink-0">
                         <Share2 className="w-4 h-4 stroke-[2.2]" />
                       </div>
-                      <span className="text-[12.5px] font-bold truncate">
+                      <span className="text-[12.5px] font-bold whitespace-normal break-words leading-snug">
                         {t.hud.menuShare}
                       </span>
                     </button>
@@ -715,10 +715,10 @@ export function MobileHeaderHUD({
                       onClick={() => handleAction(onOpenWorkshop)}
                       className={bentoTileClass}
                     >
-                      <div className="w-8 h-8 rounded-xl bg-[#187557]/15 text-[#187557] dark:text-emerald-300 flex items-center justify-center shrink-0">
+                      <div className="w-8 h-8 rounded-xl bg-[#dcefe4] text-[#0b2719] flex items-center justify-center shrink-0">
                         <Hammer className="w-4 h-4 stroke-[2.2]" />
                       </div>
-                      <span className="text-[12.5px] font-bold truncate">
+                      <span className="text-[12.5px] font-bold whitespace-normal break-words leading-snug">
                         {t.hud.menuWorkshop}
                       </span>
                     </button>
@@ -731,11 +731,11 @@ export function MobileHeaderHUD({
                     className="w-full p-3 rounded-2xl bg-gradient-to-r from-[#187557] via-[#1E8865] to-[#125D44] text-white flex items-center justify-between gap-3 shadow-md shadow-[#187557]/20 active:scale-[0.99] transition-all cursor-pointer"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="w-8 h-8 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center shrink-0">
-                        <Sparkles className="w-4 h-4 text-emerald-100 fill-emerald-100" />
+                      <div className="w-8 h-8 rounded-xl bg-[#dcefe4] border border-white/30 flex items-center justify-center shrink-0">
+                        <Sparkles className="w-4 h-4 text-[#0b2719] fill-[#0b2719]" />
                       </div>
                       <div className="text-left min-w-0">
-                        <p className="text-[13px] font-extrabold leading-tight truncate">
+                        <p className="text-[13px] font-extrabold leading-tight whitespace-normal break-words leading-snug">
                           {isPro
                             ? lang === "en"
                               ? "Rimba Pro Active"
@@ -744,7 +744,7 @@ export function MobileHeaderHUD({
                               ? "Explore Rimba Pro"
                               : "Langganan Rimba Pro"}
                         </p>
-                        <p className="text-[10.5px] text-emerald-100/90 truncate">
+                        <p className="text-[10.5px] text-emerald-100/90 whitespace-normal break-words leading-snug">
                           {lang === "en"
                             ? "Multi-Island · Rare Flora · Streak Shield"
                             : "Multi-Pulau · Flora Langka · Pelindung Runtutan"}
@@ -767,10 +767,10 @@ export function MobileHeaderHUD({
                     onClick={() => handleAction(onOpenSettings)}
                     className={bentoTileClass}
                   >
-                    <div className="w-8 h-8 rounded-xl bg-[#187557]/15 text-[#187557] dark:text-emerald-300 flex items-center justify-center shrink-0">
+                    <div className="w-8 h-8 rounded-xl bg-[#dcefe4] text-[#0b2719] flex items-center justify-center shrink-0">
                       <Settings className="w-4 h-4 stroke-[2.2]" />
                     </div>
-                    <span className="text-[12.5px] font-bold truncate">
+                    <span className="text-[12.5px] font-bold whitespace-normal break-words leading-snug">
                       {t.hud.menuSettings}
                     </span>
                   </button>
@@ -781,10 +781,10 @@ export function MobileHeaderHUD({
                     onClick={() => handleAction(onOpenSoundscapes)}
                     className={bentoTileClass}
                   >
-                    <div className="w-8 h-8 rounded-xl bg-[#187557]/15 text-[#187557] dark:text-emerald-300 flex items-center justify-center shrink-0">
+                    <div className="w-8 h-8 rounded-xl bg-[#dcefe4] text-[#0b2719] flex items-center justify-center shrink-0">
                       <Headphones className="w-4 h-4 stroke-[2.2]" />
                     </div>
-                    <span className="text-[12.5px] font-bold truncate">
+                    <span className="text-[12.5px] font-bold whitespace-normal break-words leading-snug">
                       {t.hud.menuSoundscape}
                     </span>
                   </button>
@@ -795,10 +795,10 @@ export function MobileHeaderHUD({
                     onClick={handleToggleLanguage}
                     className={bentoTileClass}
                   >
-                    <div className="w-8 h-8 rounded-xl bg-[#187557]/15 text-[#187557] dark:text-emerald-300 flex items-center justify-center shrink-0">
+                    <div className="w-8 h-8 rounded-xl bg-[#dcefe4] text-[#0b2719] flex items-center justify-center shrink-0">
                       <Globe className="w-4 h-4 stroke-[2.2]" />
                     </div>
-                    <span className="text-[12.5px] font-bold truncate flex-1">
+                    <span className="text-[12.5px] font-bold whitespace-normal break-words leading-snug flex-1">
                       {t.hud.langToggleTitle}
                     </span>
                     <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-md bg-[#187557]/15 text-[#187557] dark:bg-white/20 dark:text-white uppercase shrink-0">
@@ -812,10 +812,10 @@ export function MobileHeaderHUD({
                     onClick={() => handleAction(onOpenGuide || onOpenOnboarding)}
                     className={bentoTileClass}
                   >
-                    <div className="w-8 h-8 rounded-xl bg-[#187557]/15 text-[#187557] dark:text-emerald-300 flex items-center justify-center shrink-0">
+                    <div className="w-8 h-8 rounded-xl bg-[#dcefe4] text-[#0b2719] flex items-center justify-center shrink-0">
                       <HelpCircle className="w-4 h-4 stroke-[2.2]" />
                     </div>
-                    <span className="text-[12.5px] font-bold truncate">
+                    <span className="text-[12.5px] font-bold whitespace-normal break-words leading-snug">
                       {t.hud.menuGuide}
                     </span>
                   </button>

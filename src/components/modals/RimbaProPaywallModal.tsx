@@ -234,7 +234,7 @@ export function RimbaProPaywallModal({
             boxShadow:
               "0 28px 72px -12px rgba(6, 30, 20, 0.38), inset 0 1.5px 0 0 rgba(255, 255, 255, 0.95)",
           }}
-          className="w-full max-w-md md:max-w-lg rounded-[38px] p-5 sm:p-6 border border-white/85 text-[#0D3528] flex flex-col gap-3.5 relative overflow-hidden animate-in zoom-in-95 duration-200 max-h-full overflow-y-auto no-scrollbar"
+          className="w-full max-w-md md:max-w-lg rounded-[38px] p-5 sm:p-6 border border-white/85 text-[#0D3528] flex flex-col gap-3.5 relative overflow-hidden animate-in zoom-in-95 duration-200 max-h-full overflow-y-auto no-scrollbar [&>*]:shrink-0"
         >
           {/* Ambient Mint & Jade Glass Glow Orbs */}
           <div className="pointer-events-none absolute -top-20 -left-16 w-56 h-56 rounded-full bg-emerald-300/25 blur-3xl" />
@@ -259,9 +259,9 @@ export function RimbaProPaywallModal({
               </div>
             </div>
 
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <h2 className="text-[20px] font-extrabold tracking-tight text-[#0D3528] truncate">
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-[20px] font-extrabold tracking-tight text-[#0D3528] whitespace-normal break-words">
                   {t.paywallModal.title}
                 </h2>
                 <span className="text-[9.5px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#187557]/12 text-[#14664D] border border-[#187557]/25 shrink-0">
@@ -283,7 +283,7 @@ export function RimbaProPaywallModal({
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-[12.5px] font-extrabold text-[#0D3528] truncate">
+                    <span className="text-[12.5px] font-extrabold text-[#0D3528] whitespace-normal break-words">
                       {currentTier === "pioneer_lifetime"
                         ? t.paywallModal.lifetimeTitle
                         : currentTier === "pro_monthly"
@@ -294,7 +294,7 @@ export function RimbaProPaywallModal({
                       {t.paywallModal.activeBadge}
                     </span>
                   </div>
-                  <p className="text-[10.5px] text-[#4C7567] mt-0.5 truncate">
+                  <p className="text-[10.5px] text-[#4C7567] mt-0.5 whitespace-normal break-words">
                     {t.paywallModal.proActiveTitle}
                   </p>
                 </div>
@@ -374,10 +374,10 @@ export function RimbaProPaywallModal({
                   <Headphones className="w-4 h-4 stroke-[2.2]" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[12px] font-extrabold text-[#0D3528] leading-tight truncate">
+                  <p className="text-[12px] font-extrabold text-[#0D3528] leading-tight whitespace-normal break-words">
                     {t.paywallModal.pillarSoundTitle}
                   </p>
-                  <p className="text-[10.5px] text-[#4C7567] leading-tight truncate mt-0.5">
+                  <p className="text-[10.5px] text-[#4C7567] leading-tight whitespace-normal break-words mt-0.5">
                     {t.paywallModal.pillarSoundDesc}
                   </p>
                 </div>
@@ -449,7 +449,7 @@ export function RimbaProPaywallModal({
             </div>
 
             {/* 2. Side-by-Side Bento Pair: Lifetime Pioneer & Monthly */}
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 min-[360px]:grid-cols-2 gap-2">
               {/* Lifetime Pioneer */}
               <div
                 onClick={() => {
@@ -464,7 +464,7 @@ export function RimbaProPaywallModal({
                 }`}
               >
                 <div className="flex items-center justify-between gap-1">
-                  <span className="text-[9.5px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#E4F4ED] text-[#14664D] border border-[#BCE5D3] truncate">
+                  <span className="text-[9.5px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#E4F4ED] text-[#14664D] border border-[#BCE5D3] whitespace-normal break-words">
                     {isPro && currentTier === "pioneer_lifetime"
                       ? t.paywallModal.currentPlan
                       : t.paywallModal.lifetimeTag}
@@ -483,10 +483,10 @@ export function RimbaProPaywallModal({
                 </div>
 
                 <div>
-                  <p className="text-[12.5px] font-extrabold text-[#0D3528] truncate">
+                  <p className="text-[12.5px] font-extrabold text-[#0D3528] whitespace-normal break-words">
                     {t.paywallModal.lifetimeTitle}
                   </p>
-                  <p className="text-[10.5px] text-[#4C7567] truncate mt-0.5">
+                  <p className="text-[10.5px] text-[#4C7567] whitespace-normal break-words mt-0.5">
                     {t.paywallModal.lifetimePrice.replace(
                       "{price}",
                       storePrices[SUBSCRIPTION_PACKAGES.lifetime.id] || unavailablePrice
@@ -509,7 +509,7 @@ export function RimbaProPaywallModal({
                 }`}
               >
                 <div className="flex items-center justify-between gap-1">
-                  <span className="text-[9.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#0D3528]/6 text-[#4C7567] truncate">
+                  <span className="text-[9.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#0D3528]/6 text-[#4C7567] whitespace-normal break-words">
                     {isPro && currentTier === "pro_monthly"
                       ? t.paywallModal.currentPlan
                       : t.paywallModal.monthlyBadge}
@@ -528,10 +528,10 @@ export function RimbaProPaywallModal({
                 </div>
 
                 <div>
-                  <p className="text-[12.5px] font-extrabold text-[#0D3528] truncate">
+                  <p className="text-[12.5px] font-extrabold text-[#0D3528] whitespace-normal break-words">
                     {t.paywallModal.monthlyTitle}
                   </p>
-                  <p className="text-[10.5px] text-[#4C7567] truncate mt-0.5">
+                  <p className="text-[10.5px] text-[#4C7567] whitespace-normal break-words mt-0.5">
                     {t.paywallModal.monthlyPrice.replace(
                       "{price}",
                       storePrices[SUBSCRIPTION_PACKAGES.monthly.id] || unavailablePrice
@@ -564,7 +564,7 @@ export function RimbaProPaywallModal({
               ) : (
                 <>
                   <span>{buttonText}</span>
-                  <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+                  <ArrowRight className="w-4 h-4 stroke-[2.5] shrink-0" />
                 </>
               )}
             </button>
@@ -585,7 +585,7 @@ export function RimbaProPaywallModal({
             </p>
 
             {/* Restore & Policy Links */}
-            <div className="flex items-center justify-center gap-3 text-[11px] text-[#4C7567] pt-0.5">
+            <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-[11px] text-[#4C7567] pt-0.5">
               <button
                 type="button"
                 onClick={handleRestore}

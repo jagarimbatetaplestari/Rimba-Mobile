@@ -24,6 +24,7 @@
 		7C5CFEF1BD7146B2A6BB31C6 /* RimbaWidgetData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B4D1F7B5E314D8E840D0B8A /* RimbaWidgetData.swift */; };
 		C4A1DE594B2D47B7A9BF62E7 /* StartRimbaFocusIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02963407780342CEA2CC4A83 /* StartRimbaFocusIntent.swift */; };
 		4FEF4D907B6140E894185278 /* RimbaBridgeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9218CCD84664454EA8C30A61 /* RimbaBridgeViewController.swift */; };
+		B58002AC5DCA445C9A98F80D /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 0C97F07DDB4E4583AEABF807 /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -215,6 +216,7 @@
 				50379B232058CBB4000EE86E /* capacitor.config.json in Resources */,
 				504EC30D1FED79650016851F /* Main.storyboard in Resources */,
 				2FAD9763203C412B000D30F8 /* config.xml in Resources */,
+				B58002AC5DCA445C9A98F80D /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

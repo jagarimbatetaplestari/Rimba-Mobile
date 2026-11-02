@@ -95,7 +95,7 @@ function persistAndSyncSaveData(data: RimbaSaveData): void {
   }
   scheduleDebouncedCloudSync();
   try {
-    void syncWidgetsWithSaveData(data, useGameStore.getState().activeSession);
+    void syncWidgetsWithSaveData(data, data.focus_sessions.find(session => session.status === 'active') ?? null);
   } catch {
     // ignore widget sync error
   }

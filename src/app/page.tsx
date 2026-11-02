@@ -436,7 +436,7 @@ export default function RimbaDioramaApp() {
             const store = useGameStore.getState();
             store.setFocusSetup({ minutes: safeMins });
             if (!store.activeSession) {
-              store.startFocus(safeMins);
+              store.startFocus(safeMins * 60);
             }
           } else if (host === "soundscape") {
             setIsSoundscapeOpen(true);

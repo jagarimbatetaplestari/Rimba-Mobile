@@ -30,4 +30,11 @@ describe('native widget packaging',()=>{
    expect(paths.some((p:string)=>p?.endsWith('RimbaWidgetData.swift'))).toBe(true);
   }
  });
+ it('packages the shared-container privacy declaration in both bundles',()=>{
+  for(const name of ['App','RimbaWidgets']) {
+   const t:any=target(name)?.[1];
+   const paths=t.buildPhases.flatMap((r:any)=>objects.PBXResourcesBuildPhase?.[r.value]?.files||[]).map((r:any)=>objects.PBXFileReference[objects.PBXBuildFile[r.value].fileRef]?.path?.replaceAll('"',''));
+   expect(paths.some((p:string)=>p?.endsWith('PrivacyInfo.xcprivacy'))).toBe(true);
+  }
+ });
 });

@@ -252,3 +252,11 @@ Current verification: 52/52 Vitest, mobile typecheck and npm run build passed af
 
 ### Review owner changes 7f4730e
 - Laporan pemilik dan audit lampiran diverifikasi; lihat OWNER_CHANGES_REVIEW_20261102.md. Build6 tag gagal pada Next build. Fix schema profil, feedback subscription, retry/pending verification, dan tes boundary widget disiapkan;335tests,155prelaunch,typecheck,production build dan core browser EN/ID lulus. Widget extension/AppGroup/registrasi plugin tetap belum terintegrasi; jangan klaim fitur native sudah lengkap. Google Skip Nonce Check pemilik dipertahankan untuk kompatibilitas jalur native yang diperiksa.
+
+- e13b1a2 pushed; native verify41386535235 SUCCESS. Manual deploy41387288040/build7 started for the same SHA after native gate. Apple processing and physical-device purchase acceptance still unverified.
+
+### Activation fix after device clarification
+- Device report says Pro features stayed locked. Reproduced verified billing result invalidation on same-owner TOKEN_REFRESHED and duplicate SIGNED_IN. Split owner/session epoch from profile hydration generation, retaining sign-out and A-B-A stale-result guards.
+- Two red regressions now green; auth lifecycle9tests include same-owner metadata races and A-B-A. Full339tests passed before final extra A-B-A test;155prelaunch/typecheck passed. Fresh production build pending.
+- Upload7/41387288040 canceled at Upload IPA step before a final candidate was confirmed. Do not ask owner to accept build7 as the complete activation fix.
+- Fresh production export after the activation epoch fix passed. No app review submission.

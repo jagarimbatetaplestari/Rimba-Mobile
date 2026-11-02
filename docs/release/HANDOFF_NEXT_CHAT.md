@@ -2,6 +2,15 @@
 
 Diperbarui: 2 November 2026 (Asia/Jakarta).
 
+## Checkpoint review perubahan pemilik dan subscription — 2 November 2026
+
+- Pemilik mengubah53file pada7f4730e dan menonaktifkan nonce check Google di Supabase; login dilaporkan berhasil. Jalur Google iOS Capgo6.0.1 tidak meneruskan opsi nonce, dan pertukaran Supabase saat ini tanpa nonce. Konfigurasi pemilik dipertahankan; Apple nonce tidak diubah.
+- Tag v1.0.6-202611021034/run41383802859 gagal pada Next build, bukan TestFlight baru. UID akun dipasang ke profile.id yang wajib local-user. Fix auth/cloud profile schema dan regresi sudah masuk e13b1a2.
+- e13b1a2 di origin/fix/rimba-release-readiness mempertahankan perubahan pemilik, memperbaiki feedback pembelian/restore, pending-verification recovery tanpa membeli kedua kali, error terlihat dekat CTA, dan rapid-tap/account guards.335tests,155prelaunch,typecheck,build dan browser sintetis EN/ID lulus. CI native41386535235 SUCCESS.
+- Upload7/run41387288040 dibatalkan pada tahap upload setelah klarifikasi fitur Pro tetap terkunci. Regresi membuktikan TOKEN_REFRESHED/duplikat SIGNED_IN menginvalidasi hasil paid pada akun yang sama. Fix memisahkan epoch pemilik dan generasi hidrasi profil;339tes full + regresi tambahan A-B-A,155prelaunch,typecheck dan build akhir lulus. Kandidat berikutnya perlu native CI dan upload baru.
+- Baca OWNER_CHANGES_REVIEW_20261102.md: WidgetKit baru berupa file/pratinjau; target/embedding extension, AppGroup entitlement App dan registrasi bridge belum ada. Integrasi widget dan audit privasi native belum lulus. Jangan mengklaim fitur widget sudah terpasang hanya karena App target dapat dikompilasi.
+- Pertanyaan untuk pemilik masih menunggu: build/paket/metode login saat pembelian yang terasa tidak bereaksi, serta apakah fitur Pro sebenarnya sudah terbuka. Backend punya satu catatan annual sandbox terkonfirmasi, tetapi belum dicocokkan dengan transaksi pemilik. Tidak ada transaksi atau grantPro manual dilakukan.
+
 ## Checkpoint rilis build 5 — 2 November 2026
 
 - TestFlight 1.0 (5), source 308215bd140a442bd9b20c57ce2e2d24228d9cbf (app runtime f643673), upload run 41376358841 SUCCESS. Apple API reports VALID; Internal beta group contains build5 and internalBuildState IN_BETA_TESTING. Draft version1.0 now selects build5. No review submitted.

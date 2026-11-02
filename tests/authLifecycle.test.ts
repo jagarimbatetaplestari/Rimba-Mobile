@@ -35,3 +35,45 @@ describe('Supabase auth lifecycle', () => {
     m.callback('SIGNED_OUT', null); expect(store.getState().user).toBeNull();
   });
 });
+it('keeps a verified purchase current across token refresh for the same account',async()=>{
+  m.callback('SIGNED_IN',session('a'));await vi.runAllTimersAsync();
+  const {getAuthSessionRevision}=await import('../src/lib/auth/useAuthStore');
+  const {isStoreResultCurrent}=await import('../src/lib/subscription/revenueCatService');
+  const paidResult={success:true,ownerId:'a',sessionRevision:getAuthSessionRevision()};
+  m.callback('TOKEN_REFRESHED',session('a'));
+  expect(isStoreResultCurrent(paidResult)).toBe(true);
+});
+it('keeps a verified purchase current across a duplicate signed-in event for the same account',async()=>{
+  m.callback('SIGNED_IN',session('a'));await vi.runAllTimersAsync();
+  const {getAuthSessionRevision}=await import('../src/lib/auth/useAuthStore');
+  const {isStoreResultCurrent}=await import('../src/lib/subscription/revenueCatService');
+  const paidResult={success:true,ownerId:'a',sessionRevision:getAuthSessionRevision()};
+  m.callback('SIGNED_IN',session('a'));
+  expect(isStoreResultCurrent(paidResult)).toBe(true);
+});
+it('still invalidates a verified purchase after sign-out and sign-in to the same account',async()=>{
+  m.callback('SIGNED_IN',session('a'));await vi.runAllTimersAsync();
+  const {getAuthSessionRevision}=await import('../src/lib/auth/useAuthStore');
+  const {isStoreResultCurrent}=await import('../src/lib/subscription/revenueCatService');
+  const oldResult={success:true,ownerId:'a',sessionRevision:getAuthSessionRevision()};
+  m.callback('SIGNED_OUT',null);m.callback('SIGNED_IN',session('a'));await vi.runAllTimersAsync();
+  expect(isStoreResultCurrent(oldResult)).toBe(false);
+});
+it('discards an older same-owner profile response without invalidating purchase ownership',async()=>{
+  m.callback('SIGNED_IN',session('a'));await vi.runAllTimersAsync();
+  let resolve!:(value:any)=>void;
+  m.read.mockReturnValueOnce(new Promise(r=>{resolve=r;}));
+  m.callback('TOKEN_REFRESHED',session('a'));await vi.advanceTimersByTimeAsync(0);
+  m.read.mockResolvedValue({data:{display_name:'Latest profile'}});
+  m.callback('TOKEN_REFRESHED',session('a'));await vi.advanceTimersByTimeAsync(0);
+  resolve({data:{display_name:'Stale profile'}});await vi.runAllTimersAsync();
+  expect(store.getState().user?.name).toBe('Latest profile');
+});
+it('invalidates an old purchase across A to B to A before profile hydration finishes',async()=>{
+  m.callback('SIGNED_IN',session('a'));await vi.runAllTimersAsync();
+  const {getAuthSessionRevision}=await import('../src/lib/auth/useAuthStore');
+  const {isStoreResultCurrent}=await import('../src/lib/subscription/revenueCatService');
+  const oldResult={success:true,ownerId:'a',sessionRevision:getAuthSessionRevision()};
+  m.callback('SIGNED_IN',session('b'));m.callback('SIGNED_IN',session('a'));await vi.runAllTimersAsync();
+  expect(store.getState().user?.id).toBe('a');expect(isStoreResultCurrent(oldResult)).toBe(false);
+});

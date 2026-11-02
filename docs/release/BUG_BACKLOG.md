@@ -4,6 +4,8 @@ Scope: iPhone+iPad, global excluding27EU territories, Free/Pro, virtual trees on
 
 ## Latest checkpoint — 2 November, runtime9b6548d
 
+Submission superseding status21:10WIB: owner-authorized API submission succeeded after generic UI error; app15,three product versions and group version WAITING_FOR_REVIEW. Submission41619189-27ab-4c80-83e3-2e07ef3e3bba submittedDate2026-11-02T14:10:43.66Z. No metadata/product/build changes needed; exact UI error cause unknown. Do not resubmit/withdraw automatically.
+
 Final superseding status: TestFlight1.0(15) release6f74a1f is VALID/Internal/IN_BETA_TESTING after deploy41453991325 SUCCESS on the standard Intel runner. Both14attempts never started due ARM capacity. SignedIPA inspected, five-item Apple draft READY_FOR_REVIEW with Submit enabled and submittedDate=null. Owner15smoke replied "aman" for audio/name/icon/focus/direct moderation checks. Ready for owner Submit; coverage limits in SUBMIT_READINESS_20261102.md and DEVICE_ACCEPTANCE.md remain explicit. No review submitted.
 
 This checkpoint supersedes historical service/build states in the table below. NativeCI41445401653 SUCCESS;401tests/45files, typecheck,155prelaunch and production export passed in that CI. TestFlight upload14/run41448458837 is queued; draft still selects13 until Apple validates14.

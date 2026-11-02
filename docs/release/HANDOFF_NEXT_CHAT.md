@@ -4,7 +4,9 @@ Diperbarui: 2 November 2026, Asia/Jakarta.
 
 ## Status terbaru
 
-**Siap untuk pemilik klik Submit for Review. Agent belum mengirim App Review.** Apple draft berisi5item READY_FOR_REVIEW, tombol Submit aktif, submittedDate=null. Pemilik melaporkan smoke test TestFlight1.0(15) "aman" setelah diminta memeriksa volume/mute musik+alam, nama pulau/bioma EN/ID dan nama custom, ikon outline, start/pause/cancel fokus, serta Moderasi/antrean kosong melalui Campfire pada akun support. Model/iOS tidak disebut; jangan mengarang detail perangkat atau menandai seluruh matriks historis lulus.
+**SUDAH DIKIRIM — WAITING FOR REVIEW, 2 November2026 pukul21:10:43WIB.** Pemilik mencoba Submit melalui UI dan mendapat unexpected error; API read mengonfirmasi belum terkirim. Pemilik kemudian secara eksplisit menyetujui satu kali pengiriman draft yang sama melalui API resmi Apple. PATCH submitted=true berhasil pada2026-11-02T14:10:43.66Z. Submission,app1.0(15),annual,monthly,lifetime dan grupPro terverifikasi WAITING_FOR_REVIEW. Jangan Submit ulang atau menarik kiriman tanpa instruksi baru. Penyebab spesifik error UI belum terbukti; tidak ada metadata/produk/build yang diganti untuk keberhasilan API ini.
+
+Pemilik melaporkan smoke test TestFlight1.0(15) "aman" untuk audio/mute,nama EN/ID/custom,ikon outline,fokus dan direct moderation/empty queue. Model/iOS tidak disebut; jangan mengarang detail perangkat atau menandai seluruh matriks historis lulus.
 
 ## Kandidat final
 
@@ -17,11 +19,11 @@ Diperbarui: 2 November 2026, Asia/Jakarta.
 ## Apple review
 
 - App6825621183, version389f78c9-7f47-417f-b76c-fd07007b2c34.
-- Draft41619189-27ab-4c80-83e3-2e07ef3e3bba berisi iOS1.0(15),grup Rimba Pro,annual,monthly,lifetime. Kelima item READY_FOR_REVIEW; submittedDate=null. Tombol final Submit aktif; jangan klik atas nama pemilik tanpa instruksi baru yang eksplisit.
+- Submission41619189-27ab-4c80-83e3-2e07ef3e3bba berisi iOS1.0(15),grup Rimba Pro,annual,monthly,lifetime. submittedDate2026-11-02T14:10:43.66Z,platformIOS,stateWAITING_FOR_REVIEW. API itemstates masih READY_FOR_REVIEW, sedangkan app dan keempat product/group version states sudah WAITING_FOR_REVIEW; simpan perbedaan semantik ini, bukan klaim itemstate berubah menjadi ACCEPTED.
 - Monthly6829362346 rimba_pro_monthly; annual6829362411 rimba_pro_annual; lifetime6829362449 rimba_pioneer_lifetime. Metadata/price schedules/locales dan review screenshots COMPLETE/READY_TO_SUBMIT. Screenshot review merupakan browser UI capture dengan harga unavailable, bukan transaksi native; provenance dijelaskan dalam review notes. Jangan membuat harga/transaksi palsu.
 - EN/ID memakai aset visual English sesuai instruksi: video20detik pertama,6frame iPhone pada2ukuran,8layar iPad,header;46placements ACTIVE. Frame05 sudah dikoreksi pemilik dari klaim100%on-device. Video Apple telah diputar/diverifikasi. Mode release existing AFTER_APPROVAL dipertahankan.
 - App Privacy12kategori Published dengan persetujuan eksplisit pemilik, tanpa setup tersisa. Paid/Free Agreements,bank,taxforms,complianceActive; tidak ada legal/business setting diubah. Reviewer login aktual berhasil,savefiktif terbaca,moderatorfalse; Apple username/password cocok dan contact lengkap. Jangan cetak kredensial.
-- Link halaman: https://appstoreconnect.apple.com/apps/6825621183/distribution/ios/version/inflight . Tab Apple ditinggalkan pada modal draft dengan Submit aktif.
+- Link halaman: https://appstoreconnect.apple.com/apps/6825621183/distribution/ios/version/inflight . Tab Apple diperbarui untuk menunjukkan Waiting for Review.
 
 ## Perbaikan dan bukti pemilik
 
@@ -52,4 +54,4 @@ Supabase rkljugrrscmqopeuwtpd JagaRimba-project. Campfire memakai authoritative 
 - Aset listing/proof di D:/Project/Rimba/Deliverables/AppStore-Owner-20261102. Source pemilik di D:/Project/Apple Dev/App Store/App Store - Rimba.
 - Private credentials hanya lokasi privat yang sudah disepakati, termasuk D:/Project/Apple Dev/Rimba_Review_Credentials.json. Jangan print/commit. Build scripts/artifacts ignored.
 
-Ikuti D:/Project/Rimba/rules.md dan CODEX/GEMINI proyek. Upload TestFlight sudah diizinkan; Submit final tetap pemilik. Jika ada regresi baru, reproduksi dan perbaiki dari source Mobile, jalankan pemeriksaan relevan/build/native, lalu buat kandidat baru; jangan menganggap status15membuktikan build sesudahnya.
+Ikuti D:/Project/Rimba/rules.md dan CODEX/GEMINI proyek. Pengiriman15sudah diizinkan secara eksplisit dan selesai. Tidak ada izin otomatis untuk menarik/mengirim ulang versi berikutnya. Jika ada regresi atau respons Apple, diagnosis dari bukti terbaru; jangan menganggap status15membuktikan build sesudahnya.

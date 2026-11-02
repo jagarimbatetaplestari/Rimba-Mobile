@@ -1,6 +1,6 @@
 # Submit readiness — 2 November 2026
 
-**Ready for the owner to click Submit for Review. No review has been submitted.** Submit is visibly enabled; the owner subsequently reported build15smoke acceptance "aman". Device model/OS unspecified; full-matrix coverage limits remain below.
+**SUBMITTED — WAITING FOR REVIEW.** After a generic UI submit error, owner explicitly authorized one API attempt with the same five items. Apple accepted at2026-11-02T14:10:43.66Z (21:10:43WIB). Submission41619189-27ab-4c80-83e3-2e07ef3e3bba,app1.0(15),both subscriptions,lifetime and group versions all WAITING_FOR_REVIEW. Raw itemstate remains READY_FOR_REVIEW; submission/date and entity version states prove actual acceptance. No metadata/product/build changed for this successful API attempt. Specific UI failure cause is unproven. Owner15smoke reported "aman"; coverage limits below remain.
 
 ## Final candidate and draft
 
@@ -32,4 +32,4 @@ Remaining coverage: two physical clients,physical iPad,full billing lifecycle,ti
 
 Proof: D:/Project/Rimba/Deliverables/Rimba-Build14-UI/apple-submit-enabled-build15.png,candidate15-verified.json,submit-draft15-verified.json,ipa15-audit.json,privacy-published.png plus reviewer/business booleans and live QA summaries. Folder name is historical; final candidate15.
 
-Leave final Submit for Review to the owner; the page is prepared and owner15smoke passed as reported. Preparing the page does not authorize submitting it. Preserve the coverage limits rather than marking every pending historical scenario passed.
+Submission completed with explicit owner approval. Do not click Submit again or withdraw it without new instructions. Preserve coverage limits rather than marking every pending historical scenario passed. Latest proof: submitted15-verified.json and Apple Waiting for Review screenshot; earlier draft proof below is historical.

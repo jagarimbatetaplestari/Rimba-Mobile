@@ -275,3 +275,10 @@ Current verification: 52/52 Vitest, mobile typecheck and npm run build passed af
 ### Native widget final distributed
 - Source408345b includes stopwatch guard (no false24-hour countdown),365tests/40files and fresh export/typecheck pass;155prelaunch pass. NativeCI41404506471 SUCCESS; signed archive/export/extension entitlements and IPA embedding verified in deploy41404509381 SUCCESS.
 - Build11/41403770011 canceled before upload. Apple build63dde60f-edb0-4122-afe4-9828114e69da1.0(12) VALID/IN_BETA_TESTING, Internal membership verified. EN/ID beta notes saved; draft selects12; no Submit. Physical widget and Restore/Pro acceptance still pending.
+
+## App Review submission — 2 November2026,21:10WIB
+
+- Owner UI attempt returned generic unexpected error; read-only API confirmed draft READY_FOR_REVIEW,submittedDate=null,5items. Versioned EN/ID localizations complete; no per-item validation error surfaced. Null draft platform is allowed by current official Apple API; no unsupported platform-cause claim.
+- Owner explicitly authorized one same-draft API submission. PATCH /v1/reviewSubmissions/41619189-27ab-4c80-83e3-2e07ef3e3bba with submitted=true succeeded at2026-11-02T14:10:43.66Z (21:10:43WIB). No metadata,products,IDs,assets or appbuild changed.
+- Read-back: submission/platformIOS WAITING_FOR_REVIEW,app1.0(15) WAITING_FOR_REVIEW,and annual/monthly/lifetime/group version states WAITING_FOR_REVIEW. Five raw reviewSubmissionItems retain READY_FOR_REVIEW; do not confuse itemstate with submission outcome.
+- Evidence: ignored build/submit15-api-result.json,submitted15-verified.json; public status copy in Deliverables/Rimba-Build14-UI. No appcode changed or new tests/build needed. Existing device coverage limits remain. Do not automatically retry/withdraw; next action is await Apple review/feedback.

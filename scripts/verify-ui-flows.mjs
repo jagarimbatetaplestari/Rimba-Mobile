@@ -53,7 +53,7 @@ try {
       await page.screenshot({path:`build/ui-qa/${language}-logout-failure.png`});
       throw error;
     });
-    assert.match(page.url(), /\/login\//);
+    assert.match(page.url(), /\/login\/?(?:[?#]|$)/);
     await page.getByRole('button', { name: text.guest }).click();
     await page.getByRole('button', { name: text.start, exact: true }).waitFor();
     await page.getByRole('button', { name: text.settings, exact: true }).click();

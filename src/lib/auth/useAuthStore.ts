@@ -206,7 +206,7 @@ export const useAuthStore = create<AuthState>()(
                     ...saveData,
                     profile: {
                       ...saveData.profile,
-                      id: nextUser.id,
+                      id: saveData.profile.id,
                       name:
                         saveData.profile.name && saveData.profile.name !== 'Penjaga Rimba'
                           ? saveData.profile.name

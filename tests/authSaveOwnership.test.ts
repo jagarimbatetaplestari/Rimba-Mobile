@@ -84,3 +84,9 @@ it('clears the deleted account outbox while retaining another account journal',a
  await useAuthStore.getState().deleteAccountAndData();
  expect(items.has(syncJournalKey('a'))).toBe(false);expect(items.get(syncJournalKey('b'))).toBe('private queued B progress');
 });
+it('keeps the local profile schema valid when hydrating an authenticated owner', async()=>{
+  await logIn('a');
+  const save=useGameStore.getState().saveData;
+  expect(save.storage_owner).toBe('a');
+  expect(save.profile.id).toBe('local-user');
+});

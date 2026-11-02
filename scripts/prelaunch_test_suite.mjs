@@ -464,7 +464,7 @@ assert(fs.existsSync(cloudSyncPath), 'cloudSync.ts exists');
 const cloudSyncContent = fs.readFileSync(cloudSyncPath, 'utf8');
 assert(
   cloudSyncContent.includes("supabase.rpc('commit_game_save_v2'") &&
-    cloudSyncContent.includes('p_expected_owner:owner') && cloudSyncContent.includes('p_expected_revision:pending.baseRevision'),
+    /p_expected_owner:\s*owner/.test(cloudSyncContent) && /p_expected_revision:\s*pending\.baseRevision/.test(cloudSyncContent),
   'cloudSync writes through owner/revision-aware RPC instead of blind overwrite'
 );
 assert(
@@ -682,11 +682,12 @@ assert(
     paywallModalContent.includes('setLegalModalTab'),
   'RimbaProPaywallModal integrates in-app LegalModal for 100% offline Privacy & Terms review'
 );
-assert(
-  paywallModalContent.includes('await restoreStoreKitPurchases(isEn)') &&
-    paywallModalContent.includes('t.paywallModal.restoreSuccess'),
-  'Paywall source smoke: restore requests the store and provides feedback (SDK behavior tested separately)'
-);
+const paywallFeedbackRegressions = spawnSync(process.execPath,
+  ['node_modules/vitest/vitest.mjs', 'run', 'tests/paywallFeedback.test.ts'],
+  { cwd: projectRoot, encoding: 'utf8', timeout: 120000 });
+assert(paywallFeedbackRegressions.status === 0,
+  'Paywall verified welcome, Restore, visible errors and duplicate-tap regressions pass',
+  paywallFeedbackRegressions.status === 0 ? '' : (paywallFeedbackRegressions.stdout + paywallFeedbackRegressions.stderr).slice(-5000));
 
 // 2. Backup trust-boundary source smoke (behavior is covered by Vitest)
 const backupManagerPath = path.join(projectRoot, 'src/lib/game/backupManager.ts');
@@ -702,7 +703,7 @@ assert(
 // 3. Cloud game payload is not evidence of a store purchase (source smoke only)
 assert(
   cloudSyncContent.includes('validateRimbaBackup(data.save_data)') &&
-    cloudSyncContent.includes('subscription:current.subscription'),
+    /subscription:\s*current\.subscription/.test(cloudSyncContent),
   'cloudSync keeps current entitlement instead of granting Pro from cloud game payload'
 );
 

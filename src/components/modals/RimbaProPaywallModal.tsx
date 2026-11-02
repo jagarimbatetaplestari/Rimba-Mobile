@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { useAuthStore } from "@/lib/auth/useAuthStore";
 import { useGameStore } from "@/lib/game/useGameStore";
 import { useTranslation } from "@/lib/i18n/translations";
 import { soundManager } from "@/lib/audio/sounds";
@@ -40,7 +41,24 @@ export function RimbaProPaywallModal({
   const { isPro } = useEntitlements();
   const currentTier = subscription?.tier;
   const updateSubscription = useGameStore((state) => state.updateSubscription);
-  const notify = useGameStore((state) => state.notify);
+  const ownerId = useAuthStore((state) => state.user?.id);
+
+  const [activation, setActivation] = useState<"purchase" | "restore" | null>(null);
+  const [purchaseMessage, setPurchaseMessage] = useState<string | null>(null);
+  const [verificationPending, setVerificationPending] = useState(false);
+  const noticeRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (purchaseMessage) noticeRef.current?.scrollIntoView?.({ block: "nearest" });
+  }, [purchaseMessage]);
+  const operationGeneration = useRef(0);
+  const inFlight = useRef(false);
+  useEffect(() => {
+    operationGeneration.current++;
+    setActivation(null);
+    setPurchaseMessage(null);
+    setVerificationPending(false);
+    return () => { operationGeneration.current++; };
+  }, [isOpen, ownerId]);
 
   const [selectedTier, setSelectedTier] = useState<SubscriptionTier>("pro_annual");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -78,68 +96,85 @@ export function RimbaProPaywallModal({
   const productForTier = selectedTier === "pro_annual" ? SUBSCRIPTION_PACKAGES.annual : selectedTier === "pioneer_lifetime" ? SUBSCRIPTION_PACKAGES.lifetime : SUBSCRIPTION_PACKAGES.monthly;
 
   const handlePurchase = async () => {
+    if (inFlight.current) return;
+    if (isPro && selectedTier === currentTier) { onClose(); return; }
+    inFlight.current = true;
+    const generation = operationGeneration.current;
     soundManager.playPop();
     hapticLight();
     setIsProcessing(true);
-
+    setPurchaseMessage(null);
     try {
-      if (isPro && selectedTier === currentTier) {
-        soundManager.playComplete();
-        hapticSuccess();
-        onClose();
-        return;
-      }
       const res = await purchaseSubscriptionTier(selectedTier, isEn);
       if (res.cancelled) return;
       if (!res.success || !res.subscription) {
-        soundManager.playError();
-        hapticWarning();
-        notify(
-          res.error || (isEn ? "Purchase could not be completed." : "Pembelian belum dapat diselesaikan."),
-          "error"
-        );
+        if (generation !== operationGeneration.current) return;
+        setVerificationPending(Boolean(res.pendingConfirmation));
+        setPurchaseMessage(res.pendingConfirmation ? t.paywallModal.verificationPending : res.error || t.paywallModal.purchaseFailed);
+        soundManager.playError(); hapticWarning();
         return;
       }
-      if(!isStoreResultCurrent(res))return;
+      if (!isStoreResultCurrent(res)) return;
       updateSubscription(res.subscription);
-      soundManager.playComplete();
-      hapticSuccess();
-      notify(t.paywallModal.restoreSuccess, "success");
-      onClose();
+      if (generation !== operationGeneration.current) return;
+      soundManager.playComplete(); hapticSuccess();
+      setActivation("purchase");
+    } catch {
+      if (generation === operationGeneration.current) setPurchaseMessage(t.paywallModal.purchaseFailed);
     } finally {
+      inFlight.current = false;
       setIsProcessing(false);
     }
   };
 
   const handleRestore = async () => {
-    soundManager.playPop();
-    hapticLight();
+    if (inFlight.current) return;
+    inFlight.current = true;
+    const generation = operationGeneration.current;
+    soundManager.playPop(); hapticLight();
     setIsProcessing(true);
+    setPurchaseMessage(null);
     try {
       const res = await restoreStoreKitPurchases(isEn);
       if (res.success && res.subscription) {
-        if(!isStoreResultCurrent(res))return;
+        if (!isStoreResultCurrent(res)) return;
         updateSubscription(res.subscription);
-        soundManager.playComplete();
-        hapticSuccess();
-        notify(t.paywallModal.restoreSuccess, "success");
-        onClose();
-      } else {
-        soundManager.playError();
-        hapticWarning();
-        notify(
-          res.error || (isEn ? "No previous purchases found to restore." : "Tidak ditemukan riwayat pembelian untuk dipulihkan."),
-          "info"
-        );
+        if (generation !== operationGeneration.current) return;
+        soundManager.playComplete(); hapticSuccess();
+        setActivation("restore");
+        setVerificationPending(false);
+      } else if (generation === operationGeneration.current) {
+        if (res.pendingConfirmation) setVerificationPending(true);
+        setPurchaseMessage(res.pendingConfirmation ? t.paywallModal.verificationPending : res.error || t.paywallModal.restoreFailed);
+        soundManager.playError(); hapticWarning();
       }
+    } catch {
+      if (generation === operationGeneration.current) setPurchaseMessage(t.paywallModal.restoreFailed);
     } finally {
+      inFlight.current = false;
       setIsProcessing(false);
     }
   };
 
+  if (activation && isPro) {
+    const plan = currentTier === "pioneer_lifetime" ? t.paywallModal.lifetimeTitle : currentTier === "pro_monthly" ? t.paywallModal.monthlyTitle : t.paywallModal.annualTitle;
+    return (
+      <div className="fixed inset-0 z-[120] pointer-events-auto flex items-center justify-center p-4 bg-black/50 backdrop-blur-md" role="dialog" aria-modal="true" aria-label="Rimba Pro">
+        <section className="w-full max-w-md rounded-[36px] p-7 bg-[#FAFAF7] text-[#0D3528] shadow-2xl text-center space-y-5" aria-labelledby="pro-activation-title">
+          <CheckCircle2 className="w-14 h-14 mx-auto text-[#187557]" aria-hidden="true" />
+          <h2 id="pro-activation-title" className="text-2xl font-bold">{activation === "purchase" ? t.paywallModal.welcomeTitle : t.paywallModal.restoredTitle}</h2>
+          <p>{t.paywallModal.activationDescription}</p>
+          <p className="font-semibold">{plan} · {t.paywallModal.activeBadge}</p>
+          <p className="text-sm text-[#4C7567]">{t.paywallModal.proActiveDesc}</p>
+          <button type="button" onClick={onClose} className="w-full py-3.5 rounded-2xl bg-[#187557] text-white font-bold">{t.paywallModal.returnToSanctuary}</button>
+        </section>
+      </div>
+    );
+  }
+
   const buttonPrice = storePrices[productForTier.id] || unavailablePrice;
 
-  const buttonText = isPro
+  const buttonText = verificationPending ? t.paywallModal.verifyPurchase : isPro
     ? selectedTier === currentTier
       ? t.paywallModal.returnToSanctuary
       : t.paywallModal.switchPlanBtn.replace("{price}", buttonPrice)
@@ -406,16 +441,21 @@ export function RimbaProPaywallModal({
             </div>
           </div>
 
+          {purchaseMessage && (
+            <div ref={noticeRef} role="alert" className=" p-4 rounded-2xl border border-amber-300 bg-amber-50 text-sm text-[#0D3528]">
+              {verificationPending ? t.paywallModal.verificationPending : purchaseMessage}
+            </div>
+          )}
           {/* CTA Button */}
           <div className="pt-2 relative z-10 flex flex-col gap-2">
             <button
               type="button"
-              disabled={isProcessing || (!storePrices[productForTier.id] && !(isPro && selectedTier === currentTier))}
-              onClick={handlePurchase}
+              disabled={isProcessing || (!verificationPending && !storePrices[productForTier.id] && !(isPro && selectedTier === currentTier))}
+              onClick={verificationPending ? handleRestore : handlePurchase}
               className="w-full py-3.5 px-5 rounded-2xl bg-gradient-to-r from-[#187557] via-[#208b68] to-[#2BB688] hover:opacity-95 text-white font-extrabold text-[14px] flex items-center justify-center gap-2 shadow-lg shadow-[#187557]/20 active:scale-[0.98] transition-all cursor-pointer"
             >
               {isProcessing ? (
-                <RotateCw className="w-4 h-4 animate-spin text-white" />
+                <><RotateCw className="w-4 h-4 animate-spin text-white" /><span>{t.paywallModal.processing}</span></>
               ) : (
                 <>
                   <span>{buttonText}</span>
@@ -431,6 +471,7 @@ export function RimbaProPaywallModal({
               <button
                 type="button"
                 onClick={handleRestore}
+                disabled={isProcessing}
                 className="hover:text-[#0D3528] underline underline-offset-2 cursor-pointer transition-colors"
               >
                 {t.paywallModal.restoreBtn}

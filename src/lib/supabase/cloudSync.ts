@@ -315,7 +315,7 @@ function applyCloudSave(owner: string, cloud: RimbaSaveData) {
     profile: {
       ...current.profile,
       ...cloud.profile,
-      id: owner,
+      id: 'local-user',
       name: resolvedName,
       avatarUrl: resolvedAvatar,
       bio: resolvedBio,

@@ -1,3 +1,4 @@
+vi.mock('../src/lib/mobile/widgetBridge',()=>({syncWidgetsWithSaveData:vi.fn(),clearWidgetCacheOnSignOut:vi.fn()}));
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({ getUser: vi.fn(), invoke: vi.fn(), signOut: vi.fn(), reset: vi.fn(), authorize: vi.fn() }));
 vi.mock('@capacitor/core',()=>({Capacitor:{isNativePlatform:()=>true,getPlatform:()=> 'ios'}}));

@@ -17,13 +17,18 @@ export function useNativeWidgetActions(ready: boolean) {
     window.dispatchEvent(new CustomEvent('rimba:deep_link', { detail: { url } }));
   });
   const consuming = useRef(false);
+  const consumeAgain = useRef(false);
   const consume = useRef(async () => {
-    if (!readyRef.current || consuming.current) return;
+    if (!readyRef.current) return;
+    if (consuming.current) { consumeAgain.current = true; return; }
     consuming.current = true;
     try {
       const url = await consumeNativeWidgetAction();
       if (url) deliver.current(url);
-    } finally { consuming.current = false; }
+    } finally {
+      consuming.current = false;
+      if (consumeAgain.current) { consumeAgain.current = false; void consume.current(); }
+    }
   });
 
   useEffect(() => {

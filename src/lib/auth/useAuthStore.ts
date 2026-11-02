@@ -287,6 +287,7 @@ export const useAuthStore = create<AuthState>()(
                 const hydration = ++authHydrationRevision;
                 if (boundary) {
                   invalidateCloudSyncSession();
+                  void clearWidgetCacheOnSignOut();
                 }
                 if (event === 'SIGNED_OUT') {
                   lastSyncedUserId = null;
@@ -315,6 +316,7 @@ export const useAuthStore = create<AuthState>()(
             if (session?.user) {
               await restoreSession(session.user, revision, hydration);
             } else if (get().user && !get().user?.isGuest) {
+              void clearWidgetCacheOnSignOut();
               set({ user: null, isLoading: false });
             } else {
               set({ user: get().user?.isGuest ? get().user : null, isLoading: false });

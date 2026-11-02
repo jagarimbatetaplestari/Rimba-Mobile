@@ -35,4 +35,21 @@ describe('native widget synchronization', () => {
     const payload = buildWidgetPayload(createInitialSaveData(), { status: 'active', paused_at: new Date().toISOString(), expected_end_at: '2099-01-01T00:00:00Z' } as any);
     expect(payload.isFocusPaused).toBe(true);
   });
+  it('finishes an in-flight old-owner write before clearing it and never deduplicates it as current', async () => {
+    let finish!: (value: { synced: boolean }) => void;
+    const order: string[] = [];
+    m.sync.mockImplementationOnce(() => { order.push('old write'); return new Promise(resolve => { finish = resolve; }); })
+      .mockResolvedValue({ synced: true });
+    m.clear.mockImplementation(async () => { order.push('clear'); return { cleared: true }; });
+    const save = createInitialSaveData();
+    const old = syncWidgetsWithSaveData(save);
+    await Promise.resolve();
+    const cleared = clearWidgetCacheOnSignOut();
+    finish({ synced: true });
+    expect((await old).nativeSynced).toBe(false);
+    await cleared;
+    expect(order).toEqual(['old write', 'clear']);
+    await syncWidgetsWithSaveData(save);
+    expect(m.sync).toHaveBeenCalledTimes(2);
+  });
 });

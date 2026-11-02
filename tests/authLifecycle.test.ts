@@ -1,5 +1,6 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
-const m = vi.hoisted(() => ({ callback: null as any, read: vi.fn(), sync: vi.fn(), session: null as any }));
+const m = vi.hoisted(() => ({ callback: null as any, read: vi.fn(), sync: vi.fn(), clearWidgets: vi.fn(), session: null as any }));
+vi.mock('../src/lib/mobile/widgetBridge', () => ({ clearWidgetCacheOnSignOut: m.clearWidgets, syncWidgetsWithSaveData: vi.fn() }));
 vi.mock('../src/lib/supabase/client', () => ({ supabase: { auth: { onAuthStateChange: (cb: any) => { m.callback = (event: string, session: any) => { m.session = session; return cb(event, session); }; }, getSession: async () => ({ data: { session: m.session } }) }, from: () => ({ select: () => ({ eq: () => ({ maybeSingle: m.read }) }) }) } }));
 vi.mock('../src/lib/supabase/cloudSync', () => ({ invalidateCloudSyncSession: vi.fn(), smartSyncOnLogin: m.sync }));
 vi.mock('../src/lib/game/storage', () => ({ createInitialSaveData: () => ({}) }));
@@ -33,6 +34,7 @@ describe('Supabase auth lifecycle', () => {
   it('clears the authenticated UI state on external sign-out', () => {
     store.setState({ user: { id: 'a', name: 'A', email: '', isGuest: false, createdAt: '' } });
     m.callback('SIGNED_OUT', null); expect(store.getState().user).toBeNull();
+    expect(m.clearWidgets).toHaveBeenCalledOnce();
   });
 });
 it('keeps a verified purchase current across token refresh for the same account',async()=>{

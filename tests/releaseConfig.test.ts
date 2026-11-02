@@ -80,4 +80,10 @@ describe('release configuration gates', () => {
     expect(result.stdout).toContain('Release configuration present');
     expect(result.stdout).not.toContain('synthetic');
   });
+  it('blocks a widget release if the extension signing profile is missing', () => {
+    const result = runPreflight({ ...configured, APPLE_WIDGET_PROVISION_PROFILE_BASE64: '' });
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('APPLE_WIDGET_PROVISION_PROFILE_BASE64');
+    expect(result.stderr).not.toContain('synthetic-profile');
+  });
 });

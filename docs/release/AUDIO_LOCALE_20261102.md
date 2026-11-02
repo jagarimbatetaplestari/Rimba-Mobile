@@ -10,3 +10,5 @@ Owner reported mute/volume ineffective, island names not following language, col
 Evidence:401tests/45files, typecheck,155prelaunch assertions and final production export passed. New audio tests include iOS-style ignored element.volume, real gain/mute behavior and unavailable-WebAudio fallback. Island tests cover custom names, generated names and EN/ID switching. Campfire entry regressions were observed failing before the fix and now pass. Independent review found no actionable implementation issue.
 
 Actual Chromium UI playback tested in EN/ID: slider0→element muted/gain0; slider0.2→gain≈0.2; mute→gain0; unmute restores0.2. Evidence is ignored `build/build14-ui/results.json` and PNGs. This is not physical iPhone audio evidence. Final native candidate and device acceptance remain distinct; see handoff.
+
+Source `9b6548d`. NativeCI41445401653 queued waiting for a macOS runner at last check; there is no TestFlight14 upload yet. Build13VALID/Internal contains only earlier paywall/flyout fixes. Continue from this run before deploying the next candidate. No App Review submission.

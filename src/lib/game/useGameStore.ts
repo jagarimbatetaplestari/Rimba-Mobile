@@ -16,6 +16,7 @@ import {
 } from '@/types/game';
 import { UserSubscription } from '@/types/subscription';
 import { validateRimbaBackup } from './backupManager';
+import { getIslandDisplayName } from './islandNames';
 import {
   BUILD_CATALOG,
   CatalogItem,
@@ -2341,8 +2342,8 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     get().notify(
       isEn
-        ? `🏝️ Arrived at ${targetIsland.name}`
-        : `🏝️ Tiba di ${targetIsland.name}`,
+        ? `🏝️ Arrived at ${getIslandDisplayName(targetIsland, 'en', saveData.profile.name)}`
+        : `🏝️ Tiba di ${getIslandDisplayName(targetIsland, 'id', saveData.profile.name)}`,
       'info'
     );
     return true;
@@ -2371,7 +2372,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     }
 
     const newIslandId = `island_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
-    const islandName = name.trim() || `Suaka ${islands.length + 1}`;
+    const islandName = name.trim() || `${isEn ? 'Sanctuary' : 'Suaka'} ${islands.length + 1}`;
 
     const starterTree: WorldObject = {
       id: `tree_starter_${newIslandId}`,
@@ -2391,6 +2392,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     const newIsland: IslandSlot = {
       id: newIslandId,
       name: islandName,
+      name_source: name.trim() ? 'custom' : 'generated',
       biome,
       created_at: new Date().toISOString(),
       world: {
@@ -2453,7 +2455,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     const trimmed = name.trim();
     if (!trimmed) return;
     const islands = (saveData.islands || []).map((isl) =>
-      isl.id === islandId ? { ...isl, name: trimmed, world: { ...isl.world, name: trimmed } } : isl
+      isl.id === islandId ? { ...isl, name: trimmed, name_source: 'custom' as const, world: { ...isl.world, name: trimmed } } : isl
     );
     const updatedWorld =
       saveData.active_island_id === islandId

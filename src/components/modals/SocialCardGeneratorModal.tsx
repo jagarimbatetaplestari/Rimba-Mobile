@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { useGameStore } from "@/lib/game/useGameStore";
+import { getWorldDisplayName } from "@/lib/game/islandNames";
 import { useAuthStore } from "@/lib/auth/useAuthStore";
 import { calculateAnalytics, getStreakMilestone } from "@/lib/game/analytics";
 import {
@@ -12,7 +13,8 @@ import { getLevelFromXp } from "@/lib/game/levelRules";
 import { soundManager } from "@/lib/audio/sounds";
 import { hapticLight, hapticSuccess, shareOrSaveImage } from "@/lib/mobile/nativeBridge";
 import { useTranslation } from "@/lib/i18n/translations";
-import { X, Download, Share2, Copy, Check } from "lucide-react";
+import { NatureLineIcon } from "@/components/common/NatureLineIcon";
+import { X, Download, Share2, Copy, Check, Flame, TreePine } from "lucide-react";
 
 interface SocialCardGeneratorModalProps {
   isOpen: boolean;
@@ -196,7 +198,7 @@ export function SocialCardGeneratorModal({
     ctx.textAlign = "center";
     ctx.fillText(
       user?.name ||
-        saveData.world.name ||
+        getWorldDisplayName(saveData, language) ||
         (language === "en" ? "Forest Ranger" : "Penjaga Rimba"),
       width / 2,
       userY,
@@ -449,7 +451,7 @@ export function SocialCardGeneratorModal({
   const handleCopyStatus = () => {
     soundManager.playPop();
     hapticLight();
-    const statusText = `🌲 Rimba — ${user?.name || saveData.world.name || t.shareModal.defaultUser}
+    const statusText = `🌲 Rimba — ${user?.name || getWorldDisplayName(saveData, language) || t.shareModal.defaultUser}
 🔥 ${t.shareModal.streakDays.replace("{count}", String(analytics.currentStreak))}
 🏝️ ${t.shareModal.tilesUnlocked.replace("{unlocked}", String(unlockedSet.size))} (${zoneInfo.zoneName})
 ⏱️ ${analytics.totalFocusMinutes}m
@@ -587,7 +589,7 @@ export function SocialCardGeneratorModal({
               } ${format === "story" ? "w-44 h-72" : "w-48 h-48"}`}
             >
               <div className="px-2.5 py-0.5 rounded-full border border-white/20 bg-white/10 text-[9px] font-semibold tracking-wider">
-                {language === "en" ? "🌿 RIMBA SANCTUARY" : "🌿 RIMBA SUAKA"}
+                {language === "en" ? "RIMBA SANCTUARY" : "RIMBA SUAKA"}
               </div>
 
               <div className="w-20 h-20 rounded-xl border border-white/30 bg-white/20 p-0.5 flex items-center justify-center overflow-hidden my-auto shadow-2xs">
@@ -598,18 +600,18 @@ export function SocialCardGeneratorModal({
                     className="w-full h-full object-cover rounded-lg"
                   />
                 ) : (
-                  <span className="text-2xl">{streakInfo.icon}</span>
+                  <NatureLineIcon name={streakInfo.icon} className="w-7 h-7" />
                 )}
               </div>
 
               <div className="w-full space-y-0.5">
                 <span className="text-[11px] font-semibold block truncate text-white">
-                  {user?.name || saveData.world.name}
+                  {user?.name || getWorldDisplayName(saveData, language)}
                 </span>
                 <div className="flex items-center justify-center gap-1.5 text-[9px] font-medium text-emerald-100/90 tabular-nums">
-                  <span>🔥 {t.shareModal.streakDays.replace("{count}", String(analytics.currentStreak))}</span>
+                  <span className="inline-flex items-center gap-1"><Flame className="w-3 h-3" aria-hidden="true" />{t.shareModal.streakDays.replace("{count}", String(analytics.currentStreak))}</span>
                   <span>·</span>
-                  <span>🌳 {treesCount}</span>
+                  <span className="inline-flex items-center gap-1"><TreePine className="w-3 h-3" aria-hidden="true" />{treesCount}</span>
                 </div>
               </div>
             </div>

@@ -2,6 +2,9 @@
 
 import React, { useState } from "react";
 import { User } from "lucide-react";
+import { NatureLineIcon } from "@/components/common/NatureLineIcon";
+
+const PRESET_AVATAR_VALUES = new Set(["🦌", "🐨", "🐱", "🐦", "🌲", "🌸", "🦊", "🏕️"]);
 
 export type RangerAvatarSize = "xs" | "sm" | "md" | "lg" | "xl" | number;
 
@@ -93,6 +96,10 @@ export function RangerAvatar({
           className="w-full h-full object-cover"
           onError={() => setImageFailed(true)}
         />
+      ) : avatarUrl && PRESET_AVATAR_VALUES.has(avatarUrl) ? (
+        <span className="w-full h-full flex items-center justify-center" role="img" aria-label={alt || name || "Avatar Ranger"}>
+          <NatureLineIcon name={avatarUrl} className={`${iconSize} stroke-[2] text-[#143525]`} />
+        </span>
       ) : avatarUrl && avatarUrl.trim().length > 0 ? (
         <span className="leading-none transform translate-y-[0.5px]">
           {avatarUrl.trim()}

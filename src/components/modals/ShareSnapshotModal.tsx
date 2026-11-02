@@ -11,7 +11,7 @@ import { STORY_CHAPTERS } from "@/lib/game/storyLore";
 import { soundManager } from "@/lib/audio/sounds";
 import { hapticLight, hapticSuccess, shareOrSaveImage } from "@/lib/mobile/nativeBridge";
 import { useTranslation } from "@/lib/i18n/translations";
-import { X, Download, Copy, Check, Share2 } from "lucide-react";
+import { X, Download, Copy, Check, Share2, Leaf, Mountain, Sparkles, Loader2 } from "lucide-react";
 import {
   ShareAspectRatio,
   ShareCardTheme,
@@ -535,7 +535,7 @@ function cropIslandFromCanvas(canvasEl: HTMLCanvasElement): string {
                 : "text-[#4C7567] hover:text-[#0D3528]"
             }`}
           >
-            🌿 Sanctuary
+            <Leaf className="inline w-3 h-3 mr-1" aria-hidden="true" />Sanctuary
           </button>
 
           <button
@@ -551,7 +551,7 @@ function cropIslandFromCanvas(canvasEl: HTMLCanvasElement): string {
                 : "text-[#4C7567] hover:text-[#0D3528]"
             }`}
           >
-            🏔️ Diorama
+            <Mountain className="inline w-3 h-3 mr-1" aria-hidden="true" />Diorama
           </button>
 
           <button
@@ -567,7 +567,7 @@ function cropIslandFromCanvas(canvasEl: HTMLCanvasElement): string {
                 : "text-[#4C7567] hover:text-[#0D3528]"
             }`}
           >
-            ✨ Story
+            <Sparkles className="inline w-3 h-3 mr-1" aria-hidden="true" />Story
           </button>
         </div>
 
@@ -657,7 +657,7 @@ function cropIslandFromCanvas(canvasEl: HTMLCanvasElement): string {
             className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-gradient-to-r from-[#187557] to-[#125D44] text-white font-semibold text-[13px] shadow-md shadow-[#187557]/20 hover:brightness-105 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
           >
             {isGenerating ? (
-              <span className="inline-block animate-spin mr-1">⏳</span>
+              <Loader2 className="w-4 h-4 animate-spin mr-1" aria-hidden="true" />
             ) : (
               <Download className="h-4 w-4" />
             )}

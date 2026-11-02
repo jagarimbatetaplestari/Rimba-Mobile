@@ -4,6 +4,7 @@ import React, { useState, useRef } from "react";
 import { useAuthStore } from "@/lib/auth/useAuthStore";
 import { useGameStore } from "@/lib/game/useGameStore";
 import { RangerAvatar } from "@/components/ui/RangerAvatar";
+import { NatureLineIcon } from "@/components/common/NatureLineIcon";
 import { hapticLight, hapticSuccess } from "@/lib/mobile/nativeBridge";
 import { soundManager } from "@/lib/audio/sounds";
 import { useTranslation } from "@/lib/i18n/translations";
@@ -50,6 +51,9 @@ export function AvatarPickerModal({
   const [activeTab, setActiveTab] = useState<"presets" | "upload">("presets");
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const selectedPreset = RIMBA_AVATAR_PRESETS.find(
+    (preset) => preset.emoji === selectedAvatar,
+  );
 
   // Sync selectedAvatar whenever modal opens or currentAvatarUrl changes
   React.useEffect(() => {
@@ -189,6 +193,7 @@ export function AvatarPickerModal({
               <div className="rounded-full p-1 bg-white border border-[#BCE5D3] shadow-md shadow-[#0E3B2D]/5">
                 <RangerAvatar
                   avatarUrl={selectedAvatar}
+                  alt={selectedPreset ? translateAvatarPreset(selectedPreset.id, selectedPreset.label) : undefined}
                   size={84}
                   borderClassName="border-2 border-white shadow-xs"
                 />
@@ -262,7 +267,7 @@ export function AvatarPickerModal({
                     }`}
                   >
                     <span className="text-2xl leading-none">
-                      {preset.emoji}
+                      <NatureLineIcon name={preset.emoji} className="w-6 h-6 text-[#0D3528]" />
                     </span>
                     <span
                       className={`text-[10.5px] truncate w-full text-center ${

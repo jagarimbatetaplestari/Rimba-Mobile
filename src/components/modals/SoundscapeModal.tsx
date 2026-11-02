@@ -31,6 +31,11 @@ import {
   Repeat,
   Repeat1,
   Sparkles,
+  CloudRain,
+  Droplets,
+  Flame,
+  Waves,
+  SlidersHorizontal,
 } from "lucide-react";
 
 interface SoundscapeModalProps {
@@ -40,6 +45,7 @@ interface SoundscapeModalProps {
 
 type ActiveTab = "music" | "nature";
 type MusicFilterCategory = "all" | "jazz" | "chill" | "ambient";
+const natureIcons = { rain: CloudRain, wind: Wind, river: Droplets, fire: Flame, waves: Waves, off: VolumeX };
 
 export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
   const { t, language, translateSoundscape, translateMusicTrack } = useTranslation();
@@ -67,14 +73,21 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
   );
 
   useEffect(() => {
+    const handleNatureUpdate = () => {
+      setActiveNatureTrack(soundscapeManager.getCurrentTrack());
+      setNatureVolume(soundscapeManager.getVolume());
+      setNatureMuted(soundscapeManager.getIsMuted());
+    };
     const handleMusicUpdate = (e: Event) => {
       const detail = (e as CustomEvent<MusicPlayerState>).detail;
       setMusicState({ ...detail });
     };
 
     window.addEventListener("rimba:music_update", handleMusicUpdate);
+    window.addEventListener("rimba:soundscape_change", handleNatureUpdate);
     return () => {
       window.removeEventListener("rimba:music_update", handleMusicUpdate);
+      window.removeEventListener("rimba:soundscape_change", handleNatureUpdate);
     };
   }, []);
 
@@ -101,7 +114,7 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
         musicPlayer.stop();
       }
       soundscapeManager.play(trackId);
-      setActiveNatureTrack(trackId);
+      setActiveNatureTrack(soundscapeManager.getCurrentTrack());
     }
   };
 
@@ -251,7 +264,7 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
         {isDualMixActive && (
           <div className="rounded-3xl border border-[#187557]/30 bg-white p-3.5 shadow-sm flex items-center justify-between text-xs animate-in fade-in duration-200">
             <div className="flex items-center gap-2.5 min-w-0 pr-2">
-              <span className="text-lg shrink-0">🎛️</span>
+              <SlidersHorizontal className="w-5 h-5 shrink-0 text-[#0D3528]" aria-hidden="true" />
               <div className="min-w-0">
                 <p className="font-semibold text-[#0D3528] truncate">
                   {isEn ? "Dual-Track Soundscape Mixer" : "Mixer Suara Dua Jalur Aktif"}
@@ -405,6 +418,8 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
                   <button
                     type="button"
                     onClick={handleToggleMusicMute}
+                    aria-label={musicState.isMuted ? (isEn ? "Unmute music" : "Nyalakan musik") : (isEn ? "Mute music" : "Bisukan musik")}
+                    aria-pressed={musicState.isMuted}
                     className="text-[#4C7567] hover:text-[#0D3528] transition-colors shrink-0 cursor-pointer"
                   >
                     {musicState.isMuted ? (
@@ -417,6 +432,7 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
                   <div className="flex-1 min-w-0 flex items-center py-2">
                     <input
                       type="range"
+                      aria-label={isEn ? "Music volume" : "Volume musik"}
                       min="0"
                       max="1"
                       step="0.02"
@@ -547,6 +563,7 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
                 {SOUNDSCAPES_LIST.map((sc) => {
                   const trSc = translateSoundscape(sc);
                   const isActive = activeNatureTrack === sc.id;
+                  const NatureIcon = natureIcons[sc.id];
 
                   return (
                     <button
@@ -560,9 +577,7 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
                       }`}
                     >
                       <div className="flex items-center justify-between w-full">
-                        <span className="text-2xl leading-none">
-                          {sc.icon}
-                        </span>
+                        <NatureIcon className="h-6 w-6 text-[#187557] stroke-[1.8]" aria-hidden="true" />
                         {isActive && (
                           <div className="h-5 w-5 rounded-full bg-[#187557] text-white flex items-center justify-center shadow-xs">
                             <Check className="w-3 h-3 stroke-[2.5]" />
@@ -604,6 +619,8 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
                   <button
                     type="button"
                     onClick={handleToggleNatureMute}
+                    aria-label={natureMuted ? (isEn ? "Unmute nature sounds" : "Nyalakan suara alam") : (isEn ? "Mute nature sounds" : "Bisukan suara alam")}
+                    aria-pressed={natureMuted}
                     className="text-[#4C7567] hover:text-[#0D3528] transition-colors shrink-0 cursor-pointer"
                   >
                     {natureMuted ? (
@@ -619,6 +636,7 @@ export function SoundscapeModal({ isOpen, onClose }: SoundscapeModalProps) {
                       min="0"
                       max="1"
                       step="0.02"
+                      aria-label={isEn ? "Nature volume" : "Volume suara alam"}
                       value={natureMuted ? 0 : natureVolume}
                       onChange={handleNatureVolumeChange}
                       className="w-full min-w-0 h-2 accent-[#187557] bg-[#0D3528]/10 rounded-full cursor-pointer appearance-none touch-pan-x"

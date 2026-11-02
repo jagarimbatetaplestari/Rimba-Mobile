@@ -4,9 +4,16 @@ import { usePreferencesStore } from '@/lib/settings/usePreferencesStore';
 
 class SoundController {
   private ctx: AudioContext | null = null;
+  private masterGain: GainNode | null = null;
 
   constructor() {
     if (typeof window !== 'undefined') {
+      usePreferencesStore.subscribe((prefs, previous) => {
+        if (this.masterGain && this.ctx &&
+            (prefs.masterAudioEnabled !== previous.masterAudioEnabled || prefs.soundFxEnabled !== previous.soundFxEnabled)) {
+          this.masterGain.gain.setValueAtTime(prefs.masterAudioEnabled && prefs.soundFxEnabled ? 1 : 0, this.ctx.currentTime);
+        }
+      });
       const unlock = () => {
         if (this.ctx && this.ctx.state === 'suspended') {
           this.ctx.resume().catch(() => {});
@@ -32,6 +39,10 @@ class SoundController {
         (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       if (AudioCtx) {
         this.ctx = new AudioCtx();
+        this.masterGain = this.ctx.createGain();
+        const prefs = usePreferencesStore.getState();
+        this.masterGain.gain.setValueAtTime(prefs.masterAudioEnabled && prefs.soundFxEnabled ? 1 : 0, this.ctx.currentTime);
+        this.masterGain.connect(this.ctx.destination);
       }
     }
     if (this.ctx && this.ctx.state === 'suspended') {
@@ -58,7 +69,7 @@ class SoundController {
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
 
     osc.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(this.masterGain!);
 
     osc.start(now);
     osc.stop(now + 0.8);
@@ -85,7 +96,7 @@ class SoundController {
       gain.gain.exponentialRampToValueAtTime(0.001, noteTime + 0.6);
 
       osc.connect(gain);
-      gain.connect(ctx.destination);
+      gain.connect(this.masterGain!);
 
       osc.start(noteTime);
       osc.stop(noteTime + 0.6);
@@ -110,7 +121,7 @@ class SoundController {
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
 
     osc.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(this.masterGain!);
 
     osc.start(now);
     osc.stop(now + 0.15);
@@ -136,7 +147,7 @@ class SoundController {
       gain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
 
       osc.connect(gain);
-      gain.connect(ctx.destination);
+      gain.connect(this.masterGain!);
 
       osc.start(t);
       osc.stop(t + 0.5);
@@ -161,7 +172,7 @@ class SoundController {
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
 
     osc.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(this.masterGain!);
 
     osc.start(now);
     osc.stop(now + 0.08);
@@ -188,7 +199,7 @@ class SoundController {
       gain.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
 
       osc.connect(gain);
-      gain.connect(ctx.destination);
+      gain.connect(this.masterGain!);
 
       osc.start(t);
       osc.stop(t + 0.45);
@@ -213,7 +224,7 @@ class SoundController {
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
 
     osc.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(this.masterGain!);
 
     osc.start(now);
     osc.stop(now + 0.18);
@@ -241,7 +252,7 @@ class SoundController {
       gain.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
 
       osc.connect(gain);
-      gain.connect(ctx.destination);
+      gain.connect(this.masterGain!);
 
       osc.start(t);
       osc.stop(t + 0.22);
@@ -273,7 +284,7 @@ class SoundController {
       gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
 
       osc.connect(gain);
-      gain.connect(ctx.destination);
+      gain.connect(this.masterGain!);
 
       osc.start(now);
       osc.stop(now + duration);
@@ -305,7 +316,7 @@ class SoundController {
       gain.gain.exponentialRampToValueAtTime(0.001, time + duration);
 
       osc.connect(gain);
-      gain.connect(ctx.destination);
+      gain.connect(this.masterGain!);
 
       osc.start(time);
       osc.stop(time + duration);

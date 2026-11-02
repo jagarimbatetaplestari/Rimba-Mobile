@@ -1140,6 +1140,7 @@ export default function RimbaDioramaApp() {
         <CampfireRoomModal
           isOpen={isCampfireOpen}
           onClose={() => setIsCampfireOpen(false)}
+          onOpenModeration={() => { setIsCampfireOpen(false); setIsModerationOpen(true); }}
         />
       )}
       {isGameplayGuideOpen && (

@@ -20,6 +20,7 @@ import { getDailyQuestStatus } from "@/lib/game/quests";
 import { STORY_CHAPTERS } from "@/lib/game/storyLore";
 import { getWisdomProgress } from "@/lib/game/wisdomLore";
 import { TagLineIcon } from "@/components/common/TagLineIcon";
+import { NatureLineIcon } from "@/components/common/NatureLineIcon";
 import { soundManager } from "@/lib/audio/sounds";
 import {
   hapticLight,
@@ -57,6 +58,10 @@ import {
   Copy,
   Eye,
   Calendar,
+  Landmark,
+  Leaf,
+  Waves,
+  Logs,
 } from "lucide-react";
 
 export type JournalTab =
@@ -622,7 +627,7 @@ export function SanctuaryJournalModal({
                           }`}
                         >
                           {day.isShielded
-                            ? "🛡️"
+                            ? <ShieldCheck className="w-2.5 h-2.5" aria-hidden="true" />
                             : day.minutes > 0
                               ? `${day.minutes}m`
                               : "–"}
@@ -908,7 +913,9 @@ export function SanctuaryJournalModal({
                                       : localizedSpeciesName
                                   }
                                 >
-                                  {isAbandoned ? "🪵" : species.icon}
+                                  {isAbandoned
+                                    ? <Logs className="w-5 h-5 text-stone-700" aria-hidden="true" />
+                                    : <NatureLineIcon name={species.icon} className="w-5 h-5 text-[#0D3528]" />}
                                 </span>
                                 <div>
                                   <span className={`text-[13px] font-semibold block leading-tight ${isAbandoned ? "text-stone-700" : "text-[#0D3528]"}`}>
@@ -1269,16 +1276,18 @@ export function SanctuaryJournalModal({
               {/* Tradition Filter Pills Bar */}
               <div className="flex items-center gap-1.5 overflow-x-auto pb-1 px-0.5 no-scrollbar">
                 {[
-                  { id: "all", label: t.journal.allTraditions },
-                  { id: "Nusantara", label: "Nusantara 🌿" },
+                  { id: "all", label: t.journal.allTraditions, icon: null },
+                  { id: "Nusantara", label: "Nusantara", icon: Leaf },
                   {
                     id: "Stoik",
-                    label: language === "en" ? "Stoic 🏛️" : "Stoik 🏛️",
+                    label: language === "en" ? "Stoic" : "Stoik",
+                    icon: Landmark,
                   },
-                  { id: "Zen", label: "Zen 🎋" },
+                  { id: "Zen", label: "Zen", icon: Sprout },
                   {
                     id: "Hukum Alam",
-                    label: language === "en" ? "Nature 🌊" : "Hukum Alam 🌊",
+                    label: language === "en" ? "Nature" : "Hukum Alam",
+                    icon: Waves,
                   },
                 ].map((pill) => {
                   const isActive =
@@ -1300,6 +1309,7 @@ export function SanctuaryJournalModal({
                       }`}
                     >
                       {pill.label}
+                      {pill.icon && <pill.icon className="inline w-3 h-3 ml-1" aria-hidden="true" />}
                     </button>
                   );
                 })}
@@ -1453,7 +1463,7 @@ export function SanctuaryJournalModal({
                         ) : (
                           <div className="p-3.5 rounded-2xl bg-[#0D3528]/5 border border-[#0D3528]/10 text-[11.5px] text-[#4C7567] flex items-center justify-between font-normal gap-2">
                             <span className="truncate">
-                              🔒 {t.journal.requirement}{" "}
+                              <Lock className="inline w-3 h-3 mr-1" aria-hidden="true" />{t.journal.requirement}{" "}
                               <strong className="font-semibold text-[#0D3528]">
                                 {frag.hoursRequired}{" "}
                                 {t.common.hours.toLowerCase()}
@@ -1563,7 +1573,7 @@ export function SanctuaryJournalModal({
                             className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-sm border border-black/10 shrink-0 relative overflow-hidden"
                             style={{ backgroundColor: biome.turfColor }}
                           >
-                            <span className="relative z-10">{biome.icon}</span>
+                            <NatureLineIcon name={biome.icon} className="relative z-10 w-6 h-6 text-[#0D3528]" />
                             <div className="absolute inset-0 bg-black/10 pointer-events-none" />
                           </div>
 
@@ -1631,7 +1641,7 @@ export function SanctuaryJournalModal({
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3.5 min-w-0 flex-1">
                       <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#187557] to-[#125D44] border border-[#BCE5D3] flex items-center justify-center text-2xl shadow-sm shrink-0">
-                        ⛩️
+                        <Landmark className="w-6 h-6 text-white" aria-hidden="true" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">

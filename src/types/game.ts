@@ -185,6 +185,8 @@ export interface FaunaConfig {
 export interface IslandSlot {
   id: string;
   name: string;
+  /** Explicit user names remain unchanged when the display language changes. */
+  name_source?: 'generated' | 'custom';
   biome: BiomeType;
   created_at: string;
   world: World;

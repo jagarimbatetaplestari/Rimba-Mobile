@@ -1,0 +1,22 @@
+import React from 'react';
+import {act,create,type ReactTestRenderer,type ReactTestInstance} from 'react-test-renderer';
+import {afterEach,beforeEach,expect,it,vi} from 'vitest';
+const m=vi.hoisted(()=>({user:{id:'support',name:'Ranger',isGuest:false} as any,rpc:vi.fn(),open:vi.fn()}));
+vi.mock('../src/lib/auth/useAuthStore',()=>({useAuthStore:Object.assign((s:any)=>s({user:m.user}),{getState:()=>({user:m.user})})}));
+vi.mock('../src/lib/game/useGameStore',()=>({useGameStore:Object.assign((s:any)=>s({notify:vi.fn()}),{getState:()=>({activeSession:null})})}));
+vi.mock('../src/lib/game/campfireStore',()=>({useCampfireStore:(s:any)=>s({currentRoom:null,isLoading:false,isRealtimeConnected:true,error:null,createRoom:vi.fn(),joinRoom:vi.fn()})}));
+vi.mock('../src/lib/supabase/client',()=>({supabase:{rpc:m.rpc}}));
+vi.mock('../src/lib/audio/sounds',()=>({soundManager:{playPop:vi.fn()}}));
+vi.mock('../src/lib/mobile/nativeBridge',()=>({hapticLight:vi.fn(),hapticMedium:vi.fn(),hapticSuccess:vi.fn()}));
+vi.mock('../src/lib/i18n/translations',async original=>{const a=await original<typeof import('../src/lib/i18n/translations')>();return {...a,useTranslation:()=>({language:'en',t:a.translations.en})};});
+import {CampfireRoomModal} from '../src/components/modals/CampfireRoomModal';
+let view:ReactTestRenderer;
+const text=(n:ReactTestInstance|string):string=>typeof n==='string'?n:n.children.map(text).join(' ');
+const entries=()=>view.root.findAllByType('button').filter(b=>text(b).includes('Review Campfire reports'));
+async function render(open=true){await act(async()=>{view=create(React.createElement(CampfireRoomModal,{isOpen:open,onClose:vi.fn(),onOpenModeration:m.open}));});}
+beforeEach(()=>{vi.clearAllMocks();m.user={id:'support',name:'Ranger',isGuest:false};m.rpc.mockResolvedValue({data:true,error:null});});
+afterEach(()=>{if(view)act(()=>view.unmount());});
+it('lets a server-authorized moderator open the report queue directly from Campfire',async()=>{await render();expect(entries()).toHaveLength(1);await act(async()=>entries()[0].props.onClick());expect(m.open).toHaveBeenCalledOnce();});
+it('does not offer moderator access to ordinary or guest accounts',async()=>{m.rpc.mockResolvedValue({data:false,error:null});await render();expect(entries()).toHaveLength(0);act(()=>view.unmount());m.user={id:'guest',name:'Guest',isGuest:true};m.rpc.mockClear();await render();expect(entries()).toHaveLength(0);expect(m.rpc).not.toHaveBeenCalled();});
+it('discards a late moderator result after switching accounts',async()=>{let resolveA!:(v:any)=>void;m.rpc.mockImplementationOnce(()=>new Promise(r=>{resolveA=r;}));await render();m.user={id:'member',name:'Member',isGuest:false};m.rpc.mockResolvedValue({data:false,error:null});await act(async()=>view.update(React.createElement(CampfireRoomModal,{isOpen:true,onClose:vi.fn(),onOpenModeration:m.open})));await act(async()=>resolveA({data:true,error:null}));expect(entries()).toHaveLength(0);});
+it('refreshes authorization when Campfire is reopened and fails closed on RPC errors',async()=>{await render(false);expect(m.rpc).not.toHaveBeenCalled();m.rpc.mockResolvedValue({data:true,error:{message:'unavailable'}});await act(async()=>view.update(React.createElement(CampfireRoomModal,{isOpen:true,onClose:vi.fn(),onOpenModeration:m.open})));expect(entries()).toHaveLength(0);expect(m.rpc).toHaveBeenCalledOnce();});

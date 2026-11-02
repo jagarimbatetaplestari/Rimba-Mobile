@@ -10,6 +10,7 @@ import { soundManager } from "@/lib/audio/sounds";
 import { hapticLight, hapticSuccess } from "@/lib/mobile/nativeBridge";
 import { useTranslation } from "@/lib/i18n/translations";
 import { X, CheckCircle2, Lock, Sparkles, Share2 } from "lucide-react";
+import { NatureLineIcon } from "@/components/common/NatureLineIcon";
 
 interface BadgesShowcaseModalProps {
   isOpen: boolean;
@@ -180,7 +181,7 @@ export function BadgesShowcaseModal({
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
                       <span className="text-2xl leading-none">
-                        {item.config.icon}
+                        <NatureLineIcon name={item.config.icon} className="w-6 h-6 text-[#0D3528]" />
                       </span>
                       {isClaimed ? (
                         <CheckCircle2 className="w-4 h-4 text-[#187557] stroke-[2]" />
@@ -246,7 +247,7 @@ export function BadgesShowcaseModal({
                   </button>
 
                   <div className="w-16 h-16 rounded-2xl bg-[#E4F4ED] border border-[#BCE5D3] flex items-center justify-center text-4xl mx-auto shadow-xs">
-                    {selectedBadge.config.icon}
+                    <NatureLineIcon name={selectedBadge.config.icon} className="w-9 h-9 text-[#0D3528]" />
                   </div>
 
                   <div>

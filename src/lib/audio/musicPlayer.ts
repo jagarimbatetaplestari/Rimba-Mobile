@@ -94,6 +94,9 @@ export interface MusicPlayerState {
 
 class MusicPlayerController {
   private audio: HTMLAudioElement | null = null;
+  private ctx: AudioContext | null = null;
+  private gain: GainNode | null = null;
+  private source: MediaElementAudioSourceNode | null = null;
   private currentTrack: MusicTrack | null = null;
   private isPlaying: boolean = false;
   private volume: number = 0.50;
@@ -102,13 +105,26 @@ class MusicPlayerController {
 
   constructor() {
     if (typeof window !== 'undefined') {
+      this.volume = Math.max(0, Math.min(1, usePreferencesStore.getState().ambientMusicVolume / 100));
       const stored = localStorage.getItem('rimba_music_repeat_mode');
       if (stored === 'all' || stored === 'one' || stored === 'off') {
         this.repeatMode = stored as MusicRepeatMode;
       }
       this.initAudio();
+      usePreferencesStore.subscribe((prefs, previous) => {
+        if (prefs.ambientMusicVolume !== previous.ambientMusicVolume) {
+          this.volume = Math.max(0, Math.min(1, prefs.ambientMusicVolume / 100));
+        }
+        if (prefs.masterAudioEnabled !== previous.masterAudioEnabled ||
+            prefs.ambientMusicEnabled !== previous.ambientMusicEnabled ||
+            prefs.ambientMusicVolume !== previous.ambientMusicVolume) {
+          this.applyVolume();
+          this.notifyState();
+        }
+      });
 
       const unlock = () => {
+        this.resumeContext();
         if (this.audio && this.isPlaying && this.audio.paused) {
           this.audio.play().catch(() => {});
         }
@@ -121,9 +137,7 @@ class MusicPlayerController {
   private initAudio() {
     if (this.audio) return;
     this.audio = new Audio();
-    const prefs = typeof window !== 'undefined' ? usePreferencesStore.getState() : null;
-    const effectiveVol = prefs && prefs.masterAudioEnabled && prefs.ambientMusicEnabled && !this.isMuted ? this.volume : 0;
-    this.audio.volume = effectiveVol;
+    this.applyVolume();
     this.audio.preload = 'metadata';
     this.audio.setAttribute('playsinline', 'true');
     this.audio.setAttribute('webkit-playsinline', 'true');
@@ -137,6 +151,57 @@ class MusicPlayerController {
       this.isPlaying = false;
       this.notifyState();
     });
+  }
+
+  private resumeContext() {
+    if (this.ctx?.state === 'suspended') this.ctx.resume().catch(() => {});
+  }
+
+  private initAudioGraph() {
+    if (!this.audio) return;
+    if (!this.source) {
+      const AudioCtx = window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      if (AudioCtx) {
+        let context: AudioContext | null = null;
+        try {
+          context = new AudioCtx();
+          const gain = context.createGain();
+          // One source per element; changing src keeps the same audio graph.
+          const source = context.createMediaElementSource(this.audio);
+          this.ctx = context;
+          this.gain = gain;
+          this.source = source;
+          this.applyVolume();
+          source.connect(gain);
+          gain.connect(context.destination);
+        } catch (error) {
+          this.source?.disconnect();
+          this.gain?.disconnect();
+          context?.close().catch(() => {});
+          this.ctx = null;
+          this.gain = null;
+          this.source = null;
+          this.applyVolume();
+          console.warn('Music volume routing unavailable:', error);
+        }
+      }
+    }
+    this.resumeContext();
+  }
+
+  private applyVolume() {
+    const prefs = usePreferencesStore.getState();
+    const effectiveVolume = prefs.masterAudioEnabled && prefs.ambientMusicEnabled && !this.isMuted
+      ? this.volume : 0;
+    if (this.audio) {
+      // iOS ignores element.volume; muted still guarantees immediate silence.
+      this.audio.muted = effectiveVolume === 0;
+      this.audio.volume = this.gain ? 1 : effectiveVolume;
+    }
+    if (this.gain && this.ctx) {
+      this.gain.gain.setValueAtTime(effectiveVolume, this.ctx.currentTime);
+    }
   }
 
   private handleTrackEnded() {
@@ -242,16 +307,16 @@ class MusicPlayerController {
     if (!prefs.masterAudioEnabled || !prefs.ambientMusicEnabled) return;
 
     this.initAudio();
+    this.initAudioGraph();
     if (!this.audio) return;
 
     if (this.currentTrack?.id === track.id && this.isPlaying) {
       return;
     }
 
-    const effectiveVol = (prefs.masterAudioEnabled && prefs.ambientMusicEnabled && !this.isMuted) ? this.volume : 0;
     this.currentTrack = track;
     this.audio.src = track.src;
-    this.audio.volume = effectiveVol;
+    this.applyVolume();
 
     this.audio
       .play()
@@ -288,10 +353,8 @@ class MusicPlayerController {
       this.isPlaying = false;
       this.notifyState();
     } else {
-      const effectiveVol = (prefs.masterAudioEnabled && prefs.ambientMusicEnabled && !this.isMuted) ? this.volume : 0;
-      if (this.audio) {
-        this.audio.volume = effectiveVol;
-      }
+      this.initAudioGraph();
+      this.applyVolume();
       this.audio
         ?.play()
         .then(() => {
@@ -326,21 +389,14 @@ class MusicPlayerController {
 
   setVolume(vol: number) {
     this.volume = Math.max(0, Math.min(1, vol));
-    const prefs = usePreferencesStore.getState();
-    const effectiveVol = (prefs.masterAudioEnabled && prefs.ambientMusicEnabled && !this.isMuted) ? this.volume : 0;
-    if (this.audio) {
-      this.audio.volume = effectiveVol;
-    }
+    usePreferencesStore.getState().setAmbientMusicVolume(this.volume * 100);
+    this.applyVolume();
     this.notifyState();
   }
 
   toggleMute(): boolean {
     this.isMuted = !this.isMuted;
-    const prefs = usePreferencesStore.getState();
-    const effectiveVol = (prefs.masterAudioEnabled && prefs.ambientMusicEnabled && !this.isMuted) ? this.volume : 0;
-    if (this.audio) {
-      this.audio.volume = effectiveVol;
-    }
+    this.applyVolume();
     this.notifyState();
     return this.isMuted;
   }

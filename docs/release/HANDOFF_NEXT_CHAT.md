@@ -2,6 +2,15 @@
 
 Diperbarui: 2 November 2026 (Asia/Jakarta).
 
+## Checkpoint UI Pro dan metadata pembelian
+
+- Source `2bc609e`: EN/ID paywall memakai nama paket ringkas dan wrapping; flyout memakai ikon `#0b2719` dengan label lengkap.365tes/40file, typecheck,155prelaunch, produksi dan10kombinasi layout/browser lulus. NativeCI41437204766 dan deploy41438719466/build13 SUCCESS. Apple13 ebb42a1c-c1a3-401a-927a-a57475d789c5 VALID/IN_BETA_TESTING/Internal; draft memilih13 dan beta notesEN/ID tersimpan. Tidak Submit.
+- Pemilik kemudian melaporkan audio/mute, nama pulau, emoji modal serta antrean tidak terlihat dari Campfire. Perbaikan berikutnya di AUDIO_LOCALE_20261102.md:401tes/45file,155prelaunch,typecheck,produksi dan browser audioEN/ID lulus. Kandidat14 belum diunggah pada checkpoint ini;13 tidak memuat perbaikan audio/nama/ikon terbaru.
+- Ketiga produk `rimba_pro_monthly`, `rimba_pro_annual`, `rimba_pioneer_lifetime` terverifikasi READY_TO_SUBMIT; tiga screenshot review COMPLETE. Screenshot merupakan browser UI capture dengan harga unavailable; asalnya dijelaskan di review notes, bukan bukti transaksi native. Listing English pada kedua locale: video pertama+6frame iPhone pada2ukuran,8layar iPad,1header,46penempatan ACTIVE; video20detik telah diputar di App Store Connect. Aset/proof di `D:/Project/Rimba/Deliverables/AppStore-Owner-20261102`.
+- Pemilik melaporkan Restore build12 berhasil, lalu hapus akun→login lagi→Restore berhasil. Model perangkat, mixer dan persistensi setelah restart belum disebut. Jangan menandai seluruh matriks iPhone+iPad/lifecycle lulus.
+- Akun support dibuat melalui dashboard dengan Auto confirm OFF dan password acak privat yang tidak dicatat. Setelah pemilik meminta cek ulang, exact email verified1/sign-in1; role Campfire moderator diberikan hanya pada akun itu. RPC sebagai authenticated: support_moderator=true,queue_type=array,reviewer_moderator=false. Pemilik tidak melihat antrean melalui Campfire karena entry sebelumnya hanya di Profil; entry langsung ditambahkan untuk14, acceptance native berikutnya tetap diperlukan. Detail di PAYWALL_UI_20261102.md dan DEVICE_ACCEPTANCE.md.
+- Tidak ada Submit/App Review. Gerbang perangkat, moderator operasional dan acceptance lain tetap terbuka.
+
 ## Widget native — checkpoint terbaru
 
 - Source final `408345b`; native CI final `41404506471` SUCCESS;365tes/40file,155prelaunch,typecheck dan export produksi lulus. Target WidgetKit nyata, AppGroup, bridge terdaftar, quick focus cold/warm, countdown/jeda, isolasi akun dan petunjuk pemasangan diterapkan. Lihat [laporan widget](NATIVE_WIDGETS_20261102.md).

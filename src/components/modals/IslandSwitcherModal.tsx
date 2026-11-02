@@ -7,6 +7,7 @@ import { useEntitlements } from "@/lib/subscription/useEntitlements";
 import { soundManager } from "@/lib/audio/sounds";
 import { hapticLight, hapticMedium, hapticSuccess, hapticWarning } from "@/lib/mobile/nativeBridge";
 import { BIOME_CATALOG } from "@/lib/game/config";
+import { getIslandDisplayName } from "@/lib/game/islandNames";
 import { BiomeType, IslandSlot } from "@/types/game";
 import {
   X,
@@ -16,7 +17,12 @@ import {
   Trash2,
   Sparkles,
   Palmtree,
+  Leaf,
+  Snowflake,
+  Flower2,
 } from "lucide-react";
+
+const BIOME_ICONS = { meadow: Leaf, autumn: Leaf, snow: Snowflake, lotus: Flower2 };
 
 interface IslandSwitcherModalProps {
   isOpen: boolean;
@@ -68,7 +74,7 @@ export function IslandSwitcherModal({ isOpen, onClose }: IslandSwitcherModalProp
       triggerPaywall("multi_island_limit");
       return;
     }
-    setNewIslandName(`${isEn ? "Sanctuary" : "Suaka"} ${islands.length + 1}`);
+    setNewIslandName("");
     setSelectedBiome("meadow");
     setIsCreating(true);
   };
@@ -76,7 +82,6 @@ export function IslandSwitcherModal({ isOpen, onClose }: IslandSwitcherModalProp
   const handleConfirmCreate = (e: React.FormEvent) => {
     e.preventDefault();
     const name = newIslandName.trim();
-    if (!name) return;
 
     soundManager.playComplete();
     hapticSuccess();
@@ -92,7 +97,7 @@ export function IslandSwitcherModal({ isOpen, onClose }: IslandSwitcherModalProp
     hapticLight();
     setConfirmingDeleteId(null);
     setEditingIslandId(isl.id);
-    setEditingName(isl.name);
+    setEditingName(getIslandDisplayName(isl, language, saveData.profile.name));
   };
 
   const handleConfirmRename = (islandId: string) => {
@@ -146,8 +151,8 @@ export function IslandSwitcherModal({ isOpen, onClose }: IslandSwitcherModalProp
                   .replace("{current}", String(islands.length))
                   .replace("{max}", String(maxIslands))}
                 {isPro && (
-                  <span className="ml-1 text-amber-700 font-semibold">
-                    (Pro ✨)
+                  <span className="ml-1 inline-flex items-center gap-0.5 text-amber-700 font-semibold">
+                    (Pro <Sparkles className="h-3 w-3" aria-hidden="true" />)
                   </span>
                 )}
               </p>
@@ -173,6 +178,8 @@ export function IslandSwitcherModal({ isOpen, onClose }: IslandSwitcherModalProp
               const isConfirmingDelete = confirmingDeleteId === isl.id;
               const currentBiome = isActive ? saveData.active_biome || isl.biome : isl.biome;
               const biomeCfg = BIOME_CATALOG.find((b) => b.id === currentBiome);
+              const BiomeIcon = BIOME_ICONS[currentBiome] || Leaf;
+              const displayName = getIslandDisplayName(isl, language, saveData.profile.name);
               const objectsToCount = isActive ? saveData.world_objects : isl.world_objects;
               const treeCount = objectsToCount?.filter((o) => o.object_type === "tree")?.length || 0;
 
@@ -192,8 +199,8 @@ export function IslandSwitcherModal({ isOpen, onClose }: IslandSwitcherModalProp
                     className="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer"
                     onClick={() => !isEditing && !isConfirmingDelete && handleSelectIsland(isl.id)}
                   >
-                    <span className="text-2xl shrink-0 p-1 rounded-xl bg-[#0D3528]/5">
-                      {biomeCfg?.icon || "🌱"}
+                    <span className="shrink-0 p-1 rounded-xl bg-[#0D3528]/5">
+                      <BiomeIcon className="h-6 w-6" aria-hidden="true" />
                     </span>
 
                     <div className="min-w-0 flex-1">
@@ -220,7 +227,7 @@ export function IslandSwitcherModal({ isOpen, onClose }: IslandSwitcherModalProp
                       ) : isConfirmingDelete ? (
                         <div className="flex flex-col" onClick={(e) => e.stopPropagation()}>
                           <span className="text-[12px] font-bold text-rose-800 truncate">
-                            {isEn ? `Delete "${isl.name}"?` : `Hapus "${isl.name}"?`}
+                            {isEn ? `Delete "${displayName}"?` : `Hapus "${displayName}"?`}
                           </span>
                           <span className="text-[10.5px] text-rose-600 font-medium">
                             {isEn ? "Cannot be undone" : "Tindakan permanen"}
@@ -230,7 +237,7 @@ export function IslandSwitcherModal({ isOpen, onClose }: IslandSwitcherModalProp
                         <>
                           <div className="flex items-center gap-1.5">
                             <span className="text-[13px] font-bold truncate tracking-tight text-[#0D3528]">
-                              {isl.name}
+                              {displayName}
                             </span>
                             {isActive && (
                               <span className="text-[9.5px] font-bold uppercase px-1.5 py-0.2 rounded-full bg-[#187557] text-white">
@@ -239,7 +246,7 @@ export function IslandSwitcherModal({ isOpen, onClose }: IslandSwitcherModalProp
                             )}
                           </div>
                           <p className="text-[10.5px] truncate font-medium text-[#4C7567]">
-                            {treeCount} {t.islandsModal.trees} • {biomeCfg?.name || "Meadow"}
+                            {treeCount} {t.islandsModal.trees} • {biomeCfg ? (isEn ? biomeCfg.nameEn : biomeCfg.name) : (isEn ? "Meadow" : "Padang Rumput")}
                           </p>
                         </>
                       )}
@@ -306,7 +313,7 @@ export function IslandSwitcherModal({ isOpen, onClose }: IslandSwitcherModalProp
                 type="text"
                 value={newIslandName}
                 onChange={(e) => setNewIslandName(e.target.value)}
-                placeholder={t.islandsModal.namePlaceholder}
+                placeholder={`${isEn ? "Sanctuary" : "Suaka"} ${islands.length + 1}`}
                 autoFocus
                 className="w-full px-3 py-2 rounded-xl bg-white border border-[#0D3528]/15 text-[#0D3528] text-xs font-semibold placeholder:text-[#4C7567]/50 outline-none focus:border-[#187557]"
               />
@@ -319,6 +326,7 @@ export function IslandSwitcherModal({ isOpen, onClose }: IslandSwitcherModalProp
               <div className="grid grid-cols-2 gap-1.5">
                 {BIOME_CATALOG.map((b) => {
                   const isSel = selectedBiome === b.id;
+                  const BiomeIcon = BIOME_ICONS[b.id];
                   return (
                     <button
                       key={b.id}
@@ -330,8 +338,8 @@ export function IslandSwitcherModal({ isOpen, onClose }: IslandSwitcherModalProp
                           : "bg-white/80 hover:bg-white text-[#0D3528] border-[#0D3528]/10 font-medium"
                       }`}
                     >
-                      <span className="text-lg">{b.icon}</span>
-                      <span className="text-xs truncate">{b.name}</span>
+                      <BiomeIcon className="h-5 w-5 shrink-0" aria-hidden="true" />
+                      <span className="text-xs truncate">{isEn ? b.nameEn : b.name}</span>
                     </button>
                   );
                 })}

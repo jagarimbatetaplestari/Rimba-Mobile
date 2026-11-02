@@ -22,6 +22,7 @@ import {
   CheckCircle2,
   Lock,
   Sparkles,
+  Crown,
 } from "lucide-react";
 
 interface MobileLeaderboardModalProps {
@@ -248,14 +249,14 @@ export function MobileLeaderboardModal({
                         )}
                 </span>
                 <span className="text-[10px] text-[#187557] font-medium">
-                  {nextTierProgress.nextTier.minMinutes}m & {nextTierProgress.nextTier.minTrees}🌲
+                  {nextTierProgress.nextTier.minMinutes}m & {nextTierProgress.nextTier.minTrees}<TreePine className="inline w-3 h-3 ml-0.5" aria-hidden="true" />
                 </span>
               </div>
             </div>
           ) : (
             <div className="rounded-3xl border border-amber-300/60 bg-gradient-to-b from-amber-50/90 to-amber-100/80 p-4 shadow-lg shadow-amber-900/5 backdrop-blur-xl flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="text-2xl">👑</span>
+                <Crown className="w-6 h-6 text-[#0D3528]" aria-hidden="true" />
                 <div>
                   <p className="text-[13px] font-bold text-amber-900">
                     {t.ranks.highestTierReached}
@@ -352,7 +353,7 @@ export function MobileLeaderboardModal({
                     ) : (
                       <span className="inline-flex items-center gap-1 text-[10.5px] font-normal text-[#4C7567] bg-black/5 px-2.5 py-1 rounded-full">
                         <Lock className="w-2.5 h-2.5 stroke-[2] opacity-60" />
-                        {tier.minMinutes}m & {tier.minTrees}🌲
+                        {tier.minMinutes}m & {tier.minTrees}<TreePine className="w-3 h-3" aria-hidden="true" />
                       </span>
                     )}
                   </div>

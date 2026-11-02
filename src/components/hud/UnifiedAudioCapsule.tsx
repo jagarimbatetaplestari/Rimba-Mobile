@@ -34,8 +34,8 @@ export function UnifiedAudioCapsule({
   const [musicState, setMusicState] = useState<MusicPlayerState>(() =>
     musicPlayer.getState()
   );
-  const [isMasterMuted, setIsMasterMuted] = useState<boolean>(() =>
-    soundscapeManager.getIsMuted() && musicPlayer.getState().isMuted
+  const [natureMuted, setNatureMuted] = useState<boolean>(() =>
+    soundscapeManager.getIsMuted()
   );
 
   useEffect(() => {
@@ -43,18 +43,13 @@ export function UnifiedAudioCapsule({
     const handleSoundscapeChange = (e: Event) => {
       const track = (e as CustomEvent<SoundscapeType>).detail;
       setSoundscapeTrack(track);
-      setIsMasterMuted(
-        soundscapeManager.getIsMuted() && musicPlayer.getState().isMuted
-      );
+      setNatureMuted(soundscapeManager.getIsMuted());
     };
 
     // 2. Listen for lo-fi / ambient music player update
     const handleMusicUpdate = (e: Event) => {
       const state = (e as CustomEvent<MusicPlayerState>).detail;
       setMusicState({ ...state });
-      setIsMasterMuted(
-        soundscapeManager.getIsMuted() && state.isMuted
-      );
     };
 
     window.addEventListener("rimba:soundscape_change", handleSoundscapeChange);
@@ -72,6 +67,7 @@ export function UnifiedAudioCapsule({
   const isSoundscapeActive = soundscapeTrack !== "off";
   const isMusicActive = musicState.isPlaying && Boolean(musicState.currentTrack);
   const isAudioActive = isSoundscapeActive || isMusicActive;
+  const isMasterMuted = (!isSoundscapeActive || natureMuted) && (!isMusicActive || musicState.isMuted);
 
   const soundscapeMeta = useMemo(() => {
     if (!isSoundscapeActive) return null;
@@ -100,7 +96,7 @@ export function UnifiedAudioCapsule({
       }
     }
 
-    setIsMasterMuted(targetMuted);
+    setNatureMuted(soundscapeManager.getIsMuted());
   };
 
   const handleOpenAudioModal = () => {

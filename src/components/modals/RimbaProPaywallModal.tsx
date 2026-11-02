@@ -27,6 +27,9 @@ import {
   RotateCw,
   Award,
   Check,
+  Flower2,
+  Leaf,
+  TreePalm,
 } from "lucide-react";
 
 interface RimbaProPaywallModalProps {
@@ -323,7 +326,7 @@ export function RimbaProPaywallModal({
                 </p>
               </div>
               <div className="w-12 h-12 rounded-2xl bg-white/15 border border-white/25 backdrop-blur-md flex items-center justify-center shrink-0 text-2xl shadow-inner">
-                🏝️
+                <TreePalm className="w-6 h-6" aria-hidden="true" />
               </div>
             </div>
 
@@ -333,8 +336,10 @@ export function RimbaProPaywallModal({
                 <div className="w-8 h-8 rounded-xl bg-[#187557]/12 border border-[#187557]/20 flex items-center justify-center text-[#187557]">
                   <TreePine className="w-4 h-4 stroke-[2.2]" />
                 </div>
-                <span className="text-[10px] font-bold text-[#14664D] bg-[#E4F4ED] border border-[#BCE5D3] px-2 py-0.5 rounded-full">
-                  🌸 🌲 🍁
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#14664D] bg-[#E4F4ED] border border-[#BCE5D3] px-2 py-0.5 rounded-full" aria-hidden="true">
+                  <Flower2 className="w-3 h-3" />
+                  <TreePine className="w-3 h-3" />
+                  <Leaf className="w-3 h-3" />
                 </span>
               </div>
               <div>

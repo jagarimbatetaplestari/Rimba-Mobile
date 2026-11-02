@@ -77,6 +77,9 @@ import {
   X,
   BookOpen,
   KeyRound,
+  Leaf,
+  Scale,
+  TreePine,
 } from "lucide-react";
 
 export interface MobileSettingsSheetProps {
@@ -408,7 +411,6 @@ export function MobileSettingsSheet({
                         : "text-[#0D3528] hover:bg-[#0D3528]/5"
                     }`}
                   >
-                    <span>🇮🇩</span>
                     <span>Bahasa Indonesia</span>
                   </button>
                   <button
@@ -424,7 +426,6 @@ export function MobileSettingsSheet({
                         : "text-[#0D3528] hover:bg-[#0D3528]/5"
                     }`}
                   >
-                    <span>🇬🇧</span>
                     <span>English</span>
                   </button>
                 </div>
@@ -494,7 +495,7 @@ export function MobileSettingsSheet({
                           {isPro ? "Rimba Pro Active" : "Rimba Pro Pass"}
                         </span>
                         <span className="text-[9.5px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 shadow-2xs">
-                          {isPro ? "Pro ✨" : "Upgrade"}
+                          {isPro ? "Pro" : "Upgrade"}
                         </span>
                       </div>
                       <p className="text-[11px] text-[#4C7567] mt-0.5">
@@ -584,9 +585,6 @@ export function MobileSettingsSheet({
                         soundscapeManager.stop();
                       } else {
                         if (prefs.ambientMusicEnabled) {
-                          musicPlayer.setVolume(
-                            (prefs.ambientMusicVolume || 50) / 100,
-                          );
                           musicPlayer.togglePlay();
                         }
                       }
@@ -623,9 +621,6 @@ export function MobileSettingsSheet({
                           if (!next) {
                             musicPlayer.stop();
                           } else {
-                            musicPlayer.setVolume(
-                              (prefs.ambientMusicVolume || 50) / 100,
-                            );
                             musicPlayer.togglePlay();
                           }
                         }}
@@ -674,7 +669,6 @@ export function MobileSettingsSheet({
                           onChange={(e) => {
                             const val = Number(e.target.value);
                             prefs.setAmbientMusicVolume(val);
-                            musicPlayer.setVolume(val / 100);
                           }}
                           className="w-full min-w-0 h-1 accent-[#187557] bg-[#0D3528]/10 rounded-full cursor-pointer appearance-none"
                           style={{ width: "100%", minWidth: 0 }}
@@ -915,10 +909,10 @@ export function MobileSettingsSheet({
                   </p>
                   <span className="text-[11px] font-medium text-[#14664D] bg-[#E4F4ED] px-2.5 py-0.5 rounded-full border border-[#BCE5D3]">
                     {prefs.graphicsQuality === "eco"
-                      ? "Eco 🍃"
+                      ? "Eco"
                       : prefs.graphicsQuality === "balanced"
-                        ? `${t.settings.balancedLabel} ⚖️`
-                        : "Ultra 🌲"}
+                        ? t.settings.balancedLabel
+                        : "Ultra"}
                   </span>
                 </div>
 
@@ -928,19 +922,19 @@ export function MobileSettingsSheet({
                       {
                         id: "eco",
                         label: "Eco",
-                        icon: "🍃",
+                        icon: <Leaf className="w-4 h-4" aria-hidden="true" />,
                         detail: t.settings.ecoDesc,
                       },
                       {
                         id: "balanced",
                         label: t.settings.balancedLabel,
-                        icon: "⚖️",
+                        icon: <Scale className="w-4 h-4" aria-hidden="true" />,
                         detail: t.settings.balancedDesc,
                       },
                       {
                         id: "ultra",
                         label: "Ultra",
-                        icon: "🌲",
+                        icon: <TreePine className="w-4 h-4" aria-hidden="true" />,
                         detail: t.settings.ultraDesc,
                       },
                     ].map((preset) => {
@@ -959,7 +953,7 @@ export function MobileSettingsSheet({
                               : "text-[#4C7567] hover:text-[#0D3528]"
                           }`}
                         >
-                          <span className="text-sm">{preset.icon}</span>
+                          {preset.icon}
                           <span className="text-[12px] font-semibold mt-0.5">
                             {preset.label}
                           </span>
@@ -1078,7 +1072,7 @@ export function MobileSettingsSheet({
 
                     {testNotifSent && (
                       <p className="text-[10.5px] text-emerald-700 font-medium bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-200/70 animate-in fade-in">
-                        ✨ {t.settings.notifTestSuccess}
+                        <Sparkles className="inline w-3 h-3" aria-hidden="true" /> {t.settings.notifTestSuccess}
                       </p>
                     )}
                   </div>

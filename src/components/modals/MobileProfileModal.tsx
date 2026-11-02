@@ -3,6 +3,7 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useGameStore } from "@/lib/game/useGameStore";
+import { getWorldDisplayName } from "@/lib/game/islandNames";
 import { useAuthStore } from "@/lib/auth/useAuthStore";
 import { supabase } from '@/lib/supabase/client';
 import { calculateAnalytics, getStreakMilestone } from "@/lib/game/analytics";
@@ -43,6 +44,8 @@ import {
   AlertTriangle,
   Cloud,
   KeyRound,
+  Flame,
+  Tent,
 } from "lucide-react";
 
 export type ProfileTab = "stats" | "profile";
@@ -359,7 +362,7 @@ export function MobileProfileModal({
           <div className="rounded-3xl border border-[#BCE5D3] bg-white p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-[14.5px] font-semibold text-[#0D3528] tracking-wide">
-                {world.name || (language === "en" ? "Rimba Island" : "Pulau Rimba")}
+                {getWorldDisplayName(saveData, language) || (language === "en" ? "Rimba Island" : "Pulau Rimba")}
               </span>
             </div>
 
@@ -521,21 +524,19 @@ export function MobileProfileModal({
 
             <div className="grid grid-cols-3 divide-x divide-[#0D3528]/10 text-center py-1">
               <div className="px-1">
-                <div className="text-xl leading-tight">
-                  {streakInfo.icon || "🌱"}
-                </div>
+                <Flame className="mx-auto h-5 w-5" aria-hidden="true" />
                 <div className="text-[11.5px] font-medium text-[#0D3528] truncate mt-1">
                   {streakInfo.title || "Streak"}
                 </div>
               </div>
               <div className="px-1">
-                <div className="text-xl leading-tight">🏕️</div>
+                <Tent className="mx-auto h-5 w-5" aria-hidden="true" />
                 <div className="text-[11.5px] font-medium text-[#0D3528] truncate mt-1">
                   {zoneInfo.shortZoneName}
                 </div>
               </div>
               <div className="px-1">
-                <div className="text-xl leading-tight">🌲</div>
+                <TreePine className="mx-auto h-5 w-5" aria-hidden="true" />
                 <div className="text-[11.5px] font-medium text-[#0D3528] truncate mt-1">
                   {t.profile.speciesCount.replace("{count}", String(unlockedTreesCount))}
                 </div>

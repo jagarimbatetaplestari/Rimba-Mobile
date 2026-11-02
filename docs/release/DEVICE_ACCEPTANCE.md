@@ -1,6 +1,8 @@
 # Final candidate device acceptance
 
-Candidate source: `408345b55654609bdf3b94526eff5728502cba10`. Native widget candidate TestFlight 1.0 (12) is VALID, IN_BETA_TESTING and available to Internal after successful run41404509381. Draft selects12; no review submitted. Build8 was the previous Pro activation candidate; build5 screenshots/runtime are older. Record the exact installed build and separate iPhone/iPad results. All rows remain unverified until device testing.
+Candidate source: `408345b55654609bdf3b94526eff5728502cba10`. Native widget candidate TestFlight 1.0 (12) is VALID, IN_BETA_TESTING and available to Internal after successful run41404509381. Draft selects12; no review submitted. Build8 was the previous Pro activation candidate; build5 screenshots/runtime are older. Record the exact installed build and separate iPhone/iPad results. Rows below describe the complete matrix; partial owner evidence is recorded separately.
+
+Owner evidence, 2 November2026: in response to the build12 Restore request, the owner reported successful Restore, then deleted the Rimba account, signed in again and successfully restored again. This confirms the reported Restore/recreated-account path. Device model, dual-sound-mixer access and Pro persistence after force-close/relaunch were not stated; do not mark the entire purchase/lifecycle or both-device rows passed. A new UI candidate `2bc609e` changes copy/layout/colors only; native verification/upload is in progress.
 
 | Flow | Expected result | iPhone | iPad |
 | --- | --- | --- | --- |
@@ -11,6 +13,8 @@ Candidate source: `408345b55654609bdf3b94526eff5728502cba10`. Native widget cand
 | Focus | Repeat start, pause, resume, cancel; no recovery screen or blank page | Pending | Pending |
 | Background timer | Background/foreground and force close preserve correct elapsed time, with one reward per completion | Pending | Pending |
 | Profile / menus | Subscription, delete confirmation, dismiss, language switching all respond; no stuck overlays | Pending | Pending |
+| Audio | Music/nature sliders change output; mute, next track, global audio toggle and restart retain correct silence/volume | Pending | Pending |
+| Language / icons | Generated island and biome names follow EN/ID; custom names stay intact; popup UI uses outline icons | Pending | Pending |
 | Purchase / restore | Native prices appear; sandbox monthly/annual/lifetime grant verified Pro; restore works | Pending | Pending |
 | Billing lifecycle | Cancel/pending/refund/expiry/renewal and account switch reflect server-verified rights | Pending | Pending |
 | Home / Lock widgets | Add Rimba from system editors; real stats, empty history stays zero, correct language and layout | Pending | Pending |

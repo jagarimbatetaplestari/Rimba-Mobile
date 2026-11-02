@@ -53,6 +53,9 @@ class SoundscapeController {
 
   constructor() {
     if (typeof window !== 'undefined') {
+      usePreferencesStore.subscribe((prefs, previous) => {
+        if (prefs.masterAudioEnabled !== previous.masterAudioEnabled) this.applyVolume();
+      });
       const unlock = () => {
         if (this.ctx && this.ctx.state === 'suspended') {
           this.ctx.resume().catch(() => {});
@@ -75,7 +78,7 @@ class SoundscapeController {
       if (AudioCtx) {
         this.ctx = new AudioCtx();
         this.masterGain = this.ctx.createGain();
-        this.masterGain.gain.setValueAtTime(this.volume, this.ctx.currentTime);
+        this.applyVolume();
         this.masterGain.connect(this.ctx.destination);
       }
     }
@@ -118,20 +121,29 @@ class SoundscapeController {
 
   setVolume(vol: number): void {
     this.volume = Math.max(0, Math.min(1, vol));
+    this.applyVolume();
+    this.notifyState();
+  }
+
+  private applyVolume(): void {
     const prefs = usePreferencesStore.getState();
     const effectiveVol = prefs.masterAudioEnabled && !this.isMuted ? this.volume : 0;
     if (this.masterGain && this.ctx) {
-      this.masterGain.gain.setTargetAtTime(effectiveVol, this.ctx.currentTime, 0.05);
+      this.masterGain.gain.cancelScheduledValues(this.ctx.currentTime);
+      this.masterGain.gain.setValueAtTime(effectiveVol, this.ctx.currentTime);
+    }
+  }
+
+  private notifyState(): void {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('rimba:soundscape_change', { detail: this.currentTrack }));
     }
   }
 
   toggleMute(): boolean {
     this.isMuted = !this.isMuted;
-    const prefs = usePreferencesStore.getState();
-    if (this.masterGain && this.ctx) {
-      const target = (this.isMuted || !prefs.masterAudioEnabled) ? 0 : this.volume;
-      this.masterGain.gain.setTargetAtTime(target, this.ctx.currentTime, 0.05);
-    }
+    this.applyVolume();
+    this.notifyState();
     return this.isMuted;
   }
 

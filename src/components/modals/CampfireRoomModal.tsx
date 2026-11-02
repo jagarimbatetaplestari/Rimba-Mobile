@@ -26,10 +26,13 @@ import {
   hapticSuccess,
 } from "@/lib/mobile/nativeBridge";
 import { useTranslation } from "@/lib/i18n/translations";
+import { supabase } from "@/lib/supabase/client";
+import { NatureLineIcon } from "@/components/common/NatureLineIcon";
 
 interface CampfireRoomModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onOpenModeration?: () => void;
 }
 
 const ANIMAL_ICONS: { id: CampfireAnimal; icon: string }[] = [
@@ -108,9 +111,24 @@ function buildCampfireQrMatrix(code: string): boolean[][] {
 export function CampfireRoomModal({
   isOpen,
   onClose,
+  onOpenModeration,
 }: CampfireRoomModalProps) {
   const { t, language } = useTranslation();
   const user = useAuthStore((state) => state.user);
+  const [moderatorAccess, setModeratorAccess] = useState<{ owner: string | null; allowed: boolean }>({ owner: null, allowed: false });
+  React.useEffect(() => {
+    let closed = false;
+    const owner = user?.id;
+    setModeratorAccess({ owner: owner ?? null, allowed: false });
+    if (isOpen && owner && !user?.isGuest) {
+      void supabase.rpc('campfire_moderator_status_v1').then(({ data, error }) => {
+        if (!closed && useAuthStore.getState().user?.id === owner) {
+          setModeratorAccess({ owner, allowed: !error && data === true });
+        }
+      }, () => {});
+    }
+    return () => { closed = true; };
+  }, [isOpen, user?.id, user?.isGuest]);
   const notify = useGameStore((state) => state.notify);
 
   const currentRoom = useCampfireStore((state) => state.currentRoom);
@@ -317,7 +335,7 @@ export function CampfireRoomModal({
         {/* STICKY SAFE-AREA HEADER NAV */}
         <div className="safe-sticky-modal-header flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0 flex-1">
-            <h2 className="text-[20px] font-bold tracking-tight text-[#0D3528] whitespace-nowrap truncate">
+            <h2 className="text-[20px] font-bold tracking-tight text-[#0D3528] leading-snug">
               {t.campfire.title}
             </h2>
             <span className="rounded-full bg-[#E4F4ED] border border-[#BCE5D3] px-2.5 py-0.5 text-[10.5px] font-semibold text-[#14664D] flex items-center gap-1 whitespace-nowrap shrink-0">
@@ -339,6 +357,13 @@ export function CampfireRoomModal({
             <X className="h-4 w-4 stroke-[2]" />
           </button>
         </div>
+
+        {onOpenModeration && moderatorAccess.allowed && moderatorAccess.owner === user?.id && !user?.isGuest && (
+          <button type="button" onClick={onOpenModeration} className="w-full min-h-12 rounded-2xl border border-[#187557]/20 bg-white/85 px-4 py-3 flex items-center gap-3 text-left text-[#0D3528]">
+            <ShieldCheck className="w-5 h-5 shrink-0" aria-hidden="true" />
+            <span className="font-semibold text-sm">{language === 'en' ? 'Review Campfire reports' : 'Tinjau laporan Campfire'}</span>
+          </button>
+        )}
 
         {!canUseCampfire && (
           <p role="status" className="rounded-2xl bg-[#E4F4ED] border border-[#BCE5D3] p-3 text-xs font-medium text-[#0D3528]">
@@ -517,7 +542,7 @@ export function CampfireRoomModal({
                       className="rounded-2xl border border-white/70 bg-white/95 p-3 shadow-xs flex flex-wrap gap-2 items-center justify-between"
                     >
                       <div className="flex items-center gap-3 min-w-0">
-                        <span className="text-2xl shrink-0">{animalObj?.icon || "🦊"}</span>
+                        <NatureLineIcon name={animalObj?.icon || "🦊"} className="w-6 h-6 shrink-0" />
                         <div className="min-w-0">
                           <div className="flex items-center gap-1.5">
                             <span className="text-[13px] font-bold text-[#0D3528] truncate max-w-[10rem]">
@@ -922,7 +947,7 @@ export function CampfireRoomModal({
                             : "bg-white/70 border-[#0D3528]/10 hover:bg-white"
                         }`}
                       >
-                        <span className="text-2xl">{a.icon}</span>
+                        <NatureLineIcon name={a.icon} className="w-6 h-6" />
                         <span className="text-[9.5px] font-semibold text-[#0D3528] truncate max-w-full">
                           {t.campfire.animals[a.id]}
                         </span>
@@ -1073,7 +1098,7 @@ export function CampfireRoomModal({
                             : "bg-white/70 border-[#0D3528]/10 hover:bg-white"
                         }`}
                       >
-                        <span className="text-2xl">{a.icon}</span>
+                        <NatureLineIcon name={a.icon} className="w-6 h-6" />
                         <span className="text-[9.5px] font-semibold text-[#0D3528] truncate max-w-full">
                           {t.campfire.animals[a.id]}
                         </span>

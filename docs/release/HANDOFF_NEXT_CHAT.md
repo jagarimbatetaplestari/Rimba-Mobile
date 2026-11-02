@@ -2,6 +2,13 @@
 
 Diperbarui: 2 November 2026 (Asia/Jakarta).
 
+## Kandidat aktivasi Pro final — build8 VALID
+
+- Source a839c4ee055a0e238d7f9b1e5edebb3299b4e065 di branch fix/rimba-release-readiness. NativeCI41389307337 SUCCESS; deploy41389860676 SUCCESS. Apple build8b34cd2f-6e5b-484b-b9ef-15a74a0c34b7 versi1.0(8) VALID, IN_BETA_TESTING dan ada di grup Internal. Draft App Store memilih8; tidak Submit.
+-342tes pada35file,155prelaunch checks,typecheck dan build final lulus. Memuat perbaikan profil save, dua race aktivasi Pro (auth token/duplicate event dan refresh Free yang datang setelah purchase/Restore), serta feedback welcome/restore/error/pending. Jangan menyebutnya hanya fix modal.
+- Catatan TestFlight en-US/id sudah disimpan. Pemilik diminta memperbarui ke8, login Apple akun semula dan Restore pembelian yang sudah ada, lalu memeriksa mixer dua suara/fitur Pro. Belum ada hasil pengujian build8 dari perangkat. Jangan membeli ulang atau memberikan Pro manual untuk menutupi kegagalan.
+- Build7 upload dibatalkan dan bukan kandidat lengkap; tag6 sebelumnya gagal build. Laporan rinci: OWNER_CHANGES_REVIEW_20261102.md. Widget Extension/AppGroup/registrasi bridge, audit privasi native dan gerbang App Review lain tetap terbuka. Screenshot toko yang tersedia berasal dari runtime f643673 sebelum perubahan UI pemilik; perbarui setelah acceptance kandidat final.
+
 ## Aktivasi Pro — verifikasi terakhir
 
 - Pemilik mengonfirmasi fitur Pro tetap terkunci setelah transaksi. Dua kelas bug direproduksi dan diperbaiki: event auth untuk akun yang sama membuang hasil paid; refresh Free yang mulai selama purchase/Restore menimpa Pro yang sudah diverifikasi. Epoch pemilik dan generasi hidrasi dipisah, dan generasi operasi billing juga berubah saat selesai.

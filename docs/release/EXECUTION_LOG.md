@@ -262,3 +262,7 @@ Current verification: 52/52 Vitest, mobile typecheck and npm run build passed af
 - Fresh production export after the activation epoch fix passed. No app review submission.
 
 - Additional activation race reproduced: a Free refresh started during purchase/Restore could finish after verified Pro and overwrite it. Increment operation generation at completion as well as start; both red regressions now pass. Final full342tests and typecheck pass. No new native source or backend configuration changed.
+
+### Final activation candidate distributed
+- a839c4e nativeCI41389307337 SUCCESS; deploy41389860676/build8 SUCCESS. Apple1.0(8)8b34cd2f-6e5b-484b-b9ef-15a74a0c34b7 VALID, Internal group and IN_BETA_TESTING verified. Draft selects8, beta notes en-US/id saved; no App Review submission.
+- Final342tests/35files,155prelaunch,typecheck,production export passed. Device Restore/actual Pro activation still awaits owner confirmation. Screenshots predating owner UI changes need refresh before submission. Widget native integration remains open.

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, Suspense } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/lib/auth/useAuthStore";
@@ -10,6 +10,7 @@ import { hapticLight, hapticMedium, hapticSuccess, hapticWarning } from "@/lib/m
 import { Mail, Lock, Eye, EyeOff, ArrowLeft, RefreshCw, CheckCircle2, KeyRound } from "lucide-react";
 import { Capacitor } from "@capacitor/core";
 import { supabase } from "@/lib/supabase/client";
+import { EMAIL_OTP_MAX_LENGTH, normalizeEmailOtp, isCompleteEmailOtp } from "@/lib/auth/emailOtp";
 import { LegalModal } from "@/components/modals/LegalModal";
 
 function WelcomeAuthPageContent() {
@@ -56,12 +57,11 @@ function WelcomeAuthPageContent() {
 
   // OTP Verification state
   const [isOtpStep, setIsOtpStep] = useState(false);
-  const [otpDigits, setOtpDigits] = useState<string[]>(["", "", "", "", "", ""]);
+  const [otpCode, setOtpCode] = useState("");
   const [resendCooldown, setResendCooldown] = useState(60);
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const [isResending, setIsResending] = useState(false);
 
-  const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   // Listen to Supabase PASSWORD_RECOVERY event
   useEffect(() => {
@@ -94,15 +94,6 @@ function WelcomeAuthPageContent() {
     }
     return () => clearInterval(timer);
   }, [isOtpStep, resendCooldown]);
-
-  // Auto focus first OTP input when entering OTP step
-  useEffect(() => {
-    if (isOtpStep) {
-      setTimeout(() => {
-        otpInputRefs.current[0]?.focus();
-      }, 200);
-    }
-  }, [isOtpStep]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -177,53 +168,10 @@ function WelcomeAuthPageContent() {
     }
   };
 
-  // Handler OTP Digit Input
-  const handleDigitChange = (index: number, val: string) => {
-    const char = val.slice(-1);
-    if (char && !/^[0-9]$/.test(char)) return;
-
-    const nextDigits = [...otpDigits];
-    nextDigits[index] = char;
-    setOtpDigits(nextDigits);
-
-    if (char && index < 5) {
-      otpInputRefs.current[index + 1]?.focus();
-    }
-
-    const fullCode = nextDigits.join("");
-    if (fullCode.length === 6) {
-      executeVerifyOtp(fullCode);
-    }
-  };
-
-  const handleDigitKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Backspace" && !otpDigits[index] && index > 0) {
-      otpInputRefs.current[index - 1]?.focus();
-    }
-  };
-
-  const handlePasteOtp = (e: React.ClipboardEvent) => {
-    e.preventDefault();
-    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
-    if (!pasted) return;
-
-    const nextDigits = [...otpDigits];
-    for (let i = 0; i < 6; i++) {
-      nextDigits[i] = pasted[i] || "";
-    }
-    setOtpDigits(nextDigits);
-
-    if (pasted.length === 6) {
-      executeVerifyOtp(pasted);
-    } else {
-      otpInputRefs.current[pasted.length]?.focus();
-    }
-  };
-
   const executeVerifyOtp = async (tokenToVerify?: string) => {
-    const token = tokenToVerify || otpDigits.join("");
-    if (token.length < 6) {
-      setErrorMsg("Masukkan 6 digit kode OTP secara lengkap.");
+    const token = tokenToVerify || otpCode;
+    if (!isCompleteEmailOtp(token)) {
+      setErrorMsg(t.auth.otpDesc);
       hapticWarning();
       return;
     }
@@ -569,9 +517,10 @@ function WelcomeAuthPageContent() {
               <input
                 type="text"
                 inputMode="numeric"
-                maxLength={6}
+                maxLength={EMAIL_OTP_MAX_LENGTH}
                 value={recoveryCode}
-                onChange={(e) => setRecoveryCode(e.target.value.replace(/\D/g, ""))}
+                onChange={(e) => setRecoveryCode(normalizeEmailOtp(e.target.value))}
+                autoComplete="one-time-code"
                 placeholder={t.auth.recoveryCodePlaceholder}
                 className="w-full bg-transparent pl-3 pr-2 text-xs font-mono tracking-widest text-white placeholder-white/50 focus:outline-none drop-shadow-sm"
               />
@@ -645,29 +594,22 @@ function WelcomeAuthPageContent() {
           /* STATE A: OTP VERIFICATION STEP IN-APP                     */
           /* ========================================================= */
           <div className="w-full space-y-3.5 animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <div className="flex items-center justify-between gap-1 sm:gap-1.5 w-full py-1">
-              {otpDigits.map((digit, idx) => (
-                <input
-                  key={idx}
-                  ref={(el) => {
-                    otpInputRefs.current[idx] = el;
-                  }}
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  maxLength={1}
-                  value={digit}
-                  onChange={(e) => handleDigitChange(idx, e.target.value)}
-                  onKeyDown={(e) => handleDigitKeyDown(idx, e)}
-                  onPaste={handlePasteOtp}
-                  className="w-9 h-12 sm:w-11 sm:h-13 max-w-[46px] rounded-xl sm:rounded-2xl bg-black/40 text-white font-mono font-bold text-lg sm:text-xl text-center border border-white/20 focus:border-emerald-400 focus:bg-black/60 focus:outline-none shadow-[0_4px_16px_rgba(0,0,0,0.3)] transition-all"
-                />
-              ))}
-            </div>
+            <input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              autoComplete="one-time-code"
+              autoFocus
+              aria-label={t.auth.otpTitle}
+              maxLength={EMAIL_OTP_MAX_LENGTH}
+              value={otpCode}
+              onChange={(e) => setOtpCode(normalizeEmailOtp(e.target.value))}
+              className="w-full h-14 rounded-2xl bg-black/40 text-white font-mono font-bold text-xl tracking-[0.3em] text-center border border-white/20 focus:border-emerald-400 focus:outline-none transition-all"
+            />
 
             <button
               type="button"
-              disabled={isVerifyingOtp || otpDigits.join("").length < 6}
+              disabled={isVerifyingOtp || !isCompleteEmailOtp(otpCode)}
               onClick={() => executeVerifyOtp()}
               className="group relative w-full py-3.5 px-6 rounded-full font-medium text-xs text-white bg-emerald-500/35 hover:bg-emerald-500/30 active:bg-emerald-500/40 backdrop-blur-2xl border border-emerald-300/20 shadow-[0_12px_32px_rgba(4,25,16,0.45),inset_0_1.5px_2px_rgba(255,255,255,0.5)] transition-all active:scale-[0.98] flex items-center justify-center gap-2 overflow-hidden cursor-pointer disabled:opacity-50"
             >

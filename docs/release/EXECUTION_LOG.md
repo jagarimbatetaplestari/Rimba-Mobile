@@ -216,3 +216,19 @@ Current verification: 52/52 Vitest, mobile typecheck and npm run build passed af
 - Fresh complete Vitest322/322 across33files; typecheck exit0; prelaunch155/155 (obsolete static broadcast/3-digit assertions replaced with actual Campfire behavior suite); production npm run build completed. First sandbox build hit EPERM from elevated QA-generated .next files; same build with consistent access passed, no validation disabled. git diff --check passed.
 - Supabase connector again Unknown tool and CLI has no auth. Authenticated dashboard fallback works. Read-only catalog: campfire tables0; auth.users.is_anonymous exists; cron available but not installed; schema_migrations columns verified; existing auth triggers on_auth_user_created/on_auth_user_created_rimba. No production data or schema changed in this checkpoint. GitHub CLI unauthenticated; connector read works. No candidate push/nativeCI/upload/review submission yet.
 - OPEN: native iPhone+iPad final-build acceptance, real Google/Apple/account deletion, StoreKit sandbox purchase/restore/refund/renewal, two-device cloud/Campfire and moderator operational testing, policy publish and App Privacy final audit, store screenshots/IAP review metadata. Do not claim ready Submit.
+
+## Production Campfire deployment — 2026-11-02
+
+- Owner explicitly approved migration plus daily permanent retention cleanup at10:17WIB. Dashboard fallback applied reviewed transactional build/campfire-deploy.sql (migration20261101201444, schema_migrations record, pg_cron and03:17UTC daily schedule). No maintenance function invoked immediately and no existing save payload updated/deleted.
+- Dashboard initially warned RLS might be absent because migration enables it via dynamic SQL. Auto-review rejected Run without RLS; used safer Run and enable RLS. Execution returned migration_recorded=true,campfire_table_count=8,retention_job_active=true.
+- Independent catalog audit: rls_tables8,client_tables_readable0,client_tables_writable0,anon_rpcfalse,member_rpctrue,client_maintenancefalse,service_maintenancetrue,redaction_triggertrue,moderators0; job17 3 * * * active. Verified owner moderator still unassigned; real independent-session/adversarial and two-device tests remain open.
+- Candidate commits c5e83b6/cabfdb2 pushed successfully to existing fix/rimba-release-readiness branch. Native CI41372926763 started for cabfdb2. No TestFlight upload or App Review submission yet.
+- Transfer server first proposal exposing build directory was auto-review rejected; safer dedicated directory with only SQL approved, then single-route localhost Node server used. Stop transfer server after migration; no credential was included.
+- Production rollback-safe synthetic matrix passed: host-only start, outsider read denial, premature completion denial, ordinary-member moderator denial, report queue and authorized dismissal. Transaction explicitly ROLLBACK; final query synthetic_accounts_rolled_back=true. This is real deployed SQL behavior, not separate-device HTTP/native acceptance.
+- Owner selected the support email for moderator assignment. Exact case-insensitive auth lookup returned matching_accounts0/verified_accounts0, so no role granted. Owner must sign in/register that address once before trusted assignment.
+
+### 2026-11-02 — Email OTP length mismatch
+- User reported email delivers 8 digits while app permits only 6. Confirmed verification fields, paste handler, and password recovery all imposed a six-digit limit.
+- Replaced segmented verification with one numeric one-time-code input accepting up to 8 digits; explicit submit accepts complete 6/8-digit codes without premature verification at digit six. Recovery supports eight digits. ID/EN copy updated.
+- Candidate must include this fix before final native acceptance; previous uploaded builds do not contain it.
+- Verification OTP: 324/324 tests, typecheck and production export passed; native CI 41372926763 passed for preceding cabfdb2 (not OTP).

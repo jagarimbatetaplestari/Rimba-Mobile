@@ -2,6 +2,14 @@
 
 Diperbarui: 2 November 2026 (Asia/Jakarta).
 
+## Checkpoint menuju Submit — baca ini lebih dahulu
+
+- Laporan terkonsolidasi: [SUBMIT_READINESS_20261102.md](SUBMIT_READINESS_20261102.md). NativeCI41445401653 SUCCESS untuk runtime9b6548d (401tes/45file,155prelaunch,Swiftwidget dan iPhone/iPad). Artefak13143211438/verification25 diperiksa:18manifest,host+widget,families1/2,iOS16minimum. Bukan IPA/TestFlight14.
+- Deploy14/run41448458837 checkoutc229c20/runtime9b6548d: KEDUA attempt gagal sebelum langkah apa pun karena kapasitas hosted macOS arm64, bukan source error. Anotasi125295418508 mengonfirmasi alasan yang sama. Recovery terarah: deploy workflow memakai runner standar `macos-26-intel` (GitHub resmi, Xcode26.6/SDK26.5), satu baris konfigurasi tanpa perubahan runtime. Kandidat upload berikutnya diperkirakan15, verifikasi nomor aktual.13masih kandidat tersedia. Setelah SUCCESS periksa signedIPA, AppleVALID/Internal,ENIDnotes dan draft memilih kandidat final; helper14perlu disesuaikan ke nomor aktual.
+- Pemilik menyetujui empat kategori AppPrivacy baru secara eksplisit;12kategori sudah Published tanpa setup tersisa. Detail dan batas SDK Facebook/Google di APP_PRIVACY.md serta laporan readiness. Reviewer login aktual berhasil,identitas cocok,savefiktif terbaca,moderatorfalse;username/password Apple cocok,contact lengkap. Tidak ada secret dicetak.
+- Draft review `41619189-27ab-4c80-83e3-2e07ef3e3bba` dibuat hanya sebagai draft:groupPro+annual+monthly+lifetime,4items,submittedDatenull. Apple menolakSubmit karena appversion belum ditambahkan. Tambahkan appversion1.0 setelah14VALID dipilih,ke draft yang SAMA; jangan finalSubmit. Bukti `D:/Project/Rimba/Deliverables/Rimba-Build14-UI/review-draft-products.png`.
+- Pemilik melaporkan13aman untuk alur satu perangkat (historyisolation,Restore→Prorestart,widgetsetup), model/OSbelum disebut; hanya punya1device sehingga sync2device belum terbukti. Campfire diuji langsung: nativehost13+reviewerQA RPCclient,2anggota,lobbyrev2→activerev3,15menitSharedDestiny; pemilik melaporkan timer normal lalu sengaja keluar→suakaaman,severedrev4; pesertaQAkeluarberhasil. Bukan keduaUI native/browser,belumreward/report/blockdevice. Audio/nama/ikon/moderasi baru memerlukan kandidat final. Jangan klaim siapSubmit dari unit/browser/simulator.
+
 ## Checkpoint UI Pro dan metadata pembelian
 
 - Source `2bc609e`: EN/ID paywall memakai nama paket ringkas dan wrapping; flyout memakai ikon `#0b2719` dengan label lengkap.365tes/40file, typecheck,155prelaunch, produksi dan10kombinasi layout/browser lulus. NativeCI41437204766 dan deploy41438719466/build13 SUCCESS. Apple13 ebb42a1c-c1a3-401a-927a-a57475d789c5 VALID/IN_BETA_TESTING/Internal; draft memilih13 dan beta notesEN/ID tersimpan. Tidak Submit.

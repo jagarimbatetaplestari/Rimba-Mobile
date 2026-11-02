@@ -2,6 +2,16 @@
 
 Scope: iPhone+iPad, global excluding27EU territories, Free/Pro, virtual trees only. Status below distinguishes local tests, deployed configuration, unsigned CI and actual device acceptance.
 
+## Latest checkpoint — 2 November, runtime9b6548d
+
+This checkpoint supersedes historical service/build states in the table below. NativeCI41445401653 SUCCESS;401tests/45files, typecheck,155prelaunch and production export passed in that CI. TestFlight upload14/run41448458837 is queued; draft still selects13 until Apple validates14.
+
+- BILL-02: all three products READY_TO_SUBMIT and review screenshots COMPLETE. Owner reported successful Restore on12, including after account deletion/recreation. Native paywall screenshots with actual prices and full lifecycle/device acceptance remain open.
+- SOCIAL-01/02: authoritative RPC/retention, report/block and server moderation role are deployed and tested. Support moderator RPC true, reviewer false.14 adds direct moderation entry from Campfire; native queue access and two-person device flow remain open.
+- STORE-01: owner iPhone video first + six frames, eight iPad screens and header placed for EN/ID;46placements ACTIVE. App Privacy expanded to12categories and published with explicit owner approval. Reviewer credentials already stored privately in Apple. Review draft preparation and final-device acceptance remain open.
+- Audio/music hard mute/gain, generated island/biome localization and outline modal/preset icons fixed in9b6548d; browser EN/ID output checks pass. Final iOS acceptance still required.
+- NATIVE-02: latest available13 is VALID/Internal but does not contain these newest fixes.14must be VALID before treating it as an installable candidate. No App Review submission.
+
 | ID | Priority | Finding / gate | Current evidence / status |
 | --- | --- | --- | --- |
 | AUTH-01 | P1 | Provider configuration absent | Apple/Google enabled in Supabase, native audiences and nonce rules configured. Device acceptance pending. |

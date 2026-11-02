@@ -161,6 +161,7 @@ export async function purchaseSubscriptionTier(tier: SubscriptionTier, isEn = fa
     if (!(await isCurrentUser(userId, revision))) throw new Error('Account changed. Restore purchases after signing in again.');
     return { success: true, ownerId:userId, sessionRevision:revision, subscription:await confirmStoreResult(customerInfo,userId,revision,isEn,tier) };
   } catch (error) { return {...failed(error, isEn),...(storeAccepted?{pendingConfirmation:true}:{})}; }
+  finally { purchaseRevision++; }
 }
 
 export async function restoreStoreKitPurchases(isEn = false): Promise<StoreKitPurchaseResult> {
@@ -173,6 +174,7 @@ export async function restoreStoreKitPurchases(isEn = false): Promise<StoreKitPu
     if (!(await isCurrentUser(userId, revision))) throw new Error('Account changed. Please try again.');
     return { success: true, ownerId:userId, sessionRevision:revision, subscription:await confirmStoreResult(customerInfo,userId,revision,isEn) };
   } catch (error) { return {...failed(error, isEn),...(storeReturned?{pendingConfirmation:true}:{})}; }
+  finally { purchaseRevision++; }
 }
 
 /** Refresh is read-only with respect to the store: never starts a purchase or restore sheet. */

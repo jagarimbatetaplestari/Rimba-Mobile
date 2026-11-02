@@ -260,3 +260,5 @@ Current verification: 52/52 Vitest, mobile typecheck and npm run build passed af
 - Two red regressions now green; auth lifecycle9tests include same-owner metadata races and A-B-A. Full339tests passed before final extra A-B-A test;155prelaunch/typecheck passed. Fresh production build pending.
 - Upload7/41387288040 canceled at Upload IPA step before a final candidate was confirmed. Do not ask owner to accept build7 as the complete activation fix.
 - Fresh production export after the activation epoch fix passed. No app review submission.
+
+- Additional activation race reproduced: a Free refresh started during purchase/Restore could finish after verified Pro and overwrite it. Increment operation generation at completion as well as start; both red regressions now pass. Final full342tests and typecheck pass. No new native source or backend configuration changed.

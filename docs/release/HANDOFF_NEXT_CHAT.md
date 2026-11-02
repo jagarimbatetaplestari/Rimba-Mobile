@@ -2,6 +2,11 @@
 
 Diperbarui: 2 November 2026 (Asia/Jakarta).
 
+## Aktivasi Pro — verifikasi terakhir
+
+- Pemilik mengonfirmasi fitur Pro tetap terkunci setelah transaksi. Dua kelas bug direproduksi dan diperbaiki: event auth untuk akun yang sama membuang hasil paid; refresh Free yang mulai selama purchase/Restore menimpa Pro yang sudah diverifikasi. Epoch pemilik dan generasi hidrasi dipisah, dan generasi operasi billing juga berubah saat selesai.
+-342tes full dan typecheck lulus. Gunakan kandidat terakhir yang memuat kedua fix;611d923 hanya memuat fix auth. Build7/run41387288040 dibatalkan. Jangan klaim pembelian di perangkat sudah lulus; pemilik perlu Restore dengan akun semula pada build final.
+
 ## Checkpoint review perubahan pemilik dan subscription — 2 November 2026
 
 - Pemilik mengubah53file pada7f4730e dan menonaktifkan nonce check Google di Supabase; login dilaporkan berhasil. Jalur Google iOS Capgo6.0.1 tidak meneruskan opsi nonce, dan pertukaran Supabase saat ini tanpa nonce. Konfigurasi pemilik dipertahankan; Apple nonce tidak diubah.

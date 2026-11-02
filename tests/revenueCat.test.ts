@@ -49,3 +49,17 @@ it('restores a server-confirmed billing grace period even when the native renewa
 });
 it('retries temporary backend verification failure after the store accepts a purchase',async()=>{m.invoke.mockResolvedValueOnce({data:null,error:{name:'FunctionsHttpError',context:{status:503}}});const result=await service.purchaseSubscriptionTier('pro_annual');expect(result.success).toBe(true);expect(m.purchase).toHaveBeenCalledOnce();expect(m.invoke).toHaveBeenCalledTimes(2);});
 it('marks accepted store purchases as pending when backend verification remains unavailable',async()=>{m.invoke.mockResolvedValue({data:null,error:{name:'FunctionsHttpError',context:{status:503}}});const result=await service.purchaseSubscriptionTier('pro_annual');expect(result.success).toBe(false);expect(result.pendingConfirmation).toBe(true);expect(result.subscription).toBeUndefined();expect(m.purchase).toHaveBeenCalledOnce();});
+it.each(['purchase','restore'] as const)('discards a Free refresh started during %s after verified Pro completes',async(operation)=>{
+  let finishStore!:(value:any)=>void;let finishRefresh!:(value:any)=>void;
+  const action=operation==='purchase'?m.purchase:m.restore;
+  action.mockReturnValue(new Promise(r=>{finishStore=r;}));
+  const paid=operation==='purchase'?service.purchaseSubscriptionTier('pro_annual'):service.restoreStoreKitPurchases();
+  await vi.waitFor(()=>expect(action).toHaveBeenCalled());
+  m.getInfo.mockReturnValue(new Promise(r=>{finishRefresh=r;}));
+  const refresh=service.refreshStoreKitSubscription();
+  await vi.waitFor(()=>expect(m.getInfo).toHaveBeenCalled());
+  finishStore({customerInfo:info({})});expect((await paid).success).toBe(true);
+  m.invoke.mockResolvedValue({data:{subscription:{environment:'production',isPro:false,tier:'free',status:'none',expiresAt:null}},error:null});
+  finishRefresh({customerInfo:{requestDate:new Date().toISOString(),entitlements:{active:{}}}});
+  expect((await refresh).superseded).toBe(true);
+});

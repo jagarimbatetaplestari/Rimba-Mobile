@@ -37,27 +37,17 @@ type CategoryTab = "tags" | "species";
 
 export function MobileBottomCockpit({
   tagLabel,
-  tagColor,
-  speciesIcon,
   selectedMinutes,
   isNight: isNightProp = false,
-  claimableCount = 0,
   onSelectTag,
   onSelectSpecies,
   onSelectMinutes,
   onToggleStrictMode,
   onStartFocus,
-  onOpenJournal,
 }: MobileBottomCockpitProps) {
   const [activeFlyout, setActiveFlyout] = useState<FlyoutType>(null);
   const [categoryTab, setCategoryTab] = useState<CategoryTab>("tags");
   const { t, translateTag, translateSpecies } = useTranslation();
-
-  /*
-   * ---------------------------------------------------------
-   * STORE
-   * ---------------------------------------------------------
-   */
 
   const focusSetup = useGameStore((state) => state.focusSetup);
   const setFocusSetup = useGameStore((state) => state.setFocusSetup);
@@ -70,12 +60,6 @@ export function MobileBottomCockpit({
   const playerLevel = getLevelFromXp(profile.xp);
   const isStrictMode = focusSetup?.strictMode ?? false;
   const currentSpeciesId = focusSetup?.species || "oak";
-
-  /*
-   * ---------------------------------------------------------
-   * DATA
-   * ---------------------------------------------------------
-   */
 
   const allTags = useMemo(() => {
     return [
@@ -100,12 +84,6 @@ export function MobileBottomCockpit({
     );
   }, [currentSpeciesId]);
 
-  /*
-   * ---------------------------------------------------------
-   * KEYBOARD LISTENER
-   * ---------------------------------------------------------
-   */
-
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -118,12 +96,6 @@ export function MobileBottomCockpit({
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, []);
-
-  /*
-   * ---------------------------------------------------------
-   * HANDLERS
-   * ---------------------------------------------------------
-   */
 
   const closeFlyout = () => {
     soundManager.playPop();
@@ -186,9 +158,6 @@ export function MobileBottomCockpit({
 
   const isExpanded = activeFlyout !== null;
 
-  /*
-   * SMOOTH & CLEAR LIQUID GLASS MATERIAL
-   */
   const glassCapsuleStyle: React.CSSProperties = {
     background: isNight
       ? "linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.04) 40%, rgba(14, 32, 22, 0.45) 100%)"
@@ -231,7 +200,6 @@ export function MobileBottomCockpit({
           "var(--font-urbanist), 'Urbanist', -apple-system, BlinkMacSystemFont, sans-serif",
       }}
     >
-      {/* OVERLAY BERSIH TANPA BLUR */}
       {isExpanded && (
         <div
           className="fixed inset-0 z-40 pointer-events-auto bg-black/15 transition-opacity duration-200"
@@ -240,7 +208,7 @@ export function MobileBottomCockpit({
       )}
 
       {/* ====================================================
-          FLOATING DOCK LAYER
+          FLOATING DOCK LAYER (Adaptive for iPhone & iPad)
           ==================================================== */}
       <div
         className="fixed bottom-0 left-0 right-0 z-40 flex justify-center px-4 pointer-events-none"
@@ -249,7 +217,7 @@ export function MobileBottomCockpit({
             "max(calc(env(safe-area-inset-bottom, 0px) + 14px), 20px)",
         }}
       >
-        <div className="w-full max-w-[390px] flex items-end justify-center pointer-events-auto">
+        <div className="w-full max-w-[390px] md:max-w-[480px] flex items-end justify-center pointer-events-auto">
           {!isExpanded ? (
             /* ====================================================
                 IDLE COCKPIT: 3 LIQUID GLASS PEBBLES + GLASS CHIP
@@ -264,6 +232,7 @@ export function MobileBottomCockpit({
                 title={t.cockpit.sessionTag}
               >
                 <div className="absolute inset-x-2 top-0 h-[45%] bg-gradient-to-b from-white/25 to-transparent rounded-t-full pointer-events-none" />
+                <span className="text-xs leading-none">{activeSpecies.icon}</span>
                 <span className="font-semibold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.2)]">
                   {translateTag(tagLabel)}
                 </span>
@@ -335,11 +304,9 @@ export function MobileBottomCockpit({
               style={modalGlassStyle}
               className="relative w-full overflow-hidden rounded-[34px] p-4 pb-3 transition-opacity duration-200 flex flex-col justify-between"
             >
-              {/* Top ambient highlight */}
               <div className="absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-white/15 to-transparent pointer-events-none rounded-t-[34px]" />
 
               <div className="flex flex-col animate-in fade-in duration-200 relative z-10">
-                {/* Drag Handle Bar */}
                 <div
                   className="mx-auto w-10 h-1 rounded-full bg-white/40 mb-3 cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.15)]"
                   onClick={closeFlyout}
@@ -397,7 +364,7 @@ export function MobileBottomCockpit({
 
                     {/* Bento Grid: Kategori */}
                     {categoryTab === "tags" && (
-                      <div className="grid grid-cols-3 gap-2 px-0.5 max-h-[160px] overflow-y-auto no-scrollbar py-0.5">
+                      <div className="grid grid-cols-3 gap-2 px-0.5 max-h-[168px] overflow-y-auto no-scrollbar py-0.5">
                         {allTags.map((tag) => {
                           const isActive = tag.id === activeTag.id;
                           return (
@@ -427,7 +394,7 @@ export function MobileBottomCockpit({
                                 />
                               </div>
                               <span
-                                className={`text-[12px] truncate flex-1 tracking-tight ${
+                                className={`text-[12px] truncate whitespace-nowrap flex-1 tracking-tight ${
                                   isActive
                                     ? "font-bold text-[#0b2719]"
                                     : "text-white/90 drop-shadow-[0_1px_1px_rgba(0,0,0,0.2)]"
@@ -441,9 +408,9 @@ export function MobileBottomCockpit({
                       </div>
                     )}
 
-                    {/* Bento Grid: Bibit Pohon */}
+                    {/* Streamlined Single-Line Bento Grid: Bibit Pohon */}
                     {categoryTab === "species" && (
-                      <div className="grid grid-cols-3 gap-2 px-0.5 max-h-[160px] overflow-y-auto no-scrollbar py-0.5">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 px-0.5 max-h-[168px] overflow-y-auto no-scrollbar py-0.5">
                         {TREE_SPECIES_CONFIG.map((sp) => {
                           const isActive = sp.id === activeSpecies.id;
                           const unlocked = playerLevel >= sp.levelRequired;
@@ -454,10 +421,10 @@ export function MobileBottomCockpit({
                               disabled={!unlocked}
                               onClick={() => handleSpeciesSelect(sp.id)}
                               className={`
-                                relative flex flex-col items-center justify-center h-[74px] p-1.5 rounded-2xl border transition-all text-center
+                                relative flex items-center gap-2 px-2.5 py-2 rounded-2xl border transition-all text-left min-w-0
                                 ${
                                   !unlocked
-                                    ? "opacity-35 cursor-not-allowed border-white/10 bg-black/15"
+                                    ? "opacity-40 cursor-not-allowed border-white/10 bg-black/15"
                                     : "cursor-pointer"
                                 }
                                 ${
@@ -467,11 +434,11 @@ export function MobileBottomCockpit({
                                 }
                               `}
                             >
-                              <span className="text-[20px] mb-1 leading-none drop-shadow-xs">
+                              <span className="text-[18px] leading-none shrink-0 drop-shadow-xs">
                                 {sp.icon}
                               </span>
                               <span
-                                className={`text-[10.5px] leading-tight line-clamp-2 px-0.5 ${
+                                className={`text-[11.5px] leading-none truncate whitespace-nowrap flex-1 min-w-0 ${
                                   isActive
                                     ? "font-bold text-[#0b2719]"
                                     : "text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.2)]"
@@ -481,9 +448,9 @@ export function MobileBottomCockpit({
                               </span>
 
                               {!unlocked && (
-                                <span className="absolute top-1.5 right-1.5 flex items-center text-[8.5px] font-semibold text-amber-100 bg-amber-950/60 border border-amber-400/30 px-1 py-0.2 rounded-full">
-                                  <Lock className="w-2 h-2 mr-0.5 stroke-[2.5]" />
-                                  L{sp.levelRequired}
+                                <span className="flex items-center text-[9px] font-bold text-white/90 bg-black/40 border border-white/20 px-1.5 py-0.5 rounded-full shrink-0 whitespace-nowrap">
+                                  <Lock className="w-2.5 h-2.5 mr-0.5 stroke-[2.5] shrink-0" />
+                                  <span>Lv.{sp.levelRequired}</span>
                                 </span>
                               )}
                             </button>
@@ -515,7 +482,6 @@ export function MobileBottomCockpit({
                     ---------------------------------------------- */}
                 {activeFlyout === "timer" && (
                   <div className="space-y-3 pb-1 text-center">
-                    {/* Header + Close Button */}
                     <div className="flex items-center justify-between px-1">
                       <span className="text-[12px] font-medium text-white/80 tracking-tight">
                         {t.cockpit.targetDuration}
@@ -530,7 +496,6 @@ export function MobileBottomCockpit({
                       </button>
                     </div>
 
-                    {/* Big Clean Time Display */}
                     <div className="py-0.5">
                       <div className="text-[44px] font-semibold tracking-tight text-white tabular-nums leading-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.2)]">
                         {selectedMinutes === 0
@@ -539,7 +504,6 @@ export function MobileBottomCockpit({
                       </div>
                     </div>
 
-                    {/* Quick Preset Pills */}
                     <div className="flex items-center justify-between gap-1.5 px-0.5">
                       {TIMER_PRESETS.map((m) => {
                         const isActive = selectedMinutes === m;
@@ -563,7 +527,6 @@ export function MobileBottomCockpit({
                       })}
                     </div>
 
-                    {/* Minimal Slider */}
                     <div className="relative py-1 select-none touch-none px-1">
                       <input
                         type="range"
@@ -579,7 +542,6 @@ export function MobileBottomCockpit({
                       />
                     </div>
 
-                    {/* Inline Mode Ketat Toggle */}
                     <button
                       type="button"
                       onClick={handleStrictToggle}
@@ -589,7 +551,7 @@ export function MobileBottomCockpit({
                         <div
                           className={`w-7 h-7 rounded-xl flex items-center justify-center transition-colors ${
                             isStrictMode
-                              ? "bg-amber-400/25 text-amber-300 border border-amber-400/35"
+                              ? "bg-emerald-400/25 text-emerald-200 border border-emerald-400/35"
                               : "bg-white/10 text-white/50 border border-white/15"
                           }`}
                         >
@@ -622,7 +584,6 @@ export function MobileBottomCockpit({
                       </div>
                     </button>
 
-                    {/* Quick Start Focus Button inside flyout */}
                     <button
                       type="button"
                       onClick={() => {

@@ -241,8 +241,8 @@ export async function drawSanctuaryCardCanvas(
   ctx.fillStyle = "rgba(255, 255, 255, 0.80)";
   ctx.font = `400 ${boxDescSize}px "Urbanist", sans-serif`;
   const peakLabel = isEn
-    ? `Peak Hours: ${peakWindowLabel || "10:00 – 12:00"}`
-    : `Jam Emas: ${peakWindowLabel || "10:00 – 12:00"}`;
+    ? `Peak Hours: ${peakWindowLabel || "-"}`
+    : `Jam Emas: ${peakWindowLabel || "-"}`;
   ctx.fillText(
     peakLabel,
     col2X,
@@ -357,8 +357,8 @@ export function SanctuaryShareCard({
             </p>
             <p className="text-[7.5px] font-normal text-white/60 leading-tight mt-0.5">
               {isEn
-                ? `Peak Hours: ${peakWindowLabel || "10:00 – 12:00"}`
-                : `Jam Emas: ${peakWindowLabel || "10:00 – 12:00"}`}
+                ? `Peak Hours: ${peakWindowLabel || "-"}`
+                : `Jam Emas: ${peakWindowLabel || "-"}`}
             </p>
           </div>
         </div>

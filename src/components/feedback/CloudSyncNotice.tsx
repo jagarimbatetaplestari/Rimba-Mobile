@@ -1,9 +1,12 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+
+import React, { useEffect, useRef, useState } from 'react';
 import { useAuthStore } from '@/lib/auth/useAuthStore';
 import { useGameStore } from '@/lib/game/useGameStore';
 import { usePreferencesStore } from '@/lib/settings/usePreferencesStore';
 import { useCloudSyncStatus, resolveCloudConflict, smartSyncOnLogin } from '@/lib/supabase/cloudSync';
+import { getLevelFromXp } from '@/lib/game/levelRules';
+import { Cloud, Smartphone, Check } from 'lucide-react';
 
 export function CloudSyncNotice({ blocked }: { blocked: boolean }) {
   const user = useAuthStore((s) => s.user);
@@ -52,34 +55,36 @@ export function CloudSyncNotice({ blocked }: { blocked: boolean }) {
 
   if (!user || user.isGuest || local.storage_owner !== user.id || blocked) return null;
 
-  // Never show intrusive floating "Synced" / "Syncing" / "Pending" pills over the Focus HUD.
-  // Only surface an actionable pill when conflict or sync error requires user attention.
   const requiresAttention = sync.phase === 'conflict' || sync.phase === 'error';
   if (!requiresAttention && !conflict) return null;
 
   const label = isEn
     ? ({
-        conflict: 'Choose your saved progress',
-        error: 'Sync needs attention · Tap to retry',
+        conflict: 'Choose saved progress',
+        error: 'Sync retry',
       }[sync.phase as 'conflict' | 'error'] || 'Sync notice')
     : ({
-        conflict: 'Pilih progres tersimpan',
-        error: 'Periksa sinkronisasi · Ketuk coba lagi',
+        conflict: 'Pilih progres suaka',
+        error: 'Coba sinkron ulang',
       }[sync.phase as 'conflict' | 'error'] || 'Info sinkronisasi');
+
+  const localLevel = getLevelFromXp(local.profile?.xp ?? 0);
+  const cloudLevel = getLevelFromXp(conflict?.cloudSave?.profile?.xp ?? 0);
 
   return (
     <>
-      {requiresAttention && (
+      {requiresAttention && !open && (
         <button
           disabled={busy || sync.isSyncing}
           onClick={() => void retry()}
           aria-label={label}
-          style={{ top: 'max(calc(env(safe-area-inset-top, 0px) + 62px), 74px)' }}
-          className="fixed left-1/2 z-[80] min-h-9 max-w-[calc(100%-2rem)] -translate-x-1/2 whitespace-nowrap rounded-full border border-amber-300/80 bg-white/95 px-4 py-1.5 text-xs font-semibold text-[#0D3528] shadow-md backdrop-blur-md disabled:opacity-70"
+          style={{ top: 'max(calc(env(safe-area-inset-top, 0px) + 64px), 76px)' }}
+          className="fixed left-1/2 z-[80] min-h-8 max-w-[calc(100%-2rem)] -translate-x-1/2 whitespace-nowrap rounded-full border border-white/60 bg-white/85 px-3.5 py-1 text-[11px] font-bold text-[#0D3528] shadow-md backdrop-blur-xl disabled:opacity-70"
         >
           {label}
         </button>
       )}
+
       {conflict && (
         <dialog
           ref={dialog}
@@ -88,68 +93,111 @@ export function CloudSyncNotice({ blocked }: { blocked: boolean }) {
             event.preventDefault();
             later();
           }}
-          className="m-auto w-[calc(100%-2rem)] max-w-md rounded-3xl border border-[#BCE5D3] bg-white p-6 text-[#0D3528] shadow-2xl backdrop:bg-[#051F18]/80"
+          className="m-auto w-[calc(100%-2rem)] max-w-sm rounded-[34px] border border-white/75 bg-white/85 p-5 text-[#0D3528] shadow-[0_24px_64px_rgba(10,38,26,0.28)] backdrop-blur-2xl backdrop:bg-black/45 backdrop:backdrop-blur-md"
+          style={{
+            fontFamily: "var(--font-urbanist), 'Urbanist', -apple-system, BlinkMacSystemFont, sans-serif",
+          }}
         >
-          <div className="space-y-4">
-            <h2 id="cloud-conflict-title" className="text-xl font-semibold">
-              {isEn ? 'Choose your saved progress' : 'Pilih progres tersimpan'}
-            </h2>
-            <p className="text-sm leading-relaxed text-[#4C7567]">
-              {isEn
-                ? 'This device and the cloud have different progress. Choose one complete copy. Both available copies will be saved as snapshots before replacement. Purchases are kept separately.'
-                : 'Perangkat ini dan cloud memiliki progres berbeda. Pilih satu salinan utuh. Kedua salinan yang tersedia akan disimpan sebagai snapshot sebelum penggantian. Pembelian tetap terpisah.'}
-            </p>
-            <dl className="grid grid-cols-2 gap-3 text-sm">
-              <div className="rounded-2xl border border-[#BCE5D3] bg-[#F4F9F6] p-3">
-                <dt className="font-semibold">{isEn ? 'This device' : 'Perangkat ini'}</dt>
-                <dd className="mt-0.5 text-xs text-[#4C7567]">
+          <div className="relative space-y-4">
+            <div className="pointer-events-none absolute -top-5 inset-x-6 h-px bg-gradient-to-r from-transparent via-white to-transparent" />
+
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#BCE5D3] bg-gradient-to-br from-[#E4F4ED] to-white text-[#187557] shadow-xs">
+                <Cloud className="h-5 w-5 stroke-[2]" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h2 id="cloud-conflict-title" className="text-[17px] font-bold tracking-tight text-[#0D3528]">
+                  {isEn ? 'Sync Your Sanctuary' : 'Sinkronisasi Suaka'}
+                </h2>
+                <p className="text-[11.5px] text-[#4C7567] leading-snug">
+                  {isEn
+                    ? 'Choose which progress copy to use on this device.'
+                    : 'Pilih data progres yang ingin digunakan di perangkat ini.'}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5">
+              <div className="rounded-2xl border border-[#BCE5D3] bg-white/90 p-3 shadow-2xs space-y-1">
+                <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#187557]">
+                  <Smartphone className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate">{isEn ? 'This Device' : 'Perangkat Ini'}</span>
+                </div>
+                <p className="text-[16px] font-extrabold text-[#0D3528] tabular-nums">
+                  Lv. {localLevel}
+                </p>
+                <p className="text-[11px] text-[#4C7567] tabular-nums">
                   {local.focus_sessions.length} {isEn ? 'sessions' : 'sesi'} · {local.world_objects.length}{' '}
-                  {isEn ? 'objects' : 'objek'}
-                </dd>
+                  {isEn ? 'items' : 'objek'}
+                </p>
               </div>
-              <div className="rounded-2xl border border-[#BCE5D3] bg-[#F4F9F6] p-3">
-                <dt className="font-semibold">Cloud</dt>
-                <dd className="mt-0.5 text-xs text-[#4C7567]">
+
+              <div className="rounded-2xl border border-[#BCE5D3] bg-[#F4F9F6]/90 p-3 space-y-1">
+                <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#14664D]">
+                  <Cloud className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate">Cloud</span>
+                </div>
+                <p className="text-[16px] font-extrabold text-[#0D3528] tabular-nums">
+                  Lv. {cloudLevel}
+                </p>
+                <p className="text-[11px] text-[#4C7567] tabular-nums">
                   {conflict.cloudSave
-                    ? `${conflict.cloudSave.focus_sessions.length} ${isEn ? 'sessions' : 'sesi'} · ${conflict.cloudSave.world_objects.length} ${isEn ? 'objects' : 'objek'}`
+                    ? `${conflict.cloudSave.focus_sessions.length} ${isEn ? 'sessions' : 'sesi'} · ${conflict.cloudSave.world_objects.length} ${isEn ? 'items' : 'objek'}`
                     : isEn
-                      ? 'No copy available'
-                      : 'Belum ada salinan'}
-                </dd>
+                      ? 'Empty'
+                      : 'Kosong'}
+                </p>
               </div>
-            </dl>
+            </div>
+
             {sync.error && (
-              <p role="alert" className="text-sm text-rose-700">
+              <p role="alert" className="rounded-2xl bg-rose-50 border border-rose-200 p-2.5 text-xs font-medium text-rose-700">
                 {isEn
-                  ? 'The choice could not finish. Any snapshots already saved remain available.'
-                  : 'Pilihan belum selesai. Snapshot yang sudah tersimpan tetap tersedia.'}
+                  ? 'Could not complete sync. Snapshots remain safe.'
+                  : 'Sinkronisasi belum selesai. Snapshot tetap aman.'}
               </p>
             )}
+
             {active?.status === 'active' && (
-              <p className="text-sm text-amber-800">
+              <p className="rounded-2xl bg-emerald-50 border border-[#BCE5D3] p-2.5 text-xs font-medium text-[#0D3528]">
                 {isEn
-                  ? 'Finish or cancel the current focus session before loading the cloud copy.'
-                  : 'Selesaikan atau batalkan sesi fokus sebelum memuat salinan cloud.'}
+                  ? 'Finish your active focus session before switching to Cloud.'
+                  : 'Selesaikan sesi fokus aktif sebelum beralih ke salinan Cloud.'}
               </p>
             )}
-            <button
-              autoFocus
-              disabled={busy}
-              onClick={() => void choose('local')}
-              className="w-full rounded-2xl bg-[#187557] px-4 py-3 font-semibold text-white disabled:opacity-50"
-            >
-              {isEn ? 'Keep this device’s progress' : 'Pakai progres perangkat ini'}
-            </button>
-            <button
-              disabled={busy || !conflict.cloudSave || active?.status === 'active'}
-              onClick={() => void choose('cloud')}
-              className="w-full rounded-2xl border border-[#BCE5D3] bg-[#F4F9F6] px-4 py-3 font-semibold text-[#0D3528] disabled:opacity-50"
-            >
-              {isEn ? 'Use the cloud copy' : 'Pakai salinan cloud'}
-            </button>
-            <button disabled={busy} onClick={later} className="w-full px-4 py-2 text-sm text-[#4C7567]">
-              {isEn ? 'Decide later' : 'Pilih nanti'}
-            </button>
+
+            <div className="space-y-2 pt-0.5">
+              <button
+                type="button"
+                autoFocus
+                disabled={busy}
+                onClick={() => void choose('local')}
+                className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#187557] to-[#125D44] px-4 py-3 text-[13px] font-bold text-white shadow-md shadow-[#187557]/20 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
+              >
+                <Check className="h-4 w-4 stroke-[2.4]" />
+                <span>{isEn ? 'Use This Device' : 'Pakai Data Perangkat Ini'}</span>
+              </button>
+
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  disabled={busy || !conflict.cloudSave || active?.status === 'active'}
+                  onClick={() => void choose('cloud')}
+                  className="rounded-2xl border border-[#BCE5D3] bg-white hover:bg-[#E4F4ED]/60 px-3 py-2.5 text-[11.5px] font-semibold text-[#0D3528] active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
+                >
+                  {isEn ? 'Use Cloud Copy' : 'Pakai Data Cloud'}
+                </button>
+
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={later}
+                  className="rounded-2xl border border-[#0D3528]/10 bg-white/70 hover:bg-white px-3 py-2.5 text-[11.5px] font-medium text-[#4C7567] active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
+                >
+                  {isEn ? 'Later' : 'Nanti Saja'}
+                </button>
+              </div>
+            </div>
           </div>
         </dialog>
       )}

@@ -344,7 +344,7 @@ export function MobileSettingsSheet({
         role="dialog"
         aria-modal="true"
       >
-        <div className="w-full max-w-md mx-auto px-5 safe-modal-content space-y-4">
+        <div className="w-full max-w-md md:max-w-xl mx-auto px-5 safe-modal-content space-y-4">
           {/* STICKY SAFE-AREA HEADER NAV */}
           <div className="safe-sticky-modal-header flex items-center justify-between gap-2">
             {currentView === "storage" ? (

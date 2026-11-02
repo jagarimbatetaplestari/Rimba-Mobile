@@ -50,16 +50,55 @@ export function RisingLandBlock({
       : '/models/block-grass-low.glb';
   const { scene } = useGLTF(modelUrl);
 
-  const clonedScene = useMemo(() => {
+  const { clonedScene, disposableGeos, disposableMats } = useMemo(() => {
     const cloned = scene.clone(true);
+    const geos: THREE.BufferGeometry[] = [];
+    const mats: THREE.Material[] = [];
+
     cloned.traverse((node) => {
       if ((node as THREE.Mesh).isMesh) {
-        node.castShadow = true;
-        node.receiveShadow = true;
+        const mesh = node as THREE.Mesh;
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+
+        if (mesh.geometry) {
+          const g = mesh.geometry.clone();
+          if (g.hasAttribute('tangent')) {
+            g.deleteAttribute('tangent');
+          }
+          if (!g.hasAttribute('normal')) {
+            g.computeVertexNormals();
+          }
+          mesh.geometry = g;
+          geos.push(g);
+        }
+
+        const rawMat = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
+        const stdMat = rawMat as THREE.MeshStandardMaterial;
+        if (stdMat?.map) {
+          stdMat.map.colorSpace = THREE.SRGBColorSpace;
+          stdMat.map.needsUpdate = true;
+        }
+        const safeMat = new THREE.MeshStandardMaterial({
+          map: stdMat?.map || null,
+          color: stdMat?.color ? stdMat.color.clone() : new THREE.Color('#ffffff'),
+          roughness: 0.88,
+          metalness: 0.02,
+        });
+        mesh.material = safeMat;
+        mats.push(safeMat);
       }
     });
-    return cloned;
+
+    return { clonedScene: cloned, disposableGeos: geos, disposableMats: mats };
   }, [scene]);
+
+  useEffect(() => {
+    return () => {
+      disposableGeos.forEach((g) => g.dispose());
+      disposableMats.forEach((m) => m.dispose());
+    };
+  }, [disposableGeos, disposableMats]);
 
   // Spring physics variables
   const yRef = useRef<number>(-1.25);
@@ -237,7 +276,7 @@ export function RisingLandBlock({
       {/* Rising modular land block */}
       <group ref={groupRef} position={[0, -1.25, 0]}>
         <group position={[cx, -0.5, cz]}>
-          <primitive object={clonedScene} />
+          <primitive object={clonedScene} dispose={null} />
         </group>
 
         {/* Emergence Pulse Glow on Edge */}

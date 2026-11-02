@@ -101,16 +101,16 @@ export function ShareSnapshotModal({ isOpen, onClose }: ShareSnapshotModalProps)
     if (entries.length === 0 || totalMins === 0) {
       return isEn
         ? [
-            { name: "Study", minutes: 120, pct: 40, hours: 2.0, color: BLUE_GREEN_PALETTE[0] },
-            { name: "Work", minutes: 90, pct: 30, hours: 1.5, color: BLUE_GREEN_PALETTE[1] },
-            { name: "Coding", minutes: 60, pct: 20, hours: 1.0, color: BLUE_GREEN_PALETTE[2] },
-            { name: "Mindfulness", minutes: 30, pct: 10, hours: 0.5, color: BLUE_GREEN_PALETTE[3] },
+            { name: "Focus", minutes: 0, pct: 0, hours: 0, color: BLUE_GREEN_PALETTE[0] },
+            { name: "Study", minutes: 0, pct: 0, hours: 0, color: BLUE_GREEN_PALETTE[1] },
+            { name: "Work", minutes: 0, pct: 0, hours: 0, color: BLUE_GREEN_PALETTE[2] },
+            { name: "Reading", minutes: 0, pct: 0, hours: 0, color: BLUE_GREEN_PALETTE[3] },
           ]
         : [
-            { name: "Belajar", minutes: 120, pct: 40, hours: 2.0, color: BLUE_GREEN_PALETTE[0] },
-            { name: "Kerja", minutes: 90, pct: 30, hours: 1.5, color: BLUE_GREEN_PALETTE[1] },
-            { name: "Koding", minutes: 60, pct: 20, hours: 1.0, color: BLUE_GREEN_PALETTE[2] },
-            { name: "Mindfulness", minutes: 30, pct: 10, hours: 0.5, color: BLUE_GREEN_PALETTE[3] },
+            { name: "Fokus", minutes: 0, pct: 0, hours: 0, color: BLUE_GREEN_PALETTE[0] },
+            { name: "Belajar", minutes: 0, pct: 0, hours: 0, color: BLUE_GREEN_PALETTE[1] },
+            { name: "Kerja", minutes: 0, pct: 0, hours: 0, color: BLUE_GREEN_PALETTE[2] },
+            { name: "Buku", minutes: 0, pct: 0, hours: 0, color: BLUE_GREEN_PALETTE[3] },
           ];
     }
 
@@ -160,21 +160,26 @@ export function ShareSnapshotModal({ isOpen, onClose }: ShareSnapshotModalProps)
         dayCounts[new Date(s.started_at).getDay()] += s.duration_minutes || 25;
       }
     });
-    let maxIdx = 0;
+    let maxIdx = -1;
+    let maxVal = 0;
     dayCounts.forEach((cnt, idx) => {
-      if (cnt > dayCounts[maxIdx]) maxIdx = idx;
+      if (cnt > maxVal) {
+        maxVal = cnt;
+        maxIdx = idx;
+      }
     });
-    return dayNames[maxIdx];
+    return maxIdx >= 0 ? dayNames[maxIdx] : "-";
   }, [periodStats.filteredSessions, language]);
 
-  // Total Hours
+  // Total Hours (Strictly real data, 0 when no sessions)
   const totalHoursNum = useMemo(() => {
-    const mins = periodStats.totalMinutes > 0 ? periodStats.totalMinutes : analytics.todayMinutes;
+    const mins = periodStats.totalMinutes > 0 ? periodStats.totalMinutes : analytics.totalFocusMinutes;
     return Math.round((mins / 60) * 10) / 10;
-  }, [periodStats.totalMinutes, analytics.todayMinutes]);
+  }, [periodStats.totalMinutes, analytics.totalFocusMinutes]);
 
   const regionalBonusHours = useMemo(() => {
-    return Math.max(2, Math.round(totalHoursNum * 0.45));
+    if (totalHoursNum <= 0) return 0;
+    return Math.max(0.5, Math.round(totalHoursNum * 0.45 * 10) / 10);
   }, [totalHoursNum]);
 
 function cropIslandFromCanvas(canvasEl: HTMLCanvasElement): string {
@@ -474,14 +479,18 @@ function cropIslandFromCanvas(canvasEl: HTMLCanvasElement): string {
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
-      className="fixed inset-0 z-[115] flex items-center justify-center p-3 select-none antialiased font-urbanist text-[#0D3528] animate-in fade-in duration-200 pointer-events-auto"
+      className="fixed inset-0 z-[115] flex items-center justify-center px-4 select-none antialiased font-urbanist text-[#0D3528] animate-in fade-in duration-200 pointer-events-auto"
+      style={{
+        paddingTop: "max(calc(env(safe-area-inset-top, 0px) + 18px), 54px)",
+        paddingBottom: "max(calc(env(safe-area-inset-bottom, 0px) + 16px), 24px)",
+      }}
     >
       <div
         className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity duration-200 pointer-events-none"
         aria-hidden="true"
       />
 
-      <div className="relative z-10 w-full max-w-[410px] max-h-[94vh] overflow-y-auto no-scrollbar rounded-3xl border border-white/80 bg-white p-4 shadow-2xl shadow-[#0E3B2D]/20 backdrop-blur-xl animate-in zoom-in-95 duration-200 flex flex-col space-y-3">
+      <div className="relative z-10 w-full max-w-[410px] md:max-w-[460px] max-h-full overflow-y-auto no-scrollbar rounded-3xl border border-white/80 bg-white p-4 shadow-2xl shadow-[#0E3B2D]/20 backdrop-blur-xl animate-in zoom-in-95 duration-200 flex flex-col space-y-3">
         
         {/* Header */}
         <div className="flex items-center justify-between pb-0.5">
@@ -617,7 +626,7 @@ function cropIslandFromCanvas(canvasEl: HTMLCanvasElement): string {
             forestDateText={forestDateText}
             treesCount={treesCount}
             stumpsCount={stumpsCount}
-            completedSessionsCount={periodStats.completedCount || treesCount}
+            completedSessionsCount={periodStats.completedCount}
             mostFocusedDay={mostFocusedDay}
             peakWindowLabel={circadianData.peakWindowLabel}
             totalHoursNum={totalHoursNum}

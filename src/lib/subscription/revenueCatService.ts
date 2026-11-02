@@ -10,7 +10,6 @@ export interface StoreKitPurchaseResult {
   success: boolean;
   cancelled?: boolean;
   superseded?: boolean;
-  pendingConfirmation?: boolean;
   ownerId?: string;
   sessionRevision?: number;
   subscription?: Partial<UserSubscription>;
@@ -82,19 +81,10 @@ function subscriptionFromCustomerInfo(info: CustomerInfo, expectedTier?: PaidTie
 
 
 class VerificationTransportError extends Error {}
-async function reconcileWithRetry(environment:string,userId:string,revision:number) {
-  for(let attempt=0;;attempt++) {
-    if(!(await isCurrentUser(userId,revision)))throw new Error('Account changed. Restore purchases after signing in again.');
-    const result=await supabase.functions.invoke('reconcile-subscription',{body:{environment}});
-    const temporary=result.error&&(result.error.name==='FunctionsFetchError'||result.error.context?.status===503);
-    if(!temporary||attempt===2)return result;
-    await new Promise(resolve=>setTimeout(resolve,750*(attempt+1)));
-  }
-}
 export const freeStoreSubscription = (): Partial<UserSubscription> => ({tier:'free',status:'none',isPro:false,expiresAt:null,productId:undefined,store:'promo',realTreesPledged:0,pioneerBadge:false,treeCertificateId:undefined,treeLocation:undefined,treeCoordinates:undefined});
 async function confirmSubscription(info:CustomerInfo,candidate:Partial<UserSubscription>,userId:string,revision:number,isEn:boolean,requirePaid=true):Promise<Partial<UserSubscription>> {
   const environment=info.entitlements.active.rimba_pro?.isSandbox?'sandbox':'production';
-  const {data,error}=await reconcileWithRetry(environment,userId,revision);
+  const {data,error}=await supabase.functions.invoke('reconcile-subscription',{body:{environment}});
   if(!(await isCurrentUser(userId,revision)))throw new Error('Account changed. Restore purchases after signing in again.');
   if(error){
     if(error.name==='FunctionsFetchError'||error.context?.status===503)throw new VerificationTransportError('Purchase verification unavailable');
@@ -140,7 +130,6 @@ export async function getStoreProducts(): Promise<PurchasesStoreProduct[]> {
 export async function purchaseSubscriptionTier(tier: SubscriptionTier, isEn = false): Promise<StoreKitPurchaseResult> {
   if (tier === 'free') return { success: false, error: isEn ? 'Choose a paid plan.' : 'Pilih paket berbayar.' };
   purchaseRevision++;
-  let storeAccepted=false;
   try {
     const { Purchases, userId, revision } = await storeContext();
     const productId = productsByTier[tier];
@@ -157,24 +146,19 @@ export async function purchaseSubscriptionTier(tier: SubscriptionTier, isEn = fa
       if (!(await isCurrentUser(userId, revision))) throw new Error('Account changed. Please try again.');
       ({ customerInfo } = await Purchases.purchaseStoreProduct({ product }));
     }
-    storeAccepted=true;
     if (!(await isCurrentUser(userId, revision))) throw new Error('Account changed. Restore purchases after signing in again.');
     return { success: true, ownerId:userId, sessionRevision:revision, subscription:await confirmStoreResult(customerInfo,userId,revision,isEn,tier) };
-  } catch (error) { return {...failed(error, isEn),...(storeAccepted?{pendingConfirmation:true}:{})}; }
-  finally { purchaseRevision++; }
+  } catch (error) { return failed(error, isEn); }
 }
 
 export async function restoreStoreKitPurchases(isEn = false): Promise<StoreKitPurchaseResult> {
   purchaseRevision++;
-  let storeReturned=false;
   try {
     const { Purchases, userId, revision } = await storeContext();
     const { customerInfo } = await Purchases.restorePurchases();
-    storeReturned=Boolean(customerInfo.entitlements.active.rimba_pro?.isActive);
     if (!(await isCurrentUser(userId, revision))) throw new Error('Account changed. Please try again.');
     return { success: true, ownerId:userId, sessionRevision:revision, subscription:await confirmStoreResult(customerInfo,userId,revision,isEn) };
-  } catch (error) { return {...failed(error, isEn),...(storeReturned?{pendingConfirmation:true}:{})}; }
-  finally { purchaseRevision++; }
+  } catch (error) { return failed(error, isEn); }
 }
 
 /** Refresh is read-only with respect to the store: never starts a purchase or restore sheet. */

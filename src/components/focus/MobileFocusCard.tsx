@@ -785,7 +785,7 @@ export function MobileFocusCard({
             </button>
           </div>
 
-          <div className="grid grid-cols-1 gap-2 max-h-72 overflow-y-auto pr-1 relative z-10 no-scrollbar">
+          <div className="grid grid-cols-2 gap-2 max-h-72 overflow-y-auto pr-0.5 relative z-10 no-scrollbar">
             {TREE_SPECIES_CONFIG.map((sp) => {
               const isUnlocked = playerLevel >= sp.levelRequired;
               const isSelected =
@@ -802,48 +802,27 @@ export function MobileFocusCard({
                       setShowSpeciesModal(false);
                     }
                   }}
-                  className={`p-2.5 rounded-2xl border text-left transition-all flex items-center gap-3 backdrop-blur-xl ${
+                  className={`px-2.5 py-2 rounded-2xl border text-left transition-all flex items-center gap-2 backdrop-blur-xl min-w-0 ${
                     isSelected
-                      ? "bg-white/30 text-white border-white/60 font-semibold"
+                      ? "bg-white text-[#0f2e1e] border-white font-bold shadow-sm"
                       : isUnlocked
                         ? "bg-white/[0.10] hover:bg-white/[0.18] text-white/95 border-white/20 font-medium cursor-pointer"
-                        : "opacity-45 cursor-not-allowed bg-black/15 border-white/10 text-white/50"
+                        : "opacity-40 cursor-not-allowed bg-black/15 border-white/10 text-white/50"
                   }`}
                 >
-                  <span className="text-2xl p-1.5 rounded-xl bg-white/15 border border-white/20 shrink-0">
+                  <span className="text-lg leading-none shrink-0">
                     {sp.icon}
                   </span>
-                  <div className="flex flex-col min-w-0 flex-1">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold truncate">
-                        {translateSpecies(sp.id, sp.name)}
-                      </span>
-                      <span
-                        className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                          isUnlocked
-                            ? isSelected
-                              ? "bg-white/25 text-white"
-                              : "bg-white/15 text-white/90 border border-white/20"
-                            : "bg-black/25 text-white/50"
-                        }`}
-                      >
-                        {isUnlocked
-                          ? t.ranks.unlocked
-                          : `Lvl ${sp.levelRequired}`}
-                      </span>
-                    </div>
-                    <span
-                      className={`text-[11px] truncate mt-0.5 ${isSelected ? "text-white" : "text-white/70"}`}
-                    >
-                      {translateSpeciesDescription(sp.id, sp.description)}
+                  <span className="text-[11.5px] font-semibold truncate whitespace-nowrap flex-1 min-w-0">
+                    {translateSpecies(sp.id, sp.name)}
+                  </span>
+                  {isSelected ? (
+                    <Check className="w-3.5 h-3.5 text-[#0f2e1e] stroke-[2.5] shrink-0" />
+                  ) : !isUnlocked ? (
+                    <span className="text-[9.5px] font-bold px-1.5 py-0.5 rounded-full bg-black/30 text-white/80 whitespace-nowrap shrink-0">
+                      Lv.{sp.levelRequired}
                     </span>
-                  </div>
-                  {isSelected && (
-                    <Check className="w-4 h-4 text-white stroke-[2.5] shrink-0" />
-                  )}
-                  {!isUnlocked && (
-                    <Lock className="w-3.5 h-3.5 text-white/40 shrink-0" />
-                  )}
+                  ) : null}
                 </button>
               );
             })}
@@ -1254,7 +1233,7 @@ export function MobileFocusCard({
     <>
       {renderTagManagerModal()}
       <div
-        className="fixed left-1/2 -translate-x-1/2 z-30 pointer-events-auto w-[92%] max-w-[390px] flex flex-col items-center animate-in fade-in slide-in-from-bottom-4 duration-300 select-none"
+        className="fixed left-1/2 -translate-x-1/2 z-30 pointer-events-auto w-[92%] max-w-[390px] md:max-w-[460px] flex flex-col items-center animate-in fade-in slide-in-from-bottom-4 duration-300 select-none"
         style={{
           bottom: "max(calc(env(safe-area-inset-bottom, 0px) + 14px), 20px)",
           fontFamily:
@@ -1290,12 +1269,7 @@ export function MobileFocusCard({
                 </span>
               )}
 
-              {activeSession.campfire_room_code && (
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-200 bg-amber-500/25 border border-amber-300/40 px-2 py-0.5 rounded-full backdrop-blur-md">
-                  <Flame className="w-3 h-3 text-amber-300 fill-amber-300" />
-                  <span>{activeSession.campfire_room_code}</span>
-                </span>
-              )}
+
             </div>
 
             {/* Sisi Kanan: Unified Species & Tag Liquid Glass Pill */}
@@ -1441,7 +1415,7 @@ export function MobileFocusCard({
                 <button
                   type="button"
                   onClick={handleComplete}
-                  className="h-10 px-4.5 rounded-full font-bold text-xs flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer bg-white text-[#0f2e1e] hover:bg-white/90 border border-white"
+                  className="h-10 px-4 rounded-full font-bold text-xs flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer bg-white text-[#0f2e1e] hover:bg-white/90 border border-white"
                   title={t.cockpit.harvestReady}
                 >
                   <Sparkles className="w-3.5 h-3.5 fill-current" />

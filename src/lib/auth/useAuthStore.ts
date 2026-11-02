@@ -75,10 +75,7 @@ const RIMBA_LOCAL_STORAGE_KEYS = [
 ];
 
 let authStateListenerRegistered = false;
-// Token rotation supersedes profile reads without invalidating this owner's purchases.
 let authSessionRevision = 0;
-let authHydrationRevision = 0;
-let authEventOwner: string | null | undefined;
 export function getAuthSessionRevision(): number {
   return authSessionRevision;
 }
@@ -209,7 +206,7 @@ export const useAuthStore = create<AuthState>()(
                     ...saveData,
                     profile: {
                       ...saveData.profile,
-                      id: saveData.profile.id,
+                      id: nextUser.id,
                       name:
                         saveData.profile.name && saveData.profile.name !== 'Penjaga Rimba'
                           ? saveData.profile.name
@@ -260,12 +257,11 @@ export const useAuthStore = create<AuthState>()(
         initAuth: async () => {
           const restoreSession = async (
             supaUser: Parameters<typeof buildAuthUserFromSupabase>[0],
-            revision: number,
-            hydration: number
+            revision: number
           ) => {
-            if (revision !== authSessionRevision || hydration !== authHydrationRevision) return;
+            if (revision !== authSessionRevision) return;
             const userObj = await buildAuthUserFromSupabase(supaUser);
-            if (revision !== authSessionRevision || hydration !== authHydrationRevision) return;
+            if (revision !== authSessionRevision) return;
             set({ user: userObj, isLoading: false });
             if (lastSyncedUserId !== supaUser.id) {
               const synced = await smartSyncOnLogin(supaUser.id);
@@ -276,16 +272,8 @@ export const useAuthStore = create<AuthState>()(
             if (!authStateListenerRegistered) {
               authStateListenerRegistered = true;
               supabase.auth.onAuthStateChange((event, session) => {
-                const nextOwner = session?.user?.id ?? null;
-                const previousOwner = authEventOwner === undefined
-                  ? (get().user?.isGuest ? null : get().user?.id ?? null)
-                  : authEventOwner;
-                const boundary = event === 'SIGNED_OUT' || nextOwner !== previousOwner;
-                if (boundary) ++authSessionRevision;
-                authEventOwner = nextOwner;
-                const revision = authSessionRevision;
-                const hydration = ++authHydrationRevision;
-                if (boundary) {
+                const revision = ++authSessionRevision;
+                if (event === 'SIGNED_OUT' || session?.user?.id !== get().user?.id) {
                   invalidateCloudSyncSession();
                 }
                 if (event === 'SIGNED_OUT') {
@@ -296,7 +284,7 @@ export const useAuthStore = create<AuthState>()(
                 } else if (session?.user) {
                   const supaUser = session.user;
                   setTimeout(() => {
-                    void restoreSession(supaUser, revision, hydration).catch((err) => {
+                    void restoreSession(supaUser, revision).catch((err) => {
                       console.warn('Gagal memulihkan sesi Supabase:', err);
                     });
                   }, 0);
@@ -305,15 +293,14 @@ export const useAuthStore = create<AuthState>()(
             }
 
             const revision = authSessionRevision;
-            const hydration = ++authHydrationRevision;
             const {
               data: { session },
               error,
             } = await supabase.auth.getSession();
-            if (revision !== authSessionRevision || hydration !== authHydrationRevision) return;
+            if (revision !== authSessionRevision) return;
             if (error) throw error;
             if (session?.user) {
-              await restoreSession(session.user, revision, hydration);
+              await restoreSession(session.user, revision);
             } else if (get().user && !get().user?.isGuest) {
               set({ user: null, isLoading: false });
             } else {

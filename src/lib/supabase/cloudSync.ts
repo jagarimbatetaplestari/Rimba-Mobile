@@ -315,7 +315,7 @@ function applyCloudSave(owner: string, cloud: RimbaSaveData) {
     profile: {
       ...current.profile,
       ...cloud.profile,
-      id: 'local-user',
+      id: owner,
       name: resolvedName,
       avatarUrl: resolvedAvatar,
       bio: resolvedBio,
@@ -394,11 +394,13 @@ async function reconcileOwned(owner: string, generation: number): Promise<boolea
       return false;
     }
     if (action === 'adopt_cloud' && cloud.saveData) applyCloudSave(owner, cloud.saveData);
+    const postApplyPayload = canonicalProgress(useGameStore.getState().saveData);
+    const postApplyHash = await progressHash(postApplyPayload);
     journal = {
       ...journal,
       initialized: true,
       revision: cloud.revision,
-      baseline: remoteHash,
+      baseline: action === 'adopt_cloud' ? postApplyHash : remoteHash,
       pending: null,
       blocked: false,
     };
@@ -450,11 +452,12 @@ async function resolveOwnedConflict(
       return false;
     }
     if (choice === 'cloud' && cloud.saveData) applyCloudSave(owner, cloud.saveData);
+    const resolvedLocalHash = await progressHash(canonicalProgress(useGameStore.getState().saveData));
     writeSyncJournal(owner, {
       version: 1,
       initialized: true,
       revision: cloud.revision,
-      baseline: remoteHash,
+      baseline: choice === 'cloud' ? resolvedLocalHash : remoteHash,
       pending: null,
       blocked: false,
     });

@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useState, useRef } from 'react';
+import React, { useMemo, useEffect, useLayoutEffect, useState, useRef } from 'react';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { useGameStore } from '@/lib/game/useGameStore';
@@ -18,6 +18,8 @@ useGLTF.preload('/models/block-snow-low.glb');
 useGLTF.preload('/models/block-snow-overhang-low.glb');
 useGLTF.preload('/models/block-snow-corner-overhang-low.glb');
 
+const MAX_BLOCK_INSTANCES = 128;
+
 interface InstanceData {
   pos: [number, number, number];
   rotY: number;
@@ -25,8 +27,9 @@ interface InstanceData {
 }
 
 /**
- * High-performance InstancedMesh renderer for modular Kenney terrain blocks
- * Renders hundreds of tiles in a single draw call with cast/receive shadows!
+ * High-performance InstancedMesh renderer for modular Kenney terrain blocks.
+ * Uses a constant MAX_BLOCK_INSTANCES capacity so React Three Fiber NEVER
+ * reconstructs or disposes the shared GLTF geometry/material when tile counts change!
  */
 function ModularBlockInstances({
   modelUrl,
@@ -36,38 +39,92 @@ function ModularBlockInstances({
   instances: InstanceData[];
 }) {
   const { scene } = useGLTF(modelUrl);
-  const mesh = scene.children[0] as THREE.Mesh;
   const instRef = useRef<THREE.InstancedMesh>(null);
   const dummy = useMemo(() => new THREE.Object3D(), []);
 
+  const { blockGeo, blockMat } = useMemo(() => {
+    let foundMesh: THREE.Mesh | null = null;
+    scene.traverse((child) => {
+      if (!foundMesh && (child as THREE.Mesh).isMesh) {
+        foundMesh = child as THREE.Mesh;
+      }
+    });
+
+    if (!foundMesh) {
+      return {
+        blockGeo: new THREE.BoxGeometry(1, 0.5, 1),
+        blockMat: new THREE.MeshStandardMaterial({
+          color: '#5AC487',
+          roughness: 0.88,
+          metalness: 0.02,
+        }),
+      };
+    }
+
+    const mesh = foundMesh as THREE.Mesh;
+    const clonedGeo = mesh.geometry.clone();
+    // Strip tangent attribute so Apple Metal WebGL never fails normal/tangent shader compilation on InstancedMesh
+    if (clonedGeo.hasAttribute('tangent')) {
+      clonedGeo.deleteAttribute('tangent');
+    }
+    if (!clonedGeo.hasAttribute('normal')) {
+      clonedGeo.computeVertexNormals();
+    }
+
+    const rawMat = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
+    const stdMat = rawMat as THREE.MeshStandardMaterial;
+    if (stdMat?.map) {
+      stdMat.map.colorSpace = THREE.SRGBColorSpace;
+      stdMat.map.needsUpdate = true;
+    }
+
+    const safeMat = new THREE.MeshStandardMaterial({
+      map: stdMat?.map || null,
+      color: stdMat?.color ? stdMat.color.clone() : new THREE.Color('#ffffff'),
+      roughness: 0.88,
+      metalness: 0.02,
+    });
+
+    return { blockGeo: clonedGeo, blockMat: safeMat };
+  }, [scene]);
+
   useEffect(() => {
-    if (!instRef.current || instances.length === 0) return;
-    for (let i = 0; i < instances.length; i++) {
+    return () => {
+      blockGeo.dispose();
+      blockMat.dispose();
+    };
+  }, [blockGeo, blockMat]);
+
+  useLayoutEffect(() => {
+    const inst = instRef.current;
+    if (!inst) return;
+    const count = Math.min(instances.length, MAX_BLOCK_INSTANCES);
+    inst.count = count;
+    if (count === 0) return;
+
+    for (let i = 0; i < count; i++) {
       const item = instances[i];
       dummy.position.set(item.pos[0], item.pos[1], item.pos[2]);
       dummy.rotation.set(0, item.rotY, 0);
       const s = item.scale || [1.0, 1.0, 1.0];
       dummy.scale.set(s[0], s[1], s[2]);
       dummy.updateMatrix();
-      instRef.current.setMatrixAt(i, dummy.matrix);
+      inst.setMatrixAt(i, dummy.matrix);
     }
-    instRef.current.instanceMatrix.needsUpdate = true;
+    inst.instanceMatrix.needsUpdate = true;
+    inst.computeBoundingSphere();
   }, [instances, dummy]);
-
-  if (instances.length === 0 || !mesh) return null;
 
   return (
     <instancedMesh
       ref={instRef}
-      args={[mesh.geometry, mesh.material, instances.length]}
+      args={[blockGeo, blockMat, MAX_BLOCK_INSTANCES]}
       castShadow
       receiveShadow
+      frustumCulled={false}
     />
   );
 }
-
-
-
 
 function getBiomeTurfColor(biome: BiomeType): string {
   switch (biome) {
@@ -86,8 +143,7 @@ function getBiomeTurfColor(biome: BiomeType): string {
 /**
  * Seamless unified lawn turf overlay on interior tiles:
  * Covers flat interior land with a smooth, solid turf layer.
- * Strictly applied only to interior tiles with zero exposed ocean cliffs,
- * ensuring no square planes ever overhang the rounded outer cliffs.
+ * Uses constant MAX_BLOCK_INSTANCES capacity to prevent R3F disposal bugs.
  */
 function SeamlessTurfOverlay({
   positions,
@@ -113,17 +169,22 @@ function SeamlessTurfOverlay({
     });
   }, [turfColor]);
 
-  useEffect(() => {
-    if (!instRef.current || positions.length === 0) return;
-    for (let i = 0; i < positions.length; i++) {
+  useLayoutEffect(() => {
+    const inst = instRef.current;
+    if (!inst) return;
+    const count = Math.min(positions.length, MAX_BLOCK_INSTANCES);
+    inst.count = count;
+    if (count === 0) return;
+
+    for (let i = 0; i < count; i++) {
       const pos = positions[i];
       dummy.position.set(pos[0], pos[1], pos[2]);
       dummy.rotation.set(-Math.PI / 2, 0, 0);
       dummy.scale.set(1.0, 1.0, 1.0);
       dummy.updateMatrix();
-      instRef.current.setMatrixAt(i, dummy.matrix);
+      inst.setMatrixAt(i, dummy.matrix);
     }
-    instRef.current.instanceMatrix.needsUpdate = true;
+    inst.instanceMatrix.needsUpdate = true;
   }, [positions, dummy]);
 
   useEffect(() => {
@@ -133,13 +194,12 @@ function SeamlessTurfOverlay({
     };
   }, [geo, mat]);
 
-  if (positions.length === 0) return null;
-
   return (
     <instancedMesh
       ref={instRef}
-      args={[geo, mat, positions.length]}
+      args={[geo, mat, MAX_BLOCK_INSTANCES]}
       receiveShadow
+      frustumCulled={false}
     />
   );
 }
@@ -147,9 +207,6 @@ function SeamlessTurfOverlay({
 /**
  * 4-Way Corner Junction Seal Overlay:
  * Completely seals the 4-pointed star chamfer cavities that occur where 4 modular blocks meet.
- * ONLY placed at junctions where ALL 4 surrounding quadrants are unlocked land tiles.
- * Because all 4 quadrants are land, this seal is mathematically guaranteed to stay >0.20m away
- * from any ocean cliff, eliminating all cavities without ever spilling into the sea!
  */
 function JunctionSealOverlay({
   positions,
@@ -175,17 +232,22 @@ function JunctionSealOverlay({
     });
   }, [turfColor]);
 
-  useEffect(() => {
-    if (!instRef.current || positions.length === 0) return;
-    for (let i = 0; i < positions.length; i++) {
+  useLayoutEffect(() => {
+    const inst = instRef.current;
+    if (!inst) return;
+    const count = Math.min(positions.length, MAX_BLOCK_INSTANCES);
+    inst.count = count;
+    if (count === 0) return;
+
+    for (let i = 0; i < count; i++) {
       const pos = positions[i];
       dummy.position.set(pos[0], pos[1], pos[2]);
       dummy.rotation.set(-Math.PI / 2, 0, 0);
       dummy.scale.set(1.0, 1.0, 1.0);
       dummy.updateMatrix();
-      instRef.current.setMatrixAt(i, dummy.matrix);
+      inst.setMatrixAt(i, dummy.matrix);
     }
-    instRef.current.instanceMatrix.needsUpdate = true;
+    inst.instanceMatrix.needsUpdate = true;
   }, [positions, dummy]);
 
   useEffect(() => {
@@ -195,13 +257,12 @@ function JunctionSealOverlay({
     };
   }, [geo, mat]);
 
-  if (positions.length === 0) return null;
-
   return (
     <instancedMesh
       ref={instRef}
-      args={[geo, mat, positions.length]}
+      args={[geo, mat, MAX_BLOCK_INSTANCES]}
       receiveShadow
+      frustumCulled={false}
     />
   );
 }
@@ -334,7 +395,6 @@ export function Island() {
         (missingE ? 1 : 0);
 
       // Interior tiles (surrounded by 4 land neighbors) get the seamless turf overlay plane.
-      // This includes river tiles so the surrounding grassy banks are 100% solid with zero cavities.
       if (missingCount === 0) {
         turfs.push([cx, 0.001, cz]);
       }
@@ -342,20 +402,11 @@ export function Island() {
       const blockPos: [number, number, number] = [cx, -0.5, cz];
 
       if (missingCount >= 3) {
-        // Single protrusion tile or isolated island:
-        // Has 3 or 4 open sides facing the ocean.
-        // Use interiorModel (which has complete 4-sided rounded cliff overhangs).
-        // This avoids sharp tapered corner wedges and exposed flat cuts!
         interiors.push({ pos: blockPos, rotY: 0, scale: [1.0, 1.0, 1.0] });
       } else if (missingCount === 2) {
-        // If 2 opposite sides are missing (1-wide bridge or corridor):
         if ((missingN && missingS) || (missingW && missingE)) {
-          // Opposite open sides: use interiorModel so both sides have grass cliffs!
           interiors.push({ pos: blockPos, rotY: 0, scale: [1.0, 1.0, 1.0] });
         } else {
-          // True 90-degree corner facing the ocean
-          // In Three.js: +Z = South (0), +X = East (PI*0.5), -Z = North (PI), -X = West (PI*1.5)
-          // cornerModel has cliff overhang on South (+Z) and East (+X) at rotY = 0
           if (missingS && missingE) {
             corners.push({ pos: blockPos, rotY: 0 });
           } else if (missingN && missingE) {
@@ -369,8 +420,6 @@ export function Island() {
           }
         }
       } else if (missingCount === 1) {
-        // Exposed perimeter edges facing the ocean:
-        // edgeModel has cliff overhang on South (+Z) at rotY = 0
         if (missingS) {
           edges.push({ pos: blockPos, rotY: 0 });
         } else if (missingE) {
@@ -381,7 +430,6 @@ export function Island() {
           edges.push({ pos: blockPos, rotY: Math.PI * 1.5 });
         }
       } else {
-        // Fully enclosed interior tile - snug scale prevents hairline gaps between blocks
         const rotY = ((gx * 3 + gy * 7) % 4) * Math.PI * 0.5;
         interiors.push({ pos: blockPos, rotY, scale: [1.025, 1.0, 1.025] });
       }
@@ -389,9 +437,6 @@ export function Island() {
 
     const seals: [number, number, number][] = [];
     junctionMap.forEach((entry) => {
-      // ONLY seal when ALL 4 surrounding quadrants are unlocked land tiles!
-      // This guarantees that the junction is 100% surrounded by land and >0.20m away from any ocean cliff,
-      // completely eliminating all 4-pointed star cavities between blocks!
       if (entry.count === 4) {
         seals.push(entry.pos);
       }

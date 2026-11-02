@@ -149,7 +149,7 @@ export function UnifiedAudioCapsule({
   return (
     <div
       className={`absolute left-1/2 -translate-x-1/2 z-30 pointer-events-auto transition-all duration-300 animate-in fade-in slide-in-from-top-2 ${
-        isOfflinePillShown ? "top-[82px]" : "top-[50px]"
+        isOfflinePillShown ? "top-[86px] md:top-[92px]" : "top-[54px] md:top-[60px]"
       }`}
     >
       <div

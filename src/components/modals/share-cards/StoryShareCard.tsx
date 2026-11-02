@@ -51,7 +51,7 @@ const getI18n = (lang: string) => {
 };
 
 function cleanPeakWindow(label: string): string {
-  if (!label) return "12:00 – 13:00";
+  if (!label) return "-";
   const match = label.match(/\((.*?)\)/);
   return match ? match[1] : label;
 }

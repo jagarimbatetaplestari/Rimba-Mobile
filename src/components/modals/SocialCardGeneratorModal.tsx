@@ -475,14 +475,18 @@ export function SocialCardGeneratorModal({
         onClick={(e) => {
           if (e.target === e.currentTarget) onClose();
         }}
-        className="fixed inset-0 z-[115] flex items-center justify-center p-4 select-none antialiased font-urbanist text-[#0D3528] animate-in fade-in duration-200 pointer-events-auto"
+        className="fixed inset-0 z-[115] flex items-center justify-center px-4 select-none antialiased font-urbanist text-[#0D3528] animate-in fade-in duration-200 pointer-events-auto"
+        style={{
+          paddingTop: "max(calc(env(safe-area-inset-top, 0px) + 18px), 54px)",
+          paddingBottom: "max(calc(env(safe-area-inset-bottom, 0px) + 16px), 24px)",
+        }}
       >
         <div
           className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity duration-200 pointer-events-none"
           aria-hidden="true"
         />
 
-        <div className="relative z-10 w-full max-w-[375px] max-h-[90vh] overflow-hidden rounded-3xl border border-white/80 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-5 shadow-2xl shadow-[#0E3B2D]/20 backdrop-blur-xl animate-in zoom-in-95 duration-200 flex flex-col space-y-4">
+        <div className="relative z-10 w-full max-w-[390px] md:max-w-[440px] max-h-full overflow-y-auto no-scrollbar rounded-3xl border border-white/80 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-5 shadow-2xl shadow-[#0E3B2D]/20 backdrop-blur-xl animate-in zoom-in-95 duration-200 flex flex-col space-y-4">
           {/* Header */}
           <div className="flex items-center justify-between pb-0.5">
             <div className="flex items-baseline gap-2">

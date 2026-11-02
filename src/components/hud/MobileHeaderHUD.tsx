@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useId } from "react";
-import { useRouter } from "next/navigation";
 import { useGameStore } from "@/lib/game/useGameStore";
 import { soundManager } from "@/lib/audio/sounds";
 import {
@@ -21,11 +20,12 @@ import {
   CloudFog,
   CloudSun,
   Sprout,
-    Flame,
+  Flame,
   X,
   Globe,
   Sparkles,
   Palmtree,
+  SlidersHorizontal,
 } from "lucide-react";
 import { hapticLight } from "@/lib/mobile/nativeBridge";
 import { useAuthStore } from "@/lib/auth/useAuthStore";
@@ -59,16 +59,13 @@ export interface MobileHeaderHUDProps {
 }
 
 export function MobileHeaderHUD({
-  onOpenStreak,
   onOpenAlmanac,
   onOpenJournal,
   onOpenStats,
   onOpenShare,
   onOpenSoundscapes,
-  onOpenDev,
   onOpenProfile,
   onOpenLeaderboard,
-  onOpenPioneer,
   onOpenWorkshop,
   onOpenSettings,
   onOpenBiomePicker,
@@ -80,8 +77,8 @@ export function MobileHeaderHUD({
   claimableCount = 0,
   isZenDimmed = false,
 }: MobileHeaderHUDProps) {
-  const router = useRouter();
   const profile = useGameStore((state) => state.saveData.profile);
+  const isPro = useGameStore((state) => Boolean(state.saveData.subscription?.isPro));
   const authUser = useAuthStore((state) => state.user);
   const timeOfDay = useGameStore((state) => state.timeOfDay);
   const setTimeOfDay = useGameStore((state) => state.setTimeOfDay);
@@ -89,19 +86,11 @@ export function MobileHeaderHUD({
   const toggleWeather = useGameStore((state) => state.toggleWeather);
   const activeBiome = useGameStore((state) => state.activeBiome);
   const toggleActiveBiome = useGameStore((state) => state.toggleActiveBiome);
-  const devFastMode = useGameStore((state) => state.devFastMode);
   const { t, lang, setLanguage } = useTranslation();
   const { isOnline, justReconnected } = useNetworkStatus();
 
   const currentLevel = getLevelFromXp(profile.xp);
   const nickname = authUser?.name?.trim() || "Penjaga";
-
-  const handleToggleBiome = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    soundManager.playPop();
-    hapticLight();
-    toggleActiveBiome();
-  };
 
   const [activeDropdown, setActiveDropdown] = useState<
     "profile" | "settings" | null
@@ -110,13 +99,15 @@ export function MobileHeaderHUD({
   const menuId = useId();
   const profileTrigger = useRef<HTMLButtonElement>(null);
   const settingsTrigger = useRef<HTMLButtonElement>(null);
-  const profilePanel = useRef<HTMLDivElement>(null);
-  const settingsPanel = useRef<HTMLDivElement>(null);
+  const flyoutPanel = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!activeDropdown) return;
-    const panel = activeDropdown === "profile" ? profilePanel.current : settingsPanel.current;
-    const trigger = activeDropdown === "profile" ? profileTrigger.current : settingsTrigger.current;
+    const panel = flyoutPanel.current;
+    const trigger =
+      activeDropdown === "profile"
+        ? profileTrigger.current
+        : settingsTrigger.current;
     panel?.querySelector<HTMLButtonElement>("button")?.focus();
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -127,7 +118,13 @@ export function MobileHeaderHUD({
     };
     const handleFocus = (event: FocusEvent) => {
       const target = event.target as Node;
-      if (!panel?.contains(target) && target !== trigger) setActiveDropdown(null);
+      if (
+        !panel?.contains(target) &&
+        target !== profileTrigger.current &&
+        target !== settingsTrigger.current
+      ) {
+        setActiveDropdown(null);
+      }
     };
     document.addEventListener("keydown", handleKeyDown);
     document.addEventListener("focusin", handleFocus);
@@ -155,20 +152,18 @@ export function MobileHeaderHUD({
   };
 
   const isNight = timeOfDay === "night";
-
-  // Kontras tajam: Deep Forest Green pekat di siang/sore agar terbaca jelas di background terang
   const iconThemeClass = isNight ? "text-white" : "text-[#0b2719]";
 
   const getTimeIcon = () => {
     if (timeOfDay === "day") {
-      return <Sun className={`w-4 h-4 stroke-[2.4] ${iconThemeClass}`} />;
+      return <Sun className={`w-4 h-4 stroke-[2.3] ${iconThemeClass}`} />;
     }
     if (timeOfDay === "sunset") {
-      return <Sunset className={`w-4 h-4 stroke-[2.4] ${iconThemeClass}`} />;
+      return <Sunset className={`w-4 h-4 stroke-[2.3] ${iconThemeClass}`} />;
     }
     return (
       <Moon
-        className={`w-4 h-4 stroke-[2.4] ${iconThemeClass} drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]`}
+        className={`w-4 h-4 stroke-[2.3] ${iconThemeClass} drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]`}
       />
     );
   };
@@ -188,12 +183,12 @@ export function MobileHeaderHUD({
 
   const getWeatherIcon = () => {
     if (weather === "rain") {
-      return <CloudRain className={`w-4 h-4 stroke-[2.4] ${iconThemeClass}`} />;
+      return <CloudRain className={`w-4 h-4 stroke-[2.3] ${iconThemeClass}`} />;
     }
     if (weather === "mist") {
-      return <CloudFog className={`w-4 h-4 stroke-[2.4] ${iconThemeClass}`} />;
+      return <CloudFog className={`w-4 h-4 stroke-[2.3] ${iconThemeClass}`} />;
     }
-    return <CloudSun className={`w-4 h-4 stroke-[2.4] ${iconThemeClass}`} />;
+    return <CloudSun className={`w-4 h-4 stroke-[2.3] ${iconThemeClass}`} />;
   };
 
   const getWeatherLabel = () => {
@@ -209,14 +204,15 @@ export function MobileHeaderHUD({
   };
 
   const closeDropdown = () => {
+    const prev = activeDropdown;
     setActiveDropdown(null);
-    (activeDropdown === "profile" ? profileTrigger.current : settingsTrigger.current)?.focus();
+    (prev === "profile" ? profileTrigger.current : settingsTrigger.current)?.focus();
   };
 
   const handleAction = (callback?: () => void) => {
     soundManager.playPop();
     hapticLight();
-    closeDropdown();
+    setActiveDropdown(null);
     callback?.();
   };
 
@@ -227,56 +223,54 @@ export function MobileHeaderHUD({
   };
 
   /*
-   * SMOOTH & CLEAR LIQUID GLASS MATERIAL
-   * Selaras dengan bottom cockpit
+   * UNIFIED DYNAMIC ISLAND LIQUID GLASS STYLE
+   * Adapts smoothly to Day/Sunset/Night and scales cleanly on iPhone & iPad
    */
-  const glassCapsuleStyle: React.CSSProperties = {
+  const dynamicIslandCapsuleStyle: React.CSSProperties = {
     background: isNight
-      ? "linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.04) 40%, rgba(14, 32, 22, 0.45) 100%)"
-      : "linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.25) 45%, rgba(200, 230, 215, 0.35) 100%)",
-    backdropFilter: "blur(20px) saturate(150%)",
-    WebkitBackdropFilter: "blur(20px) saturate(150%)",
-    border: isNight
-      ? "1px solid rgba(255, 255, 255, 0.26)"
-      : "1px solid rgba(255, 255, 255, 0.55)",
-    boxShadow: isNight
-      ? "0 10px 24px -4px rgba(0, 0, 0, 0.35), inset 0 1px 0 0 rgba(255, 255, 255, 0.35)"
-      : "0 8px 20px -6px rgba(10, 35, 20, 0.12), inset 0 1px 0 0 rgba(255, 255, 255, 0.6)",
-  };
-
-  const popoverGlassStyle: React.CSSProperties = {
-    background: isNight
-      ? "linear-gradient(180deg, rgba(255, 255, 255, 0.22) 0%, rgba(15, 34, 24, 0.88) 35%, rgba(8, 20, 14, 0.95) 100%)"
-      : "linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(240, 250, 244, 0.9) 35%, rgba(215, 238, 226, 0.95) 100%)",
-    backdropFilter: "blur(28px) saturate(160%)",
-    WebkitBackdropFilter: "blur(28px) saturate(160%)",
+      ? "linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0%, rgba(18, 42, 30, 0.72) 45%, rgba(8, 22, 15, 0.88) 100%)"
+      : "linear-gradient(180deg, rgba(255, 255, 255, 0.78) 0%, rgba(242, 252, 247, 0.62) 45%, rgba(212, 238, 225, 0.72) 100%)",
+    backdropFilter: "blur(24px) saturate(170%)",
+    WebkitBackdropFilter: "blur(24px) saturate(170%)",
     border: isNight
       ? "1px solid rgba(255, 255, 255, 0.28)"
-      : "1px solid rgba(255, 255, 255, 0.8)",
+      : "1px solid rgba(255, 255, 255, 0.82)",
     boxShadow: isNight
-      ? "0 20px 48px -8px rgba(0, 0, 0, 0.45), inset 0 1px 0 0 rgba(255, 255, 255, 0.45)"
-      : "0 18px 40px -6px rgba(10, 35, 20, 0.18), inset 0 1px 0 0 rgba(255, 255, 255, 0.9)",
+      ? "0 14px 34px -6px rgba(0, 0, 0, 0.45), inset 0 1px 0 0 rgba(255, 255, 255, 0.35)"
+      : "0 12px 30px -6px rgba(10, 38, 24, 0.16), inset 0 1px 0 0 rgba(255, 255, 255, 0.9)",
   };
 
-  // Tombol aksi di dalam popover (dengan label teks & HIG tap target)
-  const popoverItemButton = isNight
-    ? "w-full min-h-[44px] flex items-center gap-3 px-3 py-2.5 rounded-xl text-[14px] text-left leading-snug focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-500 font-semibold text-white/90 hover:text-white hover:bg-white/15 active:bg-white/20 transition-all cursor-pointer relative"
-    : "w-full min-h-[44px] flex items-center gap-3 px-3 py-2.5 rounded-xl text-[14px] text-left leading-snug focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-500 font-semibold text-[#0b2719] hover:bg-[#0b2719]/10 active:bg-[#0b2719]/15 transition-all cursor-pointer relative";
+  const flyoutIslandGlassStyle: React.CSSProperties = {
+    background: isNight
+      ? "linear-gradient(180deg, rgba(24, 52, 38, 0.92) 0%, rgba(12, 28, 20, 0.95) 50%, rgba(7, 18, 12, 0.98) 100%)"
+      : "linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(242, 251, 246, 0.94) 50%, rgba(226, 244, 235, 0.97) 100%)",
+    backdropFilter: "blur(32px) saturate(180%)",
+    WebkitBackdropFilter: "blur(32px) saturate(180%)",
+    border: isNight
+      ? "1px solid rgba(255, 255, 255, 0.28)"
+      : "1px solid rgba(255, 255, 255, 0.9)",
+    boxShadow: isNight
+      ? "0 24px 56px -8px rgba(0, 0, 0, 0.55), inset 0 1px 0 0 rgba(255, 255, 255, 0.38)"
+      : "0 22px 52px -8px rgba(10, 38, 24, 0.22), inset 0 1px 0 0 rgba(255, 255, 255, 0.95)",
+  };
 
-  // Tombol aksi di sisi kanan (tanpa efek zoom, kontras tinggi, 44px HIG tap target)
+  const bentoTileClass = isNight
+    ? "flex items-center gap-2.5 p-3 rounded-2xl border border-white/15 bg-white/[0.08] hover:bg-white/[0.15] active:scale-[0.98] text-white transition-all cursor-pointer text-left min-w-0"
+    : "flex items-center gap-2.5 p-3 rounded-2xl border border-[#0b2719]/10 bg-white/85 hover:bg-white active:scale-[0.98] text-[#0b2719] shadow-2xs transition-all cursor-pointer text-left min-w-0";
+
   const iconButtonClass = isNight
-    ? "w-8 h-8 rounded-full flex items-center justify-center text-white hover:bg-white/15 active:bg-white/20 transition-colors cursor-pointer shrink-0 relative z-10 before:absolute before:-inset-1.5 before:content-['']"
-    : "w-8 h-8 rounded-full flex items-center justify-center text-[#0b2719] hover:bg-[#0b2719]/10 active:bg-[#0b2719]/15 transition-colors cursor-pointer shrink-0 relative z-10 before:absolute before:-inset-1.5 before:content-['']";
+    ? "w-8 h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center text-white hover:bg-white/15 active:bg-white/25 transition-colors cursor-pointer shrink-0 relative z-10"
+    : "w-8 h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center text-[#0b2719] hover:bg-[#0b2719]/10 active:bg-[#0b2719]/15 transition-colors cursor-pointer shrink-0 relative z-10";
 
   const showAvatarImage = Boolean(authUser?.avatarUrl) && !avatarError;
 
   return (
     <>
-      {/* Overlay tanpa blur saat pilar terbuka */}
+      {/* Backdrop when Unified Dynamic Island Flyout is open */}
       {activeDropdown && (
         <div
           onClick={closeDropdown}
-          className="fixed inset-0 z-30 bg-black/15 transition-opacity duration-200 pointer-events-auto"
+          className="fixed inset-0 z-30 bg-black/20 transition-opacity duration-200 pointer-events-auto"
         />
       )}
 
@@ -290,10 +284,10 @@ export function MobileHeaderHUD({
             "var(--font-urbanist), 'Urbanist', -apple-system, BlinkMacSystemFont, sans-serif",
         }}
       >
-        <div className="w-full max-w-[390px] flex items-start justify-between pointer-events-none relative select-none">
+        <div className="w-full max-w-[390px] md:max-w-[490px] flex flex-col items-center pointer-events-none relative select-none">
           {/* Zen Pill: Offline & Reconnected Indicator */}
           {(!isOnline || justReconnected) && (
-            <div className="absolute top-[48px] left-1/2 -translate-x-1/2 z-30 pointer-events-none animate-in fade-in slide-in-from-top-1 duration-300">
+            <div className="absolute top-[56px] left-1/2 -translate-x-1/2 z-30 pointer-events-none animate-in fade-in slide-in-from-top-1 duration-300">
               <div
                 className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold border backdrop-blur-md shadow-sm transition-all duration-300 ${
                   !isOnline
@@ -305,13 +299,17 @@ export function MobileHeaderHUD({
                   <>
                     <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
                     <span>
-                      {lang === "en" ? "Offline · Saved Locally" : "Mode Offline · Tersimpan Lokal"}
+                      {lang === "en"
+                        ? "Offline · Saved Locally"
+                        : "Mode Offline · Tersimpan Lokal"}
                     </span>
                   </>
                 ) : (
                   <>
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                    <span>{lang === "en" ? "Online · Synced" : "Online · Tersinkron"}</span>
+                    <span>
+                      {lang === "en" ? "Online · Synced" : "Online · Tersinkron"}
+                    </span>
                   </>
                 )}
               </div>
@@ -326,415 +324,505 @@ export function MobileHeaderHUD({
           />
 
           {/* ======================================================== */}
-          {/* SISI KIRI: PROFIL & DYNAMIC PILLAR                      */}
+          {/* UNIFIED DYNAMIC ISLAND TOP NAVBAR CAPSULE                */}
           {/* ======================================================== */}
-          <div className="relative pointer-events-auto min-w-0 mr-2">
-              {/* Kapsul Profil Horizontal Tertutup */}
+          <div
+            style={dynamicIslandCapsuleStyle}
+            className="w-full h-[46px] md:h-[52px] px-2 md:px-2.5 rounded-full flex items-center justify-between gap-1.5 pointer-events-auto relative overflow-hidden transition-all duration-300"
+          >
+            {/* Top Specular Highlight Sheen */}
+            <div className="absolute inset-x-4 top-0 h-[42%] bg-gradient-to-b from-white/35 to-transparent rounded-t-full pointer-events-none" />
+
+            {/* LEFT ZONE: PROFILE + NAME + LEVEL TRIGGER */}
+            <button
+              type="button"
+              ref={profileTrigger}
+              aria-expanded={activeDropdown === "profile"}
+              aria-controls={`${menuId}-flyout`}
+              aria-haspopup="dialog"
+              onClick={() => toggleDropdown("profile")}
+              className={`relative z-10 flex items-center gap-2 min-w-0 flex-1 h-[36px] md:h-[40px] pl-1 pr-2.5 rounded-full transition-colors cursor-pointer ${
+                activeDropdown === "profile"
+                  ? isNight
+                    ? "bg-white/20"
+                    : "bg-[#0b2719]/10"
+                  : isNight
+                    ? "hover:bg-white/10"
+                    : "hover:bg-[#0b2719]/5"
+              }`}
+              title={t.hud.menuProfile}
+              aria-label={t.hud.menuProfile}
+            >
+              {/* Avatar with Claimable Notification Dot */}
+              <div
+                className={`relative w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center shrink-0 border ${
+                  isNight
+                    ? "bg-white/20 border-white/35 text-white"
+                    : "bg-[#0b2719]/10 border-[#0b2719]/20 text-[#0b2719]"
+                }`}
+              >
+                {showAvatarImage ? (
+                  <RangerAvatar
+                    avatarUrl={authUser?.avatarUrl || profile?.avatarUrl}
+                    name={nickname}
+                    size="sm"
+                    className="w-7 h-7 md:w-8 md:h-8"
+                    borderClassName="border border-white/40 shadow-xs"
+                  />
+                ) : (
+                  <Sprout className="w-4 h-4 stroke-[2.4]" />
+                )}
+                {claimableCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white" />
+                )}
+              </div>
+
+              {/* Ranger Name */}
+              <span
+                className={`text-[13px] md:text-[14px] font-bold truncate tracking-tight max-w-[82px] sm:max-w-[120px] md:max-w-[150px] ${
+                  isNight ? "text-white" : "text-[#0b2719]"
+                }`}
+              >
+                {nickname === "Penjaga" ? t.common.guestName : nickname}
+              </span>
+
+              {/* Single-Line Level Pill */}
+              <span
+                className={`flex items-center text-[10px] md:text-[11px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap shrink-0 ${
+                  isNight
+                    ? "border-white/30 bg-white/15 text-emerald-200"
+                    : "border-[#187557]/25 bg-[#187557]/12 text-[#0D3528]"
+                }`}
+              >
+                Lv. {currentLevel}
+              </span>
+            </button>
+
+            {/* CENTER OPTICAL DIVIDER */}
+            <div
+              className={`w-px h-5 shrink-0 ${
+                isNight ? "bg-white/20" : "bg-[#0b2719]/15"
+              }`}
+            />
+
+            {/* RIGHT ZONE: ENVIRONMENTAL & SYSTEM CONTROLS */}
+            <div className="relative z-10 flex items-center gap-0.5 md:gap-1 shrink-0">
+              {/* 1. Weather Cycle */}
               <button
                 type="button"
-                ref={profileTrigger}
-                aria-expanded={activeDropdown === "profile"}
-                aria-controls={`${menuId}-profile`}
-                aria-haspopup="dialog"
-                onClick={() => toggleDropdown("profile")}
-                style={glassCapsuleStyle}
-                className="relative flex max-w-full items-center gap-2 h-[44px] pl-2 pr-3.5 rounded-full transition-colors cursor-pointer overflow-hidden group"
-                title={t.hud.menuProfile}
-                aria-label={t.hud.menuProfile}
+                onClick={handleCycleWeather}
+                className={iconButtonClass}
+                title={getWeatherLabel()}
+                aria-label={getWeatherLabel()}
               >
-                {/* Specular Highlight Sheen Halus */}
-                <div className="absolute inset-x-2 top-0 h-[45%] bg-gradient-to-b from-white/25 to-transparent rounded-t-full pointer-events-none" />
+                {getWeatherIcon()}
+              </button>
 
-                {/* Avatar / Sprout Badge */}
-                <div
-                  className={`relative z-10 w-7 h-7 rounded-full flex items-center justify-center shrink-0 border ${
-                    isNight
-                      ? "bg-white/20 border-white/30 text-white"
-                      : "bg-[#0b2719]/10 border-[#0b2719]/20 text-[#0b2719]"
-                  }`}
-                >
-                  {showAvatarImage ? (
-                    <RangerAvatar
-                      avatarUrl={authUser?.avatarUrl || profile?.avatarUrl}
-                      name={nickname}
-                      size="sm"
-                      className="w-7 h-7"
-                      borderClassName="border border-white/40 shadow-xs"
-                    />
-                  ) : (
-                    <Sprout className="w-4 h-4 stroke-[2.4]" />
-                  )}
-                </div>
-
-                {/* Nickname Akun */}
-                <span
-                  className={`relative z-10 text-[13px] font-semibold italic truncate tracking-tight max-w-[96px] ${
-                    isNight ? "text-white" : "text-[#0b2719]"
-                  }`}
-                >
-                  {nickname === "Penjaga" ? t.common.guestName : nickname}
-                </span>
-
-                {/* Level Pill Suaka */}
-                <span
-                  className={`relative z-10 flex items-center gap-1 text-[10.5px] font-semibold px-2 py-0.5 rounded-full border shrink-0 max-[360px]:hidden ${
-                    isNight
-                      ? "border-white/35 bg-white/20 text-white"
-                      : "border-[#0b2719]/20 bg-[#0b2719]/10 text-[#0b2719]"
-                  }`}
-                >
-                  <span>{t.common.level} {currentLevel}</span>
+              {/* 2. Biome Quick Picker */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  soundManager.playPop();
+                  hapticLight();
+                  if (onOpenBiomePicker) {
+                    onOpenBiomePicker();
+                  } else {
+                    toggleActiveBiome();
+                  }
+                }}
+                className={`${iconButtonClass} ${
+                  activeBiome === "snow"
+                    ? isNight
+                      ? "bg-sky-400/25 border border-sky-300/40"
+                      : "bg-sky-500/15 border border-sky-600/25"
+                    : activeBiome === "autumn"
+                      ? isNight
+                        ? "bg-orange-400/25 border border-orange-300/40"
+                        : "bg-orange-500/15 border border-orange-600/25"
+                      : activeBiome === "lotus"
+                        ? isNight
+                          ? "bg-pink-400/25 border border-pink-300/40"
+                          : "bg-pink-500/15 border border-pink-600/25"
+                        : ""
+                }`}
+                title={
+                  activeBiome === "snow"
+                    ? t.hud.biomeSnow
+                    : activeBiome === "autumn"
+                      ? lang === "en"
+                        ? "Autumn Grove"
+                        : "Musim Gugur"
+                      : activeBiome === "lotus"
+                        ? lang === "en"
+                          ? "Lotus Springs"
+                          : "Mata Air Teratai"
+                        : t.hud.biomeGrass
+                }
+                aria-label={
+                  lang === "en"
+                    ? "Choose sanctuary theme and biome"
+                    : "Pilih Tema & Bioma Suaka"
+                }
+              >
+                <span className="text-[13.5px] leading-none select-none">
+                  {activeBiome === "snow"
+                    ? "❄️"
+                    : activeBiome === "autumn"
+                      ? "🍁"
+                      : activeBiome === "lotus"
+                        ? "🌸"
+                        : "🍃"}
                 </span>
               </button>
-            {activeDropdown === "profile" && (
-              /* Anchored profile flyout */
-              <div
-                ref={profilePanel}
-                id={`${menuId}-profile`}
-                role="dialog"
-                aria-label={t.hud.menuProfile}
-                style={{ ...popoverGlassStyle, maxHeight: "calc(100dvh - max(env(safe-area-inset-top, 0px) + 12px, 24px) - env(safe-area-inset-bottom, 0px) - 72px)" }}
-                className="absolute left-0 top-[54px] w-[272px] max-w-[calc(100vw-32px)] rounded-[24px] p-2 z-50 flex flex-col gap-0.5 overflow-y-auto overscroll-contain animate-in fade-in zoom-in-95 duration-150 shadow-2xl"
-              >
-                <div className="absolute inset-x-2 top-0 h-8 bg-gradient-to-b from-white/25 to-transparent rounded-t-full pointer-events-none" />
 
-                {/* Header: Mini Profil & Tombol Tutup */}
-                <div className="flex items-center justify-between px-2 pt-1 pb-1.5 border-b border-black/10 dark:border-white/15 relative z-10">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div
-                      className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 border ${
-                        isNight
-                          ? "bg-white/20 border-white/30 text-white"
-                          : "bg-[#0b2719]/10 border-[#0b2719]/20 text-[#0b2719]"
-                      }`}
+              {/* 3. Time of Day Cycle */}
+              <button
+                type="button"
+                onClick={handleCycleTime}
+                className={iconButtonClass}
+                title={getTimeLabel()}
+                aria-label={getTimeLabel()}
+              >
+                {getTimeIcon()}
+              </button>
+
+              {/* 4. Settings & Control Center Trigger */}
+              <button
+                type="button"
+                ref={settingsTrigger}
+                aria-expanded={activeDropdown === "settings"}
+                aria-controls={`${menuId}-flyout`}
+                aria-haspopup="dialog"
+                onClick={() => toggleDropdown("settings")}
+                className={`${iconButtonClass} ${
+                  activeDropdown === "settings"
+                    ? isNight
+                      ? "bg-white/25"
+                      : "bg-[#0b2719]/15"
+                    : ""
+                }`}
+                title={t.hud.menuSettings}
+                aria-label={t.hud.menuSettings}
+              >
+                <Settings className={`w-4 h-4 stroke-[2.3] ${iconThemeClass}`} />
+              </button>
+            </div>
+          </div>
+
+          {/* ======================================================== */}
+          {/* UNIFIED DYNAMIC ISLAND EXPANDED BENTO FLYOUT             */}
+          {/* ======================================================== */}
+          {activeDropdown && (
+            <div
+              ref={flyoutPanel}
+              id={`${menuId}-flyout`}
+              role="dialog"
+              aria-label={
+                activeDropdown === "profile"
+                  ? t.hud.menuProfile
+                  : t.hud.menuSettings
+              }
+              style={{
+                ...flyoutIslandGlassStyle,
+                maxHeight:
+                  "calc(100dvh - max(env(safe-area-inset-top, 0px) + 12px, 24px) - env(safe-area-inset-bottom, 0px) - 76px)",
+              }}
+              className="mt-2.5 w-full rounded-[30px] p-3.5 md:p-4 z-50 flex flex-col gap-3 overflow-y-auto overscroll-contain animate-in fade-in zoom-in-95 duration-150 pointer-events-auto"
+            >
+              {/* Top Specular Highlight */}
+              <div className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-white/75 to-transparent pointer-events-none" />
+
+              {/* Segmented Dynamic Island Mode Bar + Close Button */}
+              <div className="flex items-center justify-between gap-2">
+                <div
+                  className={`flex-1 grid grid-cols-2 p-1 rounded-full border ${
+                    isNight
+                      ? "bg-black/25 border-white/15"
+                      : "bg-[#0b2719]/8 border-[#0b2719]/10"
+                  }`}
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      soundManager.playPop();
+                      hapticLight();
+                      setActiveDropdown("profile");
+                    }}
+                    className={`py-1.5 px-3 rounded-full text-[12px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                      activeDropdown === "profile"
+                        ? isNight
+                          ? "bg-white text-[#0b2719] shadow-xs"
+                          : "bg-[#187557] text-white shadow-xs"
+                        : isNight
+                          ? "text-white/75 hover:text-white"
+                          : "text-[#0b2719]/70 hover:text-[#0b2719]"
+                    }`}
+                  >
+                    <User className="w-3.5 h-3.5 stroke-[2.2]" />
+                    <span>{lang === "en" ? "Sanctuary Hub" : "Menu Suaka"}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      soundManager.playPop();
+                      hapticLight();
+                      setActiveDropdown("settings");
+                    }}
+                    className={`py-1.5 px-3 rounded-full text-[12px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                      activeDropdown === "settings"
+                        ? isNight
+                          ? "bg-white text-[#0b2719] shadow-xs"
+                          : "bg-[#187557] text-white shadow-xs"
+                        : isNight
+                          ? "text-white/75 hover:text-white"
+                          : "text-[#0b2719]/70 hover:text-[#0b2719]"
+                    }`}
+                  >
+                    <SlidersHorizontal className="w-3.5 h-3.5 stroke-[2.2]" />
+                    <span>{t.hud.menuSettings}</span>
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={closeDropdown}
+                  className={`w-8 h-8 rounded-full flex items-center justify-center border transition-colors cursor-pointer shrink-0 ${
+                    isNight
+                      ? "bg-white/15 hover:bg-white/25 border-white/20 text-white"
+                      : "bg-[#0b2719]/8 hover:bg-[#0b2719]/15 border-[#0b2719]/15 text-[#0b2719]"
+                  }`}
+                  title={t.common.close}
+                  aria-label={t.common.close}
+                >
+                  <X className="w-3.5 h-3.5 stroke-[2.4]" />
+                </button>
+              </div>
+
+              {activeDropdown === "profile" ? (
+                /* ====================================================
+                   VIEW 1: SANCTUARY HUB BENTO GRID (2-Column Responsive)
+                   ==================================================== */
+                <div className="space-y-2.5">
+                  <div className="grid grid-cols-2 gap-2">
+                    {/* 1. Profil Akun */}
+                    <button
+                      type="button"
+                      onClick={() => handleAction(onOpenProfile)}
+                      className={bentoTileClass}
                     >
-                      {showAvatarImage ? (
-                        <RangerAvatar
-                          avatarUrl={authUser?.avatarUrl || profile?.avatarUrl}
-                          name={nickname}
-                          size="sm"
-                          className="w-6 h-6"
-                        />
-                      ) : (
-                        <Sprout className="w-3.5 h-3.5" />
-                      )}
-                    </div>
-                    <span
-                      className={`text-[14px] font-bold truncate ${
-                        isNight ? "text-white" : "text-[#0b2719]"
-                      }`}
+                      <div className="w-8 h-8 rounded-xl bg-[#187557]/15 text-[#187557] dark:text-emerald-300 flex items-center justify-center shrink-0">
+                        <User className="w-4 h-4 stroke-[2.2]" />
+                      </div>
+                      <span className="text-[12.5px] font-bold truncate">
+                        {t.hud.menuProfile}
+                      </span>
+                    </button>
+
+                    {/* 2. Statistik Fokus */}
+                    <button
+                      type="button"
+                      onClick={() => handleAction(onOpenStats || onOpenProfile)}
+                      className={bentoTileClass}
                     >
-                      {nickname === "Penjaga" ? t.common.guestName : nickname}
-                    </span>
+                      <div className="w-8 h-8 rounded-xl bg-[#187557]/15 text-[#187557] dark:text-emerald-300 flex items-center justify-center shrink-0">
+                        <BarChart3 className="w-4 h-4 stroke-[2.2]" />
+                      </div>
+                      <span className="text-[12.5px] font-bold truncate">
+                        {t.hud.menuStats}
+                      </span>
+                    </button>
+
+                    {/* 3. Jurnal Suaka */}
+                    <button
+                      type="button"
+                      onClick={() => handleAction(onOpenJournal || onOpenAlmanac)}
+                      className={bentoTileClass}
+                    >
+                      <div className="w-8 h-8 rounded-xl bg-[#187557]/15 text-[#187557] dark:text-emerald-300 flex items-center justify-center shrink-0 relative">
+                        <BookMarked className="w-4 h-4 stroke-[2.2]" />
+                        {claimableCount > 0 && (
+                          <span className="absolute -top-1 -right-1 min-w-[14px] h-[14px] px-1 rounded-full bg-emerald-600 text-white font-bold text-[8.5px] flex items-center justify-center">
+                            {claimableCount}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[12.5px] font-bold truncate flex-1">
+                        {t.hud.menuJournal}
+                      </span>
+                    </button>
+
+                    {/* 4. Fokus Bareng (Campfire) */}
+                    <button
+                      type="button"
+                      onClick={() => handleAction(onOpenCampfire)}
+                      className={bentoTileClass}
+                    >
+                      <div className="w-8 h-8 rounded-xl bg-[#187557]/15 text-[#187557] dark:text-emerald-300 flex items-center justify-center shrink-0">
+                        <Flame className="w-4 h-4 stroke-[2.2]" />
+                      </div>
+                      <span className="text-[12.5px] font-bold truncate">
+                        {t.hud.menuCampfire}
+                      </span>
+                    </button>
+
+                    {/* 5. Daftar Pulau (Multi-Island) */}
+                    <button
+                      type="button"
+                      onClick={() => handleAction(onOpenIslandSwitcher)}
+                      className={bentoTileClass}
+                    >
+                      <div className="w-8 h-8 rounded-xl bg-[#187557]/15 text-[#187557] dark:text-emerald-300 flex items-center justify-center shrink-0">
+                        <Palmtree className="w-4 h-4 stroke-[2.2]" />
+                      </div>
+                      <span className="text-[12.5px] font-bold truncate">
+                        {lang === "en" ? "Islands" : "Daftar Pulau"}
+                      </span>
+                    </button>
+
+                    {/* 6. Papan Peringkat */}
+                    <button
+                      type="button"
+                      onClick={() => handleAction(onOpenLeaderboard)}
+                      className={bentoTileClass}
+                    >
+                      <div className="w-8 h-8 rounded-xl bg-[#187557]/15 text-[#187557] dark:text-emerald-300 flex items-center justify-center shrink-0">
+                        <Trophy className="w-4 h-4 stroke-[2.2]" />
+                      </div>
+                      <span className="text-[12.5px] font-bold truncate">
+                        {t.hud.menuRanks}
+                      </span>
+                    </button>
+
+                    {/* 7. Bagikan Pulau */}
+                    <button
+                      type="button"
+                      onClick={() => handleAction(onOpenShare)}
+                      className={bentoTileClass}
+                    >
+                      <div className="w-8 h-8 rounded-xl bg-[#187557]/15 text-[#187557] dark:text-emerald-300 flex items-center justify-center shrink-0">
+                        <Share2 className="w-4 h-4 stroke-[2.2]" />
+                      </div>
+                      <span className="text-[12.5px] font-bold truncate">
+                        {t.hud.menuShare}
+                      </span>
+                    </button>
+
+                    {/* 8. Dekorasi Pulau */}
+                    <button
+                      type="button"
+                      onClick={() => handleAction(onOpenWorkshop)}
+                      className={bentoTileClass}
+                    >
+                      <div className="w-8 h-8 rounded-xl bg-[#187557]/15 text-[#187557] dark:text-emerald-300 flex items-center justify-center shrink-0">
+                        <Hammer className="w-4 h-4 stroke-[2.2]" />
+                      </div>
+                      <span className="text-[12.5px] font-bold truncate">
+                        {t.hud.menuWorkshop}
+                      </span>
+                    </button>
                   </div>
 
+                  {/* Full-Width Rimba Pro Liquid Glass Banner */}
                   <button
                     type="button"
-                    onClick={closeDropdown}
-                    className={`w-11 h-11 rounded-full flex items-center justify-center border transition-colors cursor-pointer shrink-0 ${
-                      isNight
-                        ? "bg-white/15 hover:bg-white/25 border-white/20 text-white"
-                        : "bg-[#0b2719]/10 hover:bg-[#0b2719]/18 border-[#0b2719]/15 text-[#0b2719]"
-                    }`}
-                    title={t.common.close}
-                    aria-label={t.common.close}
+                    onClick={() => handleAction(onOpenPaywall)}
+                    className="w-full p-3 rounded-2xl bg-gradient-to-r from-[#187557] via-[#1E8865] to-[#125D44] text-white flex items-center justify-between gap-3 shadow-md shadow-[#187557]/20 active:scale-[0.99] transition-all cursor-pointer"
                   >
-                    <X className="w-3 h-3 stroke-[2.4]" />
-                  </button>
-                </div>
-
-                {/* 1. Profil Akun */}
-                <button
-                  type="button"
-                  onClick={() => handleAction(onOpenProfile)}
-                  className={popoverItemButton}
-                >
-                  <User className="w-4 h-4 stroke-[2.2] shrink-0 opacity-80" />
-                  <span>{t.hud.menuProfile}</span>
-                </button>
-
-                {/* 2. Statistik Fokus */}
-                <button
-                  type="button"
-                  onClick={() => handleAction(onOpenStats || onOpenProfile)}
-                  className={popoverItemButton}
-                >
-                  <BarChart3 className="w-4 h-4 stroke-[2.2] shrink-0 opacity-80" />
-                  <span>{t.hud.menuStats}</span>
-                </button>
-
-                {/* 3. Jurnal Suaka */}
-                <button
-                  type="button"
-                  onClick={() => handleAction(onOpenJournal || onOpenAlmanac)}
-                  className={popoverItemButton}
-                >
-                  <BookMarked className="w-4 h-4 stroke-[2.2] shrink-0 opacity-80" />
-                  <span className="truncate flex-1 text-left">{t.hud.menuJournal}</span>
-                  {claimableCount > 0 && (
-                    <span className="min-w-[15px] h-[15px] px-1 rounded-full bg-emerald-600 text-white font-bold text-[9px] flex items-center justify-center border border-white shadow-xs">
-                      {claimableCount}
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-8 h-8 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center shrink-0">
+                        <Sparkles className="w-4 h-4 text-emerald-100 fill-emerald-100" />
+                      </div>
+                      <div className="text-left min-w-0">
+                        <p className="text-[13px] font-extrabold leading-tight truncate">
+                          {isPro
+                            ? lang === "en"
+                              ? "Rimba Pro Active"
+                              : "Rimba Pro (Aktif)"
+                            : lang === "en"
+                              ? "Explore Rimba Pro"
+                              : "Langganan Rimba Pro"}
+                        </p>
+                        <p className="text-[10.5px] text-emerald-100/90 truncate">
+                          {lang === "en"
+                            ? "Multi-Island · Rare Flora · Streak Shield"
+                            : "Multi-Pulau · Flora Langka · Pelindung Runtutan"}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-white text-[#0D3528] uppercase tracking-wider shrink-0">
+                      PRO
                     </span>
-                  )}
-                </button>
-
-                {/* 4. Papan Peringkat */}
-                <button
-                  type="button"
-                  onClick={() => handleAction(onOpenLeaderboard)}
-                  className={popoverItemButton}
-                >
-                  <Trophy className="w-4 h-4 stroke-[2.2] shrink-0 opacity-80" />
-                  <span>{t.hud.menuRanks}</span>
-                </button>
-
-                {/* 5. Fokus Bareng (Campfire Focus Room) */}
-                <button
-                  type="button"
-                  onClick={() => handleAction(onOpenCampfire)}
-                  className={popoverItemButton}
-                >
-                  <Flame className="w-4 h-4 stroke-[2.2] shrink-0 opacity-80 text-current" />
-                  <span>{t.hud.menuCampfire}</span>
-                </button>
-
-                {/* 6. Bagikan Pulau */}
-                <button
-                  type="button"
-                  onClick={() => handleAction(onOpenShare)}
-                  className={popoverItemButton}
-                >
-                  <Share2 className="w-4 h-4 stroke-[2.2] shrink-0 opacity-80" />
-                  <span>{t.hud.menuShare}</span>
-                </button>
-
-                {/* 7. Daftar Pulau Suaka (Multi-Island) */}
-                <button
-                  type="button"
-                  onClick={() => handleAction(onOpenIslandSwitcher)}
-                  className={popoverItemButton}
-                >
-                  <Palmtree className="w-4 h-4 stroke-[2.2] shrink-0 opacity-80 text-current" />
-                  <span className="truncate flex-1 text-left">
-                    {lang === "en" ? "Sanctuary Islands" : "Daftar Pulau"}
-                  </span>
-                </button>
-
-                {/* 8. Rimba Pro Subscription */}
-                <button
-                  type="button"
-                  onClick={() => handleAction(onOpenPaywall)}
-                  className={popoverItemButton}
-                >
-                  <Sparkles className="w-4 h-4 stroke-[2.2] shrink-0 opacity-80 text-current" />
-                  <span className="truncate flex-1 text-left">
-                    {useGameStore.getState().saveData.subscription?.isPro
-                      ? (lang === "en" ? "Rimba Pro Active" : "Rimba Pro (Aktif)")
-                      : (lang === "en" ? "Upgrade to Pro" : "Langganan Pro")}
-                  </span>
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-black/10 dark:bg-white/15 uppercase">
-                    PRO
-                  </span>
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* ======================================================== */}
-          {/* SISI KANAN: UNIFIED ACTION CAPSULE                      */}
-          {/* ======================================================== */}
-          <div className="relative pointer-events-auto">
-              {/* Kapsul Aksi Mengambang */}
-              <div
-                style={glassCapsuleStyle}
-                className="relative h-[44px] px-2 rounded-full flex items-center gap-1 transition-colors overflow-hidden"
-              >
-                <div className="absolute inset-x-2 top-0 h-[45%] bg-gradient-to-b from-white/25 to-transparent rounded-t-full pointer-events-none" />
-
-                {/* 1. Tombol Cuaca */}
-                <button
-                  type="button"
-                  onClick={handleCycleWeather}
-                  className={iconButtonClass}
-                  title={getWeatherLabel()}
-                  aria-label={getWeatherLabel()}
-                >
-                  {getWeatherIcon()}
-                </button>
-
-                {/* 2. Tombol Bioma Suaka (Buka Quick Picker Sheet) */}
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    soundManager.playPop();
-                    hapticLight();
-                    if (onOpenBiomePicker) {
-                      onOpenBiomePicker();
-                    } else {
-                      toggleActiveBiome();
-                    }
-                  }}
-                  className={`
-                    ${iconButtonClass}
-                    ${
-                      activeBiome === "snow"
-                        ? isNight
-                          ? "bg-sky-400/25 border border-sky-300/40 text-sky-200"
-                          : "bg-sky-500/20 border border-sky-600/30 text-sky-950 font-semibold"
-                        : activeBiome === "autumn"
-                          ? isNight
-                            ? "bg-amber-400/25 border border-amber-300/40 text-amber-200"
-                            : "bg-amber-500/20 border border-amber-600/30 text-amber-950 font-semibold"
-                          : activeBiome === "lotus"
-                            ? isNight
-                              ? "bg-pink-400/25 border border-pink-300/40 text-pink-200"
-                              : "bg-pink-500/20 border border-pink-600/30 text-pink-950 font-semibold"
-                            : ""
-                    }
-                  `}
-                  title={
-                    activeBiome === "snow"
-                      ? t.hud.biomeSnow
-                      : activeBiome === "autumn"
-                        ? (lang === "en" ? "Autumn Grove" : "Musim Gugur")
-                        : activeBiome === "lotus"
-                          ? (lang === "en" ? "Lotus Springs" : "Mata Air Teratai")
-                          : t.hud.biomeGrass
-                  }
-                  aria-label={lang === "en" ? "Choose sanctuary theme and biome" : "Pilih Tema & Bioma Suaka"}
-                >
-                  <span className="text-[13px] leading-none select-none">
-                    {activeBiome === "snow"
-                      ? "❄️"
-                      : activeBiome === "autumn"
-                        ? "🍁"
-                        : activeBiome === "lotus"
-                          ? "🌸"
-                          : "🍃"}
-                  </span>
-                </button>
-
-                {/* 3. Tombol Siklus Waktu */}
-                <button
-                  type="button"
-                  onClick={handleCycleTime}
-                  className={iconButtonClass}
-                  title={getTimeLabel()}
-                  aria-label={getTimeLabel()}
-                >
-                  {getTimeIcon()}
-                </button>
-
-                {/* 4. Tombol Pengaturan */}
-                <button
-                  type="button"
-                  ref={settingsTrigger}
-                  aria-expanded={activeDropdown === "settings"}
-                  aria-controls={`${menuId}-settings`}
-                  aria-haspopup="dialog"
-                  onClick={() => toggleDropdown("settings")}
-                  className={iconButtonClass}
-                  title={t.hud.menuSettings}
-                  aria-label={t.hud.menuSettings}
-                >
-                  <Settings
-                    className={`w-4 h-4 stroke-[2.4] ${iconThemeClass}`}
-                  />
-                </button>
-              </div>
-            {activeDropdown === "settings" && (
-              /* Anchored settings flyout */
-              <div
-                ref={settingsPanel}
-                id={`${menuId}-settings`}
-                role="dialog"
-                aria-label={t.hud.menuSettings}
-                style={{ ...popoverGlassStyle, maxHeight: "calc(100dvh - max(env(safe-area-inset-top, 0px) + 12px, 24px) - env(safe-area-inset-bottom, 0px) - 72px)" }}
-                className="absolute right-0 top-[54px] w-[272px] max-w-[calc(100vw-32px)] rounded-[24px] p-2 z-50 flex flex-col gap-0.5 overflow-y-auto overscroll-contain animate-in fade-in zoom-in-95 duration-150 shadow-2xl"
-              >
-                <div className="absolute inset-x-2 top-0 h-8 bg-gradient-to-b from-white/25 to-transparent rounded-t-full pointer-events-none" />
-
-                {/* Header: Judul & Tombol Tutup */}
-                <div className="flex items-center justify-between px-2 pt-1 pb-1.5 border-b border-black/10 dark:border-white/15 relative z-10">
-                  <span
-                    className={`text-[14px] font-bold ${
-                      isNight ? "text-white" : "text-[#0b2719]"
-                    }`}
-                  >
-                    {t.hud.menuSettings}
-                  </span>
-
-                  <button
-                    type="button"
-                    onClick={closeDropdown}
-                    className={`w-11 h-11 rounded-full flex items-center justify-center border transition-colors cursor-pointer shrink-0 ${
-                      isNight
-                        ? "bg-white/15 hover:bg-white/25 border-white/20 text-white"
-                        : "bg-[#0b2719]/10 hover:bg-[#0b2719]/18 border-[#0b2719]/15 text-[#0b2719]"
-                    }`}
-                    title={t.common.close}
-                    aria-label={t.common.close}
-                  >
-                    <X className="w-3 h-3 stroke-[2.4]" />
                   </button>
                 </div>
+              ) : (
+                /* ====================================================
+                   VIEW 2: SETTINGS & ENVIRONMENT BENTO GRID
+                   ==================================================== */
+                <div className="grid grid-cols-2 gap-2">
+                  {/* 1. Pengaturan Utama */}
+                  <button
+                    type="button"
+                    onClick={() => handleAction(onOpenSettings)}
+                    className={bentoTileClass}
+                  >
+                    <div className="w-8 h-8 rounded-xl bg-[#187557]/15 text-[#187557] dark:text-emerald-300 flex items-center justify-center shrink-0">
+                      <Settings className="w-4 h-4 stroke-[2.2]" />
+                    </div>
+                    <span className="text-[12.5px] font-bold truncate">
+                      {t.hud.menuSettings}
+                    </span>
+                  </button>
 
-                {/* 1. Pengaturan Utama */}
-                <button
-                  type="button"
-                  onClick={() => handleAction(onOpenSettings)}
-                  className={popoverItemButton}
-                >
-                  <Settings className="w-4 h-4 stroke-[2.2] shrink-0 opacity-80" />
-                  <span>{t.hud.menuSettings}</span>
-                </button>
+                  {/* 2. Audio & Suara Alam */}
+                  <button
+                    type="button"
+                    onClick={() => handleAction(onOpenSoundscapes)}
+                    className={bentoTileClass}
+                  >
+                    <div className="w-8 h-8 rounded-xl bg-[#187557]/15 text-[#187557] dark:text-emerald-300 flex items-center justify-center shrink-0">
+                      <Headphones className="w-4 h-4 stroke-[2.2]" />
+                    </div>
+                    <span className="text-[12.5px] font-bold truncate">
+                      {t.hud.menuSoundscape}
+                    </span>
+                  </button>
 
-                {/* 2. Dekorasi Pulau (Workshop) */}
-                <button
-                  type="button"
-                  onClick={() => handleAction(onOpenWorkshop)}
-                  className={popoverItemButton}
-                >
-                  <Hammer className="w-4 h-4 stroke-[2.2] shrink-0 opacity-80" />
-                  <span>{t.hud.menuWorkshop}</span>
-                </button>
+                  {/* 3. Quick Language Switcher (ID / EN) */}
+                  <button
+                    type="button"
+                    onClick={handleToggleLanguage}
+                    className={bentoTileClass}
+                  >
+                    <div className="w-8 h-8 rounded-xl bg-[#187557]/15 text-[#187557] dark:text-emerald-300 flex items-center justify-center shrink-0">
+                      <Globe className="w-4 h-4 stroke-[2.2]" />
+                    </div>
+                    <span className="text-[12.5px] font-bold truncate flex-1">
+                      {t.hud.langToggleTitle}
+                    </span>
+                    <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-md bg-[#187557]/15 text-[#187557] dark:bg-white/20 dark:text-white uppercase shrink-0">
+                      {lang}
+                    </span>
+                  </button>
 
-                {/* 3. Audio & Suara Alam */}
-                <button
-                  type="button"
-                  onClick={() => handleAction(onOpenSoundscapes)}
-                  className={popoverItemButton}
-                >
-                  <Headphones className="w-4 h-4 stroke-[2.2] shrink-0 opacity-80" />
-                  <span>{t.hud.menuSoundscape}</span>
-                </button>
-
-                {/* 4. Quick Language Switcher (ID / EN) */}
-                <button
-                  type="button"
-                  onClick={handleToggleLanguage}
-                  className={popoverItemButton}
-                >
-                  <Globe className="w-4 h-4 stroke-[2.2] shrink-0 opacity-80" />
-                  <span className="truncate flex-1 text-left">{t.hud.langToggleTitle}</span>
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-black/10 dark:bg-white/15 uppercase">
-                    {lang}
-                  </span>
-                </button>
-
-                {/* 5. Panduan Permainan (How to Play) */}
-                <button
-                  type="button"
-                  onClick={() => handleAction(onOpenGuide || onOpenOnboarding)}
-                  className={popoverItemButton}
-                >
-                  <HelpCircle className="w-4 h-4 stroke-[2.2] shrink-0 opacity-80" />
-                  <span>{t.hud.menuGuide}</span>
-                </button>
-              </div>
-            )}
-          </div>
+                  {/* 4. Panduan Permainan */}
+                  <button
+                    type="button"
+                    onClick={() => handleAction(onOpenGuide || onOpenOnboarding)}
+                    className={bentoTileClass}
+                  >
+                    <div className="w-8 h-8 rounded-xl bg-[#187557]/15 text-[#187557] dark:text-emerald-300 flex items-center justify-center shrink-0">
+                      <HelpCircle className="w-4 h-4 stroke-[2.2]" />
+                    </div>
+                    <span className="text-[12.5px] font-bold truncate">
+                      {t.hud.menuGuide}
+                    </span>
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </header>
     </>

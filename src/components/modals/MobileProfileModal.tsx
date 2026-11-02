@@ -224,7 +224,7 @@ export function MobileProfileModal({
         role="dialog"
         aria-modal="true"
       >
-        <div className="w-full max-w-md mx-auto px-5 safe-modal-content space-y-4">
+        <div className="w-full max-w-md md:max-w-xl mx-auto px-5 safe-modal-content space-y-4">
           {/* STICKY SAFE-AREA HEADER NAV */}
           <div className="safe-sticky-modal-header flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -318,7 +318,7 @@ export function MobileProfileModal({
                     >
                       <Edit2 className="w-3.5 h-3.5 stroke-[1.8]" />
                     </button>
-                    <span className="ml-auto shrink-0 rounded-full bg-[#E4F4ED] border border-[#BCE5D3] px-2.5 py-0.5 text-[11px] font-medium text-[#14664D]">
+                    <span className="ml-auto shrink-0 whitespace-nowrap rounded-full bg-[#E4F4ED] border border-[#BCE5D3] px-3 py-0.5 text-[11px] font-semibold text-[#14664D]">
                       {t.common.level} {currentLevel}
                     </span>
                   </div>
@@ -483,7 +483,7 @@ export function MobileProfileModal({
                     </div>
 
                     <span
-                      className={`shrink-0 text-[10.5px] font-medium px-2 py-0.5 rounded-md ${
+                      className={`shrink-0 whitespace-nowrap text-[10.5px] font-semibold px-2.5 py-0.5 rounded-full ${
                         isUnlocked
                           ? "bg-[#E4F4ED] text-[#14664D] border border-[#BCE5D3]"
                           : "bg-black/5 text-[#4C7567]/60"

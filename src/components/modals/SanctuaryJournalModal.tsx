@@ -424,7 +424,7 @@ export function SanctuaryJournalModal({
         role="dialog"
         aria-modal="true"
       >
-        <div className="w-full max-w-md mx-auto px-5 safe-modal-content space-y-4">
+        <div className="w-full max-w-md md:max-w-xl mx-auto px-5 safe-modal-content space-y-4">
           {/* STICKY SAFE-AREA HEADER NAV */}
           <div className="safe-sticky-modal-header flex items-center justify-between gap-2">
             <div className="min-w-0 flex-1">
@@ -597,42 +597,35 @@ export function SanctuaryJournalModal({
                   </div>
                 </div>
 
-                {/* Streak Freeze Info Note */}
-                <div className="p-3 rounded-2xl bg-[#0D3528]/[0.025] border border-[#0D3528]/8 text-[11.5px] text-[#4C7567] flex items-center justify-between">
-                  <span>
-                    🛡️{" "}
-                    <strong className="font-semibold text-[#0D3528]">
-                      {t.journal.shieldNoteTitle}
-                    </strong>{" "}
-                    {t.journal.shieldNoteDesc}
-                  </span>
-                </div>
-
-                {/* Mini Calendar (28 Days) */}
-                <div className="space-y-2 pt-1 border-t border-[#0D3528]/8">
-                  <p className="text-[11.5px] font-medium uppercase tracking-[0.12em] text-[#4C7567]">
+                {/* Mini Calendar (28 Days - High Contrast Date Numbers) */}
+                <div className="space-y-2 pt-2 border-t border-[#0D3528]/8">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-[#4C7567]">
                     {t.journal.calendarTitle}
                   </p>
                   <div className="grid grid-cols-7 gap-1.5">
                     {calendarDays.map((day) => (
                       <div
                         key={day.dateStr}
-                        className={`h-9 rounded-xl flex flex-col items-center justify-center transition-all ${
+                        className={`h-10 rounded-xl flex flex-col items-center justify-center transition-all border ${
                           day.isActive
-                            ? "bg-[#187557] text-white shadow-xs"
-                            : "bg-[#0D3528]/5 text-[#0D3528]/45 border border-black/5"
+                            ? "bg-[#187557] text-white border-[#187557] shadow-xs"
+                            : "bg-[#F2F8F5] text-[#0D3528] border-[#BCE5D3]/80"
                         }`}
                         title={`${day.dateStr}: ${day.minutes}m`}
                       >
-                        <span className="text-[10.5px] font-semibold leading-none">
+                        <span className="text-[11.5px] font-bold leading-none tabular-nums">
                           {day.dayNum}
                         </span>
-                        <span className="text-[8px] font-normal opacity-85 leading-none mt-0.5">
+                        <span
+                          className={`text-[8.5px] font-semibold leading-none mt-1 tabular-nums ${
+                            day.isActive ? "text-emerald-100" : "text-[#4C7567]"
+                          }`}
+                        >
                           {day.isShielded
                             ? "🛡️"
                             : day.minutes > 0
                               ? `${day.minutes}m`
-                              : "·"}
+                              : "–"}
                         </span>
                       </div>
                     ))}
@@ -667,15 +660,15 @@ export function SanctuaryJournalModal({
                       className="p-4 rounded-3xl border border-[#BCE5D3] bg-white shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-3"
                     >
                       <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
                           <div className="w-9 h-9 rounded-xl bg-[#E4F4ED] border border-[#BCE5D3] flex items-center justify-center shrink-0">
                             {renderQuestIcon(q.icon)}
                           </div>
-                          <div>
-                            <p className="text-[13.5px] font-semibold text-[#0D3528] leading-tight">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[13.5px] font-semibold text-[#0D3528] leading-tight truncate">
                               {trQuest.title}
                             </p>
-                            <p className="text-[11.5px] text-[#4C7567] mt-0.5 font-normal">
+                            <p className="text-[11px] text-[#4C7567] mt-0.5 font-normal truncate">
                               {trQuest.description}
                             </p>
                           </div>
@@ -1455,15 +1448,7 @@ export function SanctuaryJournalModal({
                               </p>
                             </div>
 
-                            {/* Reflection Box */}
-                            <div className="p-3.5 rounded-2xl bg-[#0D3528]/4 border border-[#0D3528]/8 text-left space-y-1">
-                              <span className="text-[10px] font-bold uppercase tracking-wider text-[#187557] block">
-                                {t.journal.reflectionLabel}
-                              </span>
-                              <p className="text-[12px] text-[#0D3528]/90 leading-relaxed font-normal">
-                                {trFrag.reflection}
-                              </p>
-                            </div>
+
                           </div>
                         ) : (
                           <div className="p-3.5 rounded-2xl bg-[#0D3528]/5 border border-[#0D3528]/10 text-[11.5px] text-[#4C7567] flex items-center justify-between font-normal gap-2">
@@ -1493,23 +1478,23 @@ export function SanctuaryJournalModal({
             <div className="space-y-4 animate-in fade-in duration-200">
               {/* Sanctuary Level & Biome Header Card */}
               <div className="rounded-3xl border border-[#BCE5D3] bg-white p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-[#E4F4ED] border border-[#BCE5D3] flex items-center justify-center text-[#187557]">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div className="w-10 h-10 rounded-2xl bg-[#E4F4ED] border border-[#BCE5D3] flex items-center justify-center text-[#187557] shrink-0">
                       <Compass className="w-5 h-5 stroke-[2.2]" />
                     </div>
-                    <div>
-                      <h3 className="text-[16px] font-bold text-[#0D3528]">
-                        {language === "en" ? "Sanctuary Biomes & Realms" : "Bioma & Wilayah Suaka"}
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-[15.5px] font-bold text-[#0D3528] truncate">
+                        {language === "en" ? "Sanctuary Biomes" : "Bioma & Wilayah Suaka"}
                       </h3>
-                      <p className="text-[11.5px] text-[#4C7567] font-normal">
+                      <p className="text-[11px] text-[#4C7567] font-normal truncate">
                         {language === "en"
-                          ? "Progress through focus to unlock new natural atmospheres"
-                          : "Tingkatkan fokus untuk membuka tema alam dan atmosfer baru"}
+                          ? "Unlock new natural atmospheres as you level up"
+                          : "Buka tema alam baru seiring kenaikan level fokus"}
                       </p>
                     </div>
                   </div>
-                  <span className="text-[11.5px] font-bold text-[#14664D] bg-[#E4F4ED] px-3 py-1 rounded-full border border-[#BCE5D3]">
+                  <span className="text-[11.5px] font-bold text-[#14664D] bg-[#E4F4ED] px-3 py-1 rounded-full border border-[#BCE5D3] whitespace-nowrap shrink-0">
                     Lv. {currentLevel}
                   </span>
                 </div>
@@ -1582,27 +1567,23 @@ export function SanctuaryJournalModal({
                             <div className="absolute inset-0 bg-black/10 pointer-events-none" />
                           </div>
 
-                          <div className="min-w-0">
+                          <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
-                              <h4 className="text-[14.5px] font-bold text-[#0D3528] truncate">
+                              <h4 className="text-[14px] font-bold text-[#0D3528] truncate">
                                 {language === "en" ? biome.nameEn : biome.name}
                               </h4>
                               <span
-                                className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border shrink-0 ${
+                                className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full border whitespace-nowrap shrink-0 ${
                                   isUnlocked
                                     ? "bg-[#E4F4ED] border-[#BCE5D3] text-[#14664D]"
                                     : "bg-stone-100 border-stone-200 text-stone-500"
                                 }`}
                               >
-                                {isUnlocked
-                                  ? `Lv. ${biome.levelRequired}`
-                                  : language === "en"
-                                    ? `Req. Lv. ${biome.levelRequired}`
-                                    : `Butuh Lv. ${biome.levelRequired}`}
+                                Lv. {biome.levelRequired}
                               </span>
                             </div>
 
-                            <p className="text-[11.5px] text-[#4C7567] font-normal mt-1 leading-relaxed">
+                            <p className="text-[11px] text-[#4C7567] font-normal mt-0.5 line-clamp-1">
                               {language === "en" ? biome.descriptionEn : biome.description}
                             </p>
                           </div>
@@ -1628,7 +1609,7 @@ export function SanctuaryJournalModal({
                               {language === "en" ? "Apply" : "Terapkan"}
                             </button>
                           ) : (
-                            <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-stone-100 border border-stone-200 text-stone-500 text-[10.5px]">
+                            <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-stone-100 border border-stone-200 text-stone-500 text-[10.5px] whitespace-nowrap shrink-0">
                               <Lock className="w-3 h-3 stroke-[2]" />
                               <span>Lv. {biome.levelRequired}</span>
                             </div>
@@ -1641,30 +1622,30 @@ export function SanctuaryJournalModal({
 
                 {/* Grand Milestone: Level 100 Celestial Island */}
                 <div
-                  className={`rounded-3xl border p-4.5 shadow-lg backdrop-blur-xl transition-all ${
+                  className={`rounded-3xl border p-4 shadow-lg backdrop-blur-xl transition-all ${
                     isCelestialUnlocked
-                      ? "bg-gradient-to-br from-amber-50 via-white to-orange-50/50 border-amber-300 ring-2 ring-amber-400/30"
+                      ? "bg-gradient-to-br from-emerald-50 via-white to-teal-50/50 border-[#BCE5D3] ring-2 ring-[#187557]/20"
                       : "bg-white/70 border-white/40 opacity-80"
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-start gap-3.5">
-                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 border border-amber-300 flex items-center justify-center text-2xl shadow-sm shrink-0">
+                    <div className="flex items-start gap-3.5 min-w-0 flex-1">
+                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#187557] to-[#125D44] border border-[#BCE5D3] flex items-center justify-center text-2xl shadow-sm shrink-0">
                         ⛩️
                       </div>
-                      <div>
+                      <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          <h4 className="text-[14.5px] font-bold text-[#0D3528]">
+                          <h4 className="text-[14px] font-bold text-[#0D3528] truncate">
                             {language === "en" ? "Celestial Archipelago" : "Kahyangan Awan Suaka"}
                           </h4>
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 border border-amber-300 text-amber-800">
+                          <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-[#E4F4ED] border border-[#BCE5D3] text-[#14664D] whitespace-nowrap shrink-0">
                             Lv. {CELESTIAL_ISLAND_LEVEL_REQUIRED}
                           </span>
                         </div>
-                        <p className="text-[11.5px] text-[#4C7567] font-normal mt-1 leading-relaxed">
+                        <p className="text-[11px] text-[#4C7567] font-normal mt-0.5 line-clamp-1">
                           {language === "en"
-                            ? "Grand floating satellite island with sacred bonsai, stone lanterns, and connecting bridge"
-                            : "Pulau satelit melayang megah dengan kuil bonsai suci, lentera batu, dan jembatan pelengkung"}
+                            ? "Floating satellite shrine with sacred bonsai & arch bridge"
+                            : "Pulau satelit melayang dengan kuil bonsai & jembatan"}
                         </p>
                       </div>
                     </div>
@@ -1694,7 +1675,7 @@ export function SanctuaryJournalModal({
                           <span>{language === "en" ? "Visit" : "Kunjungi"}</span>
                         </button>
                       ) : (
-                        <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-stone-100 border border-stone-200 text-stone-500 text-[10.5px]">
+                        <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-stone-100 border border-stone-200 text-stone-500 text-[10.5px] whitespace-nowrap shrink-0">
                           <Lock className="w-3 h-3 stroke-[2]" />
                           <span>Lv. {CELESTIAL_ISLAND_LEVEL_REQUIRED}</span>
                         </div>

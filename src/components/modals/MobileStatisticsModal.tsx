@@ -143,46 +143,45 @@ export function MobileStatisticsModal({
     [world, worldObjects],
   );
 
-  // 12 Weeks Activity Heatmap Days (84 days)
-  const heatmapWeeks = useMemo(() => {
+  // 4-Week (28-Day) Interactive Focus Calendar with Clear Date Numbers
+  const calendarDays28 = useMemo(() => {
     const today = new Date();
     const startDate = new Date(today);
-    startDate.setDate(today.getDate() - (11 * 7 + today.getDay()));
+    startDate.setDate(today.getDate() - (3 * 7 + today.getDay()));
 
-    const weeks: {
-      days: {
-        dateStr: string;
-        minutes: number;
-        isToday: boolean;
-        label: string;
-      }[];
+    const days: {
+      dateStr: string;
+      dayNum: number;
+      minutes: number;
+      isToday: boolean;
+      isFuture: boolean;
+      label: string;
     }[] = [];
 
-    let current = new Date(startDate);
+    const current = new Date(startDate);
     const todayStr = toLocalDateString(today);
 
-    for (let w = 0; w < 12; w++) {
-      const daysInWeek = [];
-      for (let d = 0; d < 7; d++) {
-        const dateStr = toLocalDateString(current);
-        const stat = analytics.activityMap[dateStr];
-        const isToday = dateStr === todayStr;
+    for (let i = 0; i < 28; i++) {
+      const dateStr = toLocalDateString(current);
+      const stat = analytics.activityMap[dateStr];
+      const isToday = dateStr === todayStr;
+      const isFuture = current.getTime() > today.getTime() && !isToday;
 
-        daysInWeek.push({
-          dateStr,
-          minutes: stat?.totalMinutes || 0,
-          isToday,
-          label: current.toLocaleDateString(language === "en" ? "en-US" : "id-ID", {
-            day: "numeric",
-            month: "short",
-          }),
-        });
+      days.push({
+        dateStr,
+        dayNum: current.getDate(),
+        minutes: stat?.totalMinutes || 0,
+        isToday,
+        isFuture,
+        label: current.toLocaleDateString(language === "en" ? "en-US" : "id-ID", {
+          day: "numeric",
+          month: "short",
+        }),
+      });
 
-        current.setDate(current.getDate() + 1);
-      }
-      weeks.push({ days: daysInWeek });
+      current.setDate(current.getDate() + 1);
     }
-    return weeks;
+    return days;
   }, [analytics.activityMap, language]);
 
   // Circadian Rhythm (24h) calculated specifically for the selected period's sessions!
@@ -230,7 +229,7 @@ export function MobileStatisticsModal({
         role="dialog"
         aria-modal="true"
       >
-        <div className="w-full max-w-md mx-auto px-5 safe-modal-content space-y-4">
+        <div className="w-full max-w-md md:max-w-xl mx-auto px-5 safe-modal-content space-y-4">
           {/* STICKY SAFE-AREA HEADER NAV */}
           <div className="safe-sticky-modal-header flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -889,56 +888,94 @@ export function MobileStatisticsModal({
                 </div>
               )}
 
-              {/* Heatmap Grid */}
-              <div className="overflow-x-auto pb-1 -mx-1 px-1 no-scrollbar">
-                <div className="flex gap-1.5 min-w-[270px] justify-between">
-                  {heatmapWeeks.map((week, wIdx) => (
-                    <div
-                      key={`week_${wIdx}`}
-                      className="flex flex-col gap-1.5 flex-1"
+              {/* 7-Column Calendar Grid with High-Contrast Date Numbers */}
+              <div className="space-y-2">
+                {/* Day-of-Week Header Row */}
+                <div className="grid grid-cols-7 gap-1.5 text-center">
+                  {(language === "en"
+                    ? ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+                    : ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"]
+                  ).map((dow) => (
+                    <span
+                      key={dow}
+                      className="text-[10.5px] font-bold uppercase tracking-wider text-[#4C7567]"
                     >
-                      {week.days.map((day) => {
-                        const minutes = day.minutes;
-                        let bgClass = "bg-[#0D3528]/8 border-transparent";
-                        if (minutes > 0 && minutes < 25) {
-                          bgClass = "bg-[#BCE5D3] border-[#A3D9C0]";
-                        } else if (minutes >= 25 && minutes < 60) {
-                          bgClass = "bg-[#38B28B] border-[#2DA07C]";
-                        } else if (minutes >= 60) {
-                          bgClass = "bg-[#187557] border-[#136148]";
-                        }
-
-                        const isSelected =
-                          selectedHeatmapDay?.dateStr === day.dateStr;
-
-                        return (
-                          <div
-                            key={day.dateStr}
-                            onClick={() => {
-                              hapticLight();
-                              if (isSelected) {
-                                setSelectedHeatmapDay(null);
-                                setDrilldownDate(null);
-                              } else {
-                                setSelectedHeatmapDay({
-                                  dateStr: day.label,
-                                  minutes: day.minutes,
-                                });
-                                setDrilldownDate({
-                                  dateStr: day.dateStr,
-                                  label: day.label,
-                                });
-                              }
-                            }}
-                            className={`aspect-square rounded-[6px] border transition-all duration-150 cursor-pointer hover:scale-110 ${bgClass} ${
-                              day.isToday ? "ring-2 ring-[#187557] ring-offset-1" : ""
-                            } ${isSelected ? "ring-2 ring-[#0D3528] scale-115" : ""}`}
-                            title={`${day.label}: ${minutes}m`}
-                          />
-                        );
-                      })}
-                    </div>
+                      {dow}
+                    </span>
                   ))}
+                </div>
+
+                {/* 28 Calendar Day Cells */}
+                <div className="grid grid-cols-7 gap-1.5">
+                  {calendarDays28.map((day) => {
+                    const minutes = day.minutes;
+                    let cellStyle =
+                      "bg-[#F3F8F5] border-[#BCE5D3]/85 text-[#0D3528]";
+                    let subTextStyle = "text-[#4C7567]";
+
+                    if (day.isFuture) {
+                      cellStyle =
+                        "bg-[#0D3528]/[0.03] border-[#0D3528]/10 text-[#4C7567]/60";
+                      subTextStyle = "text-[#4C7567]/40";
+                    } else if (minutes > 0 && minutes < 25) {
+                      cellStyle =
+                        "bg-[#D4F0E3] border-[#9CD8BE] text-[#0D3528]";
+                      subTextStyle = "text-[#14664D]";
+                    } else if (minutes >= 25 && minutes < 60) {
+                      cellStyle =
+                        "bg-[#2BB688] border-[#219971] text-white shadow-2xs";
+                      subTextStyle = "text-emerald-50";
+                    } else if (minutes >= 60) {
+                      cellStyle =
+                        "bg-[#187557] border-[#125D44] text-white shadow-xs";
+                      subTextStyle = "text-emerald-100";
+                    }
+
+                    const isSelected =
+                      drilldownDate?.dateStr === day.dateStr;
+
+                    return (
+                      <button
+                        key={day.dateStr}
+                        type="button"
+                        onClick={() => {
+                          hapticLight();
+                          if (isSelected) {
+                            setSelectedHeatmapDay(null);
+                            setDrilldownDate(null);
+                          } else {
+                            setSelectedHeatmapDay({
+                              dateStr: day.label,
+                              minutes: day.minutes,
+                            });
+                            setDrilldownDate({
+                              dateStr: day.dateStr,
+                              label: day.label,
+                            });
+                          }
+                        }}
+                        className={`h-11 rounded-2xl border flex flex-col items-center justify-center transition-all duration-150 cursor-pointer active:scale-95 ${cellStyle} ${
+                          day.isToday
+                            ? "ring-2 ring-[#187557] ring-offset-1"
+                            : ""
+                        } ${
+                          isSelected
+                            ? "ring-2 ring-[#0D3528] scale-105 shadow-sm"
+                            : ""
+                        }`}
+                        title={`${day.label}: ${minutes}m`}
+                      >
+                        <span className="text-[12px] font-bold leading-none tabular-nums">
+                          {day.dayNum}
+                        </span>
+                        <span
+                          className={`text-[8.5px] font-semibold leading-none mt-1 tabular-nums ${subTextStyle}`}
+                        >
+                          {minutes > 0 ? `${minutes}m` : "–"}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -1049,16 +1086,16 @@ export function MobileStatisticsModal({
           {/* ========================================================= */}
           {/* 7. KARTU PENCAPAIAN (SHARE CARD FLEX BANNER)              */}
           {/* ========================================================= */}
-          <div className="rounded-3xl border border-[#BCE5D3] bg-white p-4.5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-200/80 text-[#187557] flex items-center justify-center shrink-0 shadow-xs">
-                <Sparkles className="w-5 h-5 stroke-[1.8]" />
+          <div className="rounded-3xl border border-[#BCE5D3] bg-white p-5 my-2 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5 min-w-0">
+              <div className="w-11 h-11 rounded-2xl bg-[#E4F4ED] border border-[#BCE5D3] text-[#187557] flex items-center justify-center shrink-0 shadow-xs">
+                <Sparkles className="w-5 h-5 stroke-[2]" />
               </div>
               <div className="min-w-0">
-                <h4 className="text-[13.5px] font-semibold text-[#0D3528] tracking-tight">
+                <h4 className="text-[14px] font-bold text-[#0D3528] tracking-tight">
                   {t.stats.shareBannerTitle}
                 </h4>
-                <p className="text-[11px] text-[#4C7567] font-normal truncate">
+                <p className="text-[11.5px] text-[#4C7567] font-normal mt-0.5 leading-snug">
                   {t.stats.shareBannerDesc}
                 </p>
               </div>
@@ -1071,9 +1108,9 @@ export function MobileStatisticsModal({
                 hapticLight();
                 setIsShareOpen(true);
               }}
-              className="py-2 px-3.5 rounded-full bg-[#187557] hover:bg-[#126046] text-white text-[11.5px] font-medium shadow-xs active:scale-95 transition-all shrink-0 cursor-pointer flex items-center gap-1.5 whitespace-nowrap"
+              className="w-full sm:w-auto py-3 px-5 rounded-2xl bg-gradient-to-r from-[#187557] to-[#125D44] hover:opacity-95 text-white text-[12.5px] font-bold shadow-md shadow-[#187557]/20 active:scale-95 transition-all shrink-0 cursor-pointer flex items-center justify-center gap-2 whitespace-nowrap"
             >
-              <Share2 className="w-3.5 h-3.5 stroke-[2]" />
+              <Share2 className="w-4 h-4 stroke-[2.2]" />
               <span>{t.stats.createCardBtn}</span>
             </button>
           </div>

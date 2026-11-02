@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useEffect } from 'react';
+import React, { useMemo, useRef, useEffect, useLayoutEffect } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
 import {
@@ -10,13 +10,16 @@ import {
 import {
   buildRiverTileMap,
   getRiverChannelDistance,
-  } from '@/lib/game/riverSystem';
+} from '@/lib/game/riverSystem';
 import { useGameStore } from '@/lib/game/useGameStore';
 import { usePreferencesStore } from '@/lib/settings/usePreferencesStore';
 
 interface InstancedGrassProps {
   count?: number;
 }
+
+const MAX_GRASS_CAPACITY = 9000;
+const MAX_FLOWER_CAPACITY = 300;
 
 /**
  * Builds an organic, asymmetric 5-blade slender tuft cluster.
@@ -161,7 +164,11 @@ export function InstancedGrass({ count: overrideCount }: InstancedGrassProps) {
   const grassRef = useRef<THREE.InstancedMesh>(null);
   const flowerRef = useRef<THREE.InstancedMesh>(null);
 
-  const grassGeometry = useMemo(() => createFluffyTuftGeometry(count), [count]);
+  // Allocate once at max capacity so changing quality or tile counts never disposes the geometry/material
+  const grassGeometry = useMemo(
+    () => createFluffyTuftGeometry(MAX_GRASS_CAPACITY),
+    []
+  );
 
   // Stylized Fluffy Grass Material: root-to-tip velvet color gradient + rolling breeze wave
   const grassMaterial = useMemo(() => {
@@ -206,8 +213,6 @@ export function InstancedGrass({ count: overrideCount }: InstancedGrassProps) {
         '#include <color_fragment>',
         `
         #include <color_fragment>
-        // Root-to-tip stylized Ghibli velvet gradient:
-        // Blends seamlessly with the island turf at root (vBladeHeight=0) and glows warmly at tips (vBladeHeight=1)
         vec3 rootTint = diffuseColor.rgb * 0.84;
         vec3 tipTint = min(vec3(1.0), diffuseColor.rgb * vec3(1.14, 1.17, 0.94));
         diffuseColor.rgb = mix(rootTint, tipTint, smoothstep(0.0, 0.92, vBladeHeight));
@@ -249,8 +254,6 @@ export function InstancedGrass({ count: overrideCount }: InstancedGrassProps) {
       colorType: number;
     }[] = [];
 
-    // Precompute neighbor connectivity for each unlocked tile so grass flows 100% seamlessly
-    // across shared tile borders (-0.50 to +0.50), while staying neatly inside outer cliff edges.
     const tileBounds = unlockedTiles.map((tile) => {
       const [cx, , cz] = gridToWorld(tile.grid_x, tile.grid_y, 0);
       const hasLeft = unlockedKeySet.has(`${tile.grid_x - 1},${tile.grid_y}`);
@@ -272,13 +275,11 @@ export function InstancedGrass({ count: overrideCount }: InstancedGrassProps) {
       };
     });
 
-    // Helper: checks if world coordinate (wx, wz) falls strictly inside the river water channel
     const isRiverZone = (wx: number, wz: number, radius = 0.30): boolean => {
       if (riverTileMap.size === 0) return false;
       const g = worldToGrid(wx, wz);
       if (!g) return false;
 
-      // If the coordinate falls on a river tile, strictly forbid grass inside the water channel
       const currentKey = `${g.grid_x},${g.grid_y}`;
       if (riverTileMap.has(currentKey)) {
         const [cx, , cz] = gridToWorld(g.grid_x, g.grid_y, 0);
@@ -310,16 +311,14 @@ export function InstancedGrass({ count: overrideCount }: InstancedGrassProps) {
       return false;
     };
 
-    const targetTotal = Math.min(count, unlockedTiles.length * 640);
+    const targetTotal = Math.min(count, MAX_GRASS_CAPACITY, unlockedTiles.length * 640);
     const maxAttempts = targetTotal * 4;
 
     for (let attempt = 0; attempt < maxAttempts && blades.length < targetTotal; attempt++) {
-      // Pick a random unlocked tile and sample a 100% continuous random point across its full span
       const tb = tileBounds[Math.floor(rnd() * tileBounds.length)];
       const localX = tb.minX + rnd() * (tb.maxX - tb.minX);
       const localZ = tb.minZ + rnd() * (tb.maxZ - tb.minZ);
 
-      // Clamp diagonal corners on exposed cliff edges so blades follow the chamfered block corner
       if (!tb.hasLeft && !tb.hasTop && (-localX) + (-localZ) > 0.50) continue;
       if (!tb.hasRight && !tb.hasTop && (localX) + (-localZ) > 0.50) continue;
       if (!tb.hasLeft && !tb.hasBottom && (-localX) + (localZ) > 0.50) continue;
@@ -328,10 +327,8 @@ export function InstancedGrass({ count: overrideCount }: InstancedGrassProps) {
       const x = tb.cx + localX;
       const z = tb.cz + localZ;
 
-      // 1. Strict River exclusion: NEVER spawn grass inside water channels, but allow lush banks
       if (isRiverZone(x, z, 0.30)) continue;
 
-      // 2. Stepping-stone paths exclusion
       let nearPath = false;
       for (let p = 0; p < pathWorldCenters.length; p++) {
         const dx = x - pathWorldCenters[p].x;
@@ -346,12 +343,10 @@ export function InstancedGrass({ count: overrideCount }: InstancedGrassProps) {
 
       const { height } = getTerrainElevation(x, z);
 
-      // Multi-octave organic meadow wave (non-axis-aligned angles so patches never form a grid)
       const w1 = Math.sin(x * 2.3 + z * 1.7) * 0.5 + Math.cos(x * 1.4 - z * 2.6) * 0.5;
       const w2 = Math.sin(x * 5.1 - z * 4.3) * 0.35;
       const clumpFactor = Math.max(0, Math.min(1, (w1 + w2 + 1.1) * 0.45));
 
-      // Varied anisotropic scales & organic tilts so no two tufts look alike
       const scaleX = 0.72 + clumpFactor * 0.36 + rnd() * 0.34;
       const scaleZ = 0.72 + clumpFactor * 0.36 + rnd() * 0.34;
       const scaleY = 0.68 + clumpFactor * 0.54 + rnd() * 0.35;
@@ -377,7 +372,6 @@ export function InstancedGrass({ count: overrideCount }: InstancedGrassProps) {
         tSunlit,
       });
 
-      // Sprinkle tiny pastel wildflowers organically across lush meadow drifts (strictly outside river)
       if (flowers.length < 280 && clumpFactor > 0.55 && rnd() < 0.018) {
         const fx = x + (rnd() - 0.5) * 0.04;
         const fz = z + (rnd() - 0.5) * 0.04;
@@ -403,36 +397,37 @@ export function InstancedGrass({ count: overrideCount }: InstancedGrassProps) {
   const activeBiome = useGameStore((state) => state.activeBiome || 'meadow');
 
   // Apply matrices and multi-tone emerald/lime or winter frost colors
-  useEffect(() => {
-    if (!grassRef.current) return;
+  useLayoutEffect(() => {
+    const inst = grassRef.current;
+    if (!inst) return;
+
+    const total = Math.min(bladeData.length, MAX_GRASS_CAPACITY);
+    inst.count = total;
+    if (total === 0) return;
 
     const isSnow = activeBiome === 'snow';
     const isAutumn = activeBiome === 'autumn';
     const isLotus = activeBiome === 'lotus';
     const isEmerald = grassPalette === 'emerald';
 
-    // Snow Biome: Soft, shimmering winter frost crystals
     const frostBase = new THREE.Color('#CBD5E1');
     const frostMid = new THREE.Color('#E2E8F0');
     const frostTip = new THREE.Color('#FFFFFF');
 
-    // Autumn Biome: Warm rust, golden wheat, and sunlit amber
     const autumnBase = new THREE.Color('#B45309');
     const autumnMid = new THREE.Color('#D97706');
     const autumnTip = new THREE.Color('#F59E0B');
 
-    // Lotus Biome: Mystic jade, teal moss, and dewy mint
     const lotusBase = new THREE.Color('#134E4A');
     const lotusMid = new THREE.Color('#14B8A6');
     const lotusTip = new THREE.Color('#5EEAD4');
 
-    // Meadow Biome: Lush emerald and sunlit gold tones
     const lushEmerald = new THREE.Color(isEmerald ? '#2EA86E' : '#6EAE46');
     const sunlitMeadow = new THREE.Color(isEmerald ? '#4ED48E' : '#9ED45A');
     const goldenCrest = new THREE.Color(isEmerald ? '#86EAB5' : '#BCE668');
     const tempCol = new THREE.Color();
 
-    for (let i = 0; i < bladeData.length; i++) {
+    for (let i = 0; i < total; i++) {
       const item = bladeData[i];
 
       dummy.position.copy(item.pos);
@@ -444,7 +439,7 @@ export function InstancedGrass({ count: overrideCount }: InstancedGrassProps) {
       );
       dummy.updateMatrix();
 
-      grassRef.current.setMatrixAt(i, dummy.matrix);
+      inst.setMatrixAt(i, dummy.matrix);
 
       if (isSnow) {
         if (item.tSunlit < 0.5) {
@@ -472,18 +467,23 @@ export function InstancedGrass({ count: overrideCount }: InstancedGrassProps) {
         }
       }
 
-      grassRef.current.setColorAt(i, tempCol);
+      inst.setColorAt(i, tempCol);
     }
 
-    grassRef.current.instanceMatrix.needsUpdate = true;
-    if (grassRef.current.instanceColor) {
-      grassRef.current.instanceColor.needsUpdate = true;
+    inst.instanceMatrix.needsUpdate = true;
+    if (inst.instanceColor) {
+      inst.instanceColor.needsUpdate = true;
     }
   }, [dummy, bladeData, grassPalette, activeBiome]);
 
   // Set transforms and pastel colors for meadow wildflowers or seasonal florets
-  useEffect(() => {
-    if (!flowerRef.current) return;
+  useLayoutEffect(() => {
+    const inst = flowerRef.current;
+    if (!inst) return;
+
+    const total = Math.min(flowerData.length, MAX_FLOWER_CAPACITY);
+    inst.count = total;
+    if (total === 0) return;
 
     const isSnow = activeBiome === 'snow';
     const isAutumn = activeBiome === 'autumn';
@@ -507,26 +507,26 @@ export function InstancedGrass({ count: overrideCount }: InstancedGrassProps) {
       colorAccent = new THREE.Color('#FFFFFF');
     }
 
-    for (let i = 0; i < flowerData.length; i++) {
+    for (let i = 0; i < total; i++) {
       const f = flowerData[i];
       dummy.position.copy(f.pos);
       dummy.rotation.set(-Math.PI / 2 + 0.15, 0, f.rotY);
       dummy.scale.set(f.scale, f.scale, f.scale);
       dummy.updateMatrix();
 
-      flowerRef.current.setMatrixAt(i, dummy.matrix);
+      inst.setMatrixAt(i, dummy.matrix);
       const col =
         f.colorType < 0.62
           ? colorPrimary
           : f.colorType < 0.88
           ? colorSecondary
           : colorAccent;
-      flowerRef.current.setColorAt(i, col);
+      inst.setColorAt(i, col);
     }
 
-    flowerRef.current.instanceMatrix.needsUpdate = true;
-    if (flowerRef.current.instanceColor) {
-      flowerRef.current.instanceColor.needsUpdate = true;
+    inst.instanceMatrix.needsUpdate = true;
+    if (inst.instanceColor) {
+      inst.instanceColor.needsUpdate = true;
     }
   }, [dummy, flowerData, activeBiome]);
 
@@ -558,28 +558,24 @@ export function InstancedGrass({ count: overrideCount }: InstancedGrassProps) {
     }
   });
 
-  if (bladeData.length === 0) return null;
-
   return (
     <group>
-      {/* 1. Stylized Fluffy Meadow Tufts (Ghibli / Normal-Domed Instanced Clusters) */}
+      {/* 1. Stylized Fluffy Meadow Tufts (Constant capacity prevents R3F auto-disposal) */}
       <instancedMesh
         ref={grassRef}
-        args={[grassGeometry, grassMaterial, bladeData.length]}
+        args={[grassGeometry, grassMaterial, MAX_GRASS_CAPACITY]}
         receiveShadow
         castShadow={false}
         frustumCulled={false}
       />
 
       {/* 2. Pastel Wildflowers Nestled in Fluffy Grass Mounds */}
-      {flowerData.length > 0 && (
-        <instancedMesh
-          ref={flowerRef}
-          args={[flowerGeometry, flowerMaterial, flowerData.length]}
-          receiveShadow
-          frustumCulled={false}
-        />
-      )}
+      <instancedMesh
+        ref={flowerRef}
+        args={[flowerGeometry, flowerMaterial, MAX_FLOWER_CAPACITY]}
+        receiveShadow
+        frustumCulled={false}
+      />
     </group>
   );
 }

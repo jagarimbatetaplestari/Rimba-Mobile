@@ -57,11 +57,19 @@ export function drawForestTagDonutChart(
   const innerR = outerR * 0.6;
 
   let currentAngle = -Math.PI / 2;
-  const totalMins = Math.max(
-    1,
-    tags.reduce((a, b) => a + b.minutes, 0),
-  );
+  const rawTotalMins = tags.reduce((a, b) => a + b.minutes, 0);
+  const totalMins = Math.max(1, rawTotalMins);
 
+  if (rawTotalMins === 0) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, outerR, 0, Math.PI * 2);
+    ctx.arc(cx, cy, innerR, Math.PI * 2, 0, true);
+    ctx.closePath();
+    ctx.fillStyle = "#E2E8F0";
+    ctx.fill();
+    ctx.restore();
+  } else {
   tags.forEach((item, idx) => {
     const sliceAngle = (item.minutes / totalMins) * (Math.PI * 2);
     const endAngle = currentAngle + sliceAngle;
@@ -93,6 +101,7 @@ export function drawForestTagDonutChart(
 
     currentAngle = endAngle;
   });
+  }
 
   // Lubang tengah donat
   ctx.save();
@@ -179,7 +188,7 @@ export async function drawDioramaCardCanvas(
   const focusBadge = isEn ? "TOTAL FOCUS TIME" : "TOTAL WAKTU FOKUS";
   const hoursUnit = isEn ? "HRS" : "JAM";
   const peakLabel = isEn ? "Peak Day" : "Hari Puncak";
-  const rhythmMetric = `${peakLabel}: ${mostFocusedDay || (isEn ? "Thu" : "Kamis")}`;
+  const rhythmMetric = `${peakLabel}: ${mostFocusedDay || "-"}`;
 
   ctx.fillStyle = "#F6F7F9";
   ctx.fillRect(0, 0, width, height);
@@ -316,7 +325,7 @@ export function DioramaShareCard({
   const focusBadge = isEn ? "TOTAL FOCUS TIME" : "TOTAL WAKTU FOKUS";
   const hoursUnit = isEn ? "HRS" : "JAM";
   const peakLabel = isEn ? "Peak Day" : "Hari Puncak";
-  const rhythmMetric = `${peakLabel}: ${mostFocusedDay || (isEn ? "Thu" : "Kamis")}`;
+  const rhythmMetric = `${peakLabel}: ${mostFocusedDay || "-"}`;
 
   const containerAspectClass =
     aspectRatio === "story"
@@ -390,10 +399,8 @@ export function DioramaShareCard({
         >
           {(() => {
             let currentAngle = -90;
-            const totalM = Math.max(
-              1,
-              tagStats.reduce((a, b) => a + b.minutes, 0),
-            );
+            const rawTotalM = tagStats.reduce((a, b) => a + b.minutes, 0);
+            const totalM = Math.max(1, rawTotalM);
             const cx = 80,
               cy = 80,
               r = 66,
@@ -401,7 +408,17 @@ export function DioramaShareCard({
 
             return (
               <>
-                {tagStats.map((item, idx) => {
+                {rawTotalM === 0 ? (
+                  <circle
+                    cx={cx}
+                    cy={cy}
+                    r={(r + innerR) / 2}
+                    fill="none"
+                    stroke="#E2E8F0"
+                    strokeWidth={r - innerR}
+                  />
+                ) : (
+                tagStats.map((item, idx) => {
                   const sliceAngle = (item.minutes / totalM) * 360;
                   const startA = currentAngle;
                   const endA = currentAngle + sliceAngle;
@@ -449,7 +466,8 @@ export function DioramaShareCard({
                       )}
                     </g>
                   );
-                })}
+                })
+                )}
                 <text
                   x={cx}
                   y={cy - 4}

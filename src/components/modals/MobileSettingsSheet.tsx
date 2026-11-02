@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from 'next/navigation';
 import { useAuthStore } from "@/lib/auth/useAuthStore";
 import { useGameStore } from "@/lib/game/useGameStore";
 import { soundManager } from "@/lib/audio/sounds";
@@ -92,6 +93,7 @@ export function MobileSettingsSheet({
   onOpenProfile,
 }: MobileSettingsSheetProps) {
   const { user } = useAuthStore();
+  const router = useRouter();
   const saveData = useGameStore((state) => state.saveData);
   const prefs = usePreferencesStore();
   const { t, lang, setLanguage } = useTranslation();
@@ -300,8 +302,7 @@ export function MobileSettingsSheet({
       await useAuthStore.getState().deleteAccountAndData();
       setIsDeleteAccountOpen(false);
       setDeleteAccountInput("");
-      onClose();
-      window.location.replace("/login");
+      router.replace('/login/');
     } catch {
       useGameStore.getState().notify(
         lang === "en"

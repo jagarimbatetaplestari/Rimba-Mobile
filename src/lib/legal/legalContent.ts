@@ -5,7 +5,7 @@ export const LEGAL_CONTENT: Record<'id' | 'en', { privacy: LegalDocument; terms:
   "id": {
     "privacy": {
       "title": "Kebijakan Privasi",
-      "lastUpdated": "1 November 2026",
+      "lastUpdated": "2 November 2026",
       "summary": "Rimba menyimpan progres di perangkat dan menyinkronkannya ke cloud saat Anda masuk. Kebijakan ini menjelaskan akun, profil komunitas, pembelian, dan pilihan penghapusan data Anda.",
       "sections": [
         {
@@ -15,6 +15,7 @@ export const LEGAL_CONTENT: Record<'id' | 'en', { privacy: LegalDocument; terms:
             "• Akun: ID pengguna, nama, email, dan informasi autentikasi yang diberikan saat masuk melalui email, Apple, atau Google. Kami tidak menerima kata sandi akun Apple atau Google Anda.",
             "• Progres: Durasi, waktu, mode dan status sesi fokus; tugas, tag, jurnal, tata letak pulau, objek, Soul/XP, pencapaian dan preferensi. Data ini disimpan lokal dan dapat disinkronkan sebagai save akun.",
             "• Profil dan komunitas: Nama tampilan, bio, avatar/foto yang Anda pilih, statistik serta informasi kehadiran/sesi ketika memakai fitur komunitas.",
+            "• Pelaporan dan moderasi Campfire: ID pelapor dan akun yang dilaporkan, alasan laporan, waktu laporan serta bukti keadaan ruangan saat dilaporkan, termasuk nama dan pengaturan ruangan, ID/nama tampilan peserta, avatar karakter, kehadiran, waktu bergabung dan identitas host. Kami juga menyimpan keputusan, catatan, waktu dan ID moderator, pembatasan akses, serta relasi akun yang memblokir dan diblokir untuk menjalankan fitur blokir.",
             "• Pembelian dan operasi layanan: ID pengguna aplikasi, produk, transaksi, status langganan, pemulihan pembelian, informasi platform/perangkat, dan log teknis yang diperlukan oleh penyedia layanan. Apple atau Google memproses pembayaran; Rimba tidak menerima nomor kartu pembayaran Anda."
           ]
         },
@@ -32,7 +33,8 @@ export const LEGAL_CONTENT: Record<'id' | 'en', { privacy: LegalDocument; terms:
           "title": "3. Data yang Terlihat oleh Orang Lain",
           "content": [
             "Nama tampilan, bio, avatar dan statistik yang ditampilkan pada papan peringkat atau sesi bersama dapat dilihat peserta atau pengguna lain. Email akun bukan bagian dari profil publik yang dimaksudkan untuk ditampilkan.",
-            "Avatar yang diunggah menggunakan URL publik; siapa pun yang memiliki URL dapat mengaksesnya. Hindari memasukkan informasi sensitif ke profil, nama ruangan atau konten yang dibagikan."
+            "Avatar yang diunggah menggunakan URL publik; siapa pun yang memiliki URL dapat mengaksesnya. Hindari memasukkan informasi sensitif ke profil, nama ruangan atau konten yang dibagikan.",
+            "Laporan, alasan, bukti ruangan dan catatan tindakan moderasi tidak ditampilkan kepada peserta lain. Peninjauan dan tindakan melalui fitur moderator hanya tersedia bagi pemilik Rimba yang diberi kewenangan moderator; penyedia layanan memproses data sesuai kebutuhan operasional dan kontrol akses server."
           ]
         },
         {
@@ -57,6 +59,7 @@ export const LEGAL_CONTENT: Record<'id' | 'en', { privacy: LegalDocument; terms:
           "title": "6. Retensi, Ekspor dan Penghapusan",
           "content": [
             "Data akun disimpan selama diperlukan untuk menyediakan layanan atau sampai penghapusan akun diproses. Catatan yang wajib disimpan untuk kewajiban hukum, keamanan atau transaksi dapat mengikuti retensi penyedia terkait.",
+            "Saat akun terkait dihapus, bukti ruangan, alasan laporan dan catatan moderasi yang terkait disunting untuk menghapus kontennya; relasi blokir akun tersebut dihapus. Laporan dan tindakan moderasi terkait disimpan hingga 90 hari, kemudian dihapus.",
             "Ekspor JSON tersedia melalui Cadangan & Pemulihan. Berkas yang sudah Anda ekspor atau bagikan berada di luar kendali penghapusan jarak jauh Rimba.",
             "Gunakan Pengaturan atau Profil → Hapus Akun & Data Suaka untuk menghapus akun. Kegagalan jaringan/server harus diselesaikan sebelum penghapusan dinyatakan berhasil. Jika tidak dapat masuk, hubungi email dukungan; kami perlu memverifikasi kepemilikan akun.",
             "Penghapusan akun tidak otomatis membatalkan langganan App Store/Google Play. Kelola atau batalkan langganan melalui pengaturan toko sebelum menghapus akun."
@@ -143,7 +146,7 @@ export const LEGAL_CONTENT: Record<'id' | 'en', { privacy: LegalDocument; terms:
   "en": {
     "privacy": {
       "title": "Privacy Policy",
-      "lastUpdated": "November 1, 2026",
+      "lastUpdated": "November 2, 2026",
       "summary": "Rimba stores progress on your device and syncs it to the cloud when you sign in. This policy covers accounts, community profiles, purchases, and your deletion choices.",
       "sections": [
         {
@@ -153,6 +156,7 @@ export const LEGAL_CONTENT: Record<'id' | 'en', { privacy: LegalDocument; terms:
             "• Account: User ID, name, email and authentication information provided through email, Apple or Google sign-in. We do not receive your Apple or Google account password.",
             "• Progress: Focus session duration, timestamps, mode and status; tasks, tags, journals, island layout, objects, Soul/XP, achievements and preferences. This is stored locally and may be synced as an account save.",
             "• Profile and community: Display name, bio, avatar/photo you choose, statistics and presence/session information when using community features.",
+            "• Campfire reports and moderation: Reporter and reported account IDs, report reasons, report timestamps and a snapshot of the room when reported, including room name and settings, participant IDs/display names, character avatars, presence, joining times and host identity. We also store moderation decisions, notes, timestamps and moderator IDs, access restrictions, and the relationship between blocking and blocked accounts to provide blocking.",
             "• Purchases and operations: App user ID, products, transactions, subscription status, purchase restoration, platform/device information, and technical logs needed by service providers. Apple or Google handles payment; Rimba does not receive your payment card number."
           ]
         },
@@ -170,7 +174,8 @@ export const LEGAL_CONTENT: Record<'id' | 'en', { privacy: LegalDocument; terms:
           "title": "3. Information Visible to Others",
           "content": [
             "Display names, bios, avatars and statistics shown in leaderboards or shared sessions may be visible to participants or other users. Account email is not intended to be part of the public profile.",
-            "Uploaded avatars use public URLs; anyone with the URL can access them. Avoid sensitive information in profiles, room names or shared content."
+            "Uploaded avatars use public URLs; anyone with the URL can access them. Avoid sensitive information in profiles, room names or shared content.",
+            "Reports, reasons, room evidence and moderation notes are not shown to other participants. Review and action through moderator features are restricted to the Rimba owner authorized as moderator; service providers process data as required for operations under server access controls."
           ]
         },
         {
@@ -195,6 +200,7 @@ export const LEGAL_CONTENT: Record<'id' | 'en', { privacy: LegalDocument; terms:
           "title": "6. Retention, Export and Deletion",
           "content": [
             "Account data is retained as needed to provide the service or until account deletion is processed. Records required for legal, security or transaction obligations may follow applicable provider retention.",
+            "When a related account is deleted, room evidence, report reasons and related moderation notes are redacted to remove their content; that account’s block relationships are deleted. Reports and related moderation actions are retained for up to 90 days, then deleted.",
             "JSON export is available under Backup & Restore. Files you export or share remain outside Rimba remote deletion control.",
             "Use Settings or Profile → Delete Account & Sanctuary Data to delete your account. Network/server failures must be resolved before deletion is confirmed. If you cannot sign in, contact support; we must verify account ownership.",
             "Deleting an account does not automatically cancel App Store/Google Play subscriptions. Manage or cancel them through store settings before deleting your account."

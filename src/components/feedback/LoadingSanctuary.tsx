@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { hapticLight } from "@/lib/mobile/nativeBridge";
+import { useTranslation } from "@/lib/i18n/translations";
 import { soundManager } from "@/lib/audio/sounds";
 
 interface LoadingSanctuaryProps {
@@ -18,21 +19,34 @@ interface TouchRipple {
   y: number;
 }
 
-const MINDFUL_THOUGHTS = [
-  "Tarik napas perlahan... Suaka Rimba menyambutmu.",
-  "Hening di antara dedaunan, temukan fokusmu.",
-  "Setiap pohon tumbuh dari satu hembusan napas yang tenang.",
-  "Ruang hening untuk berkarya dan bertumbuh.",
-  "Fokus mengalir bagai air, tenang bagai batu karang.",
-  "Lepaskan distraksi, nikmati momen ini sepenuhnya.",
-];
+const MINDFUL_THOUGHTS = {
+  id: [
+    "Tarik napas perlahan... Suaka Rimba menyambutmu.",
+    "Hening di antara dedaunan, temukan fokusmu.",
+    "Setiap pohon tumbuh dari satu hembusan napas yang tenang.",
+    "Ruang hening untuk berkarya dan bertumbuh.",
+    "Fokus mengalir bagai air, tenang bagai batu karang.",
+    "Lepaskan distraksi, nikmati momen ini sepenuhnya.",
+  ],
+  en: [
+    "Breathe slowly... Your Rimba sanctuary welcomes you.",
+    "Find your focus in the stillness between the leaves.",
+    "Every tree grows from a single, peaceful breath.",
+    "A quiet space to create and grow.",
+    "Let focus flow like water, calm and steady.",
+    "Release distractions and settle into this moment.",
+  ],
+};
 
 export function LoadingSanctuary({
-  message = "Menyiapkan Suaka Rimba",
+  message,
   subMessage,
   fullScreen = true,
   isFadingOut = false,
 }: LoadingSanctuaryProps) {
+  const { lang } = useTranslation();
+  const thoughts = MINDFUL_THOUGHTS[lang];
+  const loadingMessage = message ?? (lang === "en" ? "Preparing your Rimba sanctuary" : "Menyiapkan Suaka Rimba");
   const containerClasses = fullScreen
     ? "fixed inset-0 z-50 flex flex-col items-center justify-between p-6"
     : "w-full h-full min-h-[300px] flex flex-col items-center justify-between p-6";
@@ -47,7 +61,7 @@ export function LoadingSanctuary({
     const interval = setInterval(() => {
       setIsThoughtFading(true);
       setTimeout(() => {
-        setThoughtIndex((prev) => (prev + 1) % MINDFUL_THOUGHTS.length);
+        setThoughtIndex((prev) => (prev + 1) % MINDFUL_THOUGHTS.id.length);
         setIsThoughtFading(false);
       }, 350);
     }, 3800);
@@ -73,12 +87,12 @@ export function LoadingSanctuary({
     // Advance to next zen reflection on tap
     setIsThoughtFading(true);
     setTimeout(() => {
-      setThoughtIndex((prev) => (prev + 1) % MINDFUL_THOUGHTS.length);
+      setThoughtIndex((prev) => (prev + 1) % MINDFUL_THOUGHTS.id.length);
       setIsThoughtFading(false);
     }, 200);
   }, []);
 
-  const activeThought = subMessage || MINDFUL_THOUGHTS[thoughtIndex];
+  const activeThought = subMessage || thoughts[thoughtIndex];
 
   return (
     <>
@@ -151,7 +165,7 @@ export function LoadingSanctuary({
         {/* Top Minimal Brand Mark */}
         <div className="relative z-10 pt-4 flex flex-col items-center">
           <span className="text-[11px] font-semibold tracking-[0.32em] uppercase text-[#6E9E83]">
-            Rimba Sanctuary
+            {lang === "en" ? "Rimba Sanctuary" : "Suaka Rimba"}
           </span>
         </div>
 
@@ -188,7 +202,7 @@ export function LoadingSanctuary({
           {/* Calming Typography */}
           <div className="mt-6 text-center max-w-xs space-y-1.5 px-4">
             <h2 className="text-[16px] font-medium tracking-tight text-[#E8F1EC]">
-              {message}
+              {loadingMessage}
             </h2>
             <p
               className={`text-[12.5px] text-[#86AA96] leading-relaxed transition-opacity duration-300 min-h-[38px] flex items-center justify-center ${
@@ -204,7 +218,7 @@ export function LoadingSanctuary({
         <div className="relative z-10 pb-4 flex items-center gap-2 text-[#567E68]">
           <span className="w-1.5 h-1.5 rounded-full bg-[#52A379] animate-ping" />
           <span className="text-[11px] font-normal tracking-wide">
-            Ketuk layar untuk bernapas
+            {lang === "en" ? "Tap the screen to breathe" : "Ketuk layar untuk bernapas"}
           </span>
         </div>
       </div>

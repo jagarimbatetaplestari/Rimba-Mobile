@@ -19,6 +19,9 @@ jobs:
     name: Build & Upload to App Store Connect
     runs-on: macos-latest
     timeout-minutes: 60
+    env:
+      NEXT_PUBLIC_GOOGLE_IOS_CLIENT_ID: ${{ vars.NEXT_PUBLIC_GOOGLE_IOS_CLIENT_ID || '475693230434-pd36p3isodu8jo7tem4tgjja8rm5u61b.apps.googleusercontent.com' }}
+      NEXT_PUBLIC_GOOGLE_WEB_CLIENT_ID: ${{ vars.NEXT_PUBLIC_GOOGLE_WEB_CLIENT_ID || '475693230434-du494aucdevbi7d8gn4v71tse9clhh86.apps.googleusercontent.com' }}
 
     steps:
       - name: Checkout Repository

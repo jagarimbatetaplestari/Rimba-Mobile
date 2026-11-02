@@ -11,6 +11,7 @@ import {
   getLandExpansionZoneInfo,
 } from "@/lib/game/worldRules";
 import { useGameStore } from "@/lib/game/useGameStore";
+import { useCampfireStore } from '@/lib/game/campfireStore';
 import { useTranslation } from "@/lib/i18n/translations";
 
 const EMPTY_TODOS: TodoItem[] = [];
@@ -48,6 +49,7 @@ export function FocusHarvestModal({
   const worldObjects = useGameStore((state) => state.saveData.world_objects);
   const todos = useGameStore((state) => state.saveData.todos) || EMPTY_TODOS;
   const notify = useGameStore((state) => state.notify);
+  const campfire = useCampfireStore();
 
   const [reflectionNote, setReflectionNote] = useState<string>("");
   const [completeLinkedTodo, setCompleteLinkedTodo] = useState<boolean>(true);
@@ -95,7 +97,7 @@ export function FocusHarvestModal({
             60000,
         ),
       );
-  const isCampfire = Boolean(session.campfire_room_code);
+  const isCampfire = campfire.hasVerifiedSession(session);
   const baseRewards = calculateFocusRewards(durationMins);
   const rewards = {
     gold: isCampfire ? Math.max(5, Math.round(baseRewards.gold * 1.2)) : baseRewards.gold,
@@ -221,7 +223,7 @@ export function FocusHarvestModal({
               <span>{t.harvest.duration}</span>
             </span>
             <span className="text-sm font-bold text-[#0D3528] mt-0.5 tabular-nums">
-              {durationMins}m
+              {durationMins} {t.common.minShort}
             </span>
             <span className="text-[9.5px] font-semibold px-1.5 py-0.2 rounded-md mt-1 truncate max-w-full border border-[#0D3528]/10 bg-white text-[#14664D]">
               #{localizedTagLabel}
@@ -244,7 +246,7 @@ export function FocusHarvestModal({
           <div className="flex flex-col items-center text-center p-2 rounded-xl bg-[#0D3528]/[0.02]">
             <span className="text-[10px] text-[#14664D] flex items-center gap-1 font-medium">
               <Sprout className="w-3 h-3 stroke-[2.2]" />
-              <span>Level XP</span>
+              <span>XP</span>
             </span>
             <span className="text-sm font-bold text-[#187557] mt-0.5 tabular-nums">
               +{rewards.xp}

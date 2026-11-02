@@ -272,10 +272,6 @@ export function NatureWorkshopSheet() {
     setIsOpen(false);
   };
 
-  if (activeSession) {
-    return null;
-  }
-
   const categoryItems = BUILD_CATALOG.filter(
     (item) => item.category === activeCategory,
   );
@@ -294,6 +290,9 @@ export function NatureWorkshopSheet() {
     }
     return { arrow: "↑", label: isEn ? "North" : "Utara" };
   }, [normalizedDegrees, language]);
+
+  // Keep hook order stable when focus hides the workshop.
+  if (activeSession) return null;
 
   const getCategoryIcon = (cat: CategoryType) => {
     switch (cat) {

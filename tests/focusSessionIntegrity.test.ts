@@ -17,5 +17,13 @@ it('does not grow a reward tree on a tile occupied after session start',()=>{con
 it('does not grow a tree on a locked target tile',()=>{const seed=createInitialSaveData();const session=startFocusSession({targetTile:{grid_x:0,grid_y:0}});elapsed(session,25);const result=completeFocusSession(session,[],new Set(seed.world.unlocked_tiles));expect(result.newWorldObject).toBeDefined();expect(seed.world.unlocked_tiles).toContain(`${result.newWorldObject!.grid_x},${result.newWorldObject!.grid_y}`);});
 it('rejects a repeat completion of the updated session',()=>{const session=startFocusSession();elapsed(session,25);const first=completeFocusSession(session,[]);expect(first.success).toBe(true);expect(completeFocusSession(first.updatedSession,[]).newLedgerEntries).toEqual([]);});
 it('retains canonical rewards for ordinary 25-minute focus',()=>{const session=startFocusSession();elapsed(session,25);expect(completeFocusSession(session,[])).toMatchObject({success:true,rewardGold:25,rewardXp:100});expect(calculateFocusRewards(60)).toEqual({gold:65,xp:250});});
+it('does not award a social bonus from an imported or stale room-code string',()=>{
+ const session={...startFocusSession(),campfire_room_code:'forged-room'};elapsed(session,25);
+ expect(completeFocusSession(session,[])).toMatchObject({rewardGold:25,rewardXp:100});
+});
+it('retains the 20 percent bonus for a verified canonical Campfire session',()=>{
+ const session={...startFocusSession(),campfire_room_code:'verified-room'};elapsed(session,25);
+ expect(completeFocusSession(session,[],undefined,true)).toMatchObject({rewardGold:30,rewardXp:120});
+});
 it('freezes elapsed display at pause time and subtracts earlier pauses',()=>{const session=startFocusSession({isStopwatch:true});elapsed(session,25);expect(getFocusedElapsedMs({...session,is_paused:true,paused_at:new Date(start.getTime()+5*60000).toISOString(),total_paused_ms:2*60000})).toBe(3*60000);});
 it('renders invalid timing as zero instead of NaN',()=>{expect(getFocusedElapsedMs({...startFocusSession(),started_at:'broken'})).toBe(0);});

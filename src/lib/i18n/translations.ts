@@ -64,6 +64,14 @@ export const translations = {
       newTagPlaceholder: "Nama kategori...",
       addBtn: "Tambah",
       coversNextTile: "Menutup {pct}% petak baru",
+      pause: "Jeda Sesi",
+      resume: "Lanjutkan Fokus",
+      pauseDisabled: "Jeda dinonaktifkan di Mode Fokus Penuh",
+      zenMode: "Mode Zen",
+      mindfulFocus: "Fokus Tenang",
+      appTitle: "Rimba — Fokus & Tumbuhkan Pulaumu",
+      focusTitle: "Fokus",
+      harvestTitle: "Pohon Siap Dipanen!",
     },
     abandon: {
       title: "Menyerah Sekarang?",
@@ -838,6 +846,14 @@ export const translations = {
       newTagPlaceholder: "New tag name...",
       addBtn: "Add",
       coversNextTile: "Covers {pct}% of next tile",
+      pause: "Pause Session",
+      resume: "Resume Focus",
+      pauseDisabled: "Pause disabled in Strict Mode",
+      zenMode: "Zen Mode",
+      mindfulFocus: "Mindful Focus",
+      appTitle: "Rimba — Focus & Grow Your Island",
+      focusTitle: "Focus",
+      harvestTitle: "Tree Ready to Harvest!",
     },
     abandon: {
       title: "Give Up Now?",
@@ -1599,6 +1615,31 @@ export function translateTagLabel(tagOrLabel: string, lang: AppLanguage): string
     return TAG_TRANSLATIONS_EN[tagOrLabel] || tagOrLabel;
   }
   return tagOrLabel;
+}
+
+export const SPECIES_DESCRIPTIONS_EN: Record<string, string> = {
+  oak: "A simple, fresh green canopy marking the start of your focus journey.",
+  birch: "A slender young tree that brings softness to an island corner.",
+  pine: "An elegant, resilient mountain pine with evergreen foliage.",
+  elm: "A lush, rounded elm canopy offering shade and calm.",
+  autumn: "Warm golden orange leaves carrying the calm of sunset.",
+  round_oak: "A dense, rounded canopy blending natural leaf colors.",
+  banana: "Fresh, broad banana leaves from the edges of Indonesia's tropical forests.",
+  savannah: "A flat acacia canopy with warm green and golden hues.",
+  cypress: "A tall, slender tree adding a majestic vertical accent.",
+  nordic_pine: "A dark emerald conifer with crisp geometric foliage.",
+  palm: "Swaying exotic fronds bringing a relaxed tropical island feel.",
+  coconut: "A graceful, towering coconut tree with lush tropical fronds.",
+  tiered_pine: "A majestic pine with three layers of forest green foliage.",
+  baobab: "A giant tree with a strong trunk sheltering a wealth of life.",
+  ancient: "A majestic sacred tree with layered foliage and deep, sturdy roots.",
+  platformer_pine: "A proud, conical pine bringing cool shade to an island corner.",
+  round_snow: "A rounded tree wrapped in a thick blanket of pure winter snow.",
+  pine_snow: "A majestic mountain pine covered in lasting snow.",
+};
+
+export function translateSpeciesDescription(speciesId: string, fallback: string, lang: AppLanguage): string {
+  return lang === "en" ? SPECIES_DESCRIPTIONS_EN[speciesId] || fallback : fallback;
 }
 
 export function translateSpeciesName(speciesId: string, fallbackName: string, lang: AppLanguage): string {
@@ -2374,6 +2415,8 @@ export function useTranslation() {
     toggleLanguage,
     t,
     translateTag: (tagOrLabel: string) => translateTagLabel(tagOrLabel, language as AppLanguage),
+    translateSpeciesDescription: (speciesId: string, fallback: string) =>
+      translateSpeciesDescription(speciesId, fallback, language as AppLanguage),
     translateSpecies: (speciesId: string, fallbackName: string) =>
       translateSpeciesName(speciesId, fallbackName, language as AppLanguage),
     translateQuest: (q: { id: string; title: string; description: string; unit: string }) =>

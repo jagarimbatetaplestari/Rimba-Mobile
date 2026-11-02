@@ -103,6 +103,7 @@ export interface FocusSession {
   is_stopwatch?: boolean;
   companions?: string[];
   campfire_room_code?: string;
+  campfire_room_id?: string;
   is_shared_destiny?: boolean;
   target_tile?: { grid_x: number; grid_y: number };
   is_paused?: boolean;

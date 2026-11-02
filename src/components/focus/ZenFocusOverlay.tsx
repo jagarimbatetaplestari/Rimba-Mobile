@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 
 export function ZenFocusOverlay() {
-  const { language, translateSoundscape } = useTranslation();
+  const { t, language, translateSoundscape, translateTag, translateSpecies } = useTranslation();
   const isZenMode = useGameStore((state) => state.isZenMode);
   const activeSession = useGameStore((state) => state.activeSession);
   const setZenMode = useGameStore((state) => state.setZenMode);
@@ -229,7 +229,7 @@ export function ZenFocusOverlay() {
           {/* Tree Species Icon */}
           <span
             className="text-xl leading-none drop-shadow-xs relative z-10"
-            title={speciesCfg.name}
+            title={translateSpecies(speciesCfg.id, speciesCfg.name)}
           >
             {speciesCfg.icon}
           </span>
@@ -259,8 +259,7 @@ export function ZenFocusOverlay() {
             )}
             <span className="truncate font-semibold tracking-tight drop-shadow-xs">
               {activeSession.task_note?.trim() ||
-                activeSession.tag ||
-                "Mindful Focus"}
+                (activeSession.tag ? translateTag(activeSession.tag) : t.cockpit.mindfulFocus)}
             </span>
           </div>
 
@@ -283,7 +282,7 @@ export function ZenFocusOverlay() {
                   className="px-2.5 py-1 rounded-full bg-white/14 hover:bg-white/25 active:scale-90 transition-all text-white text-[11px] font-semibold border border-white/20"
                   title={language === "en" ? "Finish now (under 5m does not plant a tree)" : "Selesai sekarang (di bawah 5 menit tidak menumbuhkan pohon suaka)"}
                 >
-                  {language === "en" ? "Finish (<5m)" : "Selesai (<5m)"}
+                  {language === "en" ? "Finish (<5m)" : "Selesai (<5 mnt)"}
                 </button>
               )}
               {/* Pause / Resume Button */}
@@ -327,8 +326,8 @@ export function ZenFocusOverlay() {
                   }
                   aria-label={
                     activeSession.strict_mode
-                      ? "Pause disabled in Strict Mode"
-                      : activeSession.is_paused ? "Resume Focus" : "Pause Session"
+                      ? t.cockpit.pauseDisabled
+                      : activeSession.is_paused ? t.cockpit.resume : t.cockpit.pause
                   }
                 >
                   {activeSession.is_paused ? (
@@ -408,7 +407,7 @@ export function ZenFocusOverlay() {
               <Sprout className="w-6 h-6 text-white/90 transition-transform duration-1000 scale-90 stroke-[2.2] drop-shadow-xs relative z-10" />
             )}
             <span className="text-[10px] font-mono text-white font-bold mt-0.5 tabular-nums relative z-10 drop-shadow-xs">
-              {breathSeconds}s
+              {breathSeconds} {language === "en" ? "s" : "dtk"}
             </span>
           </div>
         </div>
@@ -470,7 +469,7 @@ export function ZenFocusOverlay() {
               <button
                 onClick={() => setShowSoundscapePopover(false)}
                 className="w-7 h-7 rounded-full flex items-center justify-center bg-white/20 hover:bg-white/30 border border-white/30 text-white active:scale-90 transition-transform cursor-pointer shadow-xs"
-                aria-label="Close"
+                aria-label={t.common.close}
               >
                 <X className="w-3.5 h-3.5 stroke-[2.4]" />
               </button>

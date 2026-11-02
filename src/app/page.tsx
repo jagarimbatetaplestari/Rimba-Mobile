@@ -31,6 +31,7 @@ import {
 } from "@/components/modals/MobileProfileModal";
 import { MobileStatisticsModal } from "@/components/modals/MobileStatisticsModal";
 import { MobileLeaderboardModal } from "@/components/modals/MobileLeaderboardModal";
+import { CampfireModerationModal } from '@/components/modals/CampfireModerationModal';
 import { useSubscriptionRefresh } from '@/lib/subscription/useSubscriptionRefresh';
 import { CloudSyncNotice } from '@/components/feedback/CloudSyncNotice';
 import { ProgressMigrationModal } from '@/components/modals/ProgressMigrationModal';
@@ -87,6 +88,7 @@ export default function RimbaDioramaApp() {
     useState<ProfileTab>("profile");
   const [isStatisticsOpen, setIsStatisticsOpen] = useState(false);
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
+  const [isModerationOpen, setIsModerationOpen] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isBiomePickerOpen, setIsBiomePickerOpen] = useState(false);
@@ -119,7 +121,7 @@ export default function RimbaDioramaApp() {
     if (!isAuthHydrated) return;
     if (!authUser && !ownershipError) {
       setIsOnboardingOpen(false);
-      router.replace("/login");
+      router.replace("/login/");
     }
   }, [isAuthHydrated, authUser, ownershipError, router]);
 
@@ -163,7 +165,9 @@ export default function RimbaDioramaApp() {
         active.is_shared_destiny
       ) {
         useGameStore.getState().notify(
-          `🔥 Api unggun padam! ${room.severedBy || "Seorang kawan"} meninggalkan bilik, sesi berakhir bersama.`,
+          usePreferencesStore.getState().language === 'en'
+            ? 'A participant left the shared focus session. Your group session has ended.'
+            : 'Seorang peserta meninggalkan sesi fokus bersama. Sesi kelompok telah berakhir.',
           "error"
         );
         useGameStore.getState().abandonFocus();
@@ -231,7 +235,10 @@ export default function RimbaDioramaApp() {
   useEffect(() => {
     try {
       void useAuthStore.getState().initAuth().then(() => {
-        try { init(); } catch { setNeedsSaveRecovery(true); }
+        try {
+          init();
+          void useCampfireStore.getState().recoverActiveRoom();
+        } catch { setNeedsSaveRecovery(true); }
       }).catch(() => setNeedsSaveRecovery(true));
     } catch (err) {
       console.error("[Rimba] Failed during init():", err);
@@ -397,6 +404,8 @@ export default function RimbaDioramaApp() {
 
       const handleOpenPaywall = (e: Event) => {
         const detail = (e as CustomEvent<{ source?: string }>).detail;
+        setIsProfileOpen(false);
+        setIsSettingsOpen(false);
         setPaywallSource(detail?.source || "general");
         setIsPaywallOpen(true);
       };
@@ -470,6 +479,7 @@ export default function RimbaDioramaApp() {
   );
 
   const isCanvasPausedByModal =
+    isModerationOpen ||
     isJournalOpen ||
     isSoundscapeOpen ||
     isDevOpen ||
@@ -503,6 +513,7 @@ export default function RimbaDioramaApp() {
     setIsProfileOpen(false);
     setIsStatisticsOpen(false);
     setIsLeaderboardOpen(false);
+    setIsModerationOpen(false);
     setIsSettingsOpen(false);
     setIsBiomePickerOpen(false);
     setIsIslandSwitcherOpen(false);
@@ -522,6 +533,7 @@ export default function RimbaDioramaApp() {
   useAndroidBackButton({
     activeModals: useMemo(
       () => [
+        { isOpen: isModerationOpen, close: () => setIsModerationOpen(false) },
         { isOpen: isPaywallOpen, close: () => setIsPaywallOpen(false) },
         { isOpen: isIslandSwitcherOpen, close: () => setIsIslandSwitcherOpen(false) },
         { isOpen: isBiomePickerOpen, close: () => setIsBiomePickerOpen(false) },
@@ -538,6 +550,7 @@ export default function RimbaDioramaApp() {
         { isOpen: isJournalOpen, close: () => setIsJournalOpen(false) },
       ],
       [
+        isModerationOpen,
         isPaywallOpen,
         isIslandSwitcherOpen,
         isBiomePickerOpen,
@@ -584,6 +597,11 @@ export default function RimbaDioramaApp() {
   // Synchronize browser history state when modal opens or closes
   useEffect(() => {
     if (typeof window === "undefined") return;
+    // Auth navigation owns the route. Do not race it with a modal history pop.
+    if (!authUser) {
+      pushedModalHistoryRef.current = false;
+      return;
+    }
 
     if (isAnyModalOrSheetOpen) {
       if (!pushedModalHistoryRef.current) {
@@ -597,7 +615,7 @@ export default function RimbaDioramaApp() {
         window.history.back();
       }
     }
-  }, [isAnyModalOrSheetOpen]);
+  }, [isAnyModalOrSheetOpen, authUser]);
 
   // Prevent flashing main island or onboarding before redirecting unauthenticated user to /login
   if (needsSaveRecovery || ownershipError) {
@@ -1036,8 +1054,10 @@ export default function RimbaDioramaApp() {
       )}
 
       {/* Mobile Special Drawers & Onboarding */}
+      {isModerationOpen && <CampfireModerationModal key={authUser.id} onClose={() => setIsModerationOpen(false)} />}
       {isProfileOpen && (
         <MobileProfileModal
+          onOpenModeration={() => { setIsProfileOpen(false); setIsModerationOpen(true); }}
           isOpen={isProfileOpen}
           onClose={() => setIsProfileOpen(false)}
           initialTab={profileInitialTab}
@@ -1124,7 +1144,6 @@ export default function RimbaDioramaApp() {
       {/* Smooth Crossfade Loading Overlay */}
       {showLoadingOverlay && (
         <LoadingSanctuary
-          message="Menyiapkan Suaka Rimba"
           fullScreen={true}
           isFadingOut={isFadingOutLoading}
         />

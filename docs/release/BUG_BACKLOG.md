@@ -22,4 +22,15 @@ Scope: iPhone+iPad, global excluding27EU territories, Free/Pro, virtual trees on
 | STORE-01 | P1 | Listing/territory/privacy incomplete | en-US/id version listing+subtitle+public privacy URL saved. App and product territory exclusion verified. Productivity category, content rights, regional age ratings and8-type App Privacy published with owner approval. Screenshots, reviewer access and final draft validation OPEN. |
 | RELEASE-01 | P1 | Publish before all gates pass | OPEN. No review submission authorized or performed for Rimba. No100%readiness claim. |
 
+## Build4 owner feedback — 2 November candidate
+
+| ID | Severity | Evidence and current status |
+| --- | --- | --- |
+| UI-FOCUS-02 | P1 | Exact recovery screen reproduced: NatureWorkshopSheet skipped useMemo during active focus. Hook order fixed; repeat focus/pause/resume/cancel synthetic UI passes. Native candidate pending. |
+| UI-ACCOUNT-02 | P1 | Delete confirmation below profile and paywall pointer/layer fixed; EN/ID browser pass. Actual deletion/StoreKit acceptance pending. |
+| AUTH-LOGOUT-02 | P1 | Blank page reproduced from history.back/auth navigation race. Awaited local sign-out/client routing/history guard fixed; logout+guest browser pass. Apple native/A-B device matrix pending. |
+| AUTH-GOOGLE-02 | P1 | Release build omitted both public Google IDs. Workflow/preflight fixed with regressions; replacement native login pending. |
+| UI-LANG-02 | P2 | Loading/focus/Zen/species/menu localized; flyouts revised. Tests and EN/ID core browser pass; native visual audit pending. |
+| SOCIAL-02 | P1 | RPC/moderation/recovery candidate with24database/31store tests; NOT deployed. Moderator assignment, retention, privacy/adversarial/native gates open. |
+
 For chronology and test logs see EXECUTION_LOG.md. Do not close device/production gates solely because unit tests or unsigned simulator compilation passed.

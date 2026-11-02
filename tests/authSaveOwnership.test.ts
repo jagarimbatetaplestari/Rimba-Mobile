@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 vi.mock('../src/lib/audio/musicPlayer',()=>({musicPlayer:{stop:vi.fn()}}));
-const m = vi.hoisted(() => ({ session: null as any, initialNullEvent: false }));
+const m = vi.hoisted(() => ({ session: null as any, initialNullEvent: false, signOutError: null as any, signOutOptions: undefined as any }));
 vi.mock('../src/lib/supabase/client', () => ({ supabase: {
   functions:{invoke:async()=>({data:{deleted:true,appleRevoked:false},error:null})},
   auth: {
@@ -8,7 +8,7 @@ vi.mock('../src/lib/supabase/client', () => ({ supabase: {
     onAuthStateChange: (callback:any)=>{if(m.initialNullEvent)queueMicrotask(()=>callback('INITIAL_SESSION',null));},
     getSession: async () => ({data:{session:m.session},error:null}),
     getUser: async()=>({data:{user:{...m.session?.user,identities:[{provider:'email'}]}},error:null}),
-    signOut: async () => { m.session=null; return {error:null}; },
+    signOut: async (options:any) => { m.signOutOptions=options;if(m.signOutError)return {error:m.signOutError};m.session=null; return {error:null}; },
   },
   from: () => ({select: () => ({eq: () => ({maybeSingle: async () => ({data:null,error:null})})}),upsert: async()=>({error:null})}),
 } }));
@@ -19,7 +19,7 @@ let saveSaveData: typeof import('../src/lib/game/storage').saveSaveData;
 let items: Map<string,string>;
 beforeEach(async () => {
   vi.resetModules();
-  items=new Map();m.session=null;m.initialNullEvent=false;vi.stubGlobal('window',{ addEventListener: vi.fn(), removeEventListener: vi.fn() });vi.stubGlobal('localStorage',{
+  items=new Map();m.session=null;m.initialNullEvent=false;m.signOutError=null;m.signOutOptions=undefined;vi.stubGlobal('window',{ addEventListener: vi.fn(), removeEventListener: vi.fn() });vi.stubGlobal('localStorage',{
     getItem:(key:string)=>items.get(key)??null,setItem:(key:string,value:string)=>items.set(key,value),removeItem:(key:string)=>items.delete(key),
   });
   Object.assign(window,{localStorage});
@@ -31,6 +31,20 @@ beforeEach(async () => {
 afterEach(()=>vi.unstubAllGlobals());
 const logIn=async(id:string)=>{expect((await useAuthStore.getState().loginWithEmail(id+'@example.test','test-password')).success).toBe(true);};
 const rename=(name:string)=>{const data={...useGameStore.getState().saveData,world:{...useGameStore.getState().saveData.world,name}};saveSaveData(data);useGameStore.setState({saveData:data});};
+it('ends only this device session and isolates Apple-style account history from guest',async()=>{
+  await logIn('apple-owner');rename('Private Apple sanctuary');
+  await useAuthStore.getState().logout();
+  expect(m.signOutOptions).toEqual({scope:'local'});
+  useAuthStore.getState().loginAsGuest();
+  expect(useGameStore.getState().saveData.storage_owner).toBe('guest');
+  expect(useGameStore.getState().saveData.world.name).not.toBe('Private Apple sanctuary');
+});
+it('does not pretend logout succeeded when the SDK failed to clear the session',async()=>{
+  await logIn('a');rename('A offline progress');m.signOutError=new Error('Storage unavailable');
+  await expect(useAuthStore.getState().logout()).rejects.toThrow('Storage unavailable');
+  expect(useAuthStore.getState().user?.id).toBe('a');
+  expect(useGameStore.getState().saveData.world.name).toBe('A offline progress');
+});
 it('does not delete an offline account save when logging out and returns to it after B', async()=>{
   await logIn('a');rename('A offline progress');await useAuthStore.getState().logout();
   await logIn('b');expect(useGameStore.getState().saveData.world.name).not.toBe('A offline progress');rename('B progress');

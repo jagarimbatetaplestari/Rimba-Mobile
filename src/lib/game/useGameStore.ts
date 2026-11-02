@@ -1513,7 +1513,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     }
 
     const unlockedSet = getUnlockedTilesSet(saveData.world, saveData.world_objects);
-    const result = completeFocusSession(activeSession, saveData.world_objects, unlockedSet);
+    const result = completeFocusSession(activeSession, saveData.world_objects, unlockedSet,
+      useCampfireStore.getState().hasVerifiedSession(activeSession));
     if (!result.success) {
       get().notify(result.error || 'Gagal menyelesaikan sesi fokus.', 'error');
       return false;

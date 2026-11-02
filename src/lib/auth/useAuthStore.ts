@@ -9,6 +9,7 @@ import { syncJournalKey } from '../supabase/syncJournal';
 import { smartSyncOnLogin, invalidateCloudSyncSession } from '../supabase/cloudSync';
 import { loadSaveData, getActiveSaveOwner, selectSaveOwner, saveStorageKey } from '../game/storage';
 import { useGameStore } from '../game/useGameStore';
+import { useCampfireStore } from '../game/campfireStore';
 
 export interface AuthUser {
   id: string;
@@ -171,6 +172,7 @@ export const useAuthStore = create<AuthState>()(
           const owner = patch.user && !patch.user.isGuest ? patch.user.id : 'guest';
           if (getActiveSaveOwner() !== owner) {
             invalidateCloudSyncSession();
+            useCampfireStore.getState().clearLocalRoom();
             try {
               const saveData = selectSaveOwner(owner);
               useGameStore.setState({ saveData, activeSession: saveData.focus_sessions.find(s => s.status === 'active') || null,
@@ -833,6 +835,7 @@ export const useAuthStore = create<AuthState>()(
 
         if (typeof window !== 'undefined') {
           const owner = currentUser.isGuest ? 'guest' : currentUser.id;
+          localStorage.removeItem('rimba_campfire_room_id:' + owner);
           localStorage.removeItem(saveStorageKey(owner));
           localStorage.removeItem(syncJournalKey(owner));
           localStorage.removeItem('rimba_progress_choice:' + encodeURIComponent(owner) + ':legacy');
@@ -855,11 +858,12 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: async () => {
+        ++authSessionRevision;
+        invalidateCloudSyncSession();
         lastSyncedUserId = null;
-        try {
-          await supabase.auth.signOut();
-        } catch {
-          // ignore
+        if (!get().user?.isGuest) {
+          const { error } = await supabase.auth.signOut({ scope: 'local' });
+          if (error) throw error;
         }
         set({ user: null, isLoading: false });
         // Owner-scoped durable saves survive logout, including unsynced offline progress.

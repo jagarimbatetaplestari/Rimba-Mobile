@@ -1,8 +1,10 @@
 "use client";
 
 import React, { useMemo, useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useGameStore } from "@/lib/game/useGameStore";
 import { useAuthStore } from "@/lib/auth/useAuthStore";
+import { supabase } from '@/lib/supabase/client';
 import { calculateAnalytics, getStreakMilestone } from "@/lib/game/analytics";
 import {
   getUnlockedTilesSet,
@@ -48,6 +50,7 @@ interface MobileProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
   onOpenLeaderboard?: () => void;
+  onOpenModeration?: () => void;
   initialTab?: ProfileTab;
 }
 
@@ -55,14 +58,28 @@ export function MobileProfileModal({
   isOpen,
   onClose,
   onOpenLeaderboard,
+  onOpenModeration,
 }: MobileProfileModalProps) {
   const { t, language, translateSpecies } = useTranslation();
+  const router = useRouter();
+  const [isSigningOut, setIsSigningOut] = useState(false);
   const saveData = useGameStore((state) => state.saveData);
   const grassPalette = useGameStore((state) => state.grassPalette);
   const setGrassPalette = useGameStore((state) => state.setGrassPalette);
   const setProfileName = useGameStore((state) => state.setProfileName);
   const notify = useGameStore((state) => state.notify);
   const user = useAuthStore((state) => state.user);
+  const [canModerate, setCanModerate] = useState(false);
+  useEffect(() => {
+    let closed = false;
+    setCanModerate(false);
+    if (isOpen && user && !user.isGuest) {
+      void supabase.rpc('campfire_moderator_status_v1').then(({ data, error }) => {
+        if (!closed) setCanModerate(!error && data === true);
+      }, () => {});
+    }
+    return () => { closed = true; };
+  }, [isOpen, user?.id, user?.isGuest]);
 
   const [isAvatarPickerOpen, setIsAvatarPickerOpen] = useState(false);
   const [isBadgesOpen, setIsBadgesOpen] = useState(false);
@@ -86,8 +103,7 @@ export function MobileProfileModal({
       await useAuthStore.getState().deleteAccountAndData();
       setIsDeleteAccountOpen(false);
       setDeleteConfirmInput("");
-      onClose();
-      window.location.replace("/login");
+      router.replace("/login/");
     } catch {
       notify(
         language === "en"
@@ -542,11 +558,18 @@ export function MobileProfileModal({
               </div>
               <button
                 type="button"
-                onClick={() => {
+                disabled={isSigningOut}
+                onClick={async () => {
                   hapticLight();
-                  useAuthStore.getState().logout();
-                  onClose();
-                  window.location.replace("/login");
+                  setIsSigningOut(true);
+                  try {
+                    await useAuthStore.getState().logout();
+                    router.replace("/login/");
+                  } catch {
+                    notify(language === "en" ? "Could not sign out. Please try again." : "Belum dapat keluar. Silakan coba lagi.", "error");
+                  } finally {
+                    setIsSigningOut(false);
+                  }
                 }}
                 className="flex items-center gap-1.5 text-[11px] font-medium text-rose-600 hover:text-rose-700 bg-rose-50 border border-rose-200/60 px-2.5 py-1 rounded-full active:scale-95 transition-transform"
               >
@@ -602,6 +625,7 @@ export function MobileProfileModal({
             </div>
 
             {/* Apple Guideline 5.1.1(v) Compliant In-App Account Deletion */}
+            {canModerate && onOpenModeration && <button type="button" onClick={onOpenModeration} className="w-full min-h-11 rounded-2xl bg-[#E4F4ED] px-4 text-sm font-medium text-[#14664D]">{language === 'en' ? 'Review Campfire reports' : 'Tinjau laporan Campfire'}</button>}
             <div className="pt-2 flex items-center justify-between border-t border-[#0D3528]/10 text-[11px]">
               <span className="text-[#0D3528]/50">
                 {language === "en" ? "Account & Privacy" : "Privasi & Akun"}
@@ -627,7 +651,7 @@ export function MobileProfileModal({
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-in fade-in duration-200"
+          className="fixed inset-0 z-[120] pointer-events-auto flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-in fade-in duration-200"
           onClick={(e) => {
             if (e.target === e.currentTarget && !isDeleting) {
               setIsDeleteAccountOpen(false);

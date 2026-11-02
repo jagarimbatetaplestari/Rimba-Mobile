@@ -80,7 +80,7 @@ export function MobileFocusCard({
   onEnterZen,
   claimableCount = 0,
 }: MobileFocusCardProps = {}) {
-  const { t, language, translateTag, translateSpecies, translateSoundscape } =
+  const { t, language, translateTag, translateSpecies, translateSpeciesDescription, translateSoundscape } =
     useTranslation();
   const activeSession = useGameStore((state) => state.activeSession);
   const startFocus = useGameStore((state) => state.startFocus);
@@ -307,7 +307,7 @@ export function MobileFocusCard({
       setShowAbandonModal(false);
       hasChimedRef.current = null;
       if (typeof document !== "undefined") {
-        document.title = "Rimba — Fokus & Tumbuhkan Pulaumu";
+        document.title = t.cockpit.appTitle;
       }
       return;
     }
@@ -318,7 +318,7 @@ export function MobileFocusCard({
       setNow(Date.now());
     }, 500);
     return () => clearInterval(interval);
-  }, [activeSession, activeSession?.is_paused]);
+  }, [activeSession, activeSession?.is_paused, language]);
 
   // Play gentle completion chime & update tab title when countdown reaches 00:00
   useEffect(() => {
@@ -350,7 +350,7 @@ export function MobileFocusCard({
         setZenMode(false);
       }
       if (typeof document !== "undefined") {
-        document.title = "🌱 Pohon Siap Dipanen! — Rimba";
+        document.title = `🌱 ${t.cockpit.harvestTitle} — Rimba`;
       }
     } else if (typeof document !== "undefined") {
       const totalSec = Math.floor(remainingMs / 1000);
@@ -358,9 +358,9 @@ export function MobileFocusCard({
         .toString()
         .padStart(2, "0");
       const s = (totalSec % 60).toString().padStart(2, "0");
-      document.title = `(${m}:${s}) Fokus — Rimba`;
+      document.title = `(${m}:${s}) ${t.cockpit.focusTitle} — Rimba`;
     }
-  }, [activeSession, now]);
+  }, [activeSession, now, language]);
 
   const handleStart = async () => {
     try {
@@ -836,7 +836,7 @@ export function MobileFocusCard({
                     <span
                       className={`text-[11px] truncate mt-0.5 ${isSelected ? "text-white" : "text-white/70"}`}
                     >
-                      {sp.description}
+                      {translateSpeciesDescription(sp.id, sp.description)}
                     </span>
                   </div>
                   {isSelected && (
@@ -1063,10 +1063,10 @@ export function MobileFocusCard({
         />
         <div className="flex justify-between text-[9px] tabular-nums text-white/65 px-0.5 mt-1 font-semibold">
           <span>⏱️ {t.common.free}</span>
-          <span>30m</span>
-          <span>60m</span>
-          <span>90m</span>
-          <span>120m</span>
+          <span>30 {t.common.minShort}</span>
+          <span>60 {t.common.minShort}</span>
+          <span>90 {t.common.minShort}</span>
+          <span>120 {t.common.minShort}</span>
         </div>
       </div>
 
@@ -1402,10 +1402,10 @@ export function MobileFocusCard({
                   }
                   aria-label={
                     activeSession.strict_mode
-                      ? "Pause disabled in Strict Mode"
+                      ? t.cockpit.pauseDisabled
                       : activeSession.is_paused
-                        ? "Resume Focus"
-                        : "Pause Session"
+                        ? t.cockpit.resume
+                        : t.cockpit.pause
                   }
                 >
                   {activeSession.strict_mode ? (
@@ -1427,8 +1427,8 @@ export function MobileFocusCard({
                     onEnterZen();
                   }}
                   className="w-10 h-10 rounded-full flex items-center justify-center transition-all active:scale-90 cursor-pointer border bg-white/[0.14] hover:bg-white/[0.22] text-white border-white/30 backdrop-blur-xl"
-                  title="Zen Mode"
-                  aria-label="Zen Mode"
+                  title={t.cockpit.zenMode}
+                  aria-label={t.cockpit.zenMode}
                 >
                   <Maximize2 className="w-4 h-4 stroke-[2.2]" />
                 </button>

@@ -388,6 +388,7 @@ export function MobileBottomCockpit({
                       <button
                         type="button"
                         onClick={closeFlyout}
+                        aria-label={t.common.close}
                         className="w-7 h-7 rounded-full bg-white/15 hover:bg-white/25 border border-white/20 flex items-center justify-center text-white transition-colors cursor-pointer shrink-0 shadow-xs"
                       >
                         <X className="w-3.5 h-3.5 stroke-[2.2]" />
@@ -503,7 +504,7 @@ export function MobileBottomCockpit({
                     >
                       <Play className="w-3.5 h-3.5 fill-[#0b2719] text-[#0b2719] shrink-0" />
                       <span>
-                        {t.cockpit.startFocus} ({selectedMinutes === 0 ? "∞" : `${selectedMinutes}m`})
+                        {t.cockpit.startFocus} ({selectedMinutes === 0 ? "∞" : `${selectedMinutes} ${t.common.minShort}`})
                       </span>
                     </button>
                   </div>
@@ -522,6 +523,7 @@ export function MobileBottomCockpit({
                       <button
                         type="button"
                         onClick={closeFlyout}
+                        aria-label={t.common.close}
                         className="w-7 h-7 rounded-full bg-white/15 hover:bg-white/25 border border-white/20 flex items-center justify-center text-white transition-colors cursor-pointer shrink-0 shadow-xs"
                       >
                         <X className="w-3.5 h-3.5 stroke-[2.2]" />
@@ -555,7 +557,7 @@ export function MobileBottomCockpit({
                               }
                             `}
                           >
-                            {m === 0 ? "∞" : `${m}m`}
+                            {m === 0 ? "∞" : `${m} ${t.common.minShort}`}
                           </button>
                         );
                       })}
@@ -632,7 +634,7 @@ export function MobileBottomCockpit({
                     >
                       <Play className="w-3.5 h-3.5 fill-[#0b2719] text-[#0b2719] shrink-0" />
                       <span>
-                        {t.cockpit.startFocus} ({selectedMinutes === 0 ? "∞" : `${selectedMinutes}m`})
+                        {t.cockpit.startFocus} ({selectedMinutes === 0 ? "∞" : `${selectedMinutes} ${t.common.minShort}`})
                       </span>
                     </button>
                   </div>

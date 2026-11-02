@@ -7,17 +7,48 @@ const runPreflight = (extra: Record<string, string>) => spawnSync(process.execPa
   ['scripts/check-release-env.mjs'], { encoding: 'utf8', env: { ...process.env,
     NEXT_PUBLIC_SUPABASE_URL: '', NEXT_PUBLIC_SUPABASE_ANON_KEY: '',
     NEXT_PUBLIC_REVENUECAT_IOS_KEY: '', APPLE_CERTIFICATE_BASE64: '',
+    NEXT_PUBLIC_GOOGLE_IOS_CLIENT_ID: '', NEXT_PUBLIC_GOOGLE_WEB_CLIENT_ID: '',
     APPLE_CERTIFICATE_PASSWORD: '', APPLE_PROVISION_PROFILE_BASE64: '',
     APP_STORE_CONNECT_PRIVATE_KEY_BASE64: '', ...extra } });
 const configured = {
   NEXT_PUBLIC_SUPABASE_URL: 'https://rkljugrrscmqopeuwtpd.supabase.co',
   NEXT_PUBLIC_SUPABASE_ANON_KEY: 'synthetic-anon',
   NEXT_PUBLIC_REVENUECAT_IOS_KEY: 'appl_synthetic',
+  NEXT_PUBLIC_GOOGLE_IOS_CLIENT_ID: '123-ios.apps.googleusercontent.com',
+  NEXT_PUBLIC_GOOGLE_WEB_CLIENT_ID: '123-web.apps.googleusercontent.com',
   APPLE_CERTIFICATE_BASE64: 'synthetic-cert', APPLE_CERTIFICATE_PASSWORD: 'synthetic-password',
   APPLE_PROVISION_PROFILE_BASE64: 'synthetic-profile',
   APP_STORE_CONNECT_PRIVATE_KEY_BASE64: 'synthetic-private-key',
 };
 describe('release configuration gates', () => {
+  it('provides Google configuration to both preflight and build through the release job environment', () => {
+    const jobEnvironment = workflow.match(/    env:\r?\n([\s\S]*?)    steps:/)?.[1] ?? '';
+    const googleEnvironment = Object.fromEntries(Array.from(jobEnvironment.matchAll(
+      /      (NEXT_PUBLIC_GOOGLE_\w+): \$\{\{ vars\.\w+ \|\| '([^']+)' \}\}/g,
+    )).map((match) => [match[1], match[2]]));
+    const result = runPreflight({ ...configured,
+      NEXT_PUBLIC_GOOGLE_IOS_CLIENT_ID: '', NEXT_PUBLIC_GOOGLE_WEB_CLIENT_ID: '',
+      ...googleEnvironment });
+    expect(googleEnvironment.NEXT_PUBLIC_GOOGLE_IOS_CLIENT_ID ?? '').toMatch(/\.apps\.googleusercontent\.com$/);
+    expect(googleEnvironment.NEXT_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? '').toMatch(/\.apps\.googleusercontent\.com$/);
+    expect(result.status).toBe(0);
+  });
+  it('rejects missing Google client IDs before compiling a broken native login', () => {
+    for (const name of ['NEXT_PUBLIC_GOOGLE_IOS_CLIENT_ID', 'NEXT_PUBLIC_GOOGLE_WEB_CLIENT_ID']) {
+      const result = runPreflight({ ...configured, [name]: '' });
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain(name);
+      expect(result.stderr).not.toContain('synthetic-password');
+    }
+  });
+  it('rejects malformed Google client IDs without logging their values', () => {
+    for (const name of ['NEXT_PUBLIC_GOOGLE_IOS_CLIENT_ID', 'NEXT_PUBLIC_GOOGLE_WEB_CLIENT_ID']) {
+      const result = runPreflight({ ...configured, [name]: 'synthetic-invalid-client' });
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain(`Invalid release configuration: ${name}`);
+      expect(result.stderr).not.toContain('synthetic-invalid-client');
+    }
+  });
   it('does not embed a certificate password fallback in the public workflow', () => {
     const binding = workflow.match(/^\s*CERTIFICATE_PASSWORD:\s*(.+)$/m)?.[1];
     expect(binding === '${{ secrets.APPLE_CERTIFICATE_PASSWORD }}').toBe(true);

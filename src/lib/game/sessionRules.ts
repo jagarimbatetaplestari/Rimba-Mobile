@@ -125,7 +125,8 @@ export interface CompleteSessionResult {
 export function completeFocusSession(
   session: FocusSession,
   existingObjects: WorldObject[],
-  unlockedTiles?: Set<string>
+  unlockedTiles?: Set<string>,
+  verifiedCampfireBonus = false,
 ): CompleteSessionResult {
   const now = Date.now();
   const expectedEnd = new Date(session.expected_end_at).getTime();
@@ -227,7 +228,7 @@ export function completeFocusSession(
   let { gold: rewardGold, xp: rewardXp } = calculateFocusRewards(minutesForReward);
 
   // Fase 5: Sinergi Hangat Api Unggun (+20% Soul & XP bonus)
-  if (session.campfire_room_code && rewardGold > 0 && rewardXp > 0) {
+  if (verifiedCampfireBonus && session.campfire_room_code && rewardGold > 0 && rewardXp > 0) {
     rewardGold = Math.max(5, Math.round(rewardGold * 1.2));
     rewardXp = Math.max(20, Math.round(rewardXp * 1.2));
   }

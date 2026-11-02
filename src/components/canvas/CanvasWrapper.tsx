@@ -2,6 +2,7 @@
 
 import React, { Component, ReactNode } from 'react';
 import dynamic from 'next/dynamic';
+import { useTranslation } from '@/lib/i18n/translations';
 import { SceneFallback } from './SceneFallback';
 
 interface ErrorBoundaryProps {
@@ -36,22 +37,24 @@ class CanvasErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySta
   }
 }
 
+function SceneLoading() {
+  const { lang } = useTranslation();
+  return (
+    <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-b from-[#CEF4DE] via-[#A2E5BF] to-[#76CCA0]">
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-8 h-8 rounded-full border-2 border-emerald-600/30 border-t-emerald-600 animate-spin" />
+        <span className="text-xs font-medium text-emerald-800/70 tracking-wider">
+          {lang === 'en' ? 'Preparing your island...' : 'Menyiapkan pulau...'}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 // Dynamically import Three.js scene with ssr: false
 const DynamicScene = dynamic(
   () => import('./Scene').then((mod) => mod.Scene),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-b from-[#CEF4DE] via-[#A2E5BF] to-[#76CCA0]">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 rounded-full border-2 border-emerald-600/30 border-t-emerald-600 animate-spin" />
-          <span className="text-xs font-medium text-emerald-800/70 tracking-wider">
-            Summoning Rimba Island...
-          </span>
-        </div>
-      </div>
-    ),
-  }
+  { ssr: false, loading: SceneLoading }
 );
 
 export function CanvasWrapper({ isPaused = false }: { isPaused?: boolean }) {

@@ -80,7 +80,7 @@ function WelcomeAuthPageContent() {
   // Redirect if already logged in (hanya jika tidak sedang di alur OTP atau Reset Password)
   useEffect(() => {
     if (user && !isOtpStep && forgotStep === "none") {
-      router.replace(isSignUp ? "/?onboarding=true" : "/");
+      router.replace("/");
     }
   }, [user, router, isOtpStep, forgotStep, isSignUp]);
 
@@ -431,10 +431,7 @@ function WelcomeAuthPageContent() {
     soundManager.playPop();
     hapticMedium();
     loginAsGuest();
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("rimba_onboarding_completed");
-    }
-    router.push("/?onboarding=true");
+    router.replace("/");
   };
 
   return (

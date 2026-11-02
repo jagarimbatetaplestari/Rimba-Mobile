@@ -1,5 +1,6 @@
 const required = [
   'NEXT_PUBLIC_SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+  'NEXT_PUBLIC_GOOGLE_IOS_CLIENT_ID', 'NEXT_PUBLIC_GOOGLE_WEB_CLIENT_ID',
   'NEXT_PUBLIC_REVENUECAT_IOS_KEY', 'APPLE_CERTIFICATE_BASE64',
   'APPLE_CERTIFICATE_PASSWORD', 'APPLE_PROVISION_PROFILE_BASE64',
   'APP_STORE_CONNECT_PRIVATE_KEY_BASE64',
@@ -10,6 +11,11 @@ if (missing.length) {
   process.exit(1);
 }
 const invalid = [];
+for (const name of ['NEXT_PUBLIC_GOOGLE_IOS_CLIENT_ID', 'NEXT_PUBLIC_GOOGLE_WEB_CLIENT_ID']) {
+  if (!/^\d+-[a-zA-Z0-9-]+\.apps\.googleusercontent\.com$/.test(process.env[name])) {
+    invalid.push(name);
+  }
+}
 if (process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://rkljugrrscmqopeuwtpd.supabase.co') {
   invalid.push('NEXT_PUBLIC_SUPABASE_URL');
 }

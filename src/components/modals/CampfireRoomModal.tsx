@@ -25,7 +25,6 @@ import { useTranslation } from "@/lib/i18n/translations";
 interface CampfireRoomModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onStartFocusSession?: (minutes: number, taskNote: string) => void;
 }
 
 const ANIMAL_ICONS: { id: CampfireAnimal; icon: string }[] = [
@@ -39,12 +38,10 @@ const ANIMAL_ICONS: { id: CampfireAnimal; icon: string }[] = [
 export function CampfireRoomModal({
   isOpen,
   onClose,
-  onStartFocusSession,
 }: CampfireRoomModalProps) {
   const { t, language } = useTranslation();
   const user = useAuthStore((state) => state.user);
   const notify = useGameStore((state) => state.notify);
-  const startFocus = useGameStore((state) => state.startFocus);
 
   const currentRoom = useCampfireStore((state) => state.currentRoom);
   const myParticipantId = useCampfireStore((state) => state.myParticipantId);
@@ -52,6 +49,15 @@ export function CampfireRoomModal({
   const joinRoom = useCampfireStore((state) => state.joinRoom);
   const startRoomFocus = useCampfireStore((state) => state.startRoomFocus);
   const leaveRoom = useCampfireStore((state) => state.leaveRoom);
+  const setRoomMode = useCampfireStore((state) => state.setRoomMode);
+  const reportParticipant = useCampfireStore((state) => state.reportParticipant);
+  const blockParticipant = useCampfireStore((state) => state.blockParticipant);
+  const isLoading = useCampfireStore((state) => state.isLoading);
+  const isConnected = useCampfireStore((state) => state.isRealtimeConnected);
+  const error = useCampfireStore((state) => state.error);
+  const [safetyTarget, setSafetyTarget] = useState<string | null>(null);
+  const [safetyAction, setSafetyAction] = useState<'report' | 'block'>('report');
+  const [reportReason, setReportReason] = useState('Abusive name or room content');
 
   const [activeTab, setActiveTab] = useState<"create" | "join">("create");
   const [selectedDuration, setSelectedDuration] = useState<number>(25);
@@ -61,21 +67,36 @@ export function CampfireRoomModal({
   const [roomCodeInput, setRoomCodeInput] = useState<string>("");
   const [isCopied, setIsCopied] = useState<boolean>(false);
 
-  // Auto-dismiss modal when room enters active focus mode
+  const previousStatus = React.useRef(currentRoom?.status);
+  // Close only on a new canonical start, keeping safety controls available when reopened.
   React.useEffect(() => {
-    if (isOpen && currentRoom && currentRoom.status === "active") {
+    const active = useGameStore.getState().activeSession;
+    if (isOpen && previousStatus.current === 'lobby' && currentRoom?.status === 'active'
+      && active?.campfire_room_code === currentRoom.code) {
       onClose();
     }
+    previousStatus.current = currentRoom?.status;
   }, [isOpen, currentRoom?.status, onClose]);
 
   if (!isOpen) return null;
 
   const rangerName = user?.name?.trim() || t.common.guestName;
+  const canUseCampfire = Boolean(user && !user.isGuest);
+  const isHost = currentRoom?.participants.find(p => p.id === myParticipantId)?.isHost === true;
+  const errorText = language === 'en' && error ? ({
+    'Akses Campfire dibatasi. Hubungi dukungan melalui profil.': 'Campfire access is restricted. Contact support through your profile.',
+    'Nama ruang atau profil tidak sesuai. Ubah nama profil, lalu coba lagi.': 'The room or profile name is not allowed. Update your profile name and try again.',
+    'Masuk ke akun terverifikasi untuk menggunakan Campfire.': 'Sign in to a verified account to use Campfire.',
+    'Hanya host yang dapat memulai atau mengubah mode.': 'Only the host can start or change the mode.',
+    'Ruang berubah. Tunggu pembaruan, lalu coba lagi.': 'The room changed. Wait for an update and try again.',
+    'Batas ruang atau permintaan tercapai. Coba lagi nanti.': 'Room or request limit reached. Try again later.',
+    'Ruang tidak tersedia atau akses tidak diizinkan.': 'The room is unavailable or access is not allowed.',
+    'Campfire belum dapat terhubung. Periksa koneksi dan coba lagi.': 'Campfire could not connect. Check your connection and try again.',
+  } as Record<string, string>)[error] ?? 'Campfire could not connect. Please try again.' : error;
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     soundManager.playPop();
-    hapticSuccess();
-    createRoom(
+    const ok = await createRoom(
       rangerName,
       selectedDuration,
       selectedAnimal,
@@ -83,22 +104,18 @@ export function CampfireRoomModal({
       selectedMode,
       `${t.campfire.title} - ${rangerName}`,
     );
-    notify(t.campfire.toastCreated, "success");
+    if (ok) { hapticSuccess(); notify(t.campfire.toastCreated, "success"); }
   };
 
-  const handleJoin = () => {
-    let raw = roomCodeInput.trim().toUpperCase();
-    if (!raw) {
-      notify(t.campfire.toastEmptyCode, "error");
+  const handleJoin = async () => {
+    const raw = roomCodeInput.trim().toLowerCase();
+    if (!/^[a-f0-9]{32}$/.test(raw)) {
+      notify(language === 'en' ? 'Enter the full 32-character invite code.' : 'Masukkan kode undangan lengkap 32 karakter.', 'error');
       return;
-    }
-    // Auto-prefix RIMBA- if only 3 digits entered
-    if (/^\d{3}$/.test(raw)) {
-      raw = `RIMBA-${raw}`;
     }
     soundManager.playPop();
     hapticMedium();
-    const ok = joinRoom(raw, rangerName, selectedAnimal, "oak");
+    const ok = await joinRoom(raw, rangerName, selectedAnimal, "oak");
     if (ok) {
       notify(
         t.campfire.toastJoined.replace("{code}", raw),
@@ -140,52 +157,10 @@ export function CampfireRoomModal({
     handleCopyCode(code);
   };
 
-  const handleStartTogether = () => {
+  const handleStartTogether = async () => {
     if (!currentRoom) return;
-    soundManager.playComplete();
-    hapticSuccess();
-    startRoomFocus();
-
-    const companionNames = currentRoom.participants
-      .filter((p) => p.name !== rangerName)
-      .map((p) => p.name);
-
-    const defaultNote =
-      language === "en"
-        ? `Focus Together (${currentRoom.code})`
-        : `Fokus Bareng (${currentRoom.code})`;
-
-    if (onStartFocusSession) {
-      onStartFocusSession(currentRoom.durationMinutes, defaultNote);
-    } else {
-      startFocus(
-        currentRoom.durationMinutes * 60,
-        "Fokus",
-        false,
-        "oak",
-        defaultNote,
-      );
-    }
-
-    const active = useGameStore.getState().activeSession;
-    if (active) {
-      useGameStore.setState({
-        activeSession: {
-          ...active,
-          campfire_room_code: currentRoom.code,
-          is_shared_destiny: currentRoom.mode === "shared_destiny",
-          companions: companionNames,
-        },
-      });
-    }
-
-    onClose();
-    notify(
-      language === "en"
-        ? "🌲 Group focus started! Stay focused together."
-        : "🌲 Sesi Fokus Bareng dimulai! Yuk jaga fokus bersama.",
-      "success",
-    );
+    // The store starts gameplay only after accepting a server snapshot.
+    if (await startRoomFocus()) { soundManager.playComplete(); hapticSuccess(); }
   };
 
   return (
@@ -221,6 +196,15 @@ export function CampfireRoomModal({
           </button>
         </div>
 
+        {!canUseCampfire && <p role="status" className="rounded-2xl bg-amber-50 p-3 text-sm text-amber-950">
+          {language === 'en' ? 'Sign in through your profile to create or join a Campfire. Available to all accounts.' : 'Masuk melalui profil untuk membuat atau bergabung Campfire. Tersedia untuk semua akun.'}
+        </p>}
+        {errorText && <p role="alert" className="rounded-2xl bg-red-50 p-3 text-sm text-red-900">{errorText}</p>}
+        {isLoading && <p role="status" className="text-sm text-[#14664D]">{language === 'en' ? 'Connecting…' : 'Menghubungkan…'}</p>}
+        {currentRoom && !isConnected && <p role="status" className="text-sm text-amber-900">
+          {language === 'en' ? 'Connection interrupted. Showing the last confirmed room; retrying automatically.' : 'Koneksi terputus. Menampilkan ruang terakhir terkonfirmasi; mencoba kembali otomatis.'}
+        </p>}
+
         {/* ======================================================== */}
         {/* ACTIVE ROOM CIRCLE                                       */}
         {/* ======================================================== */}
@@ -229,11 +213,12 @@ export function CampfireRoomModal({
             <div className="rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-white/95 to-white/90 p-5 shadow-lg shadow-[#0E3B2D]/10 backdrop-blur-xl space-y-4">
               <div className="flex items-center justify-between">
                 <div>
+                  <p className="text-sm font-semibold break-words max-w-[15rem]">{currentRoom.name}</p>
                   <span className="text-[10px] font-bold uppercase tracking-wider text-[#187557] px-2 py-0.5 rounded-md bg-[#E4F4ED] border border-[#BCE5D3]">
                     {t.campfire.roomCodeLabel}
                   </span>
-                  <h3 className="text-[22px] font-extrabold text-[#0D3528] tracking-tight mt-1 flex items-center gap-2">
-                    <span>{currentRoom.code}</span>
+                  <h3 className="text-[14px] font-extrabold text-[#0D3528] tracking-tight mt-1 flex items-center gap-2 min-w-0">
+                    <span className="break-all">{currentRoom.code}</span>
                     <button
                       type="button"
                       onClick={() => handleCopyCode(currentRoom.code)}
@@ -285,8 +270,8 @@ export function CampfireRoomModal({
                 <p className="relative z-10 text-[11px] text-amber-200/70 font-medium">
                   {currentRoom.status === "severed"
                     ? (language === "en"
-                        ? `Room left by ${currentRoom.severedBy || "a companion"}`
-                        : `Ditinggalkan oleh ${currentRoom.severedBy || "seorang kawan"}`)
+                        ? 'This shared session has ended.'
+                        : 'Sesi bersama telah berakhir.')
                     : t.campfire.roomMeta
                         .replace("{mins}", String(currentRoom.durationMinutes))
                         .replace("{count}", String(currentRoom.participants.length))}
@@ -298,6 +283,7 @@ export function CampfireRoomModal({
                 <Sparkles className="w-4 h-4 shrink-0 text-[#187557] mt-0.5" />
                 <span>
                   <strong>{t.campfire.bonusTitle}</strong> {t.campfire.bonusDesc}
+                  {' '}{language === 'en' ? 'Group bonuses require an online confirmed session. Base focus rewards remain available offline.' : 'Bonus bersama memerlukan sesi terkonfirmasi online. Hadiah fokus dasar tetap tersedia offline.'}
                 </span>
               </div>
             </div>
@@ -319,13 +305,13 @@ export function CampfireRoomModal({
                   return (
                     <div
                       key={p.id}
-                      className="rounded-2xl border border-white/70 bg-white/95 p-3 shadow-xs flex items-center justify-between"
+                      className="rounded-2xl border border-white/70 bg-white/95 p-3 shadow-xs flex flex-wrap gap-2 items-center justify-between"
                     >
                       <div className="flex items-center gap-3">
                         <span className="text-2xl">{animalObj?.icon || "🦊"}</span>
                         <div>
                           <div className="flex items-center gap-1.5">
-                            <span className="text-[13px] font-bold text-[#0D3528]">
+                            <span className="text-[13px] font-bold text-[#0D3528] break-words max-w-[10rem]">
                               {p.name}
                             </span>
                             {p.isHost && (
@@ -341,15 +327,59 @@ export function CampfireRoomModal({
                       </div>
 
                       <span className="px-2.5 py-1 rounded-full bg-[#E4F4ED] text-[#14664D] text-[10.5px] font-semibold border border-[#BCE5D3]">
-                        {p.status === "focusing"
-                          ? t.campfire.statusFocusing
-                          : t.campfire.statusReady}
+                        {p.status === 'completed' ? (language === 'en' ? 'Completed' : 'Selesai')
+                          : p.status === 'abandoned' ? (language === 'en' ? 'Left focus' : 'Berhenti fokus')
+                          : p.status === 'focusing' ? t.campfire.statusFocusing : t.campfire.statusReady}
                       </span>
+                      {p.id !== myParticipantId && <div className="flex gap-3 w-full border-t border-[#0D3528]/10 pt-1">
+                        <button type="button" disabled={isLoading} className="text-xs underline py-2 px-2 disabled:opacity-50"
+                          onClick={() => { setSafetyTarget(p.id); setSafetyAction('report'); }}>
+                          {language === 'en' ? 'Report' : 'Laporkan'}
+                        </button>
+                        <button type="button" disabled={isLoading} className="text-xs underline py-2 px-2 disabled:opacity-50"
+                          onClick={() => { setSafetyTarget(p.id); setSafetyAction('block'); }}>
+                          {language === 'en' ? 'Block' : 'Blokir'}
+                        </button>
+                      </div>}
                     </div>
                   );
                 })}
               </div>
             </div>
+
+            {safetyTarget && currentRoom.participants.some(p => p.id === safetyTarget) &&
+              <div className="rounded-2xl border border-[#BCE5D3] p-4 space-y-3 bg-white" aria-label={language === 'en' ? 'Participant safety' : 'Keamanan peserta'}>
+                <p className="text-sm font-semibold">{safetyAction === 'report'
+                  ? (language === 'en' ? 'Report this participant or room content' : 'Laporkan peserta atau konten ruang ini')
+                  : (language === 'en' ? 'Block this participant? You will leave this room and cannot share rooms with them.' : 'Blokir peserta ini? Kamu akan keluar dari ruang dan tidak dapat berbagi ruang dengannya.')}</p>
+                {safetyAction === 'report' && <select aria-label={language === 'en' ? 'Report reason' : 'Alasan laporan'}
+                  value={reportReason} onChange={e => setReportReason(e.target.value)} className="w-full rounded-xl border p-3 text-sm bg-white">
+                  <option value="Abusive name or room content">{language === 'en' ? 'Abusive name or room content' : 'Nama atau konten ruang tidak pantas'}</option>
+                  <option value="Harassment or threats">{language === 'en' ? 'Harassment or threats' : 'Pelecehan atau ancaman'}</option>
+                  <option value="Spam or disruptive behavior">{language === 'en' ? 'Spam or disruptive behavior' : 'Spam atau perilaku mengganggu'}</option>
+                </select>}
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" disabled={isLoading} className="rounded-full bg-[#187557] text-white py-2 px-4 text-sm disabled:opacity-50"
+                    onClick={async () => {
+                      const ok = safetyAction === 'report' ? await reportParticipant(safetyTarget, reportReason) : await blockParticipant(safetyTarget);
+                      if (ok) {
+                        notify(safetyAction === 'report' ? (language === 'en' ? 'Report sent for review.' : 'Laporan dikirim untuk ditinjau.')
+                          : (language === 'en' ? 'Participant blocked.' : 'Peserta diblokir.'), 'success');
+                        setSafetyTarget(null);
+                      }
+                    }}>{safetyAction === 'report' ? (language === 'en' ? 'Send report' : 'Kirim laporan') : (language === 'en' ? 'Block and leave' : 'Blokir dan keluar')}</button>
+                  <button type="button" className="py-2 px-4 text-sm" onClick={() => setSafetyTarget(null)}>{language === 'en' ? 'Cancel' : 'Batal'}</button>
+                </div>
+              </div>}
+
+            {isHost && currentRoom.status === 'lobby' && <label className="block space-y-1 text-sm">
+              <span>{t.campfire.modeLabel}</span>
+              <select value={currentRoom.mode} disabled={isLoading || !isConnected}
+                onChange={event => { void setRoomMode(event.target.value as CampfireMode); }} className="w-full p-3 rounded-2xl border bg-white">
+                <option value="shared_destiny">{t.campfire.modeSharedTitle}</option>
+                <option value="gentle_circle">{t.campfire.modeGentleTitle}</option>
+              </select>
+            </label>}
 
             {/* Action Buttons */}
             <div className="space-y-2 pt-2">
@@ -359,7 +389,7 @@ export function CampfireRoomModal({
                   onClick={() => {
                     soundManager.playPop();
                     hapticLight();
-                    leaveRoom();
+                    useCampfireStore.getState().clearLocalRoom();
                   }}
                   className="w-full py-3.5 px-4 rounded-full bg-gradient-to-r from-[#187557] via-[#208b68] to-[#2BB688] hover:opacity-95 text-white font-bold text-[14px] shadow-lg shadow-[#187557]/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
@@ -374,12 +404,13 @@ export function CampfireRoomModal({
                     const myParticipant = currentRoom.participants.find(
                       (p) => p.id === myParticipantId
                     );
-                    const isHost = myParticipant?.isHost ?? (currentRoom.participants[0]?.name === rangerName);
+                    const isHost = myParticipant?.isHost === true;
 
                     return (
                       <button
                         type="button"
                         onClick={handleStartTogether}
+                        disabled={!isHost || isLoading || currentRoom.status !== 'lobby' || !isConnected}
                         className={`w-full py-3.5 px-4 rounded-full font-bold text-[14px] shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer ${
                           isHost
                             ? "bg-gradient-to-r from-[#187557] via-[#208b68] to-[#2BB688] hover:opacity-95 text-white shadow-[#187557]/20"
@@ -390,7 +421,7 @@ export function CampfireRoomModal({
                           <>
                             <Flame className="w-4 h-4 fill-white" />
                             <span>
-                              {t.campfire.startTogetherBtn.replace(
+                              {currentRoom.status === 'active' ? (language === 'en' ? 'Focus in progress' : 'Fokus berlangsung') : t.campfire.startTogetherBtn.replace(
                                 "{mins}",
                                 String(currentRoom.durationMinutes),
                               )}
@@ -401,8 +432,8 @@ export function CampfireRoomModal({
                             <Sparkles className="w-4 h-4 text-emerald-300" />
                             <span>
                               {language === "en"
-                                ? `Ready! Start Focus (${currentRoom.durationMinutes}m)`
-                                : `Siap! Mulai Fokus Bareng (${currentRoom.durationMinutes}m)`}
+                                ? 'Waiting for the host to start'
+                                : 'Menunggu host memulai'}
                             </span>
                           </>
                         )}
@@ -412,12 +443,13 @@ export function CampfireRoomModal({
 
                   <button
                     type="button"
+                    disabled={isLoading}
                     onClick={() => {
                       soundManager.playPop();
                       hapticLight();
                       leaveRoom();
                     }}
-                    className="w-full py-2.5 px-4 rounded-full text-[#4C7567] hover:text-[#0D3528] font-medium text-[12px] active:scale-[0.98] transition-all cursor-pointer"
+                    className="w-full py-2.5 px-4 rounded-full text-[#4C7567] hover:text-[#0D3528] font-medium text-[12px] active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
                   >
                     {t.campfire.leaveRoomBtn}
                   </button>
@@ -595,6 +627,7 @@ export function CampfireRoomModal({
                   <button
                     type="button"
                     onClick={handleCreate}
+                    disabled={isLoading || !canUseCampfire}
                     className="w-full py-3.5 px-4 rounded-full bg-gradient-to-r from-[#187557] via-[#208b68] to-[#2BB688] hover:opacity-95 text-white font-bold text-[13.5px] shadow-md shadow-[#187557]/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <Flame className="w-4 h-4 fill-white" />
@@ -626,9 +659,14 @@ export function CampfireRoomModal({
                   </label>
                   <input
                     type="text"
-                    placeholder={t.campfire.codeInputPlaceholder}
+                    aria-label={t.campfire.codeInputLabel}
+                    placeholder="0123456789abcdef0123456789abcdef"
+                    maxLength={32}
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
                     value={roomCodeInput}
-                    onChange={(e) => setRoomCodeInput(e.target.value.toUpperCase())}
+                    onChange={(e) => setRoomCodeInput(e.target.value.toLowerCase())}
                     className="w-full py-3 px-4 rounded-2xl border border-[#0D3528]/15 bg-white text-[15px] font-extrabold tracking-wider text-[#0D3528] placeholder:text-[#4C7567]/50 placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-[#187557] uppercase text-center"
                   />
                 </div>
@@ -668,6 +706,7 @@ export function CampfireRoomModal({
                   <button
                     type="button"
                     onClick={handleJoin}
+                    disabled={isLoading || !canUseCampfire}
                     className="w-full py-3.5 px-4 rounded-full bg-gradient-to-r from-[#187557] via-[#208b68] to-[#2BB688] hover:opacity-95 text-white font-bold text-[13.5px] shadow-md shadow-[#187557]/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <Users className="w-4 h-4 stroke-[2.2]" />

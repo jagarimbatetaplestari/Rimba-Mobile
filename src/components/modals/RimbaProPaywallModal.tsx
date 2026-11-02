@@ -148,7 +148,10 @@ export function RimbaProPaywallModal({
   return (
     <>
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-md animate-in fade-in duration-200"
+        className="fixed inset-0 z-[120] pointer-events-auto flex items-center justify-center p-4 bg-black/50 backdrop-blur-md animate-in fade-in duration-200"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Rimba Pro"
         style={{
           fontFamily:
             "var(--font-urbanist), 'Urbanist', -apple-system, BlinkMacSystemFont, sans-serif",

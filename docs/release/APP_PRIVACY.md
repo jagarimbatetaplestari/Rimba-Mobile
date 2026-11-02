@@ -20,3 +20,5 @@ Sources checked:
 - https://developer.apple.com/app-store/app-privacy-details/
 
 The public privacy policy is https://rimba-website.jagarimba-tetaplestari.workers.dev/privacy. Apple submissions still require final screenshots, a tested current binary and the remaining engineering/release gates in EXECUTION_LOG.md.
+
+2026-11-02 candidate: Campfire reports, reasons, room evidence, blocks and moderation decisions add identity-linked Other User Content/User ID processing for App Functionality. Existing selected categories appear to cover these fields, but final declaration must be audited against the deployed binary. Mobile policy source/static candidate updated with private moderator access, deletion redaction and90day moderation retention. Do not publish candidate policy before daily backend maintenance and deletion trigger deployment are verified. Public website policy still requires corresponding publication.

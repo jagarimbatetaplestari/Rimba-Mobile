@@ -11,6 +11,7 @@
 
 import fs from 'fs';
 import path from 'path';
+import { spawnSync } from 'node:child_process';
 
 let passedTests = 0;
 let failedTests = 0;
@@ -435,18 +436,12 @@ assert(
 const campfireStorePath = path.join(projectRoot, 'src/lib/game/campfireStore.ts');
 assert(fs.existsSync(campfireStorePath), 'campfireStore.ts exists');
 const campfireStoreContent = fs.readFileSync(campfireStorePath, 'utf8');
-assert(
-  campfireStoreContent.includes('START_FOCUS') &&
-    campfireStoreContent.includes('MEMBER_LEFT') &&
-    campfireStoreContent.includes('ROOM_SEVERED') &&
-    campfireStoreContent.includes('ROOM_COMPLETED'),
-  'campfireStore handles full synchronization lifecycle (START_FOCUS, MEMBER_LEFT, ROOM_SEVERED, ROOM_COMPLETED)'
-);
-assert(
-  campfireStoreContent.includes('onRehydrateStorage') &&
-    campfireStoreContent.includes('isStale'),
-  'campfireStore implements onRehydrateStorage auto-clean for stale or ended rooms'
-);
+const campfireRegressions = spawnSync(process.execPath, ['node_modules/vitest/vitest.mjs', 'run',
+  'tests/campfireStore.test.ts', 'tests/campfireDatabase.test.ts', 'tests/focusSessionIntegrity.test.ts'],
+  { cwd: projectRoot, encoding: 'utf8', timeout: 120000 });
+assert(campfireRegressions.status === 0,
+  'Campfire authorization, recovery, moderation and verified bonus behavior regressions pass',
+  campfireRegressions.status === 0 ? '' : (campfireRegressions.stdout + campfireRegressions.stderr).slice(-5000));
 
 // 3. Campfire Room Code Normalization & Auto-Dismiss in Modal
 const campfireModalPath = path.join(projectRoot, 'src/components/modals/CampfireRoomModal.tsx');
@@ -456,11 +451,6 @@ assert(
   campfireModalContent.includes('currentRoom.status === "active"') &&
     campfireModalContent.includes('onClose()'),
   'CampfireRoomModal automatically auto-dismisses when focus session starts'
-);
-assert(
-  campfireModalContent.includes('RIMBA-') &&
-    campfireModalContent.includes('raw = `RIMBA-${raw}`'),
-  'CampfireRoomModal automatically normalizes 3-digit inputs to RIMBA-XXX format'
 );
 
 // ------------------------------------------------------------------

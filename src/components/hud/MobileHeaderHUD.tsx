@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useId } from "react";
 import { useRouter } from "next/navigation";
 import { useGameStore } from "@/lib/game/useGameStore";
 import { soundManager } from "@/lib/audio/sounds";
@@ -108,6 +108,39 @@ export function MobileHeaderHUD({
     "profile" | "settings" | null
   >(null);
   const [avatarError, setAvatarError] = useState(false);
+  const menuId = useId();
+  const profileTrigger = useRef<HTMLButtonElement>(null);
+  const settingsTrigger = useRef<HTMLButtonElement>(null);
+  const profilePanel = useRef<HTMLDivElement>(null);
+  const settingsPanel = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!activeDropdown) return;
+    const panel = activeDropdown === "profile" ? profilePanel.current : settingsPanel.current;
+    const trigger = activeDropdown === "profile" ? profileTrigger.current : settingsTrigger.current;
+    panel?.querySelector<HTMLButtonElement>("button")?.focus();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setActiveDropdown(null);
+        trigger?.focus();
+      }
+    };
+    const handleFocus = (event: FocusEvent) => {
+      const target = event.target as Node;
+      if (!panel?.contains(target) && target !== trigger) setActiveDropdown(null);
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("focusin", handleFocus);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("focusin", handleFocus);
+    };
+  }, [activeDropdown]);
+
+  useEffect(() => {
+    if (isZenDimmed) setActiveDropdown(null);
+  }, [isZenDimmed]);
 
   useEffect(() => {
     setAvatarError(false);
@@ -178,6 +211,7 @@ export function MobileHeaderHUD({
 
   const closeDropdown = () => {
     setActiveDropdown(null);
+    (activeDropdown === "profile" ? profileTrigger.current : settingsTrigger.current)?.focus();
   };
 
   const handleAction = (callback?: () => void) => {
@@ -227,8 +261,8 @@ export function MobileHeaderHUD({
 
   // Tombol aksi di dalam popover (dengan label teks & HIG tap target)
   const popoverItemButton = isNight
-    ? "w-full flex items-center gap-2.5 px-3 py-2 rounded-2xl text-[12px] font-semibold text-white/90 hover:text-white hover:bg-white/15 active:bg-white/20 transition-all cursor-pointer relative"
-    : "w-full flex items-center gap-2.5 px-3 py-2 rounded-2xl text-[12px] font-semibold text-[#0b2719] hover:bg-[#0b2719]/10 active:bg-[#0b2719]/15 transition-all cursor-pointer relative";
+    ? "w-full min-h-[44px] flex items-center gap-3 px-3 py-2.5 rounded-xl text-[14px] text-left leading-snug focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-500 font-semibold text-white/90 hover:text-white hover:bg-white/15 active:bg-white/20 transition-all cursor-pointer relative"
+    : "w-full min-h-[44px] flex items-center gap-3 px-3 py-2.5 rounded-xl text-[14px] text-left leading-snug focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-500 font-semibold text-[#0b2719] hover:bg-[#0b2719]/10 active:bg-[#0b2719]/15 transition-all cursor-pointer relative";
 
   // Tombol aksi di sisi kanan (tanpa efek zoom, kontras tinggi, 44px HIG tap target)
   const iconButtonClass = isNight
@@ -252,7 +286,7 @@ export function MobileHeaderHUD({
           isZenDimmed ? "opacity-0 pointer-events-none" : "opacity-100"
         }`}
         style={{
-          paddingTop: "max(calc(env(safe-area-inset-top, 0px) + 10px), 16px)",
+          paddingTop: "max(calc(env(safe-area-inset-top, 0px) + 12px), 24px)",
           fontFamily:
             "var(--font-urbanist), 'Urbanist', -apple-system, BlinkMacSystemFont, sans-serif",
         }}
@@ -272,17 +306,13 @@ export function MobileHeaderHUD({
                   <>
                     <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
                     <span>
-                      {lang === "en"
-                        ? "Offline · Saved Locally"
-                        : "Mode Offline · Tersimpan Lokal"}
+                      {lang === "en" ? "Offline · Saved Locally" : "Mode Offline · Tersimpan Lokal"}
                     </span>
                   </>
                 ) : (
                   <>
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                    <span>
-                      {lang === "en" ? "Online · Synced" : "Online · Tersinkron"}
-                    </span>
+                    <span>{lang === "en" ? "Online · Synced" : "Online · Tersinkron"}</span>
                   </>
                 )}
               </div>
@@ -299,14 +329,17 @@ export function MobileHeaderHUD({
           {/* ======================================================== */}
           {/* SISI KIRI: PROFIL & DYNAMIC PILLAR                      */}
           {/* ======================================================== */}
-          <div className="relative pointer-events-auto">
-            {activeDropdown !== "profile" ? (
-              /* Kapsul Profil Horizontal Tertutup */
+          <div className="relative pointer-events-auto min-w-0 mr-2">
+              {/* Kapsul Profil Horizontal Tertutup */}
               <button
                 type="button"
+                ref={profileTrigger}
+                aria-expanded={activeDropdown === "profile"}
+                aria-controls={`${menuId}-profile`}
+                aria-haspopup="dialog"
                 onClick={() => toggleDropdown("profile")}
                 style={glassCapsuleStyle}
-                className="relative flex items-center gap-2 h-[44px] pl-2 pr-3.5 rounded-full transition-colors cursor-pointer overflow-hidden group"
+                className="relative flex max-w-full items-center gap-2 h-[44px] pl-2 pr-3.5 rounded-full transition-colors cursor-pointer overflow-hidden group"
                 title={t.hud.menuProfile}
                 aria-label={t.hud.menuProfile}
               >
@@ -345,20 +378,24 @@ export function MobileHeaderHUD({
 
                 {/* Level Pill Suaka */}
                 <span
-                  className={`relative z-10 flex items-center gap-1 text-[10.5px] font-semibold px-2 py-0.5 rounded-full border shrink-0 ${
+                  className={`relative z-10 flex items-center gap-1 text-[10.5px] font-semibold px-2 py-0.5 rounded-full border shrink-0 max-[360px]:hidden ${
                     isNight
                       ? "border-white/35 bg-white/20 text-white"
                       : "border-[#0b2719]/20 bg-[#0b2719]/10 text-[#0b2719]"
                   }`}
                 >
-                  <span>Lv {currentLevel}</span>
+                  <span>{t.common.level} {currentLevel}</span>
                 </span>
               </button>
-            ) : (
-              /* Dynamic Compact Popover Profil (Apple Liquid Glass) */
+            {activeDropdown === "profile" && (
+              /* Anchored profile flyout */
               <div
-                style={popoverGlassStyle}
-                className="w-[210px] rounded-[26px] p-2 z-50 flex flex-col gap-1 relative overflow-hidden animate-in fade-in zoom-in-95 duration-150 shadow-2xl"
+                ref={profilePanel}
+                id={`${menuId}-profile`}
+                role="dialog"
+                aria-label={t.hud.menuProfile}
+                style={{ ...popoverGlassStyle, maxHeight: "calc(100dvh - max(env(safe-area-inset-top, 0px) + 12px, 24px) - env(safe-area-inset-bottom, 0px) - 72px)" }}
+                className="absolute left-0 top-[54px] w-[272px] max-w-[calc(100vw-32px)] rounded-[24px] p-2 z-50 flex flex-col gap-0.5 overflow-y-auto overscroll-contain animate-in fade-in zoom-in-95 duration-150 shadow-2xl"
               >
                 <div className="absolute inset-x-2 top-0 h-8 bg-gradient-to-b from-white/25 to-transparent rounded-t-full pointer-events-none" />
 
@@ -384,7 +421,7 @@ export function MobileHeaderHUD({
                       )}
                     </div>
                     <span
-                      className={`text-[12px] font-bold truncate ${
+                      className={`text-[14px] font-bold truncate ${
                         isNight ? "text-white" : "text-[#0b2719]"
                       }`}
                     >
@@ -395,7 +432,7 @@ export function MobileHeaderHUD({
                   <button
                     type="button"
                     onClick={closeDropdown}
-                    className={`w-6 h-6 rounded-full flex items-center justify-center border transition-colors cursor-pointer shrink-0 ${
+                    className={`w-11 h-11 rounded-full flex items-center justify-center border transition-colors cursor-pointer shrink-0 ${
                       isNight
                         ? "bg-white/15 hover:bg-white/25 border-white/20 text-white"
                         : "bg-[#0b2719]/10 hover:bg-[#0b2719]/18 border-[#0b2719]/15 text-[#0b2719]"
@@ -414,7 +451,7 @@ export function MobileHeaderHUD({
                   className={popoverItemButton}
                 >
                   <User className="w-4 h-4 stroke-[2.2] shrink-0 opacity-80" />
-                  <span className="truncate">{t.hud.menuProfile}</span>
+                  <span>{t.hud.menuProfile}</span>
                 </button>
 
                 {/* 2. Statistik Fokus */}
@@ -424,7 +461,7 @@ export function MobileHeaderHUD({
                   className={popoverItemButton}
                 >
                   <BarChart3 className="w-4 h-4 stroke-[2.2] shrink-0 opacity-80" />
-                  <span className="truncate">{t.hud.menuStats}</span>
+                  <span>{t.hud.menuStats}</span>
                 </button>
 
                 {/* 3. Jurnal Suaka */}
@@ -449,7 +486,7 @@ export function MobileHeaderHUD({
                   className={popoverItemButton}
                 >
                   <Trophy className="w-4 h-4 stroke-[2.2] shrink-0 opacity-80" />
-                  <span className="truncate">{t.hud.menuRanks}</span>
+                  <span>{t.hud.menuRanks}</span>
                 </button>
 
                 {/* 5. Fokus Bareng (Campfire Focus Room) */}
@@ -459,7 +496,7 @@ export function MobileHeaderHUD({
                   className={popoverItemButton}
                 >
                   <Flame className="w-4 h-4 stroke-[2.2] shrink-0 opacity-80 text-current" />
-                  <span className="truncate">{t.hud.menuCampfire}</span>
+                  <span>{t.hud.menuCampfire}</span>
                 </button>
 
                 {/* 6. Bagikan Pulau */}
@@ -469,7 +506,7 @@ export function MobileHeaderHUD({
                   className={popoverItemButton}
                 >
                   <Share2 className="w-4 h-4 stroke-[2.2] shrink-0 opacity-80" />
-                  <span className="truncate">{t.hud.menuShare}</span>
+                  <span>{t.hud.menuShare}</span>
                 </button>
 
                 {/* 7. Daftar Pulau Suaka (Multi-Island) */}
@@ -508,8 +545,7 @@ export function MobileHeaderHUD({
           {/* SISI KANAN: UNIFIED ACTION CAPSULE                      */}
           {/* ======================================================== */}
           <div className="relative pointer-events-auto">
-            {activeDropdown !== "settings" ? (
-              /* Kapsul Aksi Mengambang */
+              {/* Kapsul Aksi Mengambang */}
               <div
                 style={glassCapsuleStyle}
                 className="relative h-[44px] px-2 rounded-full flex items-center gap-1 transition-colors overflow-hidden"
@@ -560,14 +596,14 @@ export function MobileHeaderHUD({
                   `}
                   title={
                     activeBiome === "snow"
-                      ? "Bioma Salju"
+                      ? t.hud.biomeSnow
                       : activeBiome === "autumn"
-                        ? "Bioma Musim Gugur"
+                        ? (lang === "en" ? "Autumn Grove" : "Musim Gugur")
                         : activeBiome === "lotus"
-                          ? "Bioma Mata Air Teratai"
-                          : "Bioma Padang Rumput"
+                          ? (lang === "en" ? "Lotus Springs" : "Mata Air Teratai")
+                          : t.hud.biomeGrass
                   }
-                  aria-label="Pilih Tema & Bioma Suaka"
+                  aria-label={lang === "en" ? "Choose sanctuary theme and biome" : "Pilih Tema & Bioma Suaka"}
                 >
                   <span className="text-[13px] leading-none select-none">
                     {activeBiome === "snow"
@@ -594,6 +630,10 @@ export function MobileHeaderHUD({
                 {/* 4. Tombol Pengaturan */}
                 <button
                   type="button"
+                  ref={settingsTrigger}
+                  aria-expanded={activeDropdown === "settings"}
+                  aria-controls={`${menuId}-settings`}
+                  aria-haspopup="dialog"
                   onClick={() => toggleDropdown("settings")}
                   className={iconButtonClass}
                   title={t.hud.menuSettings}
@@ -604,18 +644,22 @@ export function MobileHeaderHUD({
                   />
                 </button>
               </div>
-            ) : (
-              /* Dynamic Compact Popover Pengaturan (Apple Liquid Glass) */
+            {activeDropdown === "settings" && (
+              /* Anchored settings flyout */
               <div
-                style={popoverGlassStyle}
-                className="w-[200px] rounded-[26px] p-2 z-50 flex flex-col gap-1 relative overflow-hidden animate-in fade-in zoom-in-95 duration-150 shadow-2xl"
+                ref={settingsPanel}
+                id={`${menuId}-settings`}
+                role="dialog"
+                aria-label={t.hud.menuSettings}
+                style={{ ...popoverGlassStyle, maxHeight: "calc(100dvh - max(env(safe-area-inset-top, 0px) + 12px, 24px) - env(safe-area-inset-bottom, 0px) - 72px)" }}
+                className="absolute right-0 top-[54px] w-[272px] max-w-[calc(100vw-32px)] rounded-[24px] p-2 z-50 flex flex-col gap-0.5 overflow-y-auto overscroll-contain animate-in fade-in zoom-in-95 duration-150 shadow-2xl"
               >
                 <div className="absolute inset-x-2 top-0 h-8 bg-gradient-to-b from-white/25 to-transparent rounded-t-full pointer-events-none" />
 
                 {/* Header: Judul & Tombol Tutup */}
                 <div className="flex items-center justify-between px-2 pt-1 pb-1.5 border-b border-black/10 dark:border-white/15 relative z-10">
                   <span
-                    className={`text-[12px] font-bold ${
+                    className={`text-[14px] font-bold ${
                       isNight ? "text-white" : "text-[#0b2719]"
                     }`}
                   >
@@ -625,7 +669,7 @@ export function MobileHeaderHUD({
                   <button
                     type="button"
                     onClick={closeDropdown}
-                    className={`w-6 h-6 rounded-full flex items-center justify-center border transition-colors cursor-pointer shrink-0 ${
+                    className={`w-11 h-11 rounded-full flex items-center justify-center border transition-colors cursor-pointer shrink-0 ${
                       isNight
                         ? "bg-white/15 hover:bg-white/25 border-white/20 text-white"
                         : "bg-[#0b2719]/10 hover:bg-[#0b2719]/18 border-[#0b2719]/15 text-[#0b2719]"
@@ -644,7 +688,7 @@ export function MobileHeaderHUD({
                   className={popoverItemButton}
                 >
                   <Settings className="w-4 h-4 stroke-[2.2] shrink-0 opacity-80" />
-                  <span className="truncate">{t.hud.menuSettings}</span>
+                  <span>{t.hud.menuSettings}</span>
                 </button>
 
                 {/* 2. Dekorasi Pulau (Workshop) */}
@@ -654,7 +698,7 @@ export function MobileHeaderHUD({
                   className={popoverItemButton}
                 >
                   <Hammer className="w-4 h-4 stroke-[2.2] shrink-0 opacity-80" />
-                  <span className="truncate">{t.hud.menuWorkshop}</span>
+                  <span>{t.hud.menuWorkshop}</span>
                 </button>
 
                 {/* 3. Audio & Suara Alam */}
@@ -664,7 +708,7 @@ export function MobileHeaderHUD({
                   className={popoverItemButton}
                 >
                   <Headphones className="w-4 h-4 stroke-[2.2] shrink-0 opacity-80" />
-                  <span className="truncate">{t.hud.menuSoundscape}</span>
+                  <span>{t.hud.menuSoundscape}</span>
                 </button>
 
                 {/* 4. Quick Language Switcher (ID / EN) */}
@@ -687,7 +731,7 @@ export function MobileHeaderHUD({
                   className={popoverItemButton}
                 >
                   <HelpCircle className="w-4 h-4 stroke-[2.2] shrink-0 opacity-80" />
-                  <span className="truncate">{t.hud.menuGuide}</span>
+                  <span>{t.hud.menuGuide}</span>
                 </button>
               </div>
             )}

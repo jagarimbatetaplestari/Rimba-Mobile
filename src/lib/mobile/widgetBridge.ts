@@ -143,7 +143,8 @@ export function buildWidgetPayload(
     isFocusPaused: isFocusActive && Boolean(activeSession?.paused_at),
     activeSessionTag: isFocusActive ? activeSession?.tag || null : null,
     activeSessionSpecies: isFocusActive ? activeSession?.species || null : null,
-    activeSessionEndsAt: isFocusActive ? activeSession?.expected_end_at || null : null,
+    // Stopwatch sessions have a safety deadline, not a countdown for the widget to display.
+    activeSessionEndsAt: isFocusActive && !activeSession?.is_stopwatch ? activeSession?.expected_end_at || null : null,
     activeSessionDurationMinutes: isFocusActive ? activeSession?.duration_minutes || 25 : 0,
   };
 }

@@ -35,6 +35,11 @@ describe('native widget synchronization', () => {
     const payload = buildWidgetPayload(createInitialSaveData(), { status: 'active', paused_at: new Date().toISOString(), expected_end_at: '2099-01-01T00:00:00Z' } as any);
     expect(payload.isFocusPaused).toBe(true);
   });
+  it('does not present a stopwatch safety deadline as remaining focus time', () => {
+    const payload = buildWidgetPayload(createInitialSaveData(), { status: 'active', is_stopwatch: true, expected_end_at: '2099-01-01T00:00:00Z' } as any);
+    expect(payload.isFocusActive).toBe(true);
+    expect(payload.activeSessionEndsAt).toBeNull();
+  });
   it('finishes an in-flight old-owner write before clearing it and never deduplicates it as current', async () => {
     let finish!: (value: { synced: boolean }) => void;
     const order: string[] = [];

@@ -1,5 +1,11 @@
 # Release readiness execution log
 
+## Resubmission — 3 November 2026, 11:32 WIB
+
+- Apple requested Guideline2.1 Information Needed: physical-device video and six review-information categories; no specific crash/bug identified. Owner supplied two recordings, authorized editing and then explicitly instructed submit, reporting iPhone13/iOS27.0.1.
+- Saved3910-character English Notes and uploaded edited179.033s MP4. Notes retain honest omissions (full registration, Campfire report/block, actual two-sound mixer use), explain services/regions/purpose/access/content rights using prior owner asset confirmation. Existing demo credentials preserved and actual login verified without admin access.
+- Apple attachment925232b8-3bd3-4cfe-ae0f-5c5d202b3099 processing delayed review update; initial resolve409/UI attachment-upload-in-progress. Waited until COMPLETE/no errors, resolved the app item, and submitted same five-item submission41619189-27ab-4c80-83e3-2e07ef3e3bba at2026-11-03T04:32:46.692Z. API app/submission WAITING_FOR_REVIEW; UI all five Waiting for Review. Build1.0(15) unchanged, no runtime/new tests/build. No separate App Review reply sent. Proof and final Notes in APPLE_REVIEW_20261103.md / Deliverables.
+
 Branch: fix/rimba-release-readiness. Scope: freemium without real-tree claims, global outside EU, iPhone+iPad.
 
 ## Foundation checkpoint

@@ -1,8 +1,14 @@
 # Rimba — final App Store handoff
 
-Diperbarui: 2 November 2026, Asia/Jakarta.
+Diperbarui: 3 November 2026, Asia/Jakarta.
 
 ## Status terbaru
+
+**RESUBMITTED — WAITING FOR REVIEW, 3 November 2026 pukul 11:32:46 WIB.** Pemilik memerintahkan "submit" dan melaporkan iPhone 13 / iOS 27.0.1. Enam poin Review Notes tersimpan (3910 karakter), video edit 2m59s dilampirkan dan COMPLETE. Setelah processing selesai, app item resolved dan submission yang sama dikirim ulang lewat API; read-back app/submission WAITING_FOR_REVIEW, UI menampilkan kelima item Waiting for Review. Build tetap1.0(15); tidak ada runtime/produk/harga yang diganti. Notes menjelaskan secara jujur registrasi lengkap, Campfire report/block dan pemakaian mixer dua suara tidak ada di video. Tidak ada balasan terpisah dikirim. Bukti `Deliverables/Rimba-Build14-UI/resubmitted15-20261103-verified.json` dan `apple-resubmitted-build15-20261103.png`. Jangan submit/withdraw lagi tanpa instruksi baru.
+
+Riwayat pengiriman sebelumnya:
+
+Sebelumnya Apple menolak versi app dengan Guideline2.1 Information Needed, tanpa crash/bug spesifik. Pesan meminta rekaman perangkat fisik dan enam informasi tambahan. Rekaman pemilik `20261103_035143000_iOS.MP4` dan `20261103_041019000_iOS.MP4` digabung; yang kedua menunjukkan Restore sukses dan penghapusan akun kembali ke auth. Edit final `D:/Project/Rimba/Deliverables/Rimba-App-Review-Demo-20261103.mp4` kini sudah dilampirkan ke Apple. Google account picker/autentikasi perangkat dibuang. Perangkat/OS berdasarkan laporan pemilik, bukan inferensi resolusi. Detail jawaban dan batas bukti di `APPLE_REVIEW_20261103.md`. Konfirmasi hak aset sebelumnya ditemukan di EXECUTION_LOG, tidak ada audit lisensi baru yang diklaim.
 
 **SUDAH DIKIRIM — WAITING FOR REVIEW, 2 November2026 pukul21:10:43WIB.** Pemilik mencoba Submit melalui UI dan mendapat unexpected error; API read mengonfirmasi belum terkirim. Pemilik kemudian secara eksplisit menyetujui satu kali pengiriman draft yang sama melalui API resmi Apple. PATCH submitted=true berhasil pada2026-11-02T14:10:43.66Z. Submission,app1.0(15),annual,monthly,lifetime dan grupPro terverifikasi WAITING_FOR_REVIEW. Jangan Submit ulang atau menarik kiriman tanpa instruksi baru. Penyebab spesifik error UI belum terbukti; tidak ada metadata/produk/build yang diganti untuk keberhasilan API ini.
 

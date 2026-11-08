@@ -16,7 +16,6 @@ struct RimbaTimelineProvider: TimelineProvider {
     }
     func getTimeline(in context: Context, completion: @escaping (Timeline<RimbaWidgetEntry>) -> Void) {
         let now = Date(), state = RimbaWidgetTelemetry.loadFromSharedStorage()
-        // Expire the countdown at the real end, even when the app is in the background.
         var entries = [RimbaWidgetEntry(date: now, telemetry: state)]
         if let end = state.focusEnd(now: now) { entries.append(RimbaWidgetEntry(date: end, telemetry: state)) }
         completion(Timeline(entries: entries, policy: .after(now.addingTimeInterval(900))))
@@ -26,41 +25,109 @@ struct RimbaTimelineProvider: TimelineProvider {
 struct RimbaWidgetEntryView: View {
     let entry: RimbaWidgetEntry
     @Environment(\.widgetFamily) private var family
+    @Environment(\.colorScheme) private var colorScheme
+
     private var state: RimbaWidgetTelemetry { entry.telemetry }
     private var en: Bool { state.language == "en" }
-    private var jade: Color { Color(red: 0.08, green: 0.42, blue: 0.30) }
+    private var isDark: Bool { colorScheme == .dark }
+
+    private var primaryText: Color {
+        isDark ? Color.white : Color(red: 0.04, green: 0.22, blue: 0.15)
+    }
+    private var secondaryText: Color {
+        isDark ? Color(red: 0.65, green: 0.85, blue: 0.75) : Color(red: 0.12, green: 0.38, blue: 0.28)
+    }
+    private var emeraldTint: Color {
+        isDark ? Color(red: 0.35, green: 0.88, blue: 0.65) : Color(red: 0.08, green: 0.52, blue: 0.36)
+    }
+    private var amberTint: Color {
+        isDark ? Color(red: 0.98, green: 0.76, blue: 0.32) : Color(red: 0.82, green: 0.52, blue: 0.08)
+    }
+
+    private var bgGradient: LinearGradient {
+        if isDark {
+            return LinearGradient(
+                colors: [Color(red: 0.05, green: 0.16, blue: 0.11), Color(red: 0.02, green: 0.09, blue: 0.06)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        } else {
+            return LinearGradient(
+                colors: [Color(red: 0.92, green: 0.97, blue: 0.94), Color(red: 0.83, green: 0.94, blue: 0.88)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        }
+    }
+
     private var focusURL: URL { URL(string: "rimba://focus?minutes=\(state.quickPresetMinutes)")! }
+    private var openURL: URL { URL(string: "rimba://open")! }
     private var ratio: Double { min(1, max(0, Double(state.todayMinutes) / Double(max(1, state.dailyGoalMinutes)))) }
 
     var body: some View {
         Group {
             if #available(iOS 17.0, *) {
-                content.containerBackground(for: .widget) { Color(red: 0.88, green: 0.95, blue: 0.90) }
+                content
+                    .containerBackground(for: .widget) {
+                        bgGradient
+                    }
             } else {
-                content.padding(12).background(Color(red: 0.88, green: 0.95, blue: 0.90))
+                content
+                    .padding(14)
+                    .background(bgGradient)
             }
         }
-        .widgetURL(focusURL)
+        .widgetURL(state.isFocusActive ? openURL : focusURL)
     }
 
     @ViewBuilder private var content: some View {
         switch family {
         case .accessoryCircular:
-            Gauge(value: ratio) { Image(systemName: "leaf.fill") } currentValueLabel: {
+            Gauge(value: ratio) {
+                Image(systemName: state.isFocusActive ? "timer" : "leaf.fill")
+            } currentValueLabel: {
                 Text("\(state.todayMinutes)").monospacedDigit()
             }.gaugeStyle(.accessoryCircular)
+
         case .accessoryInline:
             if let end = state.focusEnd(now: entry.date) {
-                Label { Text(timerInterval: entry.date...end, countsDown: true) } icon: { Image(systemName: "timer") }
+                Label {
+                    Text(timerInterval: entry.date...end, countsDown: true)
+                } icon: {
+                    Image(systemName: "timer")
+                }
+            } else if state.isFocusPaused {
+                Label {
+                    Text("\(en ? "Paused" : "Jeda") · \(state.pausedTimeString())")
+                } icon: {
+                    Image(systemName: "pause.fill")
+                }
             } else {
-                Text("Rimba · \(state.todayMinutes) \(en ? "min" : "mnt") · \(state.streakDays) \(en ? "days" : "hari")")
+                Label {
+                    Text("Rimba · \(state.todayMinutes)m · \(state.streakDays)d")
+                } icon: {
+                    Image(systemName: "leaf.fill")
+                }
             }
+
         case .accessoryRectangular:
             VStack(alignment: .leading, spacing: 3) {
-                Label("Rimba", systemImage: "leaf.fill").font(.headline)
-                focusOrSummary.font(.caption).monospacedDigit()
+                HStack(spacing: 4) {
+                    Image(systemName: "leaf.fill")
+                    Text("Rimba").font(.headline)
+                    Spacer()
+                    if state.streakDays > 0 {
+                        HStack(spacing: 2) {
+                            Image(systemName: "flame.fill").foregroundStyle(.orange)
+                            Text("\(state.streakDays)")
+                        }.font(.caption2.bold())
+                    }
+                }
+                focusOrSummary
+                    .font(.caption.bold())
                 ProgressView(value: ratio)
             }
+
         default:
             home
         }
@@ -68,51 +135,157 @@ struct RimbaWidgetEntryView: View {
 
     @ViewBuilder private var focusOrSummary: some View {
         if let end = state.focusEnd(now: entry.date) {
-            Text(timerInterval: entry.date...end, countsDown: true)
+            HStack(spacing: 4) {
+                Image(systemName: "timer")
+                    .font(.system(size: family == .systemMedium ? 15 : 12))
+                    .foregroundStyle(emeraldTint)
+                Text(timerInterval: entry.date...end, countsDown: true)
+                    .monospacedDigit()
+            }
         } else if state.isFocusPaused {
-            Text(en ? "Focus paused · Open Rimba" : "Fokus dijeda · Buka Rimba")
+            HStack(spacing: 4) {
+                Image(systemName: "pause.fill")
+                    .font(.system(size: family == .systemMedium ? 15 : 12))
+                    .foregroundStyle(amberTint)
+                Text(state.pausedTimeString())
+                    .monospacedDigit()
+                Text(en ? "Paused" : "Jeda")
+                    .font(.caption2)
+                    .foregroundStyle(secondaryText)
+            }
         } else if state.isFocusActive {
-            Text(en ? "Check your session in Rimba" : "Lihat sesi di Rimba")
+            HStack(spacing: 4) {
+                Image(systemName: "timer")
+                    .font(.system(size: family == .systemMedium ? 15 : 12))
+                    .foregroundStyle(emeraldTint)
+                Text(en ? "Session active" : "Sesi berjalan")
+            }
         } else {
-            Text("\(state.todayMinutes) / \(state.dailyGoalMinutes) \(en ? "min today" : "mnt hari ini")")
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text("\(state.todayMinutes)")
+                    .font(.system(size: family == .systemMedium ? 26 : 22, weight: .bold, design: .rounded))
+                    .monospacedDigit()
+                Text("/ \(state.dailyGoalMinutes) \(en ? "min" : "mnt")")
+                    .font(.caption)
+                    .foregroundStyle(secondaryText)
+            }
         }
     }
 
     private var home: some View {
-        HStack(spacing: 14) {
-            VStack(alignment: .leading, spacing: 8) {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 6) {
+                // Top Header Row
                 HStack {
-                    Label("Rimba", systemImage: "leaf.fill").font(.headline)
+                    HStack(spacing: 4) {
+                        Image(systemName: "leaf.fill")
+                            .foregroundStyle(emeraldTint)
+                        Text("Rimba")
+                            .font(.headline)
+                            .foregroundStyle(primaryText)
+                    }
                     Spacer(minLength: 4)
-                    Text("\(state.streakDays)🔥").font(.caption.bold())
+                    if state.streakDays > 0 {
+                        HStack(spacing: 2.5) {
+                            Image(systemName: "flame.fill")
+                                .font(.caption2)
+                                .foregroundStyle(Color.orange)
+                            Text("\(state.streakDays)")
+                                .font(.caption.bold())
+                                .foregroundStyle(primaryText)
+                        }
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(
+                            isDark ? Color.orange.opacity(0.18) : Color.orange.opacity(0.12),
+                            in: Capsule()
+                        )
+                    }
                 }
+
                 Spacer(minLength: 0)
-                focusOrSummary.font(.system(size: family == .systemMedium ? 25 : 20, weight: .bold, design: .rounded))
-                    .minimumScaleFactor(0.6).lineLimit(1)
-                ProgressView(value: ratio).tint(jade)
-                Text("\(state.totalTrees) \(en ? "trees" : "pohon") · Lv.\(state.level)")
-                    .font(.caption).foregroundStyle(jade)
-                if family == .systemSmall { startLink }
+
+                // Middle Hero Value
+                focusOrSummary
+                    .font(.system(size: family == .systemMedium ? 24 : 19, weight: .bold, design: .rounded))
+                    .foregroundStyle(primaryText)
+                    .minimumScaleFactor(0.7)
+                    .lineLimit(1)
+
+                // Progress Bar
+                ProgressView(value: ratio)
+                    .tint(emeraldTint)
+
+                // Subtitle: Trees & Level
+                HStack(spacing: 4) {
+                    Image(systemName: "tree.fill")
+                        .font(.caption2)
+                    Text("\(state.totalTrees) \(en ? "trees" : "pohon")")
+                    Text("·")
+                    Text("Lv.\(state.level)").bold()
+                }
+                .font(.caption2)
+                .foregroundStyle(secondaryText)
+
+                if family == .systemSmall {
+                    startLink
+                }
             }
+
+            // Medium Widget Side Column: Action Shortcuts
             if family == .systemMedium {
-                VStack(spacing: 10) {
+                VStack(spacing: 8) {
                     startLink
                     Link(destination: URL(string: "rimba://soundscape")!) {
-                        Label(en ? "Nature audio" : "Audio alam", systemImage: "headphones")
-                            .font(.caption.bold()).padding(8)
+                        HStack(spacing: 4) {
+                            Image(systemName: "headphones")
+                                .font(.caption)
+                            Text(en ? "Audio" : "Audio")
+                                .font(.caption.bold())
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 7)
+                        .foregroundStyle(primaryText)
+                        .background(
+                            isDark ? Color.white.opacity(0.10) : Color.white.opacity(0.60),
+                            in: RoundedRectangle(cornerRadius: 11)
+                        )
                     }
-                }.frame(width: 110)
+                    Link(destination: URL(string: "rimba://journal")!) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "book.closed.fill")
+                                .font(.caption)
+                            Text(en ? "Journal" : "Jurnal")
+                                .font(.caption.bold())
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 7)
+                        .foregroundStyle(primaryText)
+                        .background(
+                            isDark ? Color.white.opacity(0.10) : Color.white.opacity(0.60),
+                            in: RoundedRectangle(cornerRadius: 11)
+                        )
+                    }
+                }
+                .frame(width: 104)
             }
         }
-        .foregroundStyle(Color(red: 0.04, green: 0.22, blue: 0.15))
     }
 
     private var startLink: some View {
-        Link(destination: focusURL) {
-            Label(state.isFocusActive ? (en ? "Open focus" : "Buka fokus") : "\(en ? "Focus" : "Fokus") \(state.quickPresetMinutes)m",
-                  systemImage: state.isFocusActive ? "timer" : "play.fill")
-                .font(.caption.bold()).frame(maxWidth: .infinity).padding(.vertical, 9)
-                .foregroundStyle(.white).background(jade, in: RoundedRectangle(cornerRadius: 12))
+        Link(destination: state.isFocusActive ? openURL : focusURL) {
+            HStack(spacing: 5) {
+                Image(systemName: state.isFocusActive ? (state.isFocusPaused ? "play.fill" : "timer") : "play.fill")
+                    .font(.caption.bold())
+                Text(state.isFocusActive ? (en ? "Open Rimba" : "Buka Suaka") : "\(en ? "Focus" : "Fokus") \(state.quickPresetMinutes)m")
+                    .font(.caption.bold())
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
+            .foregroundStyle(isDark ? Color(red: 0.04, green: 0.22, blue: 0.15) : .white)
+            .background(emeraldTint, in: RoundedRectangle(cornerRadius: 12))
+            .shadow(color: emeraldTint.opacity(0.25), radius: 3, y: 1.5)
         }
     }
 }

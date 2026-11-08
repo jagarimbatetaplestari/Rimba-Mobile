@@ -32,8 +32,9 @@ describe('native widget synchronization', () => {
     await clearWidgetCacheOnSignOut(); expect(m.clear).toHaveBeenCalled();
   });
   it('marks a paused session explicitly so native countdown does not keep ticking', () => {
-    const payload = buildWidgetPayload(createInitialSaveData(), { status: 'active', paused_at: new Date().toISOString(), expected_end_at: '2099-01-01T00:00:00Z' } as any);
+    const payload = buildWidgetPayload(createInitialSaveData(), { status: 'active', paused_at: new Date().toISOString(), expected_end_at: '2099-01-01T00:00:00Z', paused_remaining_ms: 290000 } as any);
     expect(payload.isFocusPaused).toBe(true);
+    expect(payload.pausedRemainingSeconds).toBe(290);
   });
   it('does not present a stopwatch safety deadline as remaining focus time', () => {
     const payload = buildWidgetPayload(createInitialSaveData(), { status: 'active', is_stopwatch: true, expected_end_at: '2099-01-01T00:00:00Z' } as any);

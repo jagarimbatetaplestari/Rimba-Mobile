@@ -52,6 +52,7 @@ export interface StartSessionParams {
   todoId?: string;
   isStopwatch?: boolean;
   targetTile?: { grid_x: number; grid_y: number };
+  noTree?: boolean;
 }
 
 export function startFocusSession({
@@ -63,6 +64,7 @@ export function startFocusSession({
   todoId,
   isStopwatch = false,
   targetTile,
+  noTree = false,
 }: StartSessionParams = {}): FocusSession {
   const now = new Date();
   const startedAt = now.toISOString();
@@ -85,6 +87,7 @@ export function startFocusSession({
     todo_id: todoId || undefined,
     is_stopwatch: isStopwatch,
     target_tile: targetTile,
+    no_tree: noTree,
   };
 }
 
@@ -93,6 +96,51 @@ export function getFocusedElapsedMs(session: FocusSession, now = Date.now()): nu
   const reference = session.is_paused && session.paused_at ? Date.parse(session.paused_at) : now;
   const elapsed = reference - Date.parse(session.started_at) - (session.total_paused_ms ?? 0);
   return Number.isFinite(elapsed) ? Math.max(0, elapsed) : 0;
+}
+
+/** Remaining ms for countdown focus, frozen while paused. Returns 0 for stopwatch mode. */
+export function getRemainingMs(session: FocusSession, now = Date.now()): number {
+  if (session.is_stopwatch) return 0;
+  if (session.is_paused) {
+    if (typeof session.paused_remaining_ms === 'number' && Number.isFinite(session.paused_remaining_ms)) {
+      return Math.max(0, session.paused_remaining_ms);
+    }
+    const pausedAt = session.paused_at ? Date.parse(session.paused_at) : now;
+    const expected = Date.parse(session.expected_end_at);
+    return Math.max(0, expected - (Number.isFinite(pausedAt) ? pausedAt : now));
+  }
+  const expected = Date.parse(session.expected_end_at);
+  return Number.isFinite(expected) ? Math.max(0, expected - now) : 0;
+}
+
+/**
+ * Display seconds formatted as MM:SS.
+ * For countdown: uses Math.ceil on remaining ms so 04:50 remains 04:50 until the full second ticks away.
+ * For stopwatch: uses Math.floor on focused elapsed ms.
+ */
+export function getRemainingDisplaySeconds(session: FocusSession, now = Date.now()): number {
+  if (session.is_stopwatch) {
+    return Math.floor(getFocusedElapsedMs(session, now) / 1000);
+  }
+  const remainingMs = getRemainingMs(session, now);
+  return Math.max(0, Math.ceil(remainingMs / 1000));
+}
+
+/**
+ * Normalized progress ratio [0..1] for session progress bars and 3D sapling growth.
+ * Properly frozen during pause, accounting for total_paused_ms.
+ */
+export function getProgressRatio(session: FocusSession, now = Date.now()): number {
+  if (session.is_stopwatch) {
+    const elapsed = getFocusedElapsedMs(session, now);
+    return Math.min(1, Math.max(0, elapsed / 300000));
+  }
+  const start = Date.parse(session.started_at);
+  const expected = Date.parse(session.expected_end_at);
+  if (!Number.isFinite(start) || !Number.isFinite(expected)) return 0;
+  const total = Math.max(1000, expected - start - (session.total_paused_ms ?? 0));
+  const elapsed = getFocusedElapsedMs(session, now);
+  return Math.min(1, Math.max(0, elapsed / total));
 }
 export function abandonFocusSession(session: FocusSession): FocusSession {
   if (session.status !== 'active') {
@@ -260,7 +308,7 @@ export function completeFocusSession(
   const emptyTile = validTarget ? target : findEmptyTileNearCenter(existingObjects, unlockedTiles);
   let newWorldObject: WorldObject | undefined;
 
-  if (emptyTile) {
+  if (!session.no_tree && emptyTile) {
     const species = session.species || 'oak';
     const speciesCfg = TREE_SPECIES_CONFIG.find((s) => s.id === species);
     const variant = speciesCfg?.modelVariant || 'tree_oak';

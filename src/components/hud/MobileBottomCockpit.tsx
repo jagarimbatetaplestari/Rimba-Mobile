@@ -249,6 +249,7 @@ export function MobileBottomCockpit({
                 {/* 1. KAPSUL KIRI: KATEGORI */}
                 <button
                   type="button"
+                  data-tour="cockpit-category"
                   onClick={() => toggleFlyout("category")}
                   style={glassCapsuleStyle}
                   className="w-[58px] h-[58px] rounded-full flex items-center justify-center transition-colors cursor-pointer shrink-0 relative overflow-hidden"
@@ -265,6 +266,7 @@ export function MobileBottomCockpit({
                 {/* 2. KAPSUL TENGAH: TOMBOL MULAI FOKUS */}
                 <button
                   type="button"
+                  data-tour="cockpit-start"
                   onClick={() => {
                     hapticMedium();
                     closeFlyout();
@@ -285,6 +287,7 @@ export function MobileBottomCockpit({
                 {/* 3. KAPSUL KANAN: TIMER */}
                 <button
                   type="button"
+                  data-tour="cockpit-timer"
                   onClick={() => toggleFlyout("timer")}
                   style={glassCapsuleStyle}
                   className="w-[58px] h-[58px] rounded-full flex items-center justify-center transition-colors cursor-pointer shrink-0 relative overflow-hidden"

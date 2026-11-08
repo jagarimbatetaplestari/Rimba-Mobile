@@ -33,6 +33,8 @@ export interface RimbaWidgetPayload {
   activeSessionSpecies: string | null;
   activeSessionEndsAt: string | null;
   activeSessionDurationMinutes: number;
+  pausedRemainingSeconds?: number;
+  isStopwatch?: boolean;
 }
 
 interface RimbaWidgetBridgePluginInterface {
@@ -146,6 +148,11 @@ export function buildWidgetPayload(
     // Stopwatch sessions have a safety deadline, not a countdown for the widget to display.
     activeSessionEndsAt: isFocusActive && !activeSession?.is_stopwatch ? activeSession?.expected_end_at || null : null,
     activeSessionDurationMinutes: isFocusActive ? activeSession?.duration_minutes || 25 : 0,
+    pausedRemainingSeconds:
+      isFocusActive && activeSession?.paused_at && activeSession.paused_remaining_ms
+        ? Math.ceil(activeSession.paused_remaining_ms / 1000)
+        : undefined,
+    isStopwatch: isFocusActive ? Boolean(activeSession?.is_stopwatch) : false,
   };
 }
 

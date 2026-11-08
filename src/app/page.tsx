@@ -38,6 +38,10 @@ import { ProgressMigrationModal } from '@/components/modals/ProgressMigrationMod
 import { MobileSettingsSheet } from "@/components/modals/MobileSettingsSheet";
 import { CampfireRoomModal } from "@/components/modals/CampfireRoomModal";
 import { IslandSwitcherModal } from "@/components/modals/IslandSwitcherModal";
+import { LandFullModal } from "@/components/modals/LandFullModal";
+import { LandFullState } from "@/lib/game/worldRules";
+import { GuidedTour } from "@/components/tour/GuidedTour";
+import { useTourStore } from "@/lib/tour/useTourStore";
 import { RimbaProPaywallModal } from "@/components/modals/RimbaProPaywallModal";
 import { syncMobileStatusBar, initAppLifecycleListeners } from "@/lib/mobile/nativeBridge";
 import { useNativeWidgetActions } from "@/lib/mobile/useNativeWidgetActions";
@@ -101,6 +105,8 @@ export default function RimbaDioramaApp() {
   const [isIslandSwitcherOpen, setIsIslandSwitcherOpen] = useState(false);
   const [isPaywallOpen, setIsPaywallOpen] = useState(false);
   const [paywallSource, setPaywallSource] = useState("general");
+  const [isLandFullModalOpen, setIsLandFullModalOpen] = useState(false);
+  const [landFullState, setLandFullState] = useState<LandFullState | null>(null);
 
   // Wait for persisted auth store hydration, then redirect unauthenticated users to /login first
   useEffect(() => {
@@ -419,10 +425,25 @@ export default function RimbaDioramaApp() {
       };
       window.addEventListener("rimba:open_guide", handleOpenGuide);
 
+      const handleOpenTour = () => {
+        closeAllActiveModals();
+        const owner = authUser?.id || "guest";
+        useTourStore.getState().resetTourForOwner(owner);
+        useTourStore.getState().startTour(owner);
+      };
+      window.addEventListener("rimba:open_tour", handleOpenTour);
+
       const handleOpenSoundscapes = () => {
         setIsSoundscapeOpen(true);
       };
       window.addEventListener("rimba:open_soundscapes", handleOpenSoundscapes);
+
+      const handleLandFull = (e: Event) => {
+        const detail = (e as CustomEvent<LandFullState>).detail;
+        setLandFullState(detail);
+        setIsLandFullModalOpen(true);
+      };
+      window.addEventListener("rimba:land_full", handleLandFull as EventListener);
 
       const handleDeepLink = (e: Event) => {
         const rawUrl = (e as CustomEvent<{ url?: string }>).detail?.url || "";
@@ -445,6 +466,8 @@ export default function RimbaDioramaApp() {
             setIsJournalOpen(true);
           } else if (host === "zen") {
             useGameStore.getState().setZenMode(true);
+          } else if (host === "open") {
+            closeAllActiveModals();
           }
         } catch {
           // ignore malformed deep link
@@ -479,7 +502,9 @@ export default function RimbaDioramaApp() {
           handleOpenPaywall as EventListener,
         );
         window.removeEventListener("rimba:open_guide", handleOpenGuide);
+        window.removeEventListener("rimba:open_tour", handleOpenTour);
         window.removeEventListener("rimba:open_soundscapes", handleOpenSoundscapes);
+        window.removeEventListener("rimba:land_full", handleLandFull as EventListener);
         window.removeEventListener("rimba:deep_link", handleDeepLink as EventListener);
       };
     }
@@ -545,6 +570,24 @@ export default function RimbaDioramaApp() {
     isAnyFullPageModalOpen || isWorkshopActive || isObjectInspectActive,
   );
 
+  // Guided Tour auto-trigger for new users after onboarding & after any initial focus session
+  useEffect(() => {
+    if (!isAuthHydrated || !authUser) return;
+    if (isOnboardingOpen) return;
+    if (isAnyFullPageModalOpen) return;
+    if (activeSession) return;
+
+    const owner = authUser.id || "guest";
+    if (!useTourStore.getState().hasCompletedTour(owner)) {
+      const timer = setTimeout(() => {
+        if (!useGameStore.getState().activeSession) {
+          useTourStore.getState().startTour(owner);
+        }
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isAuthHydrated, authUser, isOnboardingOpen, isAnyFullPageModalOpen, activeSession]);
+
   const pushedModalHistoryRef = useRef(false);
   const isProgrammaticBackRef = useRef(false);
 
@@ -578,6 +621,7 @@ export default function RimbaDioramaApp() {
     activeModals: useMemo(
       () => [
         { isOpen: isModerationOpen, close: () => setIsModerationOpen(false) },
+        { isOpen: isLandFullModalOpen, close: () => setIsLandFullModalOpen(false) },
         { isOpen: isPaywallOpen, close: () => setIsPaywallOpen(false) },
         { isOpen: isIslandSwitcherOpen, close: () => setIsIslandSwitcherOpen(false) },
         { isOpen: isBiomePickerOpen, close: () => setIsBiomePickerOpen(false) },
@@ -595,6 +639,7 @@ export default function RimbaDioramaApp() {
       ],
       [
         isModerationOpen,
+        isLandFullModalOpen,
         isPaywallOpen,
         isIslandSwitcherOpen,
         isBiomePickerOpen,
@@ -994,6 +1039,7 @@ export default function RimbaDioramaApp() {
 
       {/* 3D Isometric Diorama Island Scene */}
       <div
+        data-tour="sanctuary-island"
         className={`absolute inset-0 z-10 overflow-hidden ${
           isCanvasPausedByModal
             ? "invisible pointer-events-none"
@@ -1155,6 +1201,14 @@ export default function RimbaDioramaApp() {
           onClose={() => setIsIslandSwitcherOpen(false)}
         />
       )}
+      {isLandFullModalOpen && (
+        <LandFullModal
+          isOpen={isLandFullModalOpen}
+          onClose={() => setIsLandFullModalOpen(false)}
+          landState={landFullState}
+          onOpenIslandSwitcher={() => setIsIslandSwitcherOpen(true)}
+        />
+      )}
       {isPaywallOpen && (
         <RimbaProPaywallModal
           isOpen={isPaywallOpen}
@@ -1193,6 +1247,9 @@ export default function RimbaDioramaApp() {
           isFadingOut={isFadingOutLoading}
         />
       )}
+
+      {/* Post-Onboarding Guided Tour */}
+      <GuidedTour />
     </main>
   );
 }

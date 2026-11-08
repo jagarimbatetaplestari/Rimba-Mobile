@@ -102,6 +102,15 @@ export function MobileHeaderHUD({
   const flyoutPanel = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const handleTourDropdown = (e: Event) => {
+      const detail = (e as CustomEvent<{ dropdown?: "profile" | "settings" | null }>).detail;
+      setActiveDropdown(detail?.dropdown ?? null);
+    };
+    window.addEventListener("rimba:tour_dropdown", handleTourDropdown);
+    return () => window.removeEventListener("rimba:tour_dropdown", handleTourDropdown);
+  }, []);
+
+  useEffect(() => {
     if (!activeDropdown) return;
     const panel = flyoutPanel.current;
     const trigger =
@@ -317,11 +326,13 @@ export function MobileHeaderHUD({
           )}
 
           {/* Dynamic Audio Activity Capsule (Apple Live Activity Style) */}
-          <UnifiedAudioCapsule
-            onOpenSoundscapes={onOpenSoundscapes}
-            isNight={isNight}
-            isOfflinePillShown={!isOnline || justReconnected}
-          />
+          <div data-tour="hud-audio" className="w-full flex justify-center">
+            <UnifiedAudioCapsule
+              onOpenSoundscapes={onOpenSoundscapes}
+              isNight={isNight}
+              isOfflinePillShown={!isOnline || justReconnected}
+            />
+          </div>
 
           {/* ======================================================== */}
           {/* UNIFIED DYNAMIC ISLAND TOP NAVBAR CAPSULE                */}
@@ -336,6 +347,7 @@ export function MobileHeaderHUD({
             {/* LEFT ZONE: PROFILE + NAME + LEVEL TRIGGER */}
             <button
               type="button"
+              data-tour="hud-header"
               ref={profileTrigger}
               aria-expanded={activeDropdown === "profile"}
               aria-controls={`${menuId}-flyout`}
@@ -490,6 +502,7 @@ export function MobileHeaderHUD({
               {/* 4. Settings & Control Center Trigger */}
               <button
                 type="button"
+                data-tour="hud-settings"
                 ref={settingsTrigger}
                 aria-expanded={activeDropdown === "settings"}
                 aria-controls={`${menuId}-flyout`}
@@ -637,6 +650,7 @@ export function MobileHeaderHUD({
                     {/* 3. Jurnal Suaka */}
                     <button
                       type="button"
+                      data-tour="hud-journal"
                       onClick={() => handleAction(onOpenJournal || onOpenAlmanac)}
                       className={bentoTileClass}
                     >
@@ -712,6 +726,7 @@ export function MobileHeaderHUD({
                     {/* 8. Dekorasi Pulau */}
                     <button
                       type="button"
+                      data-tour="hud-workshop"
                       onClick={() => handleAction(onOpenWorkshop)}
                       className={bentoTileClass}
                     >

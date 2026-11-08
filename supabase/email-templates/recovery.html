@@ -44,7 +44,7 @@
             “Restoring the key to your sanctuary.”
           </h1>
           <p style="color: #475569; font-size: 14px; line-height: 1.6; margin: 0 0 28px 0; text-align: center;">
-            We received a request to reset your <strong style="color: #0F291E;">Rimba</strong> password. Enter this 6-digit recovery code in the app or click the button below:
+            We received a request to reset your <strong style="color: #0F291E;">Rimba</strong> password. Enter this 6-digit recovery code in the app:
           </p>
 
           <!-- OTP Code Box -->
@@ -58,22 +58,8 @@
                   {{ .Token }}
                 </div>
                 <div style="color: #64748B; font-size: 11px; margin-top: 10px;">
-                  ⏳ Code expires in 60 minutes
+                  Code expires in 60 minutes
                 </div>
-              </td>
-            </tr>
-          </table>
-
-          <!-- One-Click Reset Button -->
-          <table role="presentation" align="center" style="margin: 0 auto 28px auto;">
-            <tr>
-              <td style="text-align: center;">
-                <p style="font-size: 12px; color: #64748B; margin: 0 0 12px 0;">
-                  Or choose a new password in your browser:
-                </p>
-                <a href="{{ .ConfirmationURL }}" target="_blank" rel="noopener noreferrer" style="display: inline-block; background: linear-gradient(135deg, #10B981 0%, #047857 100%); color: #FFFFFF !important; text-decoration: none; font-weight: 700; font-size: 13px; letter-spacing: 0.02em; padding: 13px 32px; border-radius: 9999px; box-shadow: 0 6px 18px rgba(4, 120, 87, 0.25); text-align: center;">
-                  Reset Your Password Now →
-                </a>
               </td>
             </tr>
           </table>
@@ -87,7 +73,7 @@
 
           <!-- Security Notice -->
           <p style="color: #64748B; font-size: 11.5px; line-height: 1.6; margin: 22px 0 0 0; text-align: center;">
-            🔒 <em>Security Note:</em> If you did not initiate this password reset request, you can safely ignore this email. Your current password remains safe and unchanged.
+            <em>Security Note:</em> If you did not initiate this password reset request, you can safely ignore this email. Your current password remains safe and unchanged.
           </p>
         </td>
       </tr>

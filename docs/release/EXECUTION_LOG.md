@@ -1,5 +1,43 @@
 # Release readiness execution log
 
+## Post-Launch Quality & Production Polish — 8 November 2026, 13:00 WIB
+
+Rimba telah resmi disetujui oleh Apple dan terdistribusi di App Store (Build 1.0 (15)). Sesi ini mengeksekusi 6 perbaikan menyeluruh terhadap masukan pengguna nyata di produksi sesuai rencana `implementation_plan.md`:
+
+1. **Email OTP 6-Digit & Scanner Auto-Confirm Recovery (Masalah 1)**:
+   - Dihilangkan `{{ .ConfirmationURL }}` dan link button dari template email Supabase (`confirmation.html`, `magic_link.html`, `recovery.html`) untuk mencegah Apple Mail Privacy Protection dan scanner email menginvalidasi OTP sebelum pengguna memasukkannya.
+   - Ditambahkan automatic fallback login recovery via `signInWithPassword` saat OTP gagal diverifikasi karena sudah dikonfirmasi scanner.
+   - Standardisasi OTP ke 6 digit (`EMAIL_OTP_STANDARD_LENGTH = 6`, `EMAIL_OTP_MIN_LENGTH = 6`, `EMAIL_OTP_MAX_LENGTH = 8`), placeholder `"123456"`, dan pembaruan salinan i18n EN/ID.
+2. **iOS Widgets Polish & Action Bridge (Masalah 2)**:
+   - Diperbarui SwiftUI `RimbaWidgetsBundle.swift` dengan desain Liquid Glass adaptif yang mendukung Dark Mode dan Light Mode melalui `@Environment(\.colorScheme)`.
+   - Emoji native `🔥` digantikan dengan SF Symbol `Image(systemName: "flame.fill")`.
+   - Ditambahkan penanganan sesi jeda (`pausedRemainingSeconds`) sehingga widget menampilkan teks sisa waktu statis saat dijeda dan tidak terus menghitung mundur di background.
+   - Diperluas `consumeAction` dan `widgetActions.ts` untuk mendukung rute `rimba://open`.
+3. **Pembersihan Emoji Bawaan & Mojibake (Masalah 3)**:
+   - Menghapus emoji native dari seluruh toast, HUD, status fauna, dan modal (~40 pemanggilan `notify(...)`).
+   - Replaced mojibake avatar fallback `'ðŸ¦Œ'` dengan `\u{1F98C}` di `useAuthStore.ts`.
+   - Ditambahkan regex sanitizer di `NotificationToast.tsx` untuk menyaring emoji yang tersisa.
+4. **Invarian Waktu Pause / Resume Fokus (Masalah 4)**:
+   - Menambahkan `paused_remaining_ms` di `FocusSession` sebagai snapshot sisa waktu saat jeda manual.
+   - `resumeFocus` memulihkan sisa waktu dari snapshot, menjamin sisa waktu identik sebelum jeda dan setelah lanjut (selisih 0 detik).
+   - Penyeragaman pembulatan waktu display ke `Math.ceil` di seluruh komponen (`MobileFocusCard`, `ZenFocusOverlay`, `FocusSapling`).
+5. **Panduan / Tur Interaktif Pasca-Onboarding (Masalah 5)**:
+   - Dibuat `useTourStore.ts` dengan penyimpanan per-owner di localStorage (`rimba_tour_v1_<owner>`).
+   - Dibuat `GuidedTour.tsx` dengan SVG spotlight cutout mask, kartu Liquid Glass, 9 langkah interaktif menyorot elemen HUD nyata (`sanctuary-island`, `cockpit-category`, `cockpit-timer`, `cockpit-start`, `hud-header`, `hud-workshop`, `hud-journal`, `hud-audio`).
+   - Ditambahkan tombol "Panduan Interaktif" di `MobileSettingsSheet.tsx` untuk memulai ulang tur kapan saja.
+6. **Pulau Penuh & Panduan Perluasan Lahan (Masalah 6)**:
+   - Ditambahkan choke-point di `startFocus`: jika `getLandFullState().isFull` dan bukan mode tanpa-pohon, sesi dicegah dan event `rimba:land_full` dipancarkan.
+   - Dibuat `LandFullModal.tsx` yang menawarkan opsi Perluas Lahan, Fokus Tanpa Pohon (`no_tree: true`), atau Pindah Pulau.
+   - Dihilangkan fallback koordinat `[0, 0.05, 0]` di `FocusSapling.tsx`.
+   - Ditambahkan proteksi reservasi petak target pada `confirmRelocation` dan `placeCatalogItem`.
+
+**Verifikasi & Gerbang Rilis**:
+- `npm test`: 48 test files passed (414 tests passed, 0 failed).
+- `npm run typecheck`: 0 errors (`tsc --noEmit` bersih).
+- `npm run test:prelaunch`: 155/155 assertions passed.
+- `npm run build`: 12/12 static pages exported successfully.
+- `git diff --check`: 0 whitespace/conflict warnings.
+
 ## Resubmission — 3 November 2026, 11:32 WIB
 
 - Apple requested Guideline2.1 Information Needed: physical-device video and six review-information categories; no specific crash/bug identified. Owner supplied two recordings, authorized editing and then explicitly instructed submit, reporting iPhone13/iOS27.0.1.

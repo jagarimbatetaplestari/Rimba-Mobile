@@ -7,6 +7,7 @@ describe('widget routes', () => {
     expect(parseWidgetAction('rimba://focus/other')).toBeNull();
     expect(parseWidgetAction('invalid')).toBeNull();
     expect(parseWidgetAction('rimba://journal')).toEqual({ route: 'journal' });
+    expect(parseWidgetAction('rimba://open')).toEqual({ route: 'open' });
   });
   it('accepts complete valid minutes and falls back safely for malformed durations', () => {
     expect(parseWidgetAction('rimba://focus?minutes=45')).toEqual({ route: 'focus', minutes: 45 });

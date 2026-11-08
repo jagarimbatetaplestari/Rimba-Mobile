@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
@@ -33,6 +33,8 @@ interface AuthState {
   ownershipError: string | null;
   isLoading: boolean;
   userPasswordHash?: string;
+  pendingRegistrationEmail?: string | null;
+  pendingRegistrationPassword?: string | null;
   initAuth: () => Promise<void>;
   loginAsGuest: (customName?: string) => void;
   loginWithEmail: (email: string, pass: string) => Promise<AuthResult>;
@@ -73,6 +75,8 @@ const RIMBA_LOCAL_STORAGE_KEYS = [
   'rimba_focus_history_v1',
   'rimba_preferences_v1',
 ];
+
+const DEFAULT_AVATAR_FALLBACK = '\u{1F98C}';
 
 let authStateListenerRegistered = false;
 // Token rotation supersedes profile reads without invalidating this owner's purchases.
@@ -178,7 +182,7 @@ async function buildAuthUserFromSupabase(
     profile?.avatar_url ||
     supaUser.user_metadata?.avatar_url ||
     supaUser.user_metadata?.picture ||
-    'ðŸ¦Œ';
+    DEFAULT_AVATAR_FALLBACK;
 
   return {
     id: userId,
@@ -215,7 +219,7 @@ export const useAuthStore = create<AuthState>()(
                           ? saveData.profile.name
                           : nextUser.name || saveData.profile.name,
                       avatarUrl:
-                        saveData.profile.avatarUrl && saveData.profile.avatarUrl !== 'ðŸ¦Œ'
+                        saveData.profile.avatarUrl && saveData.profile.avatarUrl !== DEFAULT_AVATAR_FALLBACK
                           ? saveData.profile.avatarUrl
                           : nextUser.avatarUrl || saveData.profile.avatarUrl,
                       bio: nextUser.bio || saveData.profile.bio,
@@ -332,7 +336,7 @@ export const useAuthStore = create<AuthState>()(
             email: '',
             name: customName,
             bio: 'Penjelajah Rimba Baru',
-            avatarUrl: 'ðŸ¦Œ',
+            avatarUrl: DEFAULT_AVATAR_FALLBACK,
             isGuest: true,
             createdAt: new Date().toISOString(),
           };
@@ -409,13 +413,22 @@ export const useAuthStore = create<AuthState>()(
 
             if (data.session && data.user) {
               const userObj = await buildAuthUserFromSupabase(data.user, cleanName);
-              set({ user: userObj, isLoading: false });
+              set({
+                user: userObj,
+                isLoading: false,
+                pendingRegistrationEmail: null,
+                pendingRegistrationPassword: null,
+              });
               lastSyncedUserId = data.user.id;
               await smartSyncOnLogin(data.user.id);
               return { success: true, requiresOtp: false };
             }
 
-            set({ isLoading: false });
+            set({
+              isLoading: false,
+              pendingRegistrationEmail: cleanEmail,
+              pendingRegistrationPassword: pass,
+            });
             return { success: true, requiresOtp: true };
           } catch (err: any) {
             set({ isLoading: false });
@@ -443,6 +456,31 @@ export const useAuthStore = create<AuthState>()(
               });
 
               if (fallback.error) {
+                // Link scanner auto-confirm recovery:
+                // If a link scanner prefetched the token URL, the user is already confirmed on GoTrue.
+                // We attempt direct password sign-in using the pending registration credentials.
+                const pendingPass = get().pendingRegistrationPassword;
+                const pendingEmail = get().pendingRegistrationEmail;
+                if (pendingPass && pendingEmail && pendingEmail.toLowerCase() === cleanEmail.toLowerCase()) {
+                  const directLogin = await supabase.auth.signInWithPassword({
+                    email: cleanEmail,
+                    password: pendingPass,
+                  });
+                  if (!directLogin.error && directLogin.data.user) {
+                    const userId = directLogin.data.user.id;
+                    const userObj = await buildAuthUserFromSupabase(directLogin.data.user);
+                    set({
+                      user: userObj,
+                      isLoading: false,
+                      pendingRegistrationEmail: null,
+                      pendingRegistrationPassword: null,
+                    });
+                    lastSyncedUserId = userId;
+                    await smartSyncOnLogin(userId);
+                    return { success: true };
+                  }
+                }
+
                 set({ isLoading: false });
                 return { success: false, error: error.message || 'Kode OTP tidak valid atau kadaluarsa.' };
               }
@@ -450,7 +488,12 @@ export const useAuthStore = create<AuthState>()(
               if (fallback.data.user) {
                 const userId = fallback.data.user.id;
                 const userObj = await buildAuthUserFromSupabase(fallback.data.user);
-                set({ user: userObj, isLoading: false });
+                set({
+                  user: userObj,
+                  isLoading: false,
+                  pendingRegistrationEmail: null,
+                  pendingRegistrationPassword: null,
+                });
                 lastSyncedUserId = userId;
                 await smartSyncOnLogin(userId);
                 return { success: true };
@@ -460,7 +503,12 @@ export const useAuthStore = create<AuthState>()(
             if (data.user) {
               const userId = data.user.id;
               const userObj = await buildAuthUserFromSupabase(data.user);
-              set({ user: userObj, isLoading: false });
+              set({
+                user: userObj,
+                isLoading: false,
+                pendingRegistrationEmail: null,
+                pendingRegistrationPassword: null,
+              });
               lastSyncedUserId = userId;
               await smartSyncOnLogin(userId);
               return { success: true };
@@ -853,7 +901,7 @@ export const useAuthStore = create<AuthState>()(
                 id: currentUser.id,
                 display_name: updatedUser.name,
                 bio: updatedUser.bio || 'Penjaga Hutan Suaka',
-                avatar_url: updatedUser.avatarUrl || 'ðŸ¦Œ',
+                avatar_url: updatedUser.avatarUrl || DEFAULT_AVATAR_FALLBACK,
                 updated_at: new Date().toISOString(),
               })
               .then(() => {});

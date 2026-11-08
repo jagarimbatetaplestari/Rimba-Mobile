@@ -31,6 +31,7 @@ import {
   abandonFocusSession,
   completeFocusSession,
   startFocusSession,
+  getRemainingMs,
 } from './sessionRules';
 import {
   claimDailyQuest,
@@ -59,6 +60,7 @@ import {
   canUnlockTile,
   findEmptyTileNearCenter,
   getLandExpansionZoneInfo,
+  getLandFullState,
 } from './worldRules';
 import { createInitialSaveData, loadSaveData, saveSaveData } from './storage';
 import { requestScreenWakeLock, releaseScreenWakeLock } from '@/lib/mobile/nativeBridge';
@@ -189,8 +191,9 @@ interface GameState {
     strictMode?: boolean,
     species?: TreeSpecies,
     taskNote?: string,
-    todoId?: string
-  ) => void;
+    todoId?: string,
+    noTree?: boolean
+  ) => boolean;
   updateActiveSessionMeta: (updates: { tag?: FocusTag; task_note?: string }) => void;
   addCustomTag: (label: string, color?: string, icon?: string) => CustomTagItem | null;
   deleteCustomTag: (tagId: string) => void;
@@ -364,29 +367,29 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (newCount === 25) {
       get().notify(
         isEn
-          ? '🌊 25 Tiles Milestone (5×5)! You entered Zone 2: River Valley! Rivers and bridges are ready.'
-          : '🌊 Milestone 25 Petak (5×5)! Kamu memasuki Zona 2: Lembah Sungai! Jalur sungai & jembatan kini siap ditata.',
+          ? '25 Tiles Milestone (5×5)! You entered Zone 2: River Valley! Rivers and bridges are ready.'
+          : 'Milestone 25 Petak (5×5)! Kamu memasuki Zona 2: Lembah Sungai! Jalur sungai & jembatan kini siap ditata.',
         'success'
       );
     } else if (newCount === 49) {
       get().notify(
         isEn
-          ? '👑 49 Tiles Milestone (7×7)! You entered Zone 3: Rimba Sovereign! Coastal shores and ancient spirit trees await.'
-          : '👑 Milestone 49 Petak (7×7)! Kamu memasuki Zona 3: Rimba Raya! Area pesisir & pohon leluhur menanti.',
+          ? '49 Tiles Milestone (7×7)! You entered Zone 3: Rimba Sovereign! Coastal shores and ancient spirit trees await.'
+          : 'Milestone 49 Petak (7×7)! Kamu memasuki Zona 3: Rimba Raya! Area pesisir & pohon leluhur menanti.',
         'success'
       );
     } else if (newCount === 100) {
       get().notify(
         isEn
-          ? '🏆 FULL SOVEREIGNTY 10×10 (100 Tiles)! The entire Rimba Sanctuary is fully unlocked! 👑'
-          : '🏆 KEDAULATAN PENUH 10×10 (100 Petak)! Seluruh Pulau Rimba telah terbuka sempurna!',
+          ? 'FULL SOVEREIGNTY 10×10 (100 Tiles)! The entire Rimba Sanctuary is fully unlocked!'
+          : 'KEDAULATAN PENUH 10×10 (100 Petak)! Seluruh Pulau Rimba telah terbuka sempurna!',
         'success'
       );
     } else {
       get().notify(
         isEn
-          ? `🌱 Tile (${grid_x},${grid_y}) rises from the water! (${newCount}/${zoneInfo.zoneTargetTiles} Tiles • -${cost} Soul)`
-          : `🌱 Petak (${grid_x},${grid_y}) bangkit dari air! (${newCount}/${zoneInfo.zoneTargetTiles} Petak ${zoneInfo.shortZoneName} • -${cost} Soul)`,
+          ? `Tile (${grid_x},${grid_y}) rises from the water! (${newCount}/${zoneInfo.zoneTargetTiles} Tiles • -${cost} Soul)`
+          : `Petak (${grid_x},${grid_y}) bangkit dari air! (${newCount}/${zoneInfo.zoneTargetTiles} Petak ${zoneInfo.shortZoneName} • -${cost} Soul)`,
         'success'
       );
     }
@@ -475,6 +478,23 @@ export const useGameStore = create<GameState>((set, get) => ({
       return false;
     }
 
+    const currentActiveSession = get().activeSession;
+    if (
+      currentActiveSession &&
+      currentActiveSession.status === 'active' &&
+      currentActiveSession.target_tile &&
+      currentActiveSession.target_tile.grid_x === grid_x &&
+      currentActiveSession.target_tile.grid_y === grid_y
+    ) {
+      get().notify(
+        getStoreLang() === 'en'
+          ? 'This tile is reserved for your growing focus sapling!'
+          : 'Petak ini sedang digunakan oleh bibit fokus yang sedang tumbuh!',
+        'error'
+      );
+      return false;
+    }
+
     const updatedObjects = saveData.world_objects.map((obj) => {
       if (obj.id === relocatingObjectId) {
         return {
@@ -511,7 +531,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       hoveredGridTile: null,
     });
 
-    get().notify(getStoreLang() === 'en' ? '🌿 Object relocated for free!' : '🌿 Posisi objek berhasil dipindahkan (Gratis)!', 'success');
+    get().notify(getStoreLang() === 'en' ? 'Object relocated for free!' : 'Posisi objek berhasil dipindahkan (Gratis)!', 'success');
     return true;
   },
 
@@ -579,8 +599,8 @@ export const useGameStore = create<GameState>((set, get) => ({
 
       get().notify(
         lang === 'en'
-          ? '🍂 Living sanctuary tree uprooted. Nature balance disturbed (-2 Soul penalty).'
-          : '🍂 Pohon suaka dicabut. Keseimbangan alam terganggu (-2 Soul sebagai konsekuensi).',
+          ? 'Living sanctuary tree uprooted. Nature balance disturbed (-2 Soul penalty).'
+          : 'Pohon suaka dicabut. Keseimbangan alam terganggu (-2 Soul sebagai konsekuensi).',
         'info'
       );
       return true;
@@ -619,8 +639,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       const lang = getStoreLang();
       get().notify(
         lang === 'en'
-          ? '🌱 Withered stump cleared for free. Island soil is fertile again for new saplings.'
-          : '🌱 Tunggul lapuk dibersihkan tanpa biaya. Lahan suaka kembali subur untuk ditanami bibit baru.',
+          ? 'Withered stump cleared for free. Island soil is fertile again for new saplings.'
+          : 'Tunggul lapuk dibersihkan tanpa biaya. Lahan suaka kembali subur untuk ditanami bibit baru.',
         'success'
       );
       return true;
@@ -672,8 +692,8 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     get().notify(
       getStoreLang() === 'en'
-        ? `🗑️ Structure ${target.object_type} dismantled. Materials recycled (+${refund} Soul).`
-        : `🗑️ Struktur ${target.object_type} dibongkar. Material didaur ulang (+${refund} Soul).`,
+        ? `Structure ${target.object_type} dismantled. Materials recycled (+${refund} Soul).`
+        : `Struktur ${target.object_type} dibongkar. Material didaur ulang (+${refund} Soul).`,
       'info'
     );
     return true;
@@ -771,8 +791,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       persistAndSyncSaveData(data);
       get().notify(
         getStoreLang() === 'en'
-          ? `🛡️ Streak Freeze activated! Yesterday's absence was forgiven, keeping your streak intact! (Shields left: ${updatedShields})`
-          : `🛡️ Embun Pelindung aktif! Absen kemarin dimaafkan, streak harianmu tetap utuh! (Sisa perisai: ${updatedShields})`,
+          ? `Streak Freeze activated! Yesterday's absence was forgiven, keeping your streak intact! (Shields left: ${updatedShields})`
+          : `Embun Pelindung aktif! Absen kemarin dimaafkan, streak harianmu tetap utuh! (Sisa perisai: ${updatedShields})`,
         'success'
       );
     }
@@ -788,8 +808,8 @@ export const useGameStore = create<GameState>((set, get) => ({
         persistAndSyncSaveData(data);
         get().notify(
           getStoreLang() === 'en'
-            ? '🛡️ Monthly Pro Streak Freeze allowance has been added to your sanctuary!'
-            : '🛡️ Jatah Embun Pelindung bulanan Pro telah ditambahkan ke suakamu!',
+            ? 'Monthly Pro Streak Freeze allowance has been added to your sanctuary!'
+            : 'Jatah Embun Pelindung bulanan Pro telah ditambahkan ke suakamu!',
           'success'
         );
       } else {
@@ -849,7 +869,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     const currentLevel = getLevelFromXp(saveData.profile.xp);
     const config = BIOME_CATALOG.find((b) => b.id === biome);
     if (config && currentLevel < config.levelRequired && !devFastMode) {
-      get().notify(getStoreLang() === 'en' ? `🔒 ${config.nameEn} unlocks at Level ${config.levelRequired}! Keep focusing.` : `🔒 ${config.name} terbuka saat mencapai Level ${config.levelRequired}! Teruslah fokus.`, 'error');
+      get().notify(getStoreLang() === 'en' ? `${config.nameEn} unlocks at Level ${config.levelRequired}! Keep focusing.` : `${config.name} terbuka saat mencapai Level ${config.levelRequired}! Teruslah fokus.`, 'error');
       return;
     }
     if (typeof window !== 'undefined') {
@@ -866,7 +886,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     persistAndSyncSaveData(updatedData);
     set({ activeBiome: biome, saveData: updatedData });
     if (showToast && config) {
-      get().notify(getStoreLang() === 'en' ? `${config.icon} ${config.nameEn} theme active!` : `${config.icon} Tema ${config.name} aktif!`, 'info');
+      get().notify(getStoreLang() === 'en' ? `${config.nameEn} theme active!` : `Tema ${config.name} aktif!`, 'info');
     }
   },
 
@@ -891,7 +911,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (unlocked.length <= 1) {
       const nextLocked = BIOME_CATALOG.find((b) => !get().isBiomeUnlocked(b.id));
       if (nextLocked) {
-        get().notify(getStoreLang() === 'en' ? `🔒 Next biome (${nextLocked.nameEn}) unlocks at Level ${nextLocked.levelRequired}!` : `🔒 Bioma berikutnya (${nextLocked.name}) terbuka di Level ${nextLocked.levelRequired}!`, 'info');
+        get().notify(getStoreLang() === 'en' ? `Next biome (${nextLocked.nameEn}) unlocks at Level ${nextLocked.levelRequired}!` : `Bioma berikutnya (${nextLocked.name}) terbuka di Level ${nextLocked.levelRequired}!`, 'info');
       }
       return;
     }
@@ -917,8 +937,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({ backgroundTheme: nextTheme });
     get().notify(
       nextTheme === 'cream'
-        ? '🌾 Nuansa Warm Cream Oat aktif (hangat & nyaman mata)'
-        : '🍵 Nuansa Calm Soft Matcha aktif (sejuk & rileks)',
+        ? 'Nuansa Warm Cream Oat aktif (hangat & nyaman mata)'
+        : 'Nuansa Calm Soft Matcha aktif (sejuk & rileks)',
       'info'
     );
   },
@@ -1048,12 +1068,29 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({ notification: null });
   },
 
-  startFocus: (customDurationSec, tag, strictMode, species, taskNote, todoId) => {
+  startFocus: (customDurationSec, tag, strictMode, species, taskNote, todoId, noTree) => {
     const { activeSession, devFastMode, saveData, focusSetup } = get();
     const lang = getStoreLang();
     if (activeSession && activeSession.status === 'active') {
       get().notify(lang === 'en' ? 'A focus session is already active.' : 'Sesi fokus sedang berjalan.', 'error');
-      return;
+      return false;
+    }
+
+    const unlockedSet = getUnlockedTilesSet(saveData?.world, saveData?.world_objects || []);
+    const targetTile = findEmptyTileNearCenter(saveData?.world_objects || [], unlockedSet);
+
+    if (!targetTile && !noTree) {
+      const landState = getLandFullState(saveData?.world, saveData?.world_objects || []);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('rimba:land_full', { detail: landState }));
+      }
+      get().notify(
+        lang === 'en'
+          ? 'Land of sanctuary is full! Expand your island to grow more trees.'
+          : 'Lahan suaka telah penuh! Perluas pulaumu untuk menanam pohon baru.',
+        'info'
+      );
+      return false;
     }
 
     const finalTag = tag ?? focusSetup?.tag ?? 'Belajar';
@@ -1076,9 +1113,6 @@ export const useGameStore = create<GameState>((set, get) => ({
         ? (focusSetup.minutes === 0 ? 86400 : focusSetup.minutes * 60)
         : GAME_CONFIG.focus.defaultDurationSec;
 
-    const unlockedSet = getUnlockedTilesSet(saveData?.world, saveData?.world_objects || []);
-    const targetTile = findEmptyTileNearCenter(saveData?.world_objects || [], unlockedSet);
-
     const newSession = startFocusSession({
       durationSeconds: duration,
       tag: finalTag,
@@ -1088,6 +1122,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       todoId,
       isStopwatch,
       targetTile: targetTile ? { grid_x: targetTile.grid_x, grid_y: targetTile.grid_y } : undefined,
+      noTree: Boolean(noTree || !targetTile),
     });
 
     const updatedData: RimbaSaveData = {
@@ -1111,6 +1146,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       relocatingObjectId: null,
       isTabBlurred: false,
     });
+    return true;
   },
 
   updateActiveSessionMeta: (updates) => {
@@ -1162,7 +1198,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     };
     persistAndSyncSaveData(updatedData);
     set({ saveData: updatedData });
-    get().notify(getStoreLang() === 'en' ? `🏷️ New tag "${clean}" added!` : `🏷️ Tag baru "${clean}" ditambahkan!`, 'success');
+    get().notify(getStoreLang() === 'en' ? `New tag "${clean}" added!` : `Tag baru "${clean}" ditambahkan!`, 'success');
     return newTag;
   },
 
@@ -1280,7 +1316,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     persistAndSyncSaveData(updatedData);
     set({ saveData: updatedData });
     get().notify(
-      '🎁 SELAMAT! Kamu membuka Hadiah Misterius Perintis: Pohon Leluhur Sakral (Ancient Elder Oak) + 50 Soul + 250 XP!',
+      'SELAMAT! Kamu membuka Hadiah Misterius Perintis: Pohon Leluhur Sakral (Ancient Elder Oak) + 50 Soul + 250 XP!',
       'success'
     );
     return true;
@@ -1404,11 +1440,11 @@ export const useGameStore = create<GameState>((set, get) => ({
     get().notify(
       emptyTile
         ? (lang === 'en'
-            ? `🥀 You gave up after the grace period. A Withered Stump appeared at (${emptyTile.grid_x},${emptyTile.grid_y}) — tap it to restore!`
-            : `🥀 Kamu menyerah setelah masa tenggang. Tunggul Layu muncul di petak (${emptyTile.grid_x},${emptyTile.grid_y}) — ketuk tunggul untuk merestorasinya!`)
+            ? `You gave up after the grace period. A Withered Stump appeared at (${emptyTile.grid_x},${emptyTile.grid_y}) — tap it to restore!`
+            : `Kamu menyerah setelah masa tenggang. Tunggul Layu muncul di petak (${emptyTile.grid_x},${emptyTile.grid_y}) — ketuk tunggul untuk merestorasinya!`)
         : (lang === 'en'
-            ? '🥀 Focus session stopped. Your sapling withered without rewards.'
-            : '🥀 Sesi fokus dihentikan. Bibit pohon layu tanpa menghasilkan hadiah.'),
+            ? 'Focus session stopped. Your sapling withered without rewards.'
+            : 'Sesi fokus dihentikan. Bibit pohon layu tanpa menghasilkan hadiah.'),
       'error'
     );
   },
@@ -1419,11 +1455,14 @@ export const useGameStore = create<GameState>((set, get) => ({
       return false;
     }
 
-    const pausedAt = new Date().toISOString();
+    const now = Date.now();
+    const pausedAt = new Date(now).toISOString();
+    const remainingMs = getRemainingMs(activeSession, now);
     const updatedSession: FocusSession = {
       ...activeSession,
       is_paused: true,
       paused_at: pausedAt,
+      paused_remaining_ms: remainingMs,
     };
 
     const updatedSessions = saveData.focus_sessions.map((s) =>
@@ -1446,8 +1485,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     const lang = getStoreLang();
     get().notify(
       lang === 'en'
-        ? '⏸️ Focus paused. Take a breath and relax.'
-        : '⏸️ Sesi fokus dijeda sejenak. Tarik napas dan istirahat.',
+        ? 'Focus paused. Take a breath and relax.'
+        : 'Sesi fokus dijeda sejenak. Tarik napas dan istirahat.',
       'info'
     );
     return true;
@@ -1460,17 +1499,23 @@ export const useGameStore = create<GameState>((set, get) => ({
     }
 
     const now = Date.now();
-    const pausedMs = activeSession.paused_at
-      ? Math.max(0, now - new Date(activeSession.paused_at).getTime())
-      : 0;
+    const pausedAtMs = activeSession.paused_at
+      ? new Date(activeSession.paused_at).getTime()
+      : now;
+    const pausedMs = Math.max(0, now - pausedAtMs);
 
-    const currentExpected = new Date(activeSession.expected_end_at).getTime();
-    const newExpectedEnd = new Date(currentExpected + pausedMs).toISOString();
+    const remaining =
+      typeof activeSession.paused_remaining_ms === 'number' &&
+      Number.isFinite(activeSession.paused_remaining_ms)
+        ? activeSession.paused_remaining_ms
+        : Math.max(0, new Date(activeSession.expected_end_at).getTime() - pausedAtMs);
+    const newExpectedEnd = new Date(now + remaining).toISOString();
 
     const updatedSession: FocusSession = {
       ...activeSession,
       is_paused: false,
       paused_at: null,
+      paused_remaining_ms: undefined,
       expected_end_at: newExpectedEnd,
       total_paused_ms: (activeSession.total_paused_ms || 0) + pausedMs,
     };
@@ -1662,8 +1707,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (saveData.world.sealed_tiles && saveData.world.sealed_tiles.includes(coordKey)) {
       get().notify(
         getStoreLang() === 'en'
-          ? '🚧 This tile is sealed by the Bulldozer crew! Complete 1 focus session or restore a stump to unseal.'
-          : '🚧 Petak ini sedang disegel oleh kru Bulldozer! Selesaikan 1 sesi fokus atau restorasi tunggul untuk membuka segel.',
+          ? 'This tile is sealed by the Bulldozer crew! Complete 1 focus session or restore a stump to unseal.'
+          : 'Petak ini sedang disegel oleh kru Bulldozer! Selesaikan 1 sesi fokus atau restorasi tunggul untuk membuka segel.',
         'error'
       );
       return false;
@@ -1685,6 +1730,23 @@ export const useGameStore = create<GameState>((set, get) => ({
         get().notify(getStoreLang() === 'en' ? 'That tile is already occupied by another object!' : 'Petak tersebut sudah terisi objek lain!', 'error');
         return false;
       }
+    }
+
+    const currentActiveSession = get().activeSession;
+    if (
+      currentActiveSession &&
+      currentActiveSession.status === 'active' &&
+      currentActiveSession.target_tile &&
+      currentActiveSession.target_tile.grid_x === grid_x &&
+      currentActiveSession.target_tile.grid_y === grid_y
+    ) {
+      get().notify(
+        getStoreLang() === 'en'
+          ? 'This tile is reserved for your growing focus sapling!'
+          : 'Petak ini sedang digunakan oleh bibit fokus yang sedang tumbuh!',
+        'error'
+      );
+      return false;
     }
 
     const cost = item.cost;
@@ -1766,15 +1828,15 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (isBridge && isExistingRiver) {
       get().notify(
         isEn
-          ? `🌉 Rimba Bridge installed over river stream! (-${cost} Soul)`
-          : `🌉 Jembatan Rimba terpasang di atas aliran sungai! (-${cost} Soul)`,
+          ? `Rimba Bridge installed over river stream! (-${cost} Soul)`
+          : `Jembatan Rimba terpasang di atas aliran sungai! (-${cost} Soul)`,
         'success'
       );
     } else {
       get().notify(
         isEn
-          ? `🌿 ${item.name} placed successfully! (-${cost} Soul)`
-          : `🌿 ${item.name} berhasil ditempatkan! (-${cost} Soul)`,
+          ? `${item.name} placed successfully! (-${cost} Soul)`
+          : `${item.name} berhasil ditempatkan! (-${cost} Soul)`,
         'success'
       );
     }
@@ -1844,8 +1906,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     const lang = getStoreLang();
     get().notify(
       lang === 'en'
-        ? `🌿 Stump/Object restored fresh & tile seal removed! (-${GAME_CONFIG.restore} Soul)`
-        : `🌿 Tunggul/Objek berhasil dipulihkan kembali segar & segel petak dibuka! (-${GAME_CONFIG.restore} Soul)`,
+        ? `Stump/Object restored fresh & tile seal removed! (-${GAME_CONFIG.restore} Soul)`
+        : `Tunggul/Objek berhasil dipulihkan kembali segar & segel petak dibuka! (-${GAME_CONFIG.restore} Soul)`,
       'success'
     );
     return true;
@@ -1903,8 +1965,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     const lang = getStoreLang();
     get().notify(
       lang === 'en'
-        ? `🛡️ Sanctuary barrier repelled the Bulldozer! Construction truck retreated. (-${GAME_CONFIG.reclamation.bulldozer_mark_cost} Soul)`
-        : `🛡️ Perisai energi suaka berhasil menghalau Bulldozer! Truk konstruksi mundur. (-${GAME_CONFIG.reclamation.bulldozer_mark_cost} Soul)`,
+        ? `Sanctuary barrier repelled the Bulldozer! Construction truck retreated. (-${GAME_CONFIG.reclamation.bulldozer_mark_cost} Soul)`
+        : `Perisai energi suaka berhasil menghalau Bulldozer! Truk konstruksi mundur. (-${GAME_CONFIG.reclamation.bulldozer_mark_cost} Soul)`,
       'success'
     );
 
@@ -1986,15 +2048,15 @@ export const useGameStore = create<GameState>((set, get) => ({
       if (result.tier === 1) {
         get().notify(
           getStoreLang() === 'en'
-            ? '🚜 Construction crew arrived at the island edge! Complete a focus session to repel them.'
-            : '🚜 Kru konstruksi tiba di tepi pulau! Selesaikan sesi fokus untuk menghalau mereka.',
+            ? 'Construction crew arrived at the island edge! Complete a focus session to repel them.'
+            : 'Kru konstruksi tiba di tepi pulau! Selesaikan sesi fokus untuk menghalau mereka.',
           'reclamation'
         );
       } else {
         get().notify(
           getStoreLang() === 'en'
-            ? '⚠️ Construction crew felled a marked tree into a stump due to prolonged inactivity!'
-            : '⚠️ Kru konstruksi menebang pohon yang ditandai menjadi tunggul karena tidak aktif terlalu lama!',
+            ? 'Construction crew felled a marked tree into a stump due to prolonged inactivity!'
+            : 'Kru konstruksi menebang pohon yang ditandai menjadi tunggul karena tidak aktif terlalu lama!',
           'error'
         );
       }
@@ -2039,7 +2101,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     };
     persistAndSyncSaveData(updatedData);
     set({ saveData: updatedData });
-    get().notify(`Granted +${amount} Soul to sanctuary ledger! ✨`, 'success');
+    get().notify(`Granted +${amount} Soul to sanctuary ledger!`, 'success');
   },
 
   loadThrivingPreset: () => {
@@ -2199,7 +2261,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     });
 
     get().notify(
-      '🌳 Thriving Sanctuary 10x10 Dimuat! Menampilkan suaka alami Rimba, aliran sungai jernih & jembatan papan kayu (+2,500 Soul).',
+      'Thriving Sanctuary 10x10 Dimuat! Menampilkan suaka alami Rimba, aliran sungai jernih & jembatan papan kayu (+2,500 Soul).',
       'success'
     );
   },
@@ -2240,7 +2302,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       hoveredGridTile: null,
       isExpandLandMode: true,
     });
-    get().notify('🌱 Starter Hub 3x3 aktif (+150 Soul)! Mode Perluas Lahan otomatis menyala.', 'success');
+    get().notify('Starter Hub 3x3 aktif (+150 Soul)! Mode Perluas Lahan otomatis menyala.', 'success');
   },
 
   importSaveData: (newData: RimbaSaveData) => {
@@ -2272,7 +2334,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         hoveredGridTile: null,
         isExpandLandMode: false,
       });
-      get().notify(getStoreLang() === 'en' ? `✨ Sanctuary "${newData.world.name || 'Rimba'}" restored from backup!` : `✨ Suaka "${newData.world.name || 'Rimba'}" berhasil dipulihkan dari berkas cadangan!`, 'success');
+      get().notify(getStoreLang() === 'en' ? `Sanctuary "${newData.world.name || 'Rimba'}" restored from backup!` : `Suaka "${newData.world.name || 'Rimba'}" berhasil dipulihkan dari berkas cadangan!`, 'success');
       return true;
     } catch (err) {
       console.error('Failed to import save data:', err);
@@ -2342,8 +2404,8 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     get().notify(
       isEn
-        ? `🏝️ Arrived at ${getIslandDisplayName(targetIsland, 'en', saveData.profile.name)}`
-        : `🏝️ Tiba di ${getIslandDisplayName(targetIsland, 'id', saveData.profile.name)}`,
+        ? `Arrived at ${getIslandDisplayName(targetIsland, 'en', saveData.profile.name)}`
+        : `Tiba di ${getIslandDisplayName(targetIsland, 'id', saveData.profile.name)}`,
       'info'
     );
     return true;
@@ -2443,8 +2505,8 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     get().notify(
       isEn
-        ? `🌱 Created new sanctuary: "${islandName}"`
-        : `🌱 Suaka baru berhasil dibuat: "${islandName}"`,
+        ? `Created new sanctuary: "${islandName}"`
+        : `Suaka baru berhasil dibuat: "${islandName}"`,
       'success'
     );
     return true;
@@ -2603,8 +2665,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({ saveData: updatedData });
     get().notify(
       getStoreLang() === 'en'
-        ? `🎁 Quest claimed! +${result.rewardGold} Soul & +${result.rewardXp} XP added to your journal.`
-        : `🎁 Misi diklaim! +${result.rewardGold} Soul & +${result.rewardXp} XP ditambahkan ke jurnalmu.`,
+        ? `Quest claimed! +${result.rewardGold} Soul & +${result.rewardXp} XP added to your journal.`
+        : `Misi diklaim! +${result.rewardGold} Soul & +${result.rewardXp} XP ditambahkan ke jurnalmu.`,
       'success'
     );
     return true;
@@ -2636,8 +2698,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({ saveData: updatedData });
     get().notify(
       getStoreLang() === 'en'
-        ? `🏆 Daily All-Clear Chest opened! +${result.rewardGold} Soul & +${result.rewardXp} XP!`
-        : `🏆 Peti All-Clear Harian terbuka! +${result.rewardGold} Soul & +${result.rewardXp} XP!`,
+        ? `Daily All-Clear Chest opened! +${result.rewardGold} Soul & +${result.rewardXp} XP!`
+        : `Peti All-Clear Harian terbuka! +${result.rewardGold} Soul & +${result.rewardXp} XP!`,
       'success'
     );
     return true;
@@ -2690,7 +2752,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     };
     persistAndSyncSaveData(updatedData);
     set({ saveData: updatedData });
-    get().notify(getStoreLang() === 'en' ? '📝 Reflection note saved to Journal!' : '📝 Catatan refleksi berhasil disimpan ke Jurnal!', 'success');
+    get().notify(getStoreLang() === 'en' ? 'Reflection note saved to Journal!' : 'Catatan refleksi berhasil disimpan ke Jurnal!', 'success');
   },
 
   buyStreakShield: () => {
@@ -2719,7 +2781,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     };
     persistAndSyncSaveData(updatedData);
     set({ saveData: updatedData });
-    get().notify(getStoreLang() === 'en' ? '🛡️ Streak Freeze purchased! Your daily streak is protected if you miss 1 day.' : '🛡️ Embun Pelindung berhasil dibeli! Streak harianmu terlindungi bila libur 1 hari.', 'success');
+    get().notify(getStoreLang() === 'en' ? 'Streak Freeze purchased! Your daily streak is protected if you miss 1 day.' : 'Embun Pelindung berhasil dibeli! Streak harianmu terlindungi bila libur 1 hari.', 'success');
     return true;
   },
 
@@ -2761,8 +2823,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({ saveData: updatedData });
     get().notify(
       getStoreLang() === 'en'
-        ? `📜 Chapter ${chapter.chapterNumber} claimed! Sanctuary blessing: +${chapter.reward.gold} Soul & +${chapter.reward.xp} XP!`
-        : `📜 Bab ${chapter.chapterNumber} terbuka! Berkah suaka: +${chapter.reward.gold} Soul & +${chapter.reward.xp} XP!`,
+        ? `Chapter ${chapter.chapterNumber} claimed! Sanctuary blessing: +${chapter.reward.gold} Soul & +${chapter.reward.xp} XP!`
+        : `Bab ${chapter.chapterNumber} terbuka! Berkah suaka: +${chapter.reward.gold} Soul & +${chapter.reward.xp} XP!`,
       'success'
     );
     return true;
@@ -2821,8 +2883,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({ saveData: updatedData });
     get().notify(
       getStoreLang() === 'en'
-        ? `✨ Wisdom absorbed! Sanctuary blessing: +${frag.rewardSoul} Soul & +${frag.rewardXp} XP!`
-        : `✨ Kebijaksanaan '${frag.title}' diserap! Berkah suaka: +${frag.rewardSoul} Soul & +${frag.rewardXp} XP!`,
+        ? `Wisdom absorbed! Sanctuary blessing: +${frag.rewardSoul} Soul & +${frag.rewardXp} XP!`
+        : `Kebijaksanaan '${frag.title}' diserap! Berkah suaka: +${frag.rewardSoul} Soul & +${frag.rewardXp} XP!`,
       'success'
     );
     return true;

@@ -146,7 +146,10 @@ function WelcomeAuthPageContent() {
           soundManager.playComplete();
           hapticSuccess();
           if (typeof window !== "undefined") {
-            localStorage.setItem("rimba_onboarding_completed", "true");
+            const currentUserId = useAuthStore.getState().user?.id;
+            if (currentUserId) {
+              localStorage.setItem(`rimba_onboarding_completed_${currentUserId}`, "true");
+            }
           }
           router.push("/");
         } else {
@@ -603,8 +606,9 @@ function WelcomeAuthPageContent() {
               aria-label={t.auth.otpTitle}
               maxLength={EMAIL_OTP_MAX_LENGTH}
               value={otpCode}
+              placeholder="123456"
               onChange={(e) => setOtpCode(normalizeEmailOtp(e.target.value))}
-              className="w-full h-14 rounded-2xl bg-black/40 text-white font-mono font-bold text-xl tracking-[0.3em] text-center border border-white/20 focus:border-emerald-400 focus:outline-none transition-all"
+              className="w-full h-14 rounded-2xl bg-black/40 text-white font-mono font-bold text-xl tracking-[0.3em] text-center border border-white/20 focus:border-emerald-400 focus:outline-none transition-all placeholder:text-white/20 placeholder:tracking-[0.3em]"
             />
 
             <button

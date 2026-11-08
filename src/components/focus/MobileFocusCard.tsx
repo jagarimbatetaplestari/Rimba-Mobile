@@ -7,7 +7,7 @@ import {
   GAME_CONFIG,
   TREE_SPECIES_CONFIG,
 } from "@/lib/game/config";
-import { calculateFocusRewards, getFocusedElapsedMs } from "@/lib/game/sessionRules";
+import { calculateFocusRewards, getFocusedElapsedMs, getRemainingMs, getRemainingDisplaySeconds, getProgressRatio } from "@/lib/game/sessionRules";
 import {
   getUnlockedTilesSet,
   getLandExpansionZoneInfo,
@@ -55,9 +55,11 @@ import {
   VolumeX,
   Pause,
   Play,
+  TreePine,
 } from "lucide-react";
 
 import { TagLineIcon, LINE_ICON_KEYS } from "@/components/common/TagLineIcon";
+import { NatureLineIcon } from "@/components/common/NatureLineIcon";
 import { useTranslation } from "@/lib/i18n/translations";
 
 export interface MobileFocusCardProps {
@@ -210,8 +212,10 @@ export function MobileFocusCard({
         if (
           elapsed >= 5 &&
           !activeSession.strict_mode &&
+          !activeSession.is_paused &&
           !isFinished
         ) {
+          pauseFocus();
           setAwaySeconds(elapsed);
           setShowReturnOverlay(true);
         }
@@ -330,14 +334,13 @@ export function MobileFocusCard({
         .padStart(2, "0");
       const s = (elapsedSec % 60).toString().padStart(2, "0");
       if (typeof document !== "undefined") {
-        document.title = `(${m}:${s}) ⏱️ Stopwatch — Rimba`;
+        document.title = `(${m}:${s}) Stopwatch - Rimba`;
       }
       return;
     }
 
-    const expectedEnd = new Date(activeSession.expected_end_at).getTime();
-    const remainingMs = Math.max(0, expectedEnd - now);
-    const reached = now >= expectedEnd - 500;
+    const remainingMs = getRemainingMs(activeSession, now);
+    const reached = !activeSession.is_stopwatch && !activeSession.is_paused && remainingMs <= 500;
 
     if (reached) {
       if (hasChimedRef.current !== activeSession.id) {
@@ -349,15 +352,15 @@ export function MobileFocusCard({
         setZenMode(false);
       }
       if (typeof document !== "undefined") {
-        document.title = `🌱 ${t.cockpit.harvestTitle} — Rimba`;
+        document.title = `${t.cockpit.harvestTitle} - Rimba`;
       }
     } else if (typeof document !== "undefined") {
-      const totalSec = Math.floor(remainingMs / 1000);
+      const totalSec = getRemainingDisplaySeconds(activeSession, now);
       const m = Math.floor(totalSec / 60)
         .toString()
         .padStart(2, "0");
       const s = (totalSec % 60).toString().padStart(2, "0");
-      document.title = `(${m}:${s}) ${t.cockpit.focusTitle} — Rimba`;
+      document.title = `(${m}:${s}) ${t.cockpit.focusTitle} - Rimba`;
     }
   }, [activeSession, now, language]);
 
@@ -769,7 +772,7 @@ export function MobileFocusCard({
 
           <div className="flex items-center justify-between pb-2.5 border-b border-white/15 relative z-10">
             <div className="flex items-center gap-2">
-              <span className="text-xl leading-none">🌲</span>
+              <TreePine className="w-5 h-5 text-emerald-300 stroke-[2.2] shrink-0" />
               <div className="flex flex-col">
                 <span className="text-sm font-bold tracking-tight text-white">
                   {t.cockpit.treeSeed}
@@ -976,7 +979,10 @@ export function MobileFocusCard({
 
         <div className="flex flex-col items-end text-right">
           <span className="text-xs font-bold text-white/95 flex items-center gap-1">
-            <span>+{previewReward.gold} Soul ✨</span>
+            <span className="inline-flex items-center gap-1">
+              +{previewReward.gold} Soul
+              <Sparkles className="w-3 h-3 text-amber-300 inline" />
+            </span>
             <span>•</span>
             <span className="text-emerald-200">+{previewReward.xp} XP</span>
           </span>
@@ -1210,20 +1216,19 @@ export function MobileFocusCard({
     activeSession.is_paused && activeSession.paused_at
       ? new Date(activeSession.paused_at).getTime()
       : now;
-  const start = new Date(activeSession.started_at).getTime();
-  const expectedEnd = new Date(activeSession.expected_end_at).getTime();
-  const totalDuration = Math.max(1000, expectedEnd - start - (activeSession.total_paused_ms ?? 0));
   const elapsedMs = getFocusedElapsedMs(activeSession, referenceNow);
-  const remainingMs = Math.max(0, expectedEnd - referenceNow);
+  const remainingMs = getRemainingMs(activeSession, referenceNow);
   const sessionProgressPct = activeSession.is_stopwatch
     ? 100
-    : Math.min(100, Math.max(2, (elapsedMs / totalDuration) * 100));
+    : Math.min(100, Math.max(2, getProgressRatio(activeSession, referenceNow) * 100));
 
-  const isTimeReached = referenceNow >= expectedEnd - 500;
+  const isTimeReached = !activeSession.is_stopwatch && remainingMs <= 500;
   const graceSecondsLeft = Math.max(0, Math.ceil((10000 - elapsedMs) / 1000));
   const isWithinGracePeriod = graceSecondsLeft > 0 && !isTimeReached;
-  const formatTime = (ms: number) => {
-    const totalSec = Math.floor(ms / 1000);
+  const formatTime = (ms: number, isStopwatch = false) => {
+    const totalSec = isStopwatch
+      ? Math.floor(ms / 1000)
+      : Math.max(0, Math.ceil(ms / 1000));
     const m = Math.floor(totalSec / 60);
     const s = totalSec % 60;
     return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
@@ -1256,6 +1261,7 @@ export function MobileFocusCard({
               <span className="text-[32px] leading-none font-extrabold tracking-tight text-white tabular-nums">
                 {formatTime(
                   activeSession.is_stopwatch ? elapsedMs : remainingMs,
+                  activeSession.is_stopwatch,
                 )}
               </span>
 
@@ -1282,9 +1288,10 @@ export function MobileFocusCard({
               className="flex items-center gap-1.5 pl-2.5 pr-2.5 py-1.5 rounded-full bg-white/[0.16] hover:bg-white/[0.24] border border-white/35 text-white active:scale-95 transition-all cursor-pointer backdrop-blur-xl max-w-[165px]"
               title={t.cockpit.sessionTag}
             >
-              <span className="text-xs leading-none shrink-0">
-                {currentSpeciesInfo.icon}
-              </span>
+              <NatureLineIcon
+                name={currentSpeciesInfo.icon || "🌲"}
+                className="w-3.5 h-3.5 text-emerald-200 stroke-[2.2] shrink-0"
+              />
               <span className="w-px h-3 bg-white/25 shrink-0" />
               <Tag className="w-3 h-3 text-white/90 stroke-[2.2] shrink-0" />
               <span className="text-xs font-semibold tracking-tight truncate">
@@ -1347,6 +1354,7 @@ export function MobileFocusCard({
                       return;
                     }
                     soundManager.playPop();
+                    setNow(Date.now());
                     if (activeSession.is_paused) {
                       resumeFocus();
                     } else {
@@ -1471,6 +1479,7 @@ export function MobileFocusCard({
         onResume={() => {
           setShowReturnOverlay(false);
           hapticLight();
+          setNow(Date.now());
           if (activeSession && activeSession.is_paused) {
             resumeFocus();
           }

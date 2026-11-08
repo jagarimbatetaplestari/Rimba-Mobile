@@ -1289,6 +1289,37 @@ export function MobileSettingsSheet({
                     <ChevronRight className="w-4 h-4 text-[#4C7567]/70 stroke-[1.8]" />
                   </button>
 
+                  {/* Panduan Interaktif (Guided Tour) */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      hapticLight();
+                      soundManager.playPop();
+                      onClose();
+                      if (typeof window !== "undefined") {
+                        window.dispatchEvent(new CustomEvent("rimba:open_tour"));
+                      }
+                    }}
+                    className="w-full flex items-center justify-between p-3 text-left hover:bg-black/5 rounded-2xl transition-all cursor-pointer"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-xl bg-[#E4F4ED] border border-[#BCE5D3] flex items-center justify-center text-[#187557]">
+                        <Sparkles className="w-4 h-4 stroke-[2]" />
+                      </div>
+                      <div>
+                        <p className="text-[13px] font-semibold text-[#0D3528]">
+                          {lang === "en" ? "Interactive Tour" : "Panduan Interaktif"}
+                        </p>
+                        <p className="text-[11px] text-[#4C7567] font-normal">
+                          {lang === "en"
+                            ? "Step-by-step sanctuary and focus walkthrough"
+                            : "Tur langkah demi langkah fitur suaka dan fokus"}
+                        </p>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-[#4C7567]/70 stroke-[1.8]" />
+                  </button>
+
                   {/* Kebijakan Privasi */}
                   <button
                     type="button"

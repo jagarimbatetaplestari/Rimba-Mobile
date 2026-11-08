@@ -109,6 +109,8 @@ export interface FocusSession {
   is_paused?: boolean;
   paused_at?: string | null;
   total_paused_ms?: number;
+  paused_remaining_ms?: number;
+  no_tree?: boolean;
 }
 
 export interface WorldObject {

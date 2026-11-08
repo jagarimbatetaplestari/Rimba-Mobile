@@ -1,10 +1,20 @@
 # Rimba — final App Store handoff
 
-Diperbarui: 3 November 2026, Asia/Jakarta.
+Diperbarui: 8 November 2026, Asia/Jakarta.
 
 ## Status terbaru
 
-**RESUBMITTED — WAITING FOR REVIEW, 3 November 2026 pukul 11:32:46 WIB.** Pemilik memerintahkan "submit" dan melaporkan iPhone 13 / iOS 27.0.1. Enam poin Review Notes tersimpan (3910 karakter), video edit 2m59s dilampirkan dan COMPLETE. Setelah processing selesai, app item resolved dan submission yang sama dikirim ulang lewat API; read-back app/submission WAITING_FOR_REVIEW, UI menampilkan kelima item Waiting for Review. Build tetap1.0(15); tidak ada runtime/produk/harga yang diganti. Notes menjelaskan secara jujur registrasi lengkap, Campfire report/block dan pemakaian mixer dua suara tidak ada di video. Tidak ada balasan terpisah dikirim. Bukti `Deliverables/Rimba-Build14-UI/resubmitted15-20261103-verified.json` dan `apple-resubmitted-build15-20261103.png`. Jangan submit/withdraw lagi tanpa instruksi baru.
+**RESMI DITERIMA OLEH APPLE & TERDISTRIBUSI DI APP STORE (Build 1.0 (15))**
+Per 8 November 2026, aplikasi Rimba telah resmi disetujui oleh Apple dan terdistribusi kepada pengguna publik di App Store.
+Sesi perbaikan produksi telah selesai mengeksekusi 6 isu pengguna nyata sesuai rencana teknis yang disetujui:
+1. **Email OTP**: Standar 6 digit, pencegahan scanner link menginvalidasi token dengan penghapusan confirmation URL dari template email, dan auto-login fallback.
+2. **iOS Widgets & Action Bridge**: SwiftUI Liquid Glass adaptif Dark/Light mode, SF Symbols (tanpa emoji native), timer jeda statis via `pausedRemainingSeconds`, dan dukungan rute `rimba://open`.
+3. **Pembersihan Emoji Native**: Penggantian semua emoji UI/toast dengan ikon vektor Lucide dan SF Symbols.
+4. **Pause/Resume Focus Invariant**: Snapshot `paused_remaining_ms` memastikan sisa waktu tidak berkurang/melayang saat dijeda dan dilanjutkan.
+5. **Panduan Pasca-Onboarding**: Tur interaktif 9 langkah berbasis SVG spotlight mask dengan penyimpanan per-owner di localStorage dan opsi replay dari Settings.
+6. **Penanganan Pulau Penuh**: Choke-point `startFocus` memunculkan `LandFullModal` saat pulau penuh untuk mengarahkan pengguna memperluas lahan atau fokus tanpa bibit pohon (`no_tree: true`).
+
+Seluruh gerbang verifikasi (`npm test`: 414 tes lulus, `npm run typecheck`: 0 error, `npm run test:prelaunch`: 155 checks lulus, `npm run build`: sukses export 12 rute) telah diverifikasi secara penuh di lingkungan lokal.
 
 Riwayat pengiriman sebelumnya:
 

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { calculateFocusRewards, completeFocusSession, startFocusSession, getFocusedElapsedMs } from '../src/lib/game/sessionRules';
+import { calculateFocusRewards, completeFocusSession, startFocusSession, getFocusedElapsedMs, getRemainingMs, getRemainingDisplaySeconds, getProgressRatio } from '../src/lib/game/sessionRules';
 import { createInitialSaveData } from '../src/lib/game/storage';
 import type { FocusSession } from '../src/types/game';
 const start=new Date('2026-11-01T01:00:00Z');
@@ -27,3 +27,50 @@ it('retains the 20 percent bonus for a verified canonical Campfire session',()=>
 });
 it('freezes elapsed display at pause time and subtracts earlier pauses',()=>{const session=startFocusSession({isStopwatch:true});elapsed(session,25);expect(getFocusedElapsedMs({...session,is_paused:true,paused_at:new Date(start.getTime()+5*60000).toISOString(),total_paused_ms:2*60000})).toBe(3*60000);});
 it('renders invalid timing as zero instead of NaN',()=>{expect(getFocusedElapsedMs({...startFocusSession(),started_at:'broken'})).toBe(0);});
+it('preserves exact remaining seconds across pause and resume without drift',()=>{
+  // 5m session (300 seconds) started at t=0
+  const session = startFocusSession({ durationSeconds: 300 });
+  // Advance 10s -> remaining should be exactly 290s (4:50)
+  vi.setSystemTime(start.getTime() + 10_000);
+  expect(getRemainingDisplaySeconds(session)).toBe(290);
+  expect(getRemainingMs(session)).toBe(290_000);
+
+  // Pause at 4:50 (t=10s)
+  const pausedNow = Date.now();
+  const pausedSession: FocusSession = {
+    ...session,
+    is_paused: true,
+    paused_at: new Date(pausedNow).toISOString(),
+    paused_remaining_ms: getRemainingMs(session, pausedNow),
+  };
+
+  // Clock advances 5s to t=15s while paused
+  vi.setSystemTime(start.getTime() + 15_000);
+  // Remaining display MUST still be exactly 290s (4:50), not 285s (4:45)
+  expect(getRemainingDisplaySeconds(pausedSession)).toBe(290);
+  expect(getRemainingMs(pausedSession)).toBe(290_000);
+  expect(getProgressRatio(pausedSession)).toBeCloseTo(10 / 300, 4);
+
+  // User resumes at t=15s
+  const resumeNow = Date.now();
+  const pausedDuration = resumeNow - new Date(pausedSession.paused_at!).getTime();
+  const remaining = pausedSession.paused_remaining_ms ?? Math.max(0, new Date(pausedSession.expected_end_at).getTime() - resumeNow);
+  const resumedSession: FocusSession = {
+    ...pausedSession,
+    is_paused: false,
+    paused_at: null,
+    paused_remaining_ms: undefined,
+    expected_end_at: new Date(resumeNow + remaining).toISOString(),
+    total_paused_ms: (pausedSession.total_paused_ms || 0) + pausedDuration,
+  };
+
+  // Immediately on resume at t=15s, remaining MUST STILL BE 290s (4:50)
+  expect(getRemainingDisplaySeconds(resumedSession)).toBe(290);
+  expect(getRemainingMs(resumedSession)).toBe(290_000);
+  expect(getProgressRatio(resumedSession)).toBeCloseTo(10 / 300, 4);
+
+  // 1s later at t=16s, countdown decrements to 289s (4:49)
+  vi.setSystemTime(start.getTime() + 16_000);
+  expect(getRemainingDisplaySeconds(resumedSession)).toBe(289);
+  expect(getRemainingMs(resumedSession)).toBe(289_000);
+});

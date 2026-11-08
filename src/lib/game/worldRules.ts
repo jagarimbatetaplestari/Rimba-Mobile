@@ -206,6 +206,52 @@ export function findEmptyTileNearCenter(
   return { grid_x: candidates[0].grid_x, grid_y: candidates[0].grid_y };
 }
 
+export interface LandFullState {
+  isFull: boolean;
+  unlockedCount: number;
+  occupiedCount: number;
+  freeCount: number;
+  canExpand: boolean;
+  nextExpansionCost: { gold: number } | null;
+  isMaxExpansion: boolean;
+}
+
+export function getLandFullState(
+  world?: { unlocked_tiles?: string[] } | null,
+  objects: WorldObject[] = []
+): LandFullState {
+  const unlockedSet = getUnlockedTilesSet(world, objects);
+  const activeObjects = (objects || []).filter(
+    (o) => o && o.status !== 'reclaimed' && o.status !== 'marked_for_clearing'
+  );
+  const occupiedSet = new Set(activeObjects.map((o) => `${o.grid_x},${o.grid_y}`));
+
+  let occupiedCount = 0;
+  unlockedSet.forEach((tileKey) => {
+    if (occupiedSet.has(tileKey)) {
+      occupiedCount++;
+    }
+  });
+
+  const unlockedCount = unlockedSet.size;
+  const freeCount = Math.max(0, unlockedCount - occupiedCount);
+  const isFull = freeCount === 0;
+  const isMaxExpansion = unlockedCount >= 100;
+  const expandableTiles = getExpandableTiles(unlockedSet);
+  const canExpand = !isMaxExpansion && expandableTiles.length > 0;
+  const zoneInfo = getLandExpansionZoneInfo(unlockedCount);
+
+  return {
+    isFull,
+    unlockedCount,
+    occupiedCount,
+    freeCount,
+    canExpand,
+    nextExpansionCost: canExpand ? { gold: zoneInfo.nextTileCost } : null,
+    isMaxExpansion,
+  };
+}
+
 export interface LandExpansionZoneInfo {
   zoneNumber: 1 | 2 | 3;
   zoneName: string;
@@ -281,8 +327,8 @@ export function getLandExpansionZoneInfo(
     milestoneRewardText:
       count >= 100
         ? isEn
-          ? 'Full 10×10 Sovereignty (100 Tiles) Achieved! 👑'
-          : 'Kedaulatan Penuh 10×10 (100 Petak) Tercapai! 👑'
+          ? 'Full 10×10 Sovereignty (100 Tiles) Achieved!'
+          : 'Kedaulatan Penuh 10×10 (100 Petak) Tercapai!'
         : isEn
           ? 'Target 100 Tiles: Full 10×10 Island Sovereignty!'
           : 'Target 100 Petak: Kedaulatan Penuh Pulau 10×10!',

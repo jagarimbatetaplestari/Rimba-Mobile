@@ -5,6 +5,16 @@ import React, { useEffect } from "react";
 import { useGameStore } from "@/lib/game/useGameStore";
 import { CheckCircle2, AlertCircle, Info, Sparkles, X } from "lucide-react";
 
+function cleanNotificationText(msg: string): string {
+  if (!msg) return "";
+  return msg
+    .replace(
+      new RegExp("^[\\u{1F300}-\\u{1F9FF}\\u{2600}-\\u{26FF}\\u{2700}-\\u{27BF}\\u{FE00}-\\u{FE0F}\\u{200D}\\s]+", "u"),
+      ""
+    )
+    .trim();
+}
+
 export function NotificationToast() {
   const { lang } = useTranslation();
   const notification = useGameStore((state) => state.notification);
@@ -72,7 +82,7 @@ export function NotificationToast() {
 
           {/* Message */}
           <p className="text-[12.5px] leading-snug flex-1 font-medium text-[#0D3528] tracking-tight">
-            {notification.message}
+            {cleanNotificationText(notification.message)}
           </p>
 
           {/* Close Button */}

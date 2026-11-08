@@ -4,6 +4,7 @@ import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import { useGameStore } from '@/lib/game/useGameStore';
 import { TREE_SPECIES_CONFIG } from '@/lib/game/config';
+import { getProgressRatio } from '@/lib/game/sessionRules';
 import {
   findEmptyTileNearCenter,
   getUnlockedTilesSet,
@@ -197,10 +198,10 @@ export function FocusSapling() {
   }, [activeSession, lockedTile, worldObjects, unlockedSet]);
 
   // Compute exact world position where the completed focus tree will spawn
-  const saplingWorldPos = useMemo<[number, number, number]>(() => {
-    if (!targetTile) return [0, 0.05, 0];
+  const saplingWorldPos = useMemo<[number, number, number] | null>(() => {
+    if (!targetTile || activeSession?.no_tree) return null;
     return gridToWorld(targetTile.grid_x, targetTile.grid_y, 0.05);
-  }, [targetTile]);
+  }, [targetTile, activeSession?.no_tree]);
 
   // Compute campfire position strictly on an unlocked land tile (never floating in the sea)
   const campfireWorldPos = useMemo<[number, number, number] | null>(() => {
@@ -226,6 +227,7 @@ export function FocusSapling() {
     }
 
     // Fallback: If no adjacent tile is unlocked (e.g. 1x1 island), offset slightly towards island center
+    if (!saplingWorldPos) return null;
     const dirX = targetTile.grid_x === 0 ? 0.2 : -Math.sign(targetTile.grid_x) * 0.22;
     const dirZ = targetTile.grid_y === 0 ? 0.2 : -Math.sign(targetTile.grid_y) * 0.22;
     return [saplingWorldPos[0] + dirX, 0.05, saplingWorldPos[2] + dirZ] as [number, number, number];
@@ -244,7 +246,7 @@ export function FocusSapling() {
     if (!groupRef.current) return;
 
     // Immediately hide when session is no longer active so it never flickers or ghosts onto adjacent tiles
-    if (!activeSession || activeSession.status !== 'active') {
+    if (!activeSession || activeSession.status !== 'active' || !saplingWorldPos || activeSession.no_tree) {
       currentScaleRef.current = 0;
       groupRef.current.scale.setScalar(0);
       groupRef.current.visible = false;
@@ -254,14 +256,7 @@ export function FocusSapling() {
     groupRef.current.visible = true;
 
     const now = Date.now();
-    const start = new Date(activeSession.started_at).getTime();
-    const end = new Date(activeSession.expected_end_at).getTime();
-    // For Stopwatch (Durasi Bebas) mode, tree growth reaches maturity at 5 minutes (300,000 ms)
-    const totalDuration = activeSession.is_stopwatch
-      ? 300000
-      : Math.max(1000, end - start);
-    const elapsed = Math.max(0, now - start);
-    const rawProgress = Math.min(1, elapsed / totalDuration);
+    const rawProgress = getProgressRatio(activeSession, now);
 
     // Determine growth stage:
     // Stage 1 (0% - 30%): Sprout (plant_bushSmall)
@@ -308,7 +303,7 @@ export function FocusSapling() {
   return (
     <>
       <group
-        position={saplingWorldPos}
+        position={saplingWorldPos || [0, -999, 0]}
         onPointerDown={(e) => {
           const state = useGameStore.getState();
           const isInteractingWithGrid = Boolean(

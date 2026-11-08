@@ -318,7 +318,7 @@ export function triggerBulldozerReclamation(
     bulldozer,
     event,
     ledgerEntry,
-    message: `⚠️ Inaktif 48 Jam: Kru Bulldozer memasang cone di petak (${threatenedCoord})! Selesaikan 1 sesi fokus untuk mengusirnya.`,
+    message: `Inaktif 48 Jam: Kru Bulldozer memasang cone di petak (${threatenedCoord})! Selesaikan 1 sesi fokus untuk mengusirnya.`,
     updatedWorld: {
       bulldozer,
       last_reclamation_at: now,

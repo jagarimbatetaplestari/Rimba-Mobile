@@ -1,6 +1,6 @@
 {
   "name": "rimba-mobile",
-  "version": "0.2.0",
+  "version": "1.0.1",
   "private": true,
   "description": "Rimba Focus Garden - Standalone Mobile Application (iOS / iPhone)",
   "scripts": {

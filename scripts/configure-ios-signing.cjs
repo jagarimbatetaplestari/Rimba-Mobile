@@ -11,6 +11,7 @@ for (const [name, profile] of [['App', process.env.PROFILE_NAME], ['RimbaWidgets
   for (const ref of objects.XCConfigurationList[target.buildConfigurationList].buildConfigurations) {
     const config = objects.XCBuildConfiguration[ref.value];
     config.buildSettings.CURRENT_PROJECT_VERSION = process.env.BUILD_NUMBER;
+    config.buildSettings.MARKETING_VERSION = process.env.MARKETING_VERSION || '1.0.1';
     if (config.name !== 'Release') continue;
     Object.assign(config.buildSettings, {
       CODE_SIGN_STYLE: 'Manual', DEVELOPMENT_TEAM: process.env.APPLE_TEAM_ID,
